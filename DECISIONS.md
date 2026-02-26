@@ -1,0 +1,1053 @@
+# Kiba — Decision Log
+
+> Single source of truth for every product, technical, and strategic decision.
+> Updated: February 19, 2026
+
+---
+
+## How to Read This Document
+
+Each decision has a status:
+
+- **LOCKED** — Decided. Do not revisit unless user testing proves it wrong.
+- **ACTIVE** — Decided and currently being implemented.
+- **DEFERRED** — Decided to postpone. Includes the trigger condition for revisiting.
+- **REJECTED** — Considered and explicitly killed. Includes rationale so it doesn't resurface.
+- **OPEN** — Needs a decision before the relevant milestone.
+
+---
+
+## 1. Brand & Identity
+
+### D-001: App Name → Kiba
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Rename from Clearbowl to Kiba.
+**Rationale:** "Kiba" means "fang" in Japanese. Punchy two-syllable name with hard consonants. Passes the word-of-mouth test cleanly (spell it after hearing it once). Works across pet food, treats, supplements, and future grooming/cosmetics expansion — unlike "Clearbowl" which only maps to food.
+**Rejected alternatives:**
+- Fura — too similar to Yuka phonetically, reads as derivative
+- Vura — sounds pharmaceutical, no memorability hook
+- Zoko — playful but undercuts credibility for a health tool
+
+### D-002: Domain → kibascan.com
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Register kibascan.com as primary domain.
+**Rationale:** "scan" suffix communicates core function, strong SEO for "pet food scanner" queries, avoids double-extension confusion of alternatives like kiba.us.com.
+**Registrar:** Porkbun ($11.08/yr .com, flat renewal pricing, no upsells).
+**Future:** Acquire kiba.com if product succeeds. kiba.app is viable alternative (~$15-17/yr) but may already be registered (Kiba Inu crypto token, defunct Kiba finance app).
+
+### D-003: Trademark Filing
+**Status:** OPEN — Must file before public launch
+**Decision:** File "Kiba" or "KibaScan" via USPTO, ~$250-350 single class.
+**Risk:** Existing Kiba Inu crypto token. Monitor trademark class overlap.
+
+---
+
+## 2. Scoring Engine
+
+### D-010: Category-Adaptive Weighting
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Different product categories get different scoring formulas.
+
+| Category | Weights | Rationale |
+|----------|---------|-----------|
+| Daily Food (kibble, wet, raw) | 55% Ingredient Quality / 30% Nutritional Profile / 15% Formulation Completeness | Ingredients anchor prevents Purina Loophole. GA data often missing, capping reliability at 30%. |
+| Treats | 100% Ingredient Quality | Treats aren't nutritionally complete by design. Caloric density handled by Treat Battery separately. |
+
+**Why NOT 50/35/15:** If Guaranteed Analysis weighted >30%, cheap manufacturers gaming macros with corn gluten meal + unnamed animal fat could mathematically overpower ingredient red flags and score 85/100. 55% keeps ingredient quality as the undeniable anchor.
+**Why NOT 85/15 for treats:** 15% based on kcal density creates "double jeopardy" — a 50-kcal dental chew isn't inherently worse than a 2-kcal training treat. Treat Battery already handles caloric limits mathematically via RER. Keep scoring engine pure.
+
+### D-011: Three-Layer Scoring Architecture
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:**
+- **Layer 1 — Base Score:** Position-weighted ingredient scoring + GA vs AAFCO + formulation quality, with category-adaptive weights
+- **Layer 2 — Species Rules:** Dog-specific (DCM advisory, taurine mitigation) and cat-specific (carb penalty, UGT1A6 enzyme, mandatory taurine) modifiers
+- **Layer 3 — Personalization:** Pet-specific adjustments (weight, breed, age, allergies, activity level). Neutral if no conflicts.
+
+All three layers must be independently testable. Species rules never share between dogs and cats.
+
+### D-012: Unnamed Species Penalty
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** −2 points per unnamed fat or protein source in Ingredient Quality score.
+**Triggers:** Generic AAFCO terms like "Poultry Fat", "Animal Fat", "Fish Meal", "Meat Meal", "Meat By-Products" — any fat or protein without species identification.
+**Rationale:** Unnamed sourcing signals variable supply chains (cheapest available that week). Critical for allergy management — dogs with chicken allergies can't determine if "Poultry Fat" is safe. Also a transparency/quality signal.
+**Source:** AAFCO Definitions 9.3 (Poultry Fat), 9.14 (Fish Meal), 2023 ed.
+
+### D-013: DCM Advisory (Dogs Only)
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** −8% penalty for grain-free formulas with 3+ legume/potato sources in top 7 ingredients. +3% mitigation if both Taurine AND L-Carnitine are supplemented.
+**Net effect:** −5% when both conditions met, −8% when no mitigation.
+**Source:** FDA Center for Veterinary Medicine — DCM Investigation (2019, updated 2024).
+
+### D-014: Feline Carb Overload Penalty
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** −15% for 3+ high-glycemic carbs in top 5 positions for cat products.
+**Rationale:** Cats lack hepatic glucokinase enzyme, making them obligate carnivores with poor carbohydrate metabolism.
+**Source:** Journal of Animal Physiology (2012).
+
+### D-015: Ingredient Splitting Detection
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** UI flag (no direct score penalty) when 2+ derivatives of the same source ingredient are detected.
+**Implementation:** `cluster_id` field in Supabase `ingredients_dict` table. Both "Dried Peas" and "Pea Starch" get `cluster_id = 'legume_pea'`. Detection via `GROUP BY cluster_id HAVING count >= 2`. No string-matching at runtime — prevents false positives ("Peach" flagged for "Pea").
+**Origin:** Gemini feedback — this was its one genuinely useful contribution. The `cluster_id` approach is correct.
+
+### D-016: Dry Matter Basis Conversion
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Scoring engine MUST convert wet food macros to DMB before calculating the 30% nutritional bucket.
+**Formula:** `Dry Matter % = (Guaranteed % / (100 - Moisture %)) × 100`
+**Example:** Wet food showing "9% Crude Protein" with 78% moisture → DMB protein = 40.9% (well above AAFCO 18% minimum). Without conversion, every wet food scores catastrophically wrong.
+**UI:** Conditionally render "Adjusted for Dry Matter Basis" disclaimer on wet food results. Kibble (≤10% moisture) shown as-fed with note "no DMB conversion needed."
+
+### D-017: Missing GA Fallback
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** When GA panel unavailable, reweight to ~78% Ingredient Quality / 22% Formulation Completeness. Show "Partial — nutritional data unavailable" badge. Prompt user to photograph GA panel (contribution prompt, not error state).
+
+### D-018: Position-Weighted Scoring — Proportion vs Presence
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Two classes of ingredient concerns with different position behavior:
+- **Proportion-based** (fillers, unnamed fats, low-quality meals): Position 1-5 = full penalty, 6-10 = 30% reduction, 11+ = 60% reduction. May drop one severity tier.
+- **Presence-based** (artificial colorants, BHA/BHT/ethoxyquin, allergens): Full penalty regardless of position. Being there at all is the concern.
+- `position_reduction_eligible` flag set manually in ingredient database. Vet auditor must sign off.
+
+### D-019: Brand-Blind Scoring
+**Status:** LOCKED — Non-negotiable
+**Decision:** Scoring engine has zero awareness of brand names. No brand-specific modifiers. No brand-specific bonuses or penalties. Score is determined entirely by ingredients, GA, formulation, and species rules. This is both the ethical choice and the legal protection.
+
+### D-020: Affiliate Isolation from Scoring
+**Status:** LOCKED — Non-negotiable
+**Decision:** `affiliate_links` JSONB column on products table is completely invisible to the scoring engine. Hard architectural separation, not policy. Scoring functions never import, query, or reference affiliate data. Buy buttons hidden entirely for products scoring below 50 — replaced with Safe Swap CTAs.
+
+---
+
+## 3. User Interface
+
+### D-030: Singleton Modal Pattern
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** One modal DOM element per screen, data dictionary injected via JavaScript on tap. Scales to 500+ ingredients with zero DOM bloat.
+**Action required:** Refactor cat V3.1 from 12+ separate modal elements to singleton pattern (already done in dog V3).
+
+### D-031: Ingredient Sort Order → Worst to Best
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Full ingredient list sorted by severity (⚠ Flagged → ⚡ Caution → ○ Neutral → ✓ Good), NOT by label position. Label position numbers preserved as metadata on each row so users can cross-reference the physical package.
+
+### D-032: Kiba Index (Community Feedback)
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Side-by-side cards replacing traditional star ratings:
+- **Taste Test** (orange): "Did your dog like this food?" → Loved it / Picky / Refused
+- **Tummy Check** (blue): "How was digestion?" → Perfect / Soft stool / Upset
+**Rationale:** Behavioral feedback ("my dog refused this") is more actionable than 1-5 stars. Tummy Check validates scoring engine concerns (e.g., high soft-stool % on grain-free legume-heavy formulas) without us editorializing.
+
+### D-033: Symptom Detective
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** 5-emoji daily logger (Itchy, Vomit, Loose, Low-E, Great!). Pattern detection algorithm flags ingredient-allergy correlations after 2-4 weeks of data. More relevant for daily food (eaten every day) than treats.
+
+### D-034: Ask AI Button → Removed
+**Status:** REJECTED — Permanently removed
+**Date:** Feb 19, 2026
+**Decision:** AI-generated pet health advice creates legal exposure regardless of disclaimers. A disclaimer on every response creates friction AND still carries liability. Replaced with Compare button (side-by-side product comparison). Zero legal risk, high utility, drives more scans (engagement loop).
+
+### D-035: Compare Button
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Replaced Ask AI. Side-by-side comparison with another scanned product. Drives engagement loop (more scans = more data = better recommendations).
+
+### D-036: Recall Check Badge
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** "✓ No Recalls Found" green chip in stat row. Boolean from FDA recall API. Zero engineering cost, massive trust signal. Premium upsell hook: "Get instant Recall Siren alerts."
+
+### D-037: Loading Terminal Messages
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** 6-step sequence masking 1.5s perceived latency:
+1. "Parsing [N] ingredients..."
+2. "Evaluating GA panel ([protein]% protein, [fat]% fat)..."
+3. "Checking FDA recall database..."
+4. "Applying [Species] Species Rules..."
+5. "Calculating [weight formula] weighted score..."
+**Purpose:** Tells user engine is doing real work across all three scoring layers. Builds confidence.
+
+### D-038: AAFCO Nutrition Panel
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Expandable section (labeled "30% of score") with colored progress bars for Protein, Fat, Fiber, Moisture vs AAFCO minimum thresholds. Bonus nutrient grid for DHA, Omega-3, Taurine, L-Carnitine, Zinc, Probiotics where present. Life stage matching (AAFCO All Life Stages vs Adult Maintenance vs Growth).
+
+### D-039: Ingredient Splitting Detection Card
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Dark navy card (same editorial weight as Flavor Deception card) with visual pill equation showing split ingredients and their combined likely position. Designed for shareability — this is the "aha moment" that drives TikTok virality.
+
+---
+
+## 4. Data & Infrastructure
+
+### D-040: UPC Schema → Junction Table
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** `product_upcs` table with UPC as PRIMARY KEY referencing product_id. NOT TEXT[] array on products table. btree index, O(log n) lookup.
+**Rationale:** TEXT[] with GIN indexing is slower and more complex. Junction table is easier to extend and normalize. Each UPC variant (5lb bag, 30lb bag) gets its own row pointing to the same product_id.
+
+### D-041: Product Images → Named by product_id
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Store images as `{product_id}.webp` in Supabase storage, NOT by UPC string. All UPC variants for the same product resolve to one image file — no 404s.
+
+### D-042: Data Source Field
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Product source field uses `'scraped' | 'community' | 'curated'` — NOT 'opff' or 'apify'. Source-agnostic in case scraping tool changes.
+
+### D-043: LLM Nutritional Refinery Pipeline
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Lightweight LLM step (Claude Haiku / GPT-4o-mini) converts raw scraped GA text blocks into structured JSON. Run once at data ingestion, store output, never re-run per user scan.
+**Cost:** ~$0.125 for 5,000 products. Effectively free.
+**Validation:** Python validates schema compliance and range plausibility before DB insertion. Out-of-range values flagged for manual review, not rejected.
+**UI disclaimer:** "Nutritional data extracted from label — verify with manufacturer for precision use" when `nutritional_data_source = 'llm_extracted'`.
+
+### D-044: Formula Change Detection
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Store `ingredients_hash` (hash of raw ingredients string) on products table. Monthly re-scrape diffs against stored hash. Mismatch triggers: score marked "under review", stale badge shown, automatic re-score, push notification to pantry users if score change >15 points.
+**Schema additions:** `ingredients_hash TEXT`, `last_verified_at TIMESTAMPTZ`, `formula_change_log JSONB`.
+
+### D-045: Ingredient Dictionary — cluster_id
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** `cluster_id` field on `ingredients_dict` table for splitting detection. Example: "Dried Peas" and "Pea Starch" both get `cluster_id = 'legume_pea'`. Detection via `GROUP BY cluster_id HAVING count >= 2`.
+**Origin:** Gemini feedback (one of the only genuinely useful contributions).
+
+### D-046: Ingredient Description — Species-Agnostic Base
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** `base_description` field is species-agnostic. Species context appended at render time from separate `cat_context` and `dog_context` fields. Never bake species references into the base description.
+
+---
+
+## 5. Monetization & Business
+
+### D-050: Pricing Structure
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+
+| Tier | Price | Notes |
+|------|-------|-------|
+| Free | 5 scans/week (rolling) | Core scan loop — hooks users before any wall |
+| Annual | $24.99/year (~$2.08/mo) | Primary conversion target. Low friction, anti-churn anchor |
+| Monthly | $5.99/month | For users unwilling to commit upfront |
+
+**Rationale:** Yuka charges $10/year at 80M users — that math doesn't work at launch scale. Kiba's stronger feature set (recall alerts, Treat Battery, species intelligence) justifies higher pricing. Annual subscribers churn at 3-5× lower rates than monthly.
+
+### D-051: Paywall UX Rules
+**Status:** LOCKED — Non-negotiable
+**Date:** Feb 19, 2026
+**Rules:**
+1. Lead with annual in all paywall UI — show monthly as the "pay more" option
+2. Frame around pet's lifespan: "About $2/month to protect Buster for a full year"
+3. 5 value-triggered paywall moments ONLY — no generic onboarding paywall
+4. Never show a paywall before the user has experienced a score result
+5. Paywall logic lives ONLY in `src/utils/permissions.ts` — never scattered
+
+### D-052: Five Paywall Trigger Moments
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+
+| Trigger | Copy |
+|---------|------|
+| 6th scan in a week | "You've used your 5 free scans this week. Go unlimited for $24.99/year." |
+| Second pet profile | "Multi-pet households need Premium. Add all your pets!" |
+| First safe swap tap | "Find healthier alternatives for your pet." |
+| Recall alert signup | "Get instant alerts if any product you've scanned is recalled." |
+| Search by name | "Search any product without scanning. Find scores for products you're considering online." |
+
+**Note:** Search by product name (text lookup, not barcode) is a premium feature. Free users must scan barcodes. This gates a power-user behavior that signals high intent — these users convert well. Compare feature (side-by-side) is also premium but triggered organically from results, not a standalone paywall moment.
+
+### D-053: Affiliate Architecture — Amazon Compliance
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:**
+- Chewy: Show estimated price with label "View on Chewy (Est. ~$45.99)" — labeled as estimate, compliant
+- Amazon: "Check Current Price on Amazon" — intentionally hides price per Amazon Associates TOS
+- FTC disclosure auto-renders below both buttons
+- Buy buttons hidden entirely for products scoring <50 — replaced with Safe Swap CTAs
+- Register iOS and Android app URLs in Amazon Associates dashboard
+
+### D-054: RevenueCat SDK → Not at M0
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** Do NOT install `react-native-purchases` at M0. Paywall boundary not yet defined. Install at M3-M4 when premium features are being built. Prevents refactoring.
+
+### D-055: Search by Product Name → Premium Feature
+**Status:** LOCKED
+**Date:** Feb 17, 2026
+**Decision:** Text-based product search (find scores without scanning a barcode) is a premium-gated feature. Free users must scan barcodes physically.
+**Rationale:** This was a contested decision. Search by name is a power-user behavior — users researching products online before buying, comparing options they don't have in hand. These users have high purchase intent and convert well to premium. Gating it creates a natural paywall moment: user taps the search bar → "Search any product without scanning. Upgrade to find scores for products you're considering online." Also creates a clean free/premium boundary: free = scan what's in front of you, premium = search anything in the database.
+**Origin:** Competitor analysis (Pawdi has search; Pet Food Wizard is web-search-only). Discussed during roadmap vs competitor comparison session.
+
+---
+
+## 6. Treat Battery
+
+### D-060: RER Base Formula
+**Status:** LOCKED
+**Decision:** `RER = 70 × (body weight in kg) ^ 0.75`. Both dogs and cats. Treat budget = 10% of DER (veterinary standard).
+**Source:** Merck Veterinary Manual / AAHA Nutritional Assessment Guidelines.
+
+### D-061: Goal Weight Logic
+**Status:** LOCKED
+**Decision:** For weight loss, RER calculated using goal weight — not current weight. This creates the caloric deficit. Goal weight field activates automatically when `goal_weight < current_weight`. Premium-gated feature.
+
+### D-062: Cat Weight Loss — Hepatic Lipidosis Guard
+**Status:** LOCKED — Critical safety
+**Decision:** App calculates implied weekly loss rate from current to goal weight. If >1% body weight/week, warn before saving goal. One-time advisory whenever weight loss goal is set for a cat: "Rapid weight loss in cats can cause serious liver complications..." This is a liability shield. Must be reviewed by vet auditor before shipping.
+
+### D-063: Geriatric Cat Calorie Inflection
+**Status:** LOCKED
+**Decision:** Cats 12+ years need MORE calories (1.4-1.6× RER), not fewer, due to sarcopenia. Do not linearly reduce calories with age for cats. This is counterintuitive and must be handled correctly.
+
+### D-064: life_stage Derivation
+**Status:** LOCKED
+**Decision:** Derived automatically from age + species + breed size. Stored explicitly on pet profile. Never ask users to select manually. Recalculated on birthday or weight update.
+
+### D-065: Pantry Feeding Calculations & Bag/Pack Countdown
+**Status:** LOCKED
+**Date:** Feb 19, 2026 (Updated Feb 25, 2026 — shared pantry support)
+**Decision:** Pantry items display daily feeding amount and countdown to empty. Calculation adapts to three serving formats:
+
+**Format 1 — Bulk (kibble, bulk treats):**
+- User inputs bag size at add-to-pantry
+- Cups/day = DER ÷ kcal_per_cup (from product GA)
+- Days remaining = (bag_weight → total_cups) ÷ cups_per_day
+- Display: "Feed: 2.3 cups/day · 22 lb bag · ~21 days remaining"
+- Requires: kcal_per_cup in product data. If missing, show kcal/day only.
+
+**Format 2 — Unit count (wet pouches, single-serve sticks, supplement chews):**
+- User inputs pack/case quantity at add-to-pantry
+- Units/day = DER ÷ kcal_per_unit (or vet-recommended dosage for supplements)
+- Units remaining = pack_count − (units/day × days_since_added)
+- Display: "1 pouch/day · 11 of 24 pouches remaining"
+
+**Format 3 — Cans (wet food bought individually or in cases):**
+- User inputs quantity purchased
+- Cans/day calculated from DER ÷ kcal_per_can
+- Display: "2 cans/day · 8 cans remaining"
+
+**Shared pantry — multi-pet consumption:**
+A single pantry item (one physical bag/case) can be assigned to multiple pets. When shared, the countdown sums all assigned pets' daily consumption rates.
+
+- Data model: many-to-many between `pantry_items` and `pets` (not one-to-one)
+- At add-to-pantry: multi-select of active pets with checkmarks. Defaults to active pet.
+- Combined rate: sum of each pet's cups/day (or units/day)
+- Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
+- If a pet is removed from the household or unassigned from the item, depletion rate recalculates automatically
+
+**Edge cases:**
+- Same brand, different formulas (puppy vs adult): separate pantry items — same brand ≠ same bag
+- Shared treats: each pet's allocation derived from their individual Treat Battery budget (D-060). Combined consumption = sum of per-pet treat counts.
+- One pet on a diet (goal weight active, D-061): that pet's consumption uses goal weight DER, not current weight DER
+
+**Auto-detection:** Product category (dry/wet/treat/supplement) determines default serving_format. User can override.
+**Low stock nudge:** When countdown hits ≤5 days or ≤5 units, show subtle "Running low" indicator. If affiliate link exists for this product, buy button appears at this moment (not before).
+**Milestone:** M5 (Pantry)
+**Dependencies:** Pet profile DER calculation (M2), product kcal data (M3 scraping), Treat Battery (M2) for treat-specific daily budgets
+
+---
+
+## 7. Community & Social
+
+### D-070: XP Engine
+**Status:** DEFERRED — Build during M8-M10 community phase
+**Decision:** In-app points for scanning, contributing, maintaining streaks, getting contributions approved. 2-3 weeks engineering. Cosmetic rewards (profile borders, badges) positioned as thank-you to contributors, not primary hook. Preserves clinical positioning.
+
+### D-071: Subreddit
+**Status:** LOCKED
+**Decision:** r/kibascan (updated from r/clearbowl). Button opens in browser. Zero engineering cost. Ship on day one.
+
+### D-072: Community Safety Flags
+**Status:** DEFERRED — Build during community phase
+**Decision:** Users flag suspect scores → queues a review. Builds trust in data quality.
+
+---
+
+## 8. Launch & Growth
+
+### D-080: Platform Priority → iOS First
+**Status:** LOCKED
+**Decision:** iOS first, Android 4-6 weeks later. iOS converts to premium at 2-3× Android rate.
+
+### D-081: App Store Category
+**Status:** LOCKED
+**Decision:** Primary: Health & Fitness (higher premium conversion, MAHA/clean eating adjacent). Secondary: Food & Drink (catches crossover from human food scanner users).
+
+### D-082: Recall Event PR Playbook
+**Status:** LOCKED
+**Decision:** Pre-written response timeline (0-2hr confirm + push alerts, 2-4hr Reddit posts, 4-8hr press outreach, 24hr TikTok, 48hr App Store update). Pure informational tone — never promotional. The credibility of being first to alert users with zero promotional language is worth more than any ad spend.
+
+### D-083: Cosmetics/Grooming → Post-Launch
+**Status:** DEFERRED — Phase 2 (M16+)
+**Trigger:** After pet food scoring engine is stable, community is active, and revenue is flowing.
+**Note:** This was a key reason for the Clearbowl → Kiba rebrand. "Kiba" scales beyond food. "Clearbowl" does not.
+
+### D-084: Zero Emoji Policy
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** No emoji characters (Unicode emoji) anywhere in the app interface. All visual communication uses:
+- **SF Symbols** (Apple's native icon set) for functional iconography — e.g., thin-line heart for DCM cardiac advisory, shield for safety warnings, magnifying glass for search, flame for calorie data
+- **Color coding** (red/amber/green severity system) instead of emoji indicators
+- **Typography weight and size** for emphasis instead of decorative characters
+- **Pet name personalization** for warmth instead of cartoon energy
+
+**What this means in practice:**
+- ✓ Clean line-art heart icon next to "Canine DCM Advisory (−8%)" — functional, communicates cardiac context
+- ✓ Minimal shield icon on recall warnings — communicates safety
+- ✓ Red dot or colored bar for severity — communicates urgency
+- ✗ ❤️ 🐾 🐶 ⚠️ 😱 ✅ 🔍 anywhere in the UI
+- ✗ Cartoon mascots, illustrated characters, brand animals
+- ✗ Emoji in push notifications, onboarding, or marketing copy within the app
+
+**Rationale:** Clinical aesthetic = trust signal. Pawdi uses emoji as filler because it lacks content density. Kiba has three scoring layers, ingredient breakdowns, DCM advisories, species modifiers, and GA panels — screen real estate is too valuable for decoration. Yuka's zero-emoji interface has 73M users. The medical-dashboard feel IS the premium positioning.
+**Applies to:** All screens, modals, push notifications, onboarding, in-app copy. App Store screenshots may use minimal marketing iconography at Steven's discretion.
+
+### D-085: Tab Bar Structure — 4 Tabs + Raised Scan Button
+**Status:** LOCKED
+**Date:** Feb 21, 2026
+**Decision:** Navigation uses 4 tabs plus a raised center scan button:
+
+```
+[ Home ]  [ Search ]  ( SCAN )  [ Pantry ]  [ Me ]
+   ⌂         ⌕        raised       ◫         ○
+```
+
+**Home:** Dashboard — recent scans, weekly scan counter ("3 of 5 remaining"), pantry summary card, recall alerts, formula change notifications. Not just history — the screen that makes Kiba feel alive between shopping trips. Scan history is a scrollable section within Home.
+**Search:** Premium paywall trigger. Always visible, always tappable. Free users see search bar → type → paywall: "Search is a premium feature." Non-aggressive — looks like a feature, not an ad. Premium users get full text search across all products.
+**SCAN (center, raised):** Accent-colored, floats above tab bar. Opens camera immediately. This IS the app — visually dominant.
+**Pantry:** Active pet's current foods with feeding calculations, bag countdown, treat battery. Multi-pet switching for premium.
+**Me:** Pet profile(s), settings, subscription status, app info.
+
+**Rationale:** Raised center button is the established pattern for scanner apps (Yuka, barcode scanners, camera apps). Search as visible-but-gated tab is a smarter paywall than Pawdi's dedicated "Premium" tab — it's a permanent temptation, not a permanent advertisement. No dedicated Premium tab. The paywall appears contextually at trigger moments (D-052), never as a navigation destination.
+
+### D-086: Background Color — Soft Dark (#1A1A1A)
+**Status:** LOCKED
+**Date:** Feb 21, 2026
+**Decision:** Primary background color is #1A1A1A (soft dark), not pure black (#000000).
+- Card surfaces: #242424 (subtle elevation)
+- Primary text: #FFFFFF
+- Secondary text: #A0A0A0
+- Tertiary/muted text: #666666
+- Severity colors: functional (red #FF3B30, amber #FF9500, green #34C759 — Apple system colors)
+- Accent color: TBD (score ring, CTAs, scan button — to be determined during build, NOT Pawdi's green)
+
+**Light mode:** Planned post-launch. Ship dark-only initially.
+**Rationale:** Pure black (#000000) creates harsh contrast with white product images (visible in Pawdi screenshots). Apple's own dark mode apps use #1A1A1A or #1C1C1E. Soft dark is more forgiving, feels premium, and reduces the "sticker on black paper" effect when displaying product photos.
+
+---
+
+## 9. Open Decisions
+
+### D-091: Database Miss Handling → Level 4 Hybrid
+**Status:** LOCKED
+**Date:** Feb 19, 2026
+**Decision:** When a scanned UPC is not found in Kiba's database, use a two-step fallback:
+1. **External UPC lookup** (UPCitemdb or similar) → retrieve product name, brand, category
+2. **Confirmation step** → "Is this [Brand Product Name]?" → user confirms
+3. **OCR prompt** → "Photograph the ingredient list and we'll score it now"
+4. **Instant partial score** → Layer 1 ingredient quality only, reweighted per D-017 (78/22 missing-GA fallback), "Partial" badge displayed
+5. **Auto-contribution** → parsed product saved to Kiba DB with `source = 'community'` and `needs_review = true` for all future users
+
+**Milestone:** M3 (data pipeline phase)
+**Rationale:** Every database miss is either a lost user or a new database entry. The external lookup provides a psychological bridge — the user sees their product recognized even before photographing the label. "We know what this is, we just need the ingredients" feels fundamentally different from "Product not found."
+**Cost:** External UPC API ~$10-50/mo (UPCitemdb free tier: 100 lookups/day, sufficient for early growth)
+**Dependencies:** OCR pipeline, Claude Haiku ingredient parsing, missing-GA fallback scoring (D-017)
+**Risk:** External API returns wrong product match. Confirmation step mitigates this — user verifies before proceeding.
+
+### D-090: Human Food Safety Scan
+**Status:** OPEN — Decide before M4
+**Question:** When a user scans a human food barcode (peanut butter, chocolate, grapes, etc.) and it's not in the pet food database, should Kiba run a toxicity-only safety check against the active pet's species?
+**Option A — Safety Scan mode:** Parse human food ingredients, run against species toxicity database, return safety-only result (toxic/caution/clear). No score out of 100, no GA analysis. Uses existing toxicity data, zero new databases needed.
+**Option B — Reject:** "This is a human food product. Kiba only scores pet food." Clean scope, but loses a high-intent user.
+**Why it matters:**
+- "Can my dog eat this?" is one of the most searched pet questions online
+- Scan-your-kitchen-pantry is a more viral use case than scan-pet-food (everyone has human food, not everyone is currently shopping for pet food)
+- Solves cold-start problem: human food safety needs no product database, only ingredient parsing + toxicity lookup
+- The TikTok moment: someone scanning peanut butter and getting a xylitol warning
+- Expands positioning from "pet food scanner" to "pet safety app"
+**Dependencies:** OCR pipeline (M10), toxicity databases (already built), ingredient parsing
+**Risk:** Scope creep if not tightly bounded. Must remain toxicity-only, never attempt to "score" human food.
+
+### D-092: Onboarding Flow — Scan First vs Profile First
+**Status:** OPEN — Decide before M1
+**Question:** Should users set up a pet profile before their first scan, or scan first and set up a pet afterward?
+**Recommendation (scan-first):**
+1. Open app → brief 3-screen onboarding (what Kiba does, scan anything, free/premium)
+2. Camera opens immediately
+3. First scan → generic Layer 1 + Layer 2 score (no species layer yet)
+4. Prompt: "Add your pet for species-specific safety checks"
+5. Quick pet setup (name, species, weight, age)
+6. Score updates live with species modifiers — user sees number CHANGE
+7. That moment of the score changing when they add their pet = the hook
+**Why it matters:** Every extra screen before first scan loses ~20% of users. Scan-first demonstrates value before asking for commitment. Affects M0 navigation architecture.
+
+### D-093: Product Image Display
+**Status:** OPEN — Decide during M4 build
+**Options:**
+- Small thumbnail left-aligned on scan result, larger in pantry/history
+- No product image on scan result (user is holding the product), images only in pantry/history
+- Gradient edge fade to blend white backgrounds into dark UI
+**Constraint:** Product images from scraped databases almost always have white/light backgrounds. Must not create harsh "sticker on dark paper" effect (visible problem in Pawdi).
+
+---
+
+## 10. Gemini Feedback Triage
+
+### What We Took
+- **D-045: cluster_id for ingredient splitting** — genuinely useful backend mechanism we hadn't defined. Adopted.
+
+### What We Rejected
+- **55/30/15 validation** — restated our own decision back to us as its own analysis
+- **Treat 100/0 validation** — same, already decided
+- **DMB crash fix** — same, already designed
+- **M0 code dump** — premature and partially wrong:
+  - `expo-barcode-scanner` is deprecated (replaced by `expo-camera` built-in scanning in SDK 51+)
+  - `react-native-purchases` at M0 is wrong — paywall comes M3-M4
+  - Supabase schema missing GA columns (protein, fat, fiber, kcal) needed for 30% nutritional layer
+  - Missing `aafco_statement`, `life_stage`, `preservative_type` for 15% formulation layer
+
+---
+
+## 11. Reference Scores
+
+### Pure Balance Grain-Free Salmon & Pea (Dog Food)
+**Score:** 66/100 — "Decent · Strong Nutrition, Heavy Legumes"
+
+| Layer | Raw | Weight | Contribution |
+|-------|-----|--------|-------------|
+| Ingredient Quality (incl. −4 unnamed) | 60 | ×0.55 | 33.0 |
+| Nutritional Profile | 82 | ×0.30 | 24.6 |
+| Formulation Completeness | 78 | ×0.15 | 11.7 |
+| **Base** | | | **69.3** |
+| DCM Advisory | | | −8% |
+| Taurine + L-Carnitine Mitigation | | | +3% |
+| Personalization (Buster) | | | Neutral |
+| **FINAL** | | | **66** |
+
+### Temptations Classic Tuna (Cat Treat)
+**Score:** 44/100 — "Occasional treat only · not for daily use"
+Base ingredient quality: 52. Cat carb penalty: −8. Personalization (Luna): neutral. Scoring mode: 100% ingredient quality (treat).
+
+---
+
+### D-094: Score Framing — Suitability Match Language
+**Status:** LOCKED — Non-negotiable
+**Date:** Feb 24, 2026
+
+All scores display as "[X]% match for [Pet Name]" — never "This product scores [X]." The score is a pet-specific suitability match, not a universal product quality rating.
+
+**Required language:**
+- Always: "[X]% match for [Pet Name]" / "compatibility deduction" / "suitability estimate" / "adjustment"
+- Never: "This product scores [X]" / "quality rating" / "product grade" / "penalty" (user-facing)
+- Waterfall labels: "Ingredient Concerns" / "[Pet Name]'s Nutritional Fit" / "[Pet Name]'s Breed & Age Adjustments"
+- No "naked" scores — pet name and photo must always be visible on scan result screen
+
+**Legal defensibility layers:**
+1. TOS clickwrap (Tier 1): Active checkbox blocking app usage until accepted
+2. Persistent disclaimer tooltip (Tier 2): ⓘ icon next to every score
+3. Suitability framing (Tier 3): All copy uses match language, never quality ratings
+
+**Rationale:** Attorney review identified product disparagement risk if scores are framed as universal quality ratings. Suitability framing positions Kiba as a personalized compatibility tool, making truth an absolute defense. Supersedes all prior score display copy in mockups and handoff docs.
+
+### D-095: UPVM Compliance — Prohibited Language
+**Status:** LOCKED — Non-negotiable
+**Date:** Feb 24, 2026
+
+**Never use in any user-facing context:**
+- "prescribe," "treat," "cure," "prevent," "diagnose"
+- "this food will help with [condition]"
+- "feed this instead"
+- Editorial: "cheap," "filler," "terrible," "toxic nightmare," "avoid at all costs"
+
+**Required pattern:** Map label data → published literature → compatibility deduction. Kiba is a data-mapping tool, not a digital veterinarian.
+
+**Copy architecture (ingredient modals):**
+1. **TL;DR** (bold, plain language): Warm, conversational — states the fact + one "so what"
+2. **Clinical body** (D-095 strict): Objective, citation-backed, no prohibited terms
+3. **Citations**: Real sources with links
+
+**The line:** Describing what something IS = fine. Telling someone what to DO about it = UPVM risk.
+
+**Rationale:** State veterinary practice acts (UPVM model) prohibit unlicensed entities from diagnosing, treating, or prescribing for animals. All Kiba copy must describe ingredient characteristics and published research findings, never give feeding directives or health outcome promises.
+
+### D-096: Supplement Scoring Architecture
+**Status:** DEFERRED to M16+ (post-launch)
+**Date:** Feb 24, 2026
+**Trigger:** Food scoring stable, community features live, supplement products populating organically
+
+**Three-layer architecture:**
+- Layer 1 — Ingredient Safety (M16 launch): Evaluates inactive ingredients like treat model. 0-100 score.
+- Layer 2 — Dose Validation (M16+, vet-audited): mg/kg against therapeutic curves. Sub-therapeutic → penalty. Toxic threshold → score 0 + red warning.
+- Layer 3 — Suitability Match (M16+): Multiplier on dose score based on pet profile relevance. **Multiplier capped at 1.0** — no bonus for sicker pets.
+
+**Launch weighting (M16):** 50/50 (Ingredient Safety / Dose×Suitability). NASC certification folds into ingredient safety as formulation signal.
+
+**Proprietary blend handling:** If dose data hidden, Dose Validation scores 20/100 with UI flag: "This product does not disclose individual active ingredient amounts."
+
+**Compliance carryover:** D-094 suitability language, D-095 UPVM compliance, D-019 brand-blind, D-020 affiliate-isolated, Scoring Rules #14 (citation required) and #15 (clinical copy rule).
+
+**Rejected:**
+- ❌ Relevance multiplier >1.0 (creates perverse incentive — sickest pets see highest scores, UPVM risk)
+- ❌ "Therapeutic match" / "targeted therapy" language (D-095 violation)
+- ❌ Building supplement infrastructure before M16
+
+### D-097: Pet Health Conditions & Food Allergen Profile
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+
+**Purpose:** Pet profiles include known health conditions and food allergens. These feed Layer 3 (personalization) scoring and contextual UI advisories. Conditions are only collected when diet actually affects scoring output — no decorative health data.
+
+**Health conditions (both species unless noted):**
+
+| UI Label | Internal Tag | Dogs | Cats | Scoring Impact |
+|----------|-------------|------|------|----------------|
+| Joint issues | `joint` | ✅ | ✅ | Glucosamine, chondroitin, omega-3 relevance flagging |
+| Food allergies | `allergy` | ✅ | ✅ | Triggers allergen sub-picker (see below) |
+| Sensitive stomach | `gi_sensitive` | ✅ | ✅ | Limited ingredient preference, novel protein flagging |
+| Overweight | `obesity` | ✅ | ✅ | Caloric density flagging, carb awareness |
+| Diabetes | `diabetes` | ✅ | ✅ | Low-glycemic carb scoring priority |
+| Kidney disease | `ckd` | ✅ | ✅ | Phosphorus restriction flagging, protein moderation |
+| Urinary issues | `urinary` | ✅ | ✅ | Mineral balance (Ca, P, Mg), moisture flagging |
+| Heart disease | `cardiac` | ✅ | ✅ | Sodium flagging, taurine/L-carnitine relevance |
+| Pancreatitis | `pancreatitis` | ✅ | ✅ | Low-fat scoring priority |
+| Skin & coat issues | `skin` | ✅ | ✅ | Omega-3/6 ratio, novel protein relevance |
+| Liver disease | `liver` | ✅ | ❌ | Copper sensitivity (breed-specific, e.g. Bedlington Terrier) |
+| Hyperthyroidism | `hyperthyroid` | ❌ | ✅ | Iodine-controlled diet flagging, senior cat flag |
+| Seizures / Epilepsy | `seizures` | ✅ | ❌ | MCT oil relevance flagging |
+
+Species-filtered: Dogs see 12 options, cats see 11. Multi-select allowed.
+
+**Food allergen sub-picker (triggered when `allergy` selected):**
+
+Ranked by peer-reviewed prevalence data (Mueller et al., 2016, BMC Vet Res, n=297 dogs / n=78 cats; Merck Vet Manual 2025; dvm360 Dec 2025):
+
+| Allergen | Dogs | Cats | Prevalence Source |
+|----------|------|------|-------------------|
+| Beef | ✅ (34%) | ✅ (#1-2) | Mueller 2016 — most reported in both species |
+| Chicken | ✅ (15%) | ✅ (#1-2) | Mueller 2016; dvm360 2025 — #1 per DACVD survey |
+| Dairy | ✅ (17%) | ✅ | Mueller 2016 — #2 in dogs |
+| Wheat | ✅ (13%) | ❌ (rare) | Mueller 2016 — #4 in dogs |
+| Fish | ✅ (2%) | ✅ (#2-3) | Mueller 2016 — top 3 in cats |
+| Lamb | ✅ (5%) | ✅ | Mueller 2016; Merck 2025 |
+| Soy | ✅ (6%) | ❌ (rare) | Mueller 2016 |
+| Egg | ✅ (4%) | ❌ (rare) | Mueller 2016; VCA |
+| Corn | ✅ (4%) | ❌ (rare) | Mueller 2016 |
+| Pork | ✅ (2%) | ❌ (rare) | Mueller 2016 |
+| Turkey | ✅ | ✅ | Not in major studies — included as common protein; sometimes cross-reactive with chicken |
+| Rice | ✅ (2%) | ❌ (rare) | Mueller 2016 — uncommon but documented |
+| Other (free text) | ✅ | ✅ | Catch-all for rare allergens (rabbit, venison, potato, etc.) |
+
+Species-filtered: Dogs see all 13 options, cats see 7 + Other. Multi-select.
+
+**Important:** Turkey is absent from the major allergen prevalence studies (Mueller 2016, Merck 2025) because it's commonly used as a novel protein in elimination diets, meaning most dogs/cats haven't been exposed enough to develop sensitivity. However, it's a common pet food protein, cross-reactivity with chicken is documented, and users will expect to see it. Included with no prevalence % displayed.
+
+**UI flow:**
+1. Pet profile → "Known health conditions?" → multi-select chips
+2. If `allergy` selected → "Known food allergens?" → multi-select chips + "Other" free text
+3. Both screens skippable ("None" / "Not sure")
+
+**Database schema:**
+
+```sql
+-- Pet conditions (many-to-many)
+CREATE TABLE pet_conditions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
+  condition_tag TEXT NOT NULL, -- e.g. 'joint', 'ckd', 'allergy'
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(pet_id, condition_tag)
+);
+
+-- Pet food allergens (many-to-many, only populated when allergy condition exists)
+CREATE TABLE pet_allergens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
+  allergen TEXT NOT NULL, -- e.g. 'beef', 'chicken', 'dairy', or free text for 'other'
+  is_custom BOOLEAN DEFAULT false, -- true for "Other" free text entries
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(pet_id, allergen)
+);
+
+-- RLS: both tables filtered by user_id through pets table join
+ALTER TABLE pet_conditions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pet_allergens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own pet conditions"
+  ON pet_conditions FOR ALL
+  USING (pet_id IN (SELECT id FROM pets WHERE user_id = auth.uid()));
+
+CREATE POLICY "Users can manage their own pet allergens"
+  ON pet_allergens FOR ALL
+  USING (pet_id IN (SELECT id FROM pets WHERE user_id = auth.uid()));
+```
+
+**Scoring integration:**
+- Allergens: If pet has `allergy` + specific allergens, any product containing that protein source gets a prominent UI warning card (not a score penalty — the ingredient's own rating handles that). This is a **hard flag**, not a score modifier, because allergen severity is binary and individual.
+- Conditions: Feed into Layer 3 personalization multipliers. E.g., `ckd` increases the weight of phosphorus levels in nutritional scoring; `pancreatitis` increases fat penalty sensitivity.
+
+**Compliance:**
+- D-094: Condition-based adjustments display as "[Pet Name]'s Breed & Age Adjustments" in waterfall
+- D-095: No "this food will make your condition worse" — only "Adjusted for [condition]: [factual mechanism]"
+- All condition/allergen data isolated by RLS through pets table
+
+### D-098: Cross-Reactivity Allergen Expansion
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+**Depends on:** D-097 (Pet Health Conditions & Food Allergen Profile)
+
+**Problem:** D-097 captures allergen selections (e.g., "Chicken") but does not specify how the scan engine expands that selection to cover derivative ingredients. Without expansion, a user who marks "Chicken" as an allergen could scan a product containing "Chicken Fat" at position #14 and receive no warning. This is the most common failure mode in pet food allergen management — the prototype MasterSpec (Feb 2026) identified it as the #1 reason elimination trials get contaminated.
+
+**Decision:** When a pet has a known allergen, the scan engine automatically flags ALL derivative forms of that protein source. A new `allergen_group` field on the `ingredients_dict` table maps every ingredient to its source protein family. At scan time, the engine queries `WHERE allergen_group IN (pet's known allergens)` and flags any matches.
+
+**Allergen expansion map:**
+
+| User Selects | `allergen_group` | Derivative Forms Flagged (examples, not exhaustive) |
+|---|---|---|
+| Chicken | `chicken` | chicken, chicken meal, chicken fat, chicken liver, chicken by-product meal, chicken broth, chicken cartilage, chicken digest, dehydrated chicken, chicken heart, chicken gizzards |
+| Beef | `beef` | beef, beef meal, beef tallow, beef fat, beef liver, beef by-products, beef broth, beef heart, beef lung |
+| Dairy | `dairy` | milk, dried milk, whey, dried whey, casein, cheese, lactose, cream, butter, lactalbumin, milk protein |
+| Wheat | `wheat` | wheat, wheat flour, wheat gluten, wheat middlings, wheat bran, wheat germ, enriched flour |
+| Fish | `fish` | salmon, salmon meal, salmon oil, tuna, whitefish, whitefish meal, fish meal, fish oil, menhaden fish meal, herring, herring meal, anchovy, sardine, pollock, cod, ocean fish meal |
+| Lamb | `lamb` | lamb, lamb meal, lamb fat, lamb liver |
+| Soy | `soy` | soy, soybean meal, soy flour, soy protein, soy protein isolate, soybean oil, soy lecithin |
+| Egg | `egg` | egg, egg product, dried egg, dried egg product, egg whites, egg yolk |
+| Corn | `corn` | corn, corn meal, corn gluten, corn gluten meal, corn starch, corn syrup, ground corn |
+| Pork | `pork` | pork, pork meal, pork fat, pork liver, pork by-products, pork plasma, pork gelatin |
+| Turkey | `turkey` | turkey, turkey meal, turkey fat, turkey by-products, turkey liver, turkey heart |
+| Rice | `rice` | rice, brown rice, white rice, rice bran, rice flour, brewers rice, rice protein |
+
+**Generic/unnamed ingredient handling (two tiers):**
+
+| Match Type | Example | UI Treatment |
+|---|---|---|
+| **Direct match** — ingredient's `allergen_group` matches pet's allergen | Product contains "chicken meal," pet allergic to chicken | Red warning card: "Contains chicken meal — chicken is listed as a known allergen for [Pet Name]" |
+| **Possible match** — unnamed sourcing term that COULD contain the allergen | Product contains "poultry fat" or "animal digest," pet allergic to chicken | Amber warning card: "Contains poultry fat — unnamed sourcing term may include chicken. Verify with manufacturer." |
+
+Possible-match ingredients tagged with `allergen_group_possible` (array field) listing which allergen groups they could plausibly contain. Examples: "poultry fat" → `{'chicken', 'turkey'}`; "animal digest" → `{'chicken', 'beef', 'pork', 'lamb', 'turkey', 'fish'}`; "natural flavors" → `{'chicken', 'beef', 'pork', 'lamb', 'turkey', 'fish', 'dairy'}`.
+
+**Database schema addition:**
+
+```sql
+ALTER TABLE ingredients_dict
+  ADD COLUMN allergen_group TEXT,
+  ADD COLUMN allergen_group_possible TEXT[];
+
+CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
+```
+
+**Why `allergen_group` is separate from `cluster_id` (D-045):** `cluster_id` detects ingredient splitting within a single product (manufacturer behavior). `allergen_group` maps ingredients to protein source families for allergen safety (user health concern). Different purpose, different field.
+
+**Scoring integration:** Allergen matches are UI warning cards, not score penalties. The ingredient's own quality rating handles scoring. The allergen flag is a binary safety alert layered on top — the point is avoidance, not gradation.
+
+**Compliance:** D-094 framing ("chicken is listed as a known allergen for Mochi"), D-095 (no prescriptive language — "Contains [ingredient]" not "Avoid this product"), D-019 (brand-blind).
+
+### D-099: Vet Report — Pet Dietary Profile (M4)
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+**Depends on:** D-097 (conditions/allergens), D-098 (cross-reactivity), D-094/D-095 (copy rules)
+**Milestone:** M4 (Product Detail + Education)
+
+**Purpose:** A shareable PDF giving a veterinarian a structured overview of what the pet is eating, what Kiba flagged, and what conditions/allergens are on file. Replaces the unreliable verbal summary pet owners give at vet visits. No competitor offers this.
+
+**What the M4 report IS:** A pet dietary profile — feeding history, ingredient exposure, nutritional data, and flagged concerns. A data document the vet files, references, and acts on.
+
+**What the M4 report is NOT:** A clinical trial report, a diagnosis, a dietary prescription, or a recommendation engine. Kiba presents data. The vet interprets.
+
+**Format:** PDF. Light background (clinical/print standard — NOT the dark app UI). Clean typography. Professional enough for a vet to file.
+
+**Section 1 — Pet Profile:** Name, species (with Latin name), breed, age, weight (lbs + kg), life stage, known conditions, known food allergens, profile completeness note. All from pet profile and D-097 tables.
+
+**Section 2 — Report Summary (stat callouts):** Four horizontal stat boxes adapted from prototype PDF format: Products scanned (count in period) | Daily foods in rotation (category count) | Suitability range ("52%–84% match for Mochi") | Allergen exposures detected (D-098 match count, or "No known allergens on file").
+
+**Section 3 — Current Diet (product table):** Scanned products in timeframe, sorted most recent first. Columns: Product Name | Category (Daily Food / Treat / Supplement) | Last Scanned | Match % (D-094 format) | Key Flags (top 3 severe ingredients; known allergens bolded with ⚠). Products containing known allergens get light red row background. Max 25 products. Category summary line below table.
+
+**Section 4 — Nutritional Overview (conditional):** Only rendered if GA data exists for ≥1 primary food. Shows Protein/Fat/Fiber/Moisture ranges across primary foods, DMB-adjusted for wet food, AAFCO life stage reference values. Per-condition nutritional flags — factual only: "Average fat across primary foods: 18% DMB. Pet profile includes pancreatitis." Never: "a low-fat diet is indicated." Partial Data badge if GA missing for some products. If zero GA data: section replaced with explanatory note.
+
+**Section 5 — Ingredient Exposure Analysis:** The M4 killer section. (5a) Top 10 protein sources with product count. (5b) Known allergen exposure with cross-reactivity detail from D-098 — "Chicken or chicken-derived ingredients detected in 8 of 18 products. Derivatives: chicken meal (5), chicken fat (3), chicken liver (1). Additionally, 2 products contain unnamed ingredients that may include chicken." (5c) Unnamed protein/fat source count. (5d) Top 5 most frequent controversial ingredients across all products.
+
+**Section 6 — Flagged Concerns:** Aggregated across all products. DCM advisory (which products, why, FDA CVM citation), ingredient splitting detections, breed-specific adjustments with citations, condition-relevant flags (factual), recall status. Each entry includes citation source.
+
+**Section 7 — Disclaimer & Footer:** "This report was generated by the Kiba Pet Food Safety App based on product data scanned by the pet owner... does not constitute veterinary medical advice, dietary recommendations, or clinical diagnosis... All dietary decisions should be made in consultation with a licensed veterinarian." Report ID (KBA-YYYY-XXXXX), timestamp, app version, ingredient DB version, report period.
+
+**Generation flow:** Tap "Vet Report" → select timeframe (30/90/180 days or all time, default 90) → preview screen with data counts → "Generate PDF" → loading (2-5 sec target) → native share sheet (email, Files, print, AirDrop). Cached locally 7 days.
+
+**Premium gating:** Free tier sees preview with data counts but cannot generate/share. Premium: unlimited. Not one of D-052's 5 trigger moments — gates naturally from the feature.
+
+**Explicitly excluded:** ❌ Feeding recommendations, ❌ "Switch to this product" suggestions, ❌ Score interpretation, ❌ Internal scoring weights, ❌ Confidence scores, ❌ Affiliate links, ❌ Symptom data (no source until M9), ❌ Trial data (no tracker until D-100), ❌ AI-generated prose (D-034).
+
+**Copy rules:** D-094 scores in PDF. D-095 zero prescriptive language. Clinical Copy Rule #15 throughout. Condition observations state data + condition on file, never connect them with a recommendation. "Average fat: 18% DMB. Pet profile includes pancreatitis." Full stop. Vet connects the dots.
+
+**Future upgrade:** D-100 (Elimination Diet Trial Tracker) adds trial sections to this same PDF infrastructure. M4 report = "Type A: Dietary Profile." Trial report = "Type B: Trial Completion Report." Same generation pipeline, superset of content.
+
+### D-100: Elimination Diet Trial Tracker — Architecture Preview
+**Status:** PLANNED — Not locked. Architecture preview for future milestone. Detailed spec at implementation time.
+**Date:** Feb 25, 2026
+**Target milestone:** M16+ (sequenced first, before Cosmetics and Supplement Scoring)
+**Depends on:** M9 (Symptom Detective), D-097 (conditions/allergens), D-098 (cross-reactivity), D-099 (vet report PDF)
+**Source:** Kiba prototype MasterSpec v1.0 (Feb 2026) — adapted for current architecture with D-094/D-095 compliance
+
+**Why this matters:** Elimination diet trials (8-12 weeks on novel protein to identify food allergens) are the gold standard for allergy diagnosis. No dedicated mobile tool exists. Active trials create daily app opens for 8-12 consecutive weeks — exceptional engagement. Mid-trial churn minimized by emotional investment in the pet's outcome.
+
+**Trial state machine:** SETUP → ACTIVE ↔ PAUSED → COMPLETE → REINTRODUCTION → CLOSED. Pause is recommended on contamination, NOT forced. User can override — forced pause on false positive destroys trust in a multi-week protocol.
+
+**Trial setup (4 steps):** Select pet → enter novel protein(s) + approved carbs → vet info (optional, populates report header) → trial settings (8 or 12 weeks, check-in notification time, sensitivity level).
+
+**Active trial scanning:** Every scan evaluated against trial whitelist (approved list from setup) AND trial blocked list (inverted from D-097 allergens). Cross-reactivity expansion (D-098) applied to both lists. Verdicts: SAFE (green), AMBIGUOUS (amber — umbrella terms), CONTAMINATION (red — blocked ingredient detected). Contamination events auto-logged with timestamp, product, ingredient(s), for pattern correlation.
+
+**Symptom logging upgrade:** M9 Symptom Detective (D-033) ships with 5-button simple logging. Trial tracker upgrades to 6-dimension 0-4 scale: Itching, GI Symptoms, Ear Issues, Paw Licking, Coat Quality, Energy Level. Daily push notification. Overall score: sum of 6 dimensions, max 24. 30-second completion target. When no trial active, simpler M9 version remains available. Both use same `symptom_logs` table, different schema completeness.
+
+**Pattern detection (rule-based v1.0):** Nightly background job. Lag Correlation: symptom increase ≥2 within 3 days of contamination → HIGH signal. Baseline Drift: 7-day rolling average increase ≥1.5 → MEDIUM. Improvement Signal: 14-day rolling average decrease ≥2 with zero contamination → POSITIVE. Stale Trial: no scan for 48+ hours → re-engagement push. All insights labeled "possible correlation," never "confirmed."
+
+**Reintroduction phase (optional, post-trial):** One protein at a time, 14-day observation each. User records outcome: REACTION / TOLERATED / INCONCLUSIVE. Self-serve with prominent disclaimer: "Reintroduction testing should be guided by your veterinarian."
+
+**Vet report upgrade (Type B: Trial Completion):** D-099 infrastructure gains trial-specific sections: outcome summary stat callouts, executive summary (templated prose, NOT AI per D-034), symptom timeline chart + weekly scoring table, contamination event log, pattern detection insights, reintroduction log. All M4 sections carry forward. Trial report is superset.
+
+**D-095 compliance — prototype copy revisions:**
+
+| Prototype (rejected) | Kiba (D-095 compliant) |
+|---|---|
+| "FOOD ALLERGY CONFIRMED" | "STRONG DIETARY SENSITIVITY SIGNAL — Discuss findings with your veterinarian" |
+| "A permanent chicken-free diet is indicated" | "Trial data identified a reaction to chicken during reintroduction. Discuss dietary adjustments with your veterinarian." |
+| "Greenies must be avoided permanently" | "Greenies flagged CONTAMINATION (chicken liver). Symptom increase of +2 observed within 3 days." |
+| "A duck-based dental chew should be sourced" | Omitted. Kiba presents data, vet recommends products. |
+| "Food allergy strongly supported" | "Trial data is consistent with a dietary sensitivity to chicken." |
+| Confidence scores (0.00-1.00) in ingredient analysis | Removed. Show verdict and evaluation layer only. |
+
+**Prototype design elements preserved:** Header/footer format, stat callout boxes, weekly symptom scoring table with color coding (Green ≤1 / Amber 2 / Red ≥3), contamination event callout boxes, Report ID format, disclaimer quality, general visual hierarchy (summary → timeline → detail → insights → disclaimer).
+
+**Premium gating:** Trial tracker = hard paywall on first trial start. Vet report Type B = premium only. Pattern detection insights = premium only. Daily 6-dimension logging = premium during active trial (M9 simple logging stays free).
+
+**Explicitly rejected from prototype:** ❌ Claude API for executive summary (D-034), ❌ Other species (dogs/cats only), ❌ SQLite offline-first (Supabase stack), ❌ Open Food Facts as data source (D-042), ❌ Fuzzy matching for TOXIC verdicts (exact match only), ❌ User-editable safe list in v1, ❌ Confidence scores in vet report.
+
+**Open questions (resolve at implementation):** (1) Trial pause: auto or recommended? Default: recommended with override. (2) Report storage TTL: 30 days with re-download. (3) Reintroduction: vet-gated or self-serve? Default: self-serve + disclaimer. (4) PDF generation: client-side or server-side? Depends on Expo chart rendering maturity. (5) 6-dimension scale: replace M9 entirely or coexist? Default: coexist. (6) HIPAA/PIPEDA review for vet info + health data before Canadian launch? Legal review required. (7) Vet Partnership Tier ($49-99/mo per clinic)? Evaluate post-launch.
+
+### D-101: Feeding Schedule Notifications & Auto-Depletion
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+**Extends:** D-065 (Pantry Feeding Calculations & Bag/Pack Countdown)
+**Milestone:** M5 (Pantry)
+
+**Purpose:** Push notifications on the user's feeding schedule keep Kiba present in daily routine — the app becomes the pet's mealtime companion, not something opened only when buying new food. Also eliminates manual consumption logging by tying depletion countdown directly to the feeding schedule.
+
+**Per-pantry-item settings:**
+
+| Field | Options | Default |
+|---|---|---|
+| Feeding frequency | Daily / As needed / Not set | Daily for food, As needed for treats & supplements |
+| Times per day | 1 / 2 / 3 / Custom | 2 for daily food (morning + evening), 1 for supplements |
+| Scheduled times | User sets clock times | 7:00 AM + 6:00 PM (sensible defaults, user-adjustable) |
+| Notifications | On / Off | On for daily items, Off for "As needed" |
+
+**Auto-depletion:** When feeding frequency is set, the depletion countdown (D-065) runs automatically — no manual logging required. The app assumes the pet ate on schedule unless the user indicates otherwise. This is the key insight: most pet owners feed on a consistent routine. Asking them to log every meal is input fatigue that kills retention.
+
+- Daily food: countdown ticks automatically based on cups/day or units/day × scheduled feeds
+- Treats: "As needed" by default — no automatic depletion, user taps "gave a treat" when they want to (optional). Depletion only auto-ticks if user explicitly sets a daily treat schedule.
+- Supplements: same as treats — "As needed" default, auto-depletion only if user sets a daily schedule
+
+**Notification content (examples):**
+- Morning: "Time for Buster's breakfast — Purina Pro Plan Salmon (2.3 cups)" 
+- Evening: "Buster's dinner time — Purina Pro Plan Salmon (2.3 cups)"
+- Supplement: "Mochi's daily probiotic — Fortiflora (1 packet)"
+- Low stock (from D-065): "Running low — ~3 days of Purina Pro Plan Salmon remaining"
+
+**Multi-pet households:** Notifications group by time slot. If Buster and Milo both eat at 7 AM, one notification: "Morning feeding — Buster (2.3 cups Pro Plan) + Milo (1.4 cups Pro Plan)." Not two separate notifications.
+
+**Skipped meal handling:** Optional. If user taps "Skip" or doesn't dismiss notification, the depletion countdown still ticks (conservative — assume food was given). User can manually adjust remaining quantity at any time. Not worth building complex "did you actually feed?" confirmation flows.
+
+**Why this matters for retention:** Two feeding notifications per day = 730 touchpoints per year where the user sees "Kiba" on their lock screen. No ad spend required. The app becomes associated with caring for their pet, not just scanning food.
+
+**Compliance:** D-084 (zero emoji in notifications). D-095 (no health claims in notification copy — "Time for breakfast" not "Feed this to prevent allergies").
+
+### D-102: Breed Selector — Alphabetical with Mixed/Other Last
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+
+**Rule:** Breed list sorted alphabetically (A→Z), with "Mixed Breed" and "Other" pinned to the bottom of the list, in that order. Applies to both dog and cat breed selectors. Searchable — user can type to filter.
+
+### D-103: Pet Appointment Scheduler
+**Status:** LOCKED
+**Date:** Feb 25, 2026
+**Milestone:** M5 (Pantry — bundled as pet management features)
+
+**Purpose:** Users can schedule vet visits, grooming appointments, and other pet-related dates with optional reminders. Deepens the app's role as a pet care hub — every reminder notification is another Kiba touchpoint. Combined with feeding notifications (D-101), the app becomes indispensable infrastructure rather than a scanner opened occasionally.
+
+**Appointment types:**
+- Vet visit
+- Grooming
+- Medication / Flea & tick
+- Vaccination
+- Other (free text label)
+
+**Per-appointment fields:**
+| Field | Required | Notes |
+|---|---|---|
+| Type | Yes | Select from list above |
+| Date & time | Yes | Date picker |
+| Pet(s) | Yes | Multi-select — can assign to multiple pets (e.g., both dogs going to vet) |
+| Location / clinic | No | Free text |
+| Notes | No | Free text |
+| Reminder | No | Off / 1 hour before / 1 day before / 3 days before / 1 week before. Default: 1 day before. |
+| Recurring | No | None / Monthly / Every 3 months / Every 6 months / Yearly. Useful for flea meds, annual checkups. |
+
+**Display:** Upcoming appointments shown on pet profile screen and optionally on home/dashboard. Past appointments archived (not deleted) — useful vet visit history for the vet report (D-099) in future.
+
+**Premium gating:** Free tier gets 2 active appointments. Premium: unlimited. Soft gate — natural upsell for multi-pet households managing multiple vet schedules.
+
+**Compliance:** D-084 (zero emoji in notifications). Notification copy is factual: "Mochi's vet visit tomorrow at 2:00 PM — Paws & Claws Animal Hospital."
+
+**Future:** Appointment history feeds into vet report (D-099) as a "Recent Vet Visits" section. Not at M4 launch — add when data accumulates.
+
+---
+
+### D-104: Carbohydrate Estimation Display & Explainer System
+**Status:** LOCKED
+**Date:** Feb 26, 2026
+**Milestone:** M0 (types + component pattern), M1 (scan result screen implementation)
+
+**Context:** AAFCO does not require carbohydrate disclosure on pet food labels. Most pet owners have never seen the carb content of their pet's food. This is one of Kiba's highest-value differentiators — especially for cat owners, where carb content directly impacts diabetes and obesity risk.
+
+**Calculation (already defined in NUTRITIONAL_PROFILE_BUCKET_SPEC.md §2c):**
+```
+carbs = 100 - protein - fat - fiber - moisture - ash
+```
+Ash defaults: dry food (≤12% moisture) = 7.0%, wet food (>12% moisture) = 2.0%, treats = 5.0%.
+If calcium AND phosphorus both available, tighten estimate: `ash ≈ (calcium% + phosphorus%) × 2.5`.
+
+**Display format — scan result screen:**
+Carbs shown as a calculated row appended to the GA table, with a qualitative label and confidence badge:
+```
+Carbohydrate (est.)    ~31%  ■ High
+```
+
+**Confidence badges:**
+| Badge | Condition |
+|---|---|
+| Exact | Ash listed on label — precise calculation |
+| Estimated | Ash assumed from category defaults |
+| Unknown | Too many missing GA values to calculate |
+
+**Qualitative thresholds (species-specific):**
+
+Cat:
+| Label | Range | Color |
+|---|---|---|
+| Low | ≤15% DMB | Green |
+| Moderate | 16–25% DMB | Yellow |
+| High | >25% DMB | Orange |
+
+Dog:
+| Label | Range | Color |
+|---|---|---|
+| Low | ≤25% DMB | Green |
+| Moderate | 26–40% DMB | Yellow |
+| High | >40% DMB | Orange |
+
+**Tap-to-expand explainer:** Tapping the carb row opens an expandable breakdown showing:
+1. The subtraction formula with actual values filled in
+2. One-sentence explanation of what ash is
+3. Why carbs matter for this species
+4. Citation sources (AAFCO OP §4; NRC 2006 Ch. 3)
+
+**Explainer content pattern (reusable):** All educational modals in Kiba follow the same typed structure:
+```typescript
+interface Explainer {
+  id: string;
+  title: string;
+  tldr: string;              // one-line summary
+  body: string;              // full explanation (plain text, not markdown)
+  citations: Citation[];
+  applies_to: Species[];     // which species this is relevant to
+}
+```
+Explainers are static content shipped with the app in `src/content/explainers/`. NOT stored in Supabase — no network dependency for educational content. Initial set: carb estimation, DMB conversion, ingredient splitting, what is ash, what is by-product meal.
+
+**Scoring integration:** The qualitative labels (Low/Moderate/High) are display-only. They do NOT feed back into the scoring engine. The 30% nutritional bucket uses the continuous carb curves already defined in NUTRITIONAL_PROFILE_BUCKET_SPEC.md §4b. No double-counting.
+
+**Compliance:** D-095 (Clinical Copy Rule) — explainer text is objective and factual, never editorial. D-019 (brand-blind) — no brand references in explainers.
+
+---
+
+### D-105: Ingredient Detail Modal — Consumer-Facing Content Layer
+**Status:** LOCKED
+**Date:** Feb 26, 2026
+**Milestone:** M1 (schema columns at M0, content population M1–M3)
+
+**Context:** The `ingredients_dict` table contains scoring data (severity, position_reduction_eligible, cluster_id) but no consumer-facing content. When a user taps an ingredient on the scan result screen, they need an accessible, engaging explanation — not raw database fields. This decision defines the content structure, tone, and display rules for ingredient detail modals.
+
+**New columns on `ingredients_dict` (display-only — scoring engine NEVER reads these):**
+
+| Column | Type | Purpose |
+|---|---|---|
+| `display_name` | text | Full name with chemical name in parens, e.g. "BHA (Butylated Hydroxyanisole)" |
+| `definition` | text | One sentence — what this ingredient physically is |
+| `tldr` | text | 2–3 sentences, engaging summary a pet owner would actually read |
+| `detail_body` | text | Full explanation, 1–2 paragraphs, factual and accessible |
+| `citations_display` | jsonb | Array of source strings for the UI footer |
+| `position_context` | text | One sentence explaining whether concern is amount-based or presence-based |
+
+**Position reduction — consumer-facing explanation:**
+
+The `position_reduction_eligible` boolean drives scoring math. But users need to understand *why* some ingredients are flagged regardless of position and others depend on how much is in the food. The `position_context` field provides this in plain language:
+
+- **position_reduction_eligible = true** → `"This ingredient's impact depends on how much is used. Listed lower on the label = less concern."`
+- **position_reduction_eligible = false** → `"This ingredient is flagged regardless of amount. Even small quantities raise the same concern."`
+
+The modal displays this as a contextual line below the TL;DR, with an info icon that expands to explain ingredient list ordering: "Pet food labels list ingredients by weight before processing. The first ingredient makes up the largest portion of the recipe."
+
+**Severity badge display:**
+
+| Severity | Badge | Color |
+|---|---|---|
+| Beneficial | ✅ Beneficial | Green |
+| Neutral | ● Neutral | Gray |
+| Caution | ⚠️ Caution | Amber |
+| Danger | 🔴 Danger | Red |
+
+Badge is species-specific — if the user's pet is a cat, show cat severity. If dog, show dog severity. If no pet profile, show both: "⚠️ Caution for dogs · 🔴 Danger for cats"
+
+**Modal layout (top to bottom):**
+1. `display_name` + species-specific severity badge
+2. `tldr` (the hook — always visible, never collapsed)
+3. `position_context` line with info icon
+4. `detail_body` (collapsed by default, "Read more" to expand)
+5. `citations_display` (small text footer, always visible)
+
+**Tone rules (enforced by D-095 Clinical Copy Rule):**
+- Factual, never editorial. "Classified as Group 2B (possibly carcinogenic)" not "this scary chemical"
+- Explain the mechanism, not just the verdict. Users should understand *why*
+- Acknowledge nuance. "Rodent studies showed X, but dogs/cats lack the forestomach where tumors occurred"
+- Name safer alternatives when they exist. "Most premium foods use mixed tocopherols instead"
+- Never mention brands. Say "some formulations" not "Brand X uses this"
+
+**Content population timeline:**
+- Phase 1 (M1): 30 Tier 1 ingredients — written manually, highest user encounter rate
+- Phase 2 (M2–M3): 90 Tier 1.5 + Tier 2 — AI-drafted from existing research, human-reviewed
+- Phase 3 (M4+): 85 Tier 3–4 vitamins/minerals/processing aids — lower priority, briefer entries
+
+**Storage:** Supabase `ingredients_dict` table. Content served via standard query — no separate API. Cached locally after first fetch for offline access.
+
+**Compliance:** D-095 (Clinical Copy Rule), D-019 (brand-blind), D-020 (affiliate-isolated — no product recommendations in ingredient modals).
+
+---
+
+*This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
