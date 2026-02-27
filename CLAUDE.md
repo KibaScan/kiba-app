@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M0 Foundation — project initialization
+**Current phase:** M1 Scan → Score Pipeline
 
 ## Tech Stack
 
@@ -170,7 +170,7 @@ Use `cluster_id` field in `ingredients_dict` table. Both "Dried Peas" and "Pea S
 When GA panel unavailable: reweight to ~78% ingredient / 22% formulation. Show "Partial" badge. Prompt user photo contribution.
 
 ### Carbohydrate Estimation Display (D-104)
-AAFCO doesn't require carb disclosure. Kiba calculates it: `carbs = 100 - protein - fat - fiber - moisture - ash`. Ash defaults: dry 7%, wet 2%, treats 5%. If Ca + P both available: `ash ≈ (Ca% + P%) × 2.5`. Display as calculated row with confidence badge (Exact/Estimated/Unknown) and species-specific qualitative label:
+AAFCO doesn't require carb disclosure. Kiba calculates it: `carbs = Math.max(0, 100 - protein - fat - fiber - moisture - ash)`. Ash defaults: dry 7%, wet 2%, treats 5%. If Ca + P both available: `ash ≈ (Ca% + P%) × 2.5`. Floor required because GA min/max asymmetry can produce negative values in ultra-high-protein wet foods. Display as calculated row with confidence badge (Exact/Estimated/Unknown) and species-specific qualitative label:
 - **Cat:** Low ≤15% / Moderate 16–25% / High >25%
 - **Dog:** Low ≤25% / Moderate 26–40% / High >40%
 
@@ -186,7 +186,7 @@ Five consumer-facing badges displayed above the fold on scan results. Tags answe
 | Added Sugar | 🍬 | Sugar, Cane Molasses (2 members) |
 | Unnamed Source | ❓ | Meat Meal, Animal Fat, Animal Digest, Natural Flavor, etc. (7 members) |
 | Synthetic Additive | 🧪 | BHA, BHT, TBHQ, Propylene Glycol, etc. (9 members) |
-| Heart Risk | 🫘 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch (5 members, dogs only) |
+| Heart Risk | 🫘 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch, Potatoes, Sweet Potatoes, Potato Starch (8 members, dogs only, gated to D-013: renders only when 3+ legume/potato in top 7) |
 
 Tags are informational only — they do NOT modify scores. Derived at render time from a static tag membership map in app code. Max 3 displayed above fold. "Filler" tag explicitly rejected (see D-107 rationale). Emoji in the table above are documentation identifiers only — the app UI renders SF Symbols per D-084/D-111.
 

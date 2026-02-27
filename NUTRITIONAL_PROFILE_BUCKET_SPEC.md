@@ -83,7 +83,7 @@ All values are on a **Dry Matter Basis** at a presumed caloric density of **4000
 Carbs are estimated via Nitrogen-Free Extract:
 
 ```
-NFE = 100 - (protein_dmb + fat_dmb + fiber_dmb + ash_dmb)
+NFE = Math.max(0, 100 - (protein_dmb + fat_dmb + fiber_dmb + ash_dmb))
 ```
 
 If ash is unavailable, estimate by product category:
@@ -97,8 +97,10 @@ If ash is unavailable, estimate by product category:
 If calcium AND phosphorus are both available, tighten the estimate: `ash ≈ (calcium% + phosphorus%) × 2.5`.
 
 ```
-estimated_carbs = 100 - (protein_dmb + fat_dmb + fiber_dmb + ash_estimate)
+estimated_carbs = Math.max(0, 100 - (protein_dmb + fat_dmb + fiber_dmb + ash_estimate))
 ```
+
+**Floor note:** `Math.max(0)` required because GA legally uses minimums for protein/fat and maximums for fiber/moisture. Actual values in the bag are almost always higher than label minimums, so this formula yields maximum possible carbs — which can go negative for ultra-high-protein wet foods without the floor.
 
 **Important:** This is an estimate. Ash values vary. Display with confidence badge (Exact/Estimated/Unknown) and species-specific qualitative labels (D-104). The qualitative labels are display-only and do NOT feed back into the scoring engine — the carb curves in §4b handle all scoring math.
 
