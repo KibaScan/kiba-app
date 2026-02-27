@@ -3,7 +3,19 @@
     "allow": [
       "Bash(node:*)",
       "Bash(cp:*)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(ls .env*:*)",
+      "Bash(ls:*)",
+      "Bash(npx supabase:*)",
+      "Bash(sudo service:*)",
+      "Bash(docker info:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell.exe:*)"
     ]
   }
 }
