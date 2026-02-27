@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: February 26, 2026
+> Last updated: February 27, 2026
 
 ---
 
@@ -29,7 +29,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (105 decisions)
+├── DECISIONS.md            ← canonical decision log (111 decisions)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 20 dog breed entries (scoring engine lookup table)
@@ -69,13 +69,17 @@ kiba-app/
 │   │   ├── supabase.ts
 │   │   └── recallCheck.ts
 │   ├── content/
-│   │   └── explainers/              ← static educational modals, shipped with app (D-104)
+│   │   ├── explainers/              ← static educational modals, shipped with app (D-104)
+│   │   │   ├── index.ts
+│   │   │   ├── carbEstimate.ts      ← "How we calculate carbohydrates"
+│   │   │   ├── dmbConversion.ts     ← "What is Dry Matter Basis?"
+│   │   │   ├── ingredientSplitting.ts ← "What is ingredient splitting?"
+│   │   │   ├── ashExplainer.ts      ← "What is ash?"
+│   │   │   └── byProductMeal.ts     ← "What is by-product meal?"
+│   │   └── breedModifiers/          ← static typed breed data, shipped with app (D-109)
 │   │       ├── index.ts
-│   │       ├── carbEstimate.ts      ← "How we calculate carbohydrates"
-│   │       ├── dmbConversion.ts     ← "What is Dry Matter Basis?"
-│   │       ├── ingredientSplitting.ts ← "What is ingredient splitting?"
-│   │       ├── ashExplainer.ts      ← "What is ash?"
-│   │       └── byProductMeal.ts     ← "What is by-product meal?"
+│   │       ├── dogs.ts              ← 20 breed entries from BREED_MODIFIERS_DOGS.md
+│   │       └── cats.ts              ← 18 breed entries from BREED_MODIFIERS_CATS.md
 │   ├── stores/
 │   │   ├── useAppStore.ts
 │   │   ├── usePetStore.ts
@@ -147,6 +151,7 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 **Layer 3 — Personalization:**
 - Allergy cross-reference, life stage matching, breed-specific modifiers
 - **Breed data:** `BREED_MODIFIERS_DOGS.md` (20 breeds) and `BREED_MODIFIERS_CATS.md` (18 breeds)
+- **Breed runtime data:** Static JSON in `src/content/breedModifiers/` (D-109) — NOT in Supabase
 - Three actionability tiers: GA-actionable, ingredient-list-actionable, advisory-only
 - Breed modifiers capped at ±10 total within the nutritional bucket
 - `no_modifier` breeds explicitly registered to prevent false penalties
@@ -171,15 +176,40 @@ AAFCO doesn't require carb disclosure. Kiba calculates it: `carbs = 100 - protei
 
 Labels are display-only — do NOT feed back into scoring engine (avoids double-counting with §4b carb curves). Tap-to-expand shows the math + explainer. All explainer content lives in `src/content/explainers/` as static typed objects — no Supabase dependency.
 
+## Concern Tags (D-107)
+
+Five consumer-facing badges displayed above the fold on scan results. Tags answer "what kind of problem?" — distinct from severity badges which answer "which ingredients?"
+
+| Tag | Emoji | Fires when product contains... |
+|-----|-------|-------------------------------|
+| Artificial Color | 🎨 | Red 40, Yellow 5, Yellow 6, Blue 2, Titanium Dioxide, etc. (7 members) |
+| Added Sugar | 🍬 | Sugar, Cane Molasses (2 members) |
+| Unnamed Source | ❓ | Meat Meal, Animal Fat, Animal Digest, Natural Flavor, etc. (7 members) |
+| Synthetic Additive | 🧪 | BHA, BHT, TBHQ, Propylene Glycol, etc. (9 members) |
+| Heart Risk | 🫘 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch (5 members, dogs only) |
+
+Tags are informational only — they do NOT modify scores. Derived at render time from a static tag membership map in app code. Max 3 displayed above fold. "Filler" tag explicitly rejected (see D-107 rationale). Emoji in the table above are documentation identifiers only — the app UI renders SF Symbols per D-084/D-111.
+
+## Scan Result Layout (D-108)
+
+Single scrollable screen, progressive disclosure. No separate simple/detailed views.
+
+**Above fold:** Score gauge → concern tags → severity badge strip (worst 4-5 ingredients) → Safe Swap CTA (M6+)
+**Below fold:** Kiba Index (M8+) → waterfall breakdown → full ingredient list (ALL, sorted worst→best) → "Track this food" CTA (M5+)
+
+Poop Check / Symptom Tracker → Me tab, NOT scan result screen.
+
 ## Key Schema Tables
 
 See `supabase/migrations/001_initial_schema.sql` for full schema. Critical tables:
 
 - `products` — includes all GA columns, `ingredients_hash` for formula change detection, `affiliate_links` JSONB (invisible to scoring)
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
-- `ingredients_dict` — canonical ingredients with `cluster_id`, severity per species, `position_reduction_eligible` flag
+- `ingredients_dict` — canonical ingredients with `cluster_id`, severity per species, `position_reduction_eligible` flag, `allergen_group` + `allergen_group_possible` (D-098), display content columns (D-105: `display_name`, `tldr`, `detail_body`, `citations_display`, `position_context`)
 - `product_ingredients` — junction linking products to ingredients with `position`
-- `pets` — RLS enforced, includes `goal_weight`, `life_stage` (derived, never user-entered)
+- `pets` — RLS enforced, includes `goal_weight`, `life_stage` (derived, never user-entered). Canonical name per D-110 (NOT `pet_profiles`)
+- `pet_conditions` — D-097 many-to-many (pet → condition_tag). RLS via pets table join
+- `pet_allergens` — D-097 many-to-many (pet → allergen). Only populated when `allergy` condition exists. RLS via pets table join
 - `scans` — stores `score_breakdown` JSONB snapshot per scan
 
 ## Non-Negotiable Rules
@@ -196,6 +226,18 @@ See `supabase/migrations/001_initial_schema.sql` for full schema. Critical table
 10. **Suitability framing (D-094).** Scores are always "[X]% match for [Pet Name]." Never display a score without pet context. No "naked" scores exist.
 11. **UPVM compliance (D-095).** Never use these terms in user-facing copy: "prescribe," "treat," "cure," "prevent," "diagnose." Map label data → published literature → compatibility deduction. Kiba is a data-mapping tool, not a digital veterinarian.
 12. **Breed modifier cap.** Total breed modifiers within the nutritional bucket capped at ±10 points. Every modifier requires `citation_source` and `vet_audit_status = 'cleared'` before production.
+
+## Weight Management (D-106)
+
+Weight status affects **portions, not scores.** No caloric density modifiers in the scoring engine.
+
+- `obesity` and `underweight` are health conditions in D-097 (mutually exclusive)
+- Portion calculator uses RER at `goal_weight` (down for obese, up for underweight)
+- Fiber penalty suppressed 50% when pet has `obesity` condition (same as "light/weight management" label logic)
+- UI advisory card shows goal-weight portions on scan result screen — not a score modifier
+- Cat hepatic lipidosis guard: warn if weight loss rate >1% body weight/week
+- Geriatric cats (12+): DER multiplier uses geriatric floor, never portioned below it
+- ❌ No caloric density penalties, no fat/carb multipliers for weight — avoids bad food outscoring good food
 
 ## What NOT to Build
 

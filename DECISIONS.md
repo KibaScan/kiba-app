@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: February 19, 2026
+> Updated: February 27, 2026
 
 ---
 
@@ -488,18 +488,32 @@ A single pantry item (one physical bag/case) can be assigned to multiple pets. W
 **Dependencies:** OCR pipeline (M10), toxicity databases (already built), ingredient parsing
 **Risk:** Scope creep if not tightly bounded. Must remain toxicity-only, never attempt to "score" human food.
 
-### D-092: Onboarding Flow — Scan First vs Profile First
-**Status:** OPEN — Decide before M1
-**Question:** Should users set up a pet profile before their first scan, or scan first and set up a pet afterward?
-**Recommendation (scan-first):**
-1. Open app → brief 3-screen onboarding (what Kiba does, scan anything, free/premium)
-2. Camera opens immediately
-3. First scan → generic Layer 1 + Layer 2 score (no species layer yet)
-4. Prompt: "Add your pet for species-specific safety checks"
-5. Quick pet setup (name, species, weight, age)
-6. Score updates live with species modifiers — user sees number CHANGE
-7. That moment of the score changing when they add their pet = the hook
-**Why it matters:** Every extra screen before first scan loses ~20% of users. Scan-first demonstrates value before asking for commitment. Affects M0 navigation architecture.
+### D-092: Onboarding Flow — Scan First, Light Profile, Progressive Personalization
+**Status:** LOCKED
+**Date:** Feb 27, 2026
+
+**Decision:** Scan-first onboarding with light profile capture before score display. Users can always bypass scanning and complete their full profile first.
+
+**Default path (scan-first):**
+1. Open app → brief intro (1-2 screens: what Kiba does)
+2. Camera opens — user scans a product
+3. **Light profile capture** (before score displays — satisfies D-094 "no naked scores"):
+   - One screen: pet name (text) + species (dog/cat toggle)
+   - Two fields, minimal friction, ≤10 seconds
+4. Score displays with Layer 1 + Layer 2 (species rules active)
+5. **Personalization prompt:** "Complete [Pet Name]'s profile — add breed, age, and health info for a more tailored score"
+6. User taps through to full profile or dismisses — either way, they already have a score
+
+**Alternative path (profile-first):**
+- User can skip scanning entirely and navigate to Me tab to set up their full profile at any time
+- Full profile includes breed, weight, birth date, activity level, conditions (D-097), allergens
+- After completing full profile, subsequent scans include Layer 3 personalization
+
+**Why scan-first wins:** Every extra screen before first scan loses ~20% of users. Scan-first demonstrates value before asking for commitment. The light profile (name + species) is the minimum needed to satisfy D-094 and activate Layer 2 species rules — everything else is progressive.
+
+**D-094 compliance:** No score displays without at least pet name + species. The light profile capture happens after scan but before score render. Score always shows "[X]% match for [Pet Name]."
+
+**Rationale:** The user sees a real score within 30 seconds of opening the app. The personalization prompt after score display creates the hook — "your score could change if you add breed info" drives profile completion without gating the core experience.
 
 ### D-093: Product Image Display
 **Status:** OPEN — Decide during M4 build
@@ -1049,5 +1063,163 @@ Badge is species-specific — if the user's pet is a cat, show cat severity. If 
 **Compliance:** D-095 (Clinical Copy Rule), D-019 (brand-blind), D-020 (affiliate-isolated — no product recommendations in ingredient modals).
 
 ---
+D-106: Weight Management — Advisories, Not Score Modifiers
+Status: LOCKED
+Date: Feb 26, 2026
+Depends on: D-097 (Pet Health Conditions), D-060–D-063 (DER Multipliers), D-094 (Suitability Framing), D-095 (UPVM Compliance)
+Milestone: M2 (Portion Calculator + Pet Profiles)
+Context: The scoring engine evaluates food quality and species/breed suitability. A pet's weight status (obese, overweight, underweight) does not change the quality of a food — it changes how much of that food should be fed. Penalizing caloric density in the suitability score would create perverse outcomes: genuinely excellent high-protein foods would score lower for obese pets while lower-quality, low-calorie kibble filled with corn and unnamed meals would score higher. The portion calculator (RER × DER at goal weight) is the correct intervention for weight management, not score modifiers.
+Decision: Weight status is handled through portion-level advisories and one targeted false-positive suppression. No caloric density penalties. No score modifiers for weight.
+1. Add underweight condition to D-097:
+UI LabelInternal TagDogsCatsPurposeUnderweightunderweight✅✅Enables goal-weight-up mode in portion calculator and weight-specific UI advisories
+Mutual exclusion: obesity and underweight cannot both be selected for the same pet. UI enforces this — selecting one deselects the other.
+2. Portion calculator handles weight direction:
+ConditionPortion Calculator Behaviorobesity + goal_weight setRER at goal weight (lower). Cups/day decreases. Already specified in M2.underweight + goal_weight setRER at goal weight (higher). Cups/day increases. Same formula, opposite direction.Neither conditionRER at current weight. Standard behavior.
+3. UI advisory on scan result screen (not a score modifier):
+When obesity or underweight is set AND goal_weight is set AND the scanned product has kcal data:
 
+Portion context card (displayed below the score, above ingredient list):
+
+Obesity: "At [Pet Name]'s goal weight portions: [X] cups/day ([Y] kcal/day)"
+Underweight: "At [Pet Name]'s goal weight portions: [X] cups/day ([Y] kcal/day)"
+
+
+If calculated portions are impractically small (< 1/4 cup per meal for cats, < 1/3 cup per meal for dogs), add a note: "Portions are very small at this caloric density — a lower-calorie food may be easier to manage." This is an observation about practicality, not a score modifier or feeding directive.
+If kcal data is unavailable, the card is not rendered. No guessing.
+4. Fiber penalty suppression for obese pets:
+The existing fiber scoring curve (NUTRITIONAL_PROFILE_BUCKET_SPEC.md §4b) penalizes fiber >5% DMB as a potential filler signal. But higher fiber is clinically beneficial for obese pets — it increases satiety and slows gastric emptying.
+Current behavior: fiber penalty reduced by 50% only when the product AAFCO statement includes "weight management" or "light."
+Extended behavior: Also reduce fiber penalty by 50% when the pet has the obesity condition, regardless of product labeling. This prevents false positives where an obese cat's owner scans a higher-fiber food that's actually appropriate for their pet's situation.
+Implementation: In the fiber scoring function, check pet.conditions.includes('obesity') in addition to the existing AAFCO label check. Same 50% reduction, same math. One additional condition in the if clause.
+5. Cat hepatic lipidosis guard (already specified — reaffirmed here):
+If pet is a cat with obesity condition and goal_weight set, and the implied weight loss rate exceeds 1% body weight per week, display a red warning: "Projected weight loss rate exceeds safe limits for cats. Rapid weight loss in cats can cause hepatic lipidosis (fatty liver disease). Consult your veterinarian before starting a weight loss plan."
+This guard already exists in the spec. Reaffirmed here because weight management is the primary context where it fires.
+6. Geriatric cat calorie protection (already specified — reaffirmed here):
+Cats aged 12+ often need MORE calories, not fewer. If a geriatric cat has obesity condition, the portion calculator still uses goal weight, but the DER multiplier uses the geriatric range (1.1-1.6× RER per NRC 2006). The system does not allow geriatric cats to be portioned below the geriatric floor. This prevents well-meaning owners from starving elderly cats.
+What this decision explicitly rejects:
+
+❌ Caloric density as a score modifier (kcal/cup or kcal/kg affecting suitability %)
+❌ Fat content penalties specific to obese pets (fat is already scored in the nutritional bucket — adding an obesity multiplier would double-count it)
+❌ Carb content penalties specific to obese pets (same double-counting concern; cat carb penalty in Layer 2 already handles species-level carb sensitivity)
+❌ "Weight management food recommended" advisory (UPVM violation — D-095 prohibits feeding directives)
+❌ Any score modifier that would make a lower-quality food score higher than a higher-quality food purely due to caloric density
+
+Rationale: The scoring engine answers "how suitable is this food's composition for your pet's species, breed, and age?" Weight management answers "how much of this food should your pet eat?" These are separate questions with separate tools. Conflating them produces misleading scores. The portion calculator, goal weight mode, fiber suppression, and UI advisories handle weight without distorting food quality assessment.
+Compliance: D-094 (advisory card uses pet name), D-095 (no feeding directives — "portions are very small" is an observation, "feed a lower-calorie food" would be a directive and is NOT used), D-019 (brand-blind — no product recommendations in advisory).
+Sources:
+
+German AJ. The growing problem of obesity in dogs and cats. Journal of Nutrition 136(7):1940S-1946S, 2006
+Laflamme DP. Nutrition for aging cats and dogs and the importance of body condition. JAVMA 226(3):332-339, 2005
+NRC (2006), Ch. 15 — Feeding of Normal Dogs and Cats (geriatric calorie requirements)
+Center SA. Feline hepatic lipidosis. Veterinary Clinics of North America: Small Animal Practice 35(1):225-269, 2005
+
+### D-107: Concern Tags — Consumer-Facing Category Badges
+**Status:** LOCKED
+**Date:** Feb 26, 2026
+**Depends on:** D-105 (Ingredient Detail Modal), D-095 (UPVM Compliance), D-094 (Suitability Framing)
+
+**Decision:** Five concern tags displayed above the fold on the scan result screen. Tags fire when a product contains one or more ingredients in the tagged group. They answer "what KIND of problem does this food have?" — not which specific ingredients are concerning (that's the severity badge strip's job).
+
+**The five tags:**
+
+| Tag | Emoji | Member count | Example members |
+|-----|-------|-------------|-----------------|
+| Artificial Color | 🎨 | 7 | Red 40, Yellow 5, Yellow 6, Blue 2, Titanium Dioxide |
+| Added Sugar | 🍬 | 2 | Sugar, Cane Molasses |
+| Unnamed Source | ❓ | 7 | Meat Meal, Animal Fat, Animal Digest, Poultry By-Product Meal, Meat By-Products, Poultry Fat, Natural Flavor |
+| Synthetic Additive | 🧪 | 9 | BHA, BHT, TBHQ, Propylene Glycol, Ethoxyquin, Sodium Nitrite, Potassium Sorbate, Calcium Propionate, Phosphoric Acid |
+| Heart Risk | 🫘 | 5 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch |
+
+**Explicitly rejected tags:**
+- ❌ **Filler** — Cannot be applied defensibly to all proposed members. Tapioca starch and powdered cellulose are genuinely nutritionally empty (citations available), but corn and wheat are peer-reviewed nutrient contributors (Tufts Petfoodology, Peixoto et al. 2021, Walker et al. 1994). No umbrella term fits the group: "Low-Starch Carb" fails because cellulose is zero-starch; "Carb" fails because cellulose is zero-carb. Severity ratings + ingredient detail modals handle these individually.
+- ❌ **Allergen Risk** — After moving Natural Flavor to Unnamed Source, only soy remained. Group too small for dedicated tag. Soy allergy handled by Layer 3 personalization (D-097).
+
+**Display rules:**
+- Tags render only when at least one member ingredient is present in the product
+- Maximum display: 3 tags above the fold (most severe first). If 4+ fire, "+N more" chip expands on tap.
+- Heart Risk tag renders for dogs only (DCM advisory is dog-specific per Layer 2 species rules)
+- Tags are informational badges — they do NOT modify scores. Score impact comes from the individual ingredient severity ratings already in Layer 1.
+- Tag tap → brief explainer tooltip (1-2 sentences, clinical copy per D-095). Not a full modal.
+
+**Implementation:** Tags are derived at render time from the product's ingredient list cross-referenced against a static tag membership map. No new database columns needed — the tag map lives in app code as a constant.
+
+**Rationale:** Severity badges tell you WHICH ingredients are concerning but not WHY. Two orange dots — one for Yellow 5, one for Meat Meal — look identical but represent completely different concerns (artificial colorant vs traceability). Tags provide instant categorical context that helps the user understand the nature of the concern without reading ingredient details.
+
+### D-108: Scan Result Screen — Single Screen Progressive Disclosure
+**Status:** LOCKED
+**Date:** Feb 26, 2026
+**Depends on:** D-094 (Suitability Framing), D-107 (Concern Tags), D-105 (Ingredient Detail Modal), D-085 (Tab Structure)
+
+**Decision:** Scan result is a single scrollable screen with progressive disclosure. No separate "simple" vs "detailed" views. No tabs or toggles.
+
+**Above the fold (visible without scrolling — optimized for 10-second store aisle decision):**
+1. **Score gauge** — "[X]% match for [Pet Name]" with pet photo, animated ring (D-094)
+2. **Concern tags** — Up to 3 tags from D-107 if any fire. Tappable for tooltip.
+3. **Severity badge strip** — 4-5 worst-scoring ingredients as color-coded chips (red/orange), sorted worst-first, tappable into D-105 ingredient detail modal. Only score-movers shown, not every ingredient.
+4. **Safe Swap CTA** — One better alternative, tappable. (Placeholder until M6 Alternatives Engine — renders only when data available)
+
+**Below the fold (scroll to explore — for at-home deep dives):**
+5. **Kiba Index** — Taste Test + Tummy Check community ratings. (Placeholder until M8 — hidden until data available)
+6. **Score breakdown waterfall** — Three layers as tappable bars showing point deductions (D-094 layer names)
+7. **Full ingredient list** — ALL ingredients sorted worst→best, color-coded by severity, each tappable into D-105 detail modal. This is competitive advantage — Pawdi/Doggo Eats lack ingredient-level depth. Visible on scroll (not hidden behind a toggle) so users discover depth naturally.
+8. **"Track this food" CTA** — Adds product to pet's pantry (M5). Connects to symptom tracking from Me tab without cluttering scan screen.
+
+**Explicitly NOT on scan result screen:**
+- ❌ Poop Check / Symptom Tracker — These are about the pet over time, not about this product. Lives in Me tab / pet profile.
+- ❌ Community discussion / reviews — M8+ scope
+
+**Rationale:** 95% of scans are "should I buy this?" decisions made in under 10 seconds in a store aisle. 5% are at-home deep dives. The layout nails the 10-second answer above the fold while making depth available on scroll for curious users. Two separate views would create a navigation decision where there shouldn't be one. Progressive disclosure means scan → answer → scroll deeper if curious — no mode switching, no tabs, no cognitive load.
+
+**M1 implementation note:** M1 builds the full scroll structure but Safe Swap (M6) and Kiba Index (M8) sections are not rendered until their milestones. The skeleton is: score gauge → concern tags → severity badges → waterfall → full ingredient list.
+
+### D-109: Breed Modifier Data Storage → Static JSON
+**Status:** LOCKED
+**Date:** Feb 27, 2026
+**Depends on:** BREED_MODIFIERS_DOGS.md, BREED_MODIFIERS_CATS.md, NUTRITIONAL_PROFILE_BUCKET_SPEC.md §6
+
+**Decision:** Breed modifier data ships as static typed JSON in `src/content/breedModifiers/`, following the same pattern as `src/content/explainers/`. NOT stored in Supabase. NOT fetched at runtime.
+
+**Structure:**
+```
+src/content/breedModifiers/
+  index.ts          ← exports + lookup function
+  dogs.ts           ← 20 breed entries, typed per BreedModifier interface
+  cats.ts           ← 18 breed entries, typed per BreedModifier interface
+```
+
+**Rationale:** 38 total breed entries (~15-20KB). Data changes only after vet audit cycles (weeks). App releases are hours. Supabase round-trip adds network dependency on the scoring critical path for data that changes maybe once a quarter. Static JSON means: no async fetch, no cache invalidation, no offline-sync edge cases, deterministic scoring, directly importable by the scoring engine.
+
+**Update path:** When breed data changes (new vet audit clears a modifier), update the static files and ship an app update. This is the same path explainer content follows.
+
+**Rejected:**
+- ❌ Supabase `breed_modifiers` table — network dependency for 38 rows of rarely-changing data, no benefit over static
+- ❌ Seed Supabase + cache locally (hybrid) — solves a problem we don't have, adds cache invalidation complexity
+
+### D-110: Canonical Table Name → `pets`
+**Status:** LOCKED
+**Date:** Feb 27, 2026
+
+**Decision:** The pet data table is named `pets`, not `pet_profiles`. All foreign keys reference `pets(id)`. All documentation, migrations, and code use `pets` as the canonical name.
+
+**Rationale:** Shorter, cleaner FK reads (`pet_id → pets.id` vs `pet_id → pet_profiles.id`). CLAUDE.md and DECISIONS.md already used `pets`. ROADMAP.md was the only outlier using `pet_profiles`.
+
+### D-111: Concern Tag Visual Identifiers — SF Symbols, Not Emoji (D-084 Compliance)
+**Status:** LOCKED
+**Date:** Feb 27, 2026
+**Depends on:** D-084 (Zero Emoji Policy), D-107 (Concern Tags)
+
+**Decision:** The emoji characters in D-107's tag table (🎨🍬❓🧪🫘) are internal identifiers used in documentation and the static tag map constant ONLY. The actual app UI renders **SF Symbols** per D-084. No Unicode emoji characters appear in the rendered interface.
+
+**SF Symbol mapping:**
+| Tag | Doc Identifier | SF Symbol (iOS) |
+|-----|---------------|-----------------|
+| Artificial Color | 🎨 | `paintpalette` or `eyedropper.halffull` |
+| Added Sugar | 🍬 | `cube` or custom sugar icon |
+| Unnamed Source | ❓ | `questionmark.circle` |
+| Synthetic Additive | 🧪 | `flask` or `atom` |
+| Heart Risk | 🫘 | `heart.text.square` or `leaf` |
+
+**Final SF Symbol selections** will be locked during M1 build when visual design is finalized. The mapping above is directional — the constraint is D-084 compliance, not specific icon choices.
+
+---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
