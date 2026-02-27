@@ -113,5 +113,48 @@ export interface PersonalizationResult {
   personalizations: PersonalizationDetail[];
 }
 
+/** Carb estimation for D-104 display — does NOT re-enter scoring */
+export interface CarbEstimate {
+  valueDmb: number | null;
+  confidence: 'exact' | 'estimated' | 'unknown';
+  qualitativeLabel: string | null;  // 'Low' | 'Moderate' | 'High'
+  species: 'dog' | 'cat';
+}
+
 /** Orchestrator final output — composite of all layers */
-export interface ScoredResult {}
+export interface ScoredResult {
+  // Core score
+  finalScore: number;               // 0-100, clamped
+  displayScore: number;             // same as finalScore — for D-094 "[X]% match" rendering
+  petName: string | null;           // null if no petProfile
+
+  // Layer breakdowns (for waterfall UI per D-094)
+  layer1: {
+    ingredientQuality: number;
+    nutritionalProfile: number;     // 0 if treat or missing GA
+    formulation: number;            // 0 if treat
+    weightedComposite: number;      // after 55/30/15 or 100/0/0 or 78/22
+  };
+  layer2: {
+    speciesAdjustment: number;
+    appliedRules: AppliedRule[];
+  };
+  layer3: {
+    personalizations: PersonalizationDetail[];
+    allergenWarnings: PersonalizationDetail[];
+  };
+
+  // Flags for UI (merged from all layers)
+  flags: string[];
+
+  // Data quality signals
+  isPartialScore: boolean;
+  isRecalled: boolean;
+  llmExtracted: boolean;
+
+  // Carb estimation (D-104 — display only)
+  carbEstimate: CarbEstimate | null;
+
+  // Category
+  category: 'daily_food' | 'treat';
+}
