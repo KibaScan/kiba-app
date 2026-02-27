@@ -1,6 +1,8 @@
 // Kiba — TypeScript Interfaces
 // All core entities. Zero `any` types.
 
+import type { IngredientSeverity } from './scoring';
+
 // ─── Enums ──────────────────────────────────────────────
 
 export enum Species {
@@ -74,6 +76,8 @@ export interface Product {
   ga_fat_pct: number | null;
   ga_fiber_pct: number | null;
   ga_moisture_pct: number | null;
+  ga_calcium_pct: number | null;
+  ga_phosphorus_pct: number | null;
 
   // Guaranteed Analysis — calorie info
   ga_kcal_per_cup: number | null;
@@ -120,16 +124,33 @@ export interface IngredientDict {
   id: string;
   canonical_name: string;
   cluster_id: string | null;
+
+  // D-098: allergen mapping
   allergen_group: string | null;
-  severity_dog: Severity;
-  severity_cat: Severity;
-  concern_type: string | null;
+  allergen_group_possible: string[];
+
+  // Severity per species — 4-level scale matching DB CHECK constraint
+  dog_base_severity: IngredientSeverity;
+  cat_base_severity: IngredientSeverity;
+
+  // Scoring flags
+  is_unnamed_species: boolean;
+  is_legume: boolean;
   position_reduction_eligible: boolean;
-  citation_source: string;
-  notes: string | null;
+  cat_carb_flag: boolean;
+
+  // D-105: display content columns
+  display_name: string | null;
+  definition: string | null;
+  tldr: string | null;
+  detail_body: string | null;
+  citations_display: string | null;
+  position_context: string | null;
+
+  created_at: string;
 }
 
-export interface ProductIngredient {
+export interface ProductIngredientRow {
   product_id: string;
   ingredient_id: string;
   position: number;
