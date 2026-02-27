@@ -294,7 +294,7 @@ export function scoreNutritionalProfile(
         name: 'senior_cat_protein_boost',
         points: 5,
         target: 'protein',
-        reason: 'Adequate protein prevents muscle wasting in senior cats',
+        reason: 'Higher protein supports muscle maintenance in senior cats',
         citationSource: 'NRC-2006; Laflamme-2005',
       });
       proteinScore += 5;
