@@ -15,11 +15,21 @@ import MeScreen from '../screens/MeScreen';
 import ResultScreen from '../screens/ResultScreen';
 import PetProfileScreen from '../screens/PetProfileScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import CommunityContributionScreen from '../screens/CommunityContributionScreen';
 import { useAppStore } from '../stores/useAppStore';
+import {
+  HomeStackParamList,
+  SearchStackParamList,
+  ScanStackParamList,
+  PantryStackParamList,
+  MeStackParamList,
+  RootStackParamList,
+  TabParamList,
+} from '../types/navigation';
 
 // ─── Stack Navigators ───────────────────────────────────
 
-const HomeStack = createNativeStackNavigator();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -29,7 +39,7 @@ function HomeStackScreen() {
   );
 }
 
-const SearchStack = createNativeStackNavigator();
+const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 function SearchStackScreen() {
   return (
     <SearchStack.Navigator screenOptions={{ headerShown: false }}>
@@ -39,17 +49,18 @@ function SearchStackScreen() {
   );
 }
 
-const ScanStack = createNativeStackNavigator();
+const ScanStack = createNativeStackNavigator<ScanStackParamList>();
 function ScanStackScreen() {
   return (
     <ScanStack.Navigator screenOptions={{ headerShown: false }}>
       <ScanStack.Screen name="ScanMain" component={ScanScreen} />
       <ScanStack.Screen name="Result" component={ResultScreen} />
+      <ScanStack.Screen name="CommunityContribution" component={CommunityContributionScreen} />
     </ScanStack.Navigator>
   );
 }
 
-const PantryStack = createNativeStackNavigator();
+const PantryStack = createNativeStackNavigator<PantryStackParamList>();
 function PantryStackScreen() {
   return (
     <PantryStack.Navigator screenOptions={{ headerShown: false }}>
@@ -59,7 +70,7 @@ function PantryStackScreen() {
   );
 }
 
-const MeStack = createNativeStackNavigator();
+const MeStack = createNativeStackNavigator<MeStackParamList>();
 function MeStackScreen() {
   return (
     <MeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -71,11 +82,11 @@ function MeStackScreen() {
 
 // ─── Root Stack (Onboarding gate) ───────────────────────
 
-const RootStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 // ─── Tab Navigator ──────────────────────────────────────
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 const KibaDarkTheme = {
   ...DefaultTheme,

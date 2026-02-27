@@ -1,33 +1,63 @@
 // Kiba — Result Screen (Score Display Placeholder)
+// Accepts product + petId from navigation params.
+// Scoring engine is NOT wired — all scores display as "--" placeholders.
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { ScanStackParamList } from '../types/navigation';
+import { usePetStore } from '../stores/usePetStore';
+
+type ScreenRoute = RouteProp<ScanStackParamList, 'Result'>;
+type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'Result'>;
 
 export default function ResultScreen() {
+  const navigation = useNavigation<ScreenNav>();
+  const route = useRoute<ScreenRoute>();
+  const { product, petId } = route.params;
+
+  const pets = usePetStore((s) => s.pets);
+  const pet = pets.find((p) => p.id === petId);
+  const petName = pet?.name ?? 'your pet';
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Result</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.productBrand} numberOfLines={1}>
+            {product.brand}
+          </Text>
+          <Text style={styles.productName} numberOfLines={1}>
+            {product.name}
+          </Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.content}>
         <View style={styles.scorePlaceholder}>
           <Text style={styles.scoreValue}>--</Text>
-          <Text style={styles.scoreLabel}>% match for your pet</Text>
+          <Text style={styles.scoreLabel}>% match for {petName}</Text>
         </View>
 
-        <View style={styles.waterfallPlaceholder}>
+        <View style={styles.waterfallCard}>
           <Text style={styles.sectionTitle}>Score Breakdown</Text>
           <View style={styles.layerRow}>
             <Text style={styles.layerLabel}>Ingredient Concerns</Text>
             <Text style={styles.layerValue}>--</Text>
           </View>
           <View style={styles.layerRow}>
-            <Text style={styles.layerLabel}>Nutritional Fit</Text>
+            <Text style={styles.layerLabel}>{petName}'s Nutritional Fit</Text>
             <Text style={styles.layerValue}>--</Text>
           </View>
-          <View style={styles.layerRow}>
-            <Text style={styles.layerLabel}>Breed & Age Adjustments</Text>
+          <View style={[styles.layerRow, styles.layerRowLast]}>
+            <Text style={styles.layerLabel}>{petName}'s Breed & Age Adjustments</Text>
             <Text style={styles.layerValue}>--</Text>
           </View>
         </View>
@@ -46,13 +76,28 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
-  title: {
-    fontSize: FontSizes.xxl,
-    fontWeight: '800',
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+  },
+  headerSpacer: {
+    width: 24,
+  },
+  productBrand: {
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  productName: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   content: {
@@ -80,7 +125,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textTertiary,
   },
-  waterfallPlaceholder: {
+  waterfallCard: {
     width: '100%',
     backgroundColor: Colors.card,
     borderRadius: 16,
@@ -102,9 +147,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
   },
+  layerRowLast: {
+    borderBottomWidth: 0,
+  },
   layerLabel: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
+    flex: 1,
   },
   layerValue: {
     fontSize: FontSizes.md,
