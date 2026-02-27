@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: February 27, 2026
+> Updated: February 27, 2026 (evening — QA review applied: D-033, D-065, D-090, D-093, D-097, D-098, D-100, D-104, D-107)
 
 ---
 
@@ -153,7 +153,8 @@ All three layers must be independently testable. Species rules never share betwe
 ### D-033: Symptom Detective
 **Status:** LOCKED
 **Date:** Feb 19, 2026
-**Decision:** 5-emoji daily logger (Itchy, Vomit, Loose, Low-E, Great!). Pattern detection algorithm flags ingredient-allergy correlations after 2-4 weeks of data. More relevant for daily food (eaten every day) than treats.
+**Decision:** 5-icon daily logger using SF Symbols (Itchy, Vomit, Loose, Low-E, Great!). Pattern detection algorithm flags ingredient-allergy correlations after 2-4 weeks of data. More relevant for daily food (eaten every day) than treats.
+**Updated Feb 27, 2026:** Changed "5-emoji" to "5-icon (SF Symbols)" for D-084 compliance. Zero emoji policy applies to all UI elements including symptom logging.
 
 ### D-034: Ask AI Button → Removed
 **Status:** REJECTED — Permanently removed
@@ -361,6 +362,10 @@ A single pantry item (one physical bag/case) can be assigned to multiple pets. W
 - One pet on a diet (goal weight active, D-061): that pet's consumption uses goal weight DER, not current weight DER
 
 **Auto-detection:** Product category (dry/wet/treat/supplement) determines default serving_format. User can override.
+
+**Mixed-feeding proportion (added Feb 27, 2026):**
+When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%, default 100%) allows the user to indicate what share of the pet's daily calories this item provides. Math becomes: `Cups/day = (DER × diet_proportion) ÷ kcal_per_cup`. This prevents a caloric doubling bug where a pet assigned two daily foods (e.g., kibble + wet) would display 100% DER portions for each, totaling 200% of actual caloric need. Over 40% of pet owners feed mixed diets.
+
 **Low stock nudge:** When countdown hits ≤5 days or ≤5 units, show subtle "Running low" indicator. If affiliate link exists for this product, buy button appears at this moment (not before).
 **Milestone:** M5 (Pantry)
 **Dependencies:** Pet profile DER calculation (M2), product kcal data (M3 scraping), Treat Battery (M2) for treat-specific daily budgets
@@ -475,18 +480,13 @@ A single pantry item (one physical bag/case) can be assigned to multiple pets. W
 **Risk:** External API returns wrong product match. Confirmation step mitigates this — user verifies before proceeding.
 
 ### D-090: Human Food Safety Scan
-**Status:** OPEN — Decide before M4
-**Question:** When a user scans a human food barcode (peanut butter, chocolate, grapes, etc.) and it's not in the pet food database, should Kiba run a toxicity-only safety check against the active pet's species?
-**Option A — Safety Scan mode:** Parse human food ingredients, run against species toxicity database, return safety-only result (toxic/caution/clear). No score out of 100, no GA analysis. Uses existing toxicity data, zero new databases needed.
-**Option B — Reject:** "This is a human food product. Kiba only scores pet food." Clean scope, but loses a high-intent user.
-**Why it matters:**
-- "Can my dog eat this?" is one of the most searched pet questions online
-- Scan-your-kitchen-pantry is a more viral use case than scan-pet-food (everyone has human food, not everyone is currently shopping for pet food)
-- Solves cold-start problem: human food safety needs no product database, only ingredient parsing + toxicity lookup
-- The TikTok moment: someone scanning peanut butter and getting a xylitol warning
-- Expands positioning from "pet food scanner" to "pet safety app"
-**Dependencies:** OCR pipeline (M10), toxicity databases (already built), ingredient parsing
-**Risk:** Scope creep if not tightly bounded. Must remain toxicity-only, never attempt to "score" human food.
+**Status:** REJECTED — Permanently killed
+**Date:** Feb 27, 2026 (originally OPEN Feb 19, 2026)
+**Decision:** Option B locked. Kiba does NOT scan or evaluate human food products. Hard scope boundary: Kiba is calibrated strictly for AAFCO-regulated pet foods. Human food labeling (FDA/USDA) operates under fundamentally different disclosure rules that make safety analysis unreliable.
+**Rationale:** Human food labels legally permit lethal-to-pets ingredients to be cloaked under umbrella terms. Xylitol (lethal to dogs in minuscule doses) can be labeled as "birch sugar," "wood sugar extract," or grouped under "sugar alcohols." Onion and garlic powder (hemolytic anemia in pets) are legally hidden under "Spices" or "Natural Flavors." If Kiba OCRs a human peanut butter jar, misses cloaked xylitol due to regulatory opacity, and issues a safe result — and a dog dies — D-094 suitability disclaimers will not protect against gross negligence liability.
+**If scanned UPC resolves to a human food product:** Display: "This appears to be a human food product. Kiba analyzes AAFCO-regulated pet foods only. For human food pet safety questions, consult your veterinarian."
+**Rejected alternative:**
+- ❌ Option A (Safety Scan mode) — toxicity-only check against species database. Rejected because FDA ingredient disclosure is too opaque to guarantee complete ingredient parsing. A single missed false negative on a lethal toxicant is an existential event.
 
 ### D-092: Onboarding Flow — Scan First, Light Profile, Progressive Personalization
 **Status:** LOCKED
@@ -515,13 +515,16 @@ A single pantry item (one physical bag/case) can be assigned to multiple pets. W
 
 **Rationale:** The user sees a real score within 30 seconds of opening the app. The personalization prompt after score display creates the hook — "your score could change if you add breed info" drives profile completion without gating the core experience.
 
-### D-093: Product Image Display
-**Status:** OPEN — Decide during M4 build
-**Options:**
-- Small thumbnail left-aligned on scan result, larger in pantry/history
-- No product image on scan result (user is holding the product), images only in pantry/history
-- Gradient edge fade to blend white backgrounds into dark UI
-**Constraint:** Product images from scraped databases almost always have white/light backgrounds. Must not create harsh "sticker on dark paper" effect (visible problem in Pawdi).
+### D-093: Product Image Display → Gradient Edge Fade
+**Status:** LOCKED
+**Date:** Feb 27, 2026 (originally OPEN)
+**Decision:** Product images displayed on scan result screen using a gradient edge fade to blend white product backgrounds into the #1A1A1A dark UI. Image is prominently visible — not hidden or shrunk.
+**Rationale:** The instant visual confirmation that the app recognized the exact product the user is holding is the core "magic moment" that builds trust in the database match. Without it, the user has no visual proof the barcode resolved correctly. Hiding or shrinking the image loses this trust signal.
+**Implementation:** CSS/RN gradient overlay from transparent (center) to #1A1A1A (edges) on the product image container. Handles the white-background problem visible in Pawdi screenshots without requiring image processing or background removal.
+**Rejected alternatives:**
+- ❌ Small thumbnail left-aligned — undercuts the trust moment
+- ❌ No product image on scan result — user can't confirm correct product match
+**Constraint acknowledged:** Scraped product images almost always have white/light backgrounds. The gradient solves this at the rendering layer without requiring image processing infrastructure.
 
 ---
 
@@ -645,11 +648,11 @@ All scores display as "[X]% match for [Pet Name]" — never "This product scores
 | Heart disease | `cardiac` | ✅ | ✅ | Sodium flagging, taurine/L-carnitine relevance |
 | Pancreatitis | `pancreatitis` | ✅ | ✅ | Low-fat scoring priority |
 | Skin & coat issues | `skin` | ✅ | ✅ | Omega-3/6 ratio, novel protein relevance |
-| Liver disease | `liver` | ✅ | ❌ | Copper sensitivity (breed-specific, e.g. Bedlington Terrier) |
+| Liver disease | `liver` | ✅ | ✅ | Copper sensitivity (breed-specific in dogs, e.g. Bedlington Terrier); L-Carnitine relevance, macronutrient modulation (cats — hepatic lipidosis, cholangiohepatitis, triaditis) |
 | Hyperthyroidism | `hyperthyroid` | ❌ | ✅ | Iodine-controlled diet flagging, senior cat flag |
 | Seizures / Epilepsy | `seizures` | ✅ | ❌ | MCT oil relevance flagging |
 
-Species-filtered: Dogs see 12 options, cats see 11. Multi-select allowed.
+Species-filtered: Dogs see 12 options, cats see 12. Multi-select allowed.
 
 **Food allergen sub-picker (triggered when `allergy` selected):**
 
@@ -669,15 +672,17 @@ Ranked by peer-reviewed prevalence data (Mueller et al., 2016, BMC Vet Res, n=29
 | Pork | ✅ (2%) | ❌ (rare) | Mueller 2016 |
 | Turkey | ✅ | ✅ | Not in major studies — included as common protein; sometimes cross-reactive with chicken |
 | Rice | ✅ (2%) | ❌ (rare) | Mueller 2016 — uncommon but documented |
-| Other (free text) | ✅ | ✅ | Catch-all for rare allergens (rabbit, venison, potato, etc.) |
+| Other | ✅ | ✅ | Searchable dropdown of all protein sources in `ingredients_dict` (rabbit, venison, duck, bison, quail, kangaroo, etc.) — NOT free text |
 
 Species-filtered: Dogs see all 13 options, cats see 7 + Other. Multi-select.
 
-**Important:** Turkey is absent from the major allergen prevalence studies (Mueller 2016, Merck 2025) because it's commonly used as a novel protein in elimination diets, meaning most dogs/cats haven't been exposed enough to develop sensitivity. However, it's a common pet food protein, cross-reactivity with chicken is documented, and users will expect to see it. Included with no prevalence % displayed.
+**Important — No free-text allergens (updated Feb 27, 2026):** The "Other" option was originally free text. This created a critical safety gap: D-098's cross-reactivity engine relies on `allergen_group` mappings in `ingredients_dict` to catch derivative ingredients. A free-text string like "Venison" has no relational mapping, so scanning a product with "Venison Meal" would silently bypass cross-reactivity detection — a false negative on an allergen. The "Other" option is now a searchable, hardcoded dropdown populated from every distinct protein source `allergen_group` in `ingredients_dict`. This guarantees every user-selected allergen has a working cross-reactivity mapping.
+
+**Note on Turkey:** Turkey is absent from the major allergen prevalence studies (Mueller 2016, Merck 2025) because it's commonly used as a novel protein in elimination diets, meaning most dogs/cats haven't been exposed enough to develop sensitivity. However, it's a common pet food protein, cross-reactivity with chicken is documented, and users will expect to see it. Included with no prevalence % displayed.
 
 **UI flow:**
 1. Pet profile → "Known health conditions?" → multi-select chips
-2. If `allergy` selected → "Known food allergens?" → multi-select chips + "Other" free text
+2. If `allergy` selected → "Known food allergens?" → multi-select chips + "Other" searchable dropdown (populated from `ingredients_dict` protein sources)
 3. Both screens skippable ("None" / "Not sure")
 
 **Database schema:**
@@ -696,8 +701,8 @@ CREATE TABLE pet_conditions (
 CREATE TABLE pet_allergens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
-  allergen TEXT NOT NULL, -- e.g. 'beef', 'chicken', 'dairy', or free text for 'other'
-  is_custom BOOLEAN DEFAULT false, -- true for "Other" free text entries
+  allergen TEXT NOT NULL, -- e.g. 'beef', 'chicken', 'dairy', or extended protein from searchable dropdown
+  is_custom BOOLEAN DEFAULT false, -- true for "Other" dropdown entries (not in top-12 standard list)
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(pet_id, allergen)
 );
@@ -737,18 +742,30 @@ CREATE POLICY "Users can manage their own pet allergens"
 
 | User Selects | `allergen_group` | Derivative Forms Flagged (examples, not exhaustive) |
 |---|---|---|
-| Chicken | `chicken` | chicken, chicken meal, chicken fat, chicken liver, chicken by-product meal, chicken broth, chicken cartilage, chicken digest, dehydrated chicken, chicken heart, chicken gizzards |
-| Beef | `beef` | beef, beef meal, beef tallow, beef fat, beef liver, beef by-products, beef broth, beef heart, beef lung |
+| Chicken | `chicken` | chicken, chicken meal, chicken liver, chicken by-product meal, chicken broth, chicken cartilage, chicken digest, dehydrated chicken, chicken heart, chicken gizzards |
+| Beef | `beef` | beef, beef meal, beef liver, beef by-products, beef broth, beef heart, beef lung |
 | Dairy | `dairy` | milk, dried milk, whey, dried whey, casein, cheese, lactose, cream, butter, lactalbumin, milk protein |
 | Wheat | `wheat` | wheat, wheat flour, wheat gluten, wheat middlings, wheat bran, wheat germ, enriched flour |
-| Fish | `fish` | salmon, salmon meal, salmon oil, tuna, whitefish, whitefish meal, fish meal, fish oil, menhaden fish meal, herring, herring meal, anchovy, sardine, pollock, cod, ocean fish meal |
-| Lamb | `lamb` | lamb, lamb meal, lamb fat, lamb liver |
-| Soy | `soy` | soy, soybean meal, soy flour, soy protein, soy protein isolate, soybean oil, soy lecithin |
+| Fish | `fish` | salmon, salmon meal, tuna, whitefish, whitefish meal, fish meal, menhaden fish meal, herring, herring meal, anchovy, sardine, pollock, cod, ocean fish meal |
+| Lamb | `lamb` | lamb, lamb meal, lamb liver |
+| Soy | `soy` | soy, soybean meal, soy flour, soy protein, soy protein isolate, soy lecithin |
 | Egg | `egg` | egg, egg product, dried egg, dried egg product, egg whites, egg yolk |
 | Corn | `corn` | corn, corn meal, corn gluten, corn gluten meal, corn starch, corn syrup, ground corn |
-| Pork | `pork` | pork, pork meal, pork fat, pork liver, pork by-products, pork plasma, pork gelatin |
-| Turkey | `turkey` | turkey, turkey meal, turkey fat, turkey by-products, turkey liver, turkey heart |
+| Pork | `pork` | pork, pork meal, pork liver, pork by-products, pork plasma, pork gelatin |
+| Turkey | `turkey` | turkey, turkey meal, turkey by-products, turkey liver, turkey heart |
 | Rice | `rice` | rice, brown rice, white rice, rice bran, rice flour, brewers rice, rice protein |
+
+**Rendered fats and purified oils — Possible Match only (updated Feb 27, 2026):**
+
+True dietary food allergies in dogs and cats are IgE-mediated immune responses to intact proteins (glycoproteins), not lipids. Commercially rendered animal fats and purified marine oils contain virtually zero protein. Board-certified veterinary dermatologists routinely prescribe diets containing chicken fat to chicken-allergic dogs (e.g., Purina Pro Plan HA, Royal Canin HP).
+
+The following are classified as **Possible Match (Amber)**, NOT Direct Match (Red):
+- `chicken_fat`, `beef_tallow`, `beef_fat`, `pork_fat`, `turkey_fat`, `lamb_fat` → Amber
+- `salmon_oil`, `fish_oil`, `soybean_oil` → Amber
+
+Amber UI copy: "Contains [Animal] Fat. Food allergies are triggered by proteins, not fats. While trace cross-contamination during manufacturing is possible, pure rendered fats are generally considered safe for allergic pets. Consult your vet."
+
+These ingredients are tagged with `allergen_group_possible` (not `allergen_group`) to ensure they trigger Amber warnings, not Red.
 
 **Generic/unnamed ingredient handling (two tiers):**
 
@@ -826,7 +843,7 @@ CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
 
 **Trial setup (4 steps):** Select pet → enter novel protein(s) + approved carbs → vet info (optional, populates report header) → trial settings (8 or 12 weeks, check-in notification time, sensitivity level).
 
-**Active trial scanning:** Every scan evaluated against trial whitelist (approved list from setup) AND trial blocked list (inverted from D-097 allergens). Cross-reactivity expansion (D-098) applied to both lists. Verdicts: SAFE (green), AMBIGUOUS (amber — umbrella terms), CONTAMINATION (red — blocked ingredient detected). Contamination events auto-logged with timestamp, product, ingredient(s), for pattern correlation.
+**Active trial scanning:** Every scan evaluated against trial whitelist (approved list from setup) AND trial blocked list. **Critical protocol correction (Feb 27, 2026):** The blocked list is NOT simply inverted from D-097 known allergens. An elimination diet is a diagnostic tool used *before* the owner knows what the pet is allergic to. The strict medical protocol requires blocking **every protein the pet has ever eaten in its lifetime** (chicken, beef, lamb, etc.), regardless of whether an allergy is confirmed. The D-100 setup wizard must ask the user to input "Previously Fed Proteins" (multi-select from `ingredients_dict` protein sources, same dropdown pattern as D-097 allergen picker) and add all of those to the blocked list alongside any D-097 known allergens. Cross-reactivity expansion (D-098) applied to both lists. Verdicts: SAFE (green), AMBIGUOUS (amber — umbrella terms), CONTAMINATION (red — blocked ingredient detected). Contamination events auto-logged with timestamp, product, ingredient(s), for pattern correlation.
 
 **Symptom logging upgrade:** M9 Symptom Detective (D-033) ships with 5-button simple logging. Trial tracker upgrades to 6-dimension 0-4 scale: Itching, GI Symptoms, Ear Issues, Paw Licking, Coat Quality, Energy Level. Daily push notification. Overall score: sum of 6 dimensions, max 24. 30-second completion target. When no trial active, simpler M9 version remains available. Both use same `symptom_logs` table, different schema completeness.
 
@@ -942,10 +959,12 @@ CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
 
 **Calculation (already defined in NUTRITIONAL_PROFILE_BUCKET_SPEC.md §2c):**
 ```
-carbs = 100 - protein - fat - fiber - moisture - ash
+carbs = Math.max(0, 100 - protein - fat - fiber - moisture - ash)
 ```
 Ash defaults: dry food (≤12% moisture) = 7.0%, wet food (>12% moisture) = 2.0%, treats = 5.0%.
 If calcium AND phosphorus both available, tighten estimate: `ash ≈ (calcium% + phosphorus%) × 2.5`.
+
+**Floor note (added Feb 27, 2026):** The `Math.max(0)` floor is required because GA legally uses *minimums* for protein and fat, and *maximums* for fiber and moisture. Actual protein and fat in the bag are almost always higher than the legal minimum, meaning this formula calculates the maximum possible carbohydrates. In ultra-high-protein wet foods, the formula can produce negative values without the floor.
 
 **Display format — scan result screen:**
 Carbs shown as a calculated row appended to the GA table, with a qualitative label and confidence badge:
@@ -1128,14 +1147,19 @@ Center SA. Feline hepatic lipidosis. Veterinary Clinics of North America: Small 
 | Added Sugar | 🍬 | 2 | Sugar, Cane Molasses |
 | Unnamed Source | ❓ | 7 | Meat Meal, Animal Fat, Animal Digest, Poultry By-Product Meal, Meat By-Products, Poultry Fat, Natural Flavor |
 | Synthetic Additive | 🧪 | 9 | BHA, BHT, TBHQ, Propylene Glycol, Ethoxyquin, Sodium Nitrite, Potassium Sorbate, Calcium Propionate, Phosphoric Acid |
-| Heart Risk | 🫘 | 5 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch |
+| Heart Risk | 🫘 | 8 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch, Potatoes, Sweet Potatoes, Potato Starch |
+
+**Heart Risk tag — conditional rendering (updated Feb 27, 2026):**
+The Heart Risk tag does NOT render on simple ingredient presence. It is conditionally bound to the D-013 DCM rule: the tag only renders when `cluster_count >= 3` legume/potato sources appear in the top 7 ingredients (the same threshold that triggers the score penalty). Without this gating, a 95/100 meat-first kibble containing trace "Pea Fiber" at position #15 would display a cardiac warning badge while receiving no score penalty — an instant credibility-destroying contradiction.
+
+Additionally, potatoes, sweet potatoes, and potato starch were added to the Heart Risk member list per the FDA CVM investigation, which explicitly includes potatoes alongside legumes in the DCM-associated dietary pattern.
 
 **Explicitly rejected tags:**
 - ❌ **Filler** — Cannot be applied defensibly to all proposed members. Tapioca starch and powdered cellulose are genuinely nutritionally empty (citations available), but corn and wheat are peer-reviewed nutrient contributors (Tufts Petfoodology, Peixoto et al. 2021, Walker et al. 1994). No umbrella term fits the group: "Low-Starch Carb" fails because cellulose is zero-starch; "Carb" fails because cellulose is zero-carb. Severity ratings + ingredient detail modals handle these individually.
 - ❌ **Allergen Risk** — After moving Natural Flavor to Unnamed Source, only soy remained. Group too small for dedicated tag. Soy allergy handled by Layer 3 personalization (D-097).
 
 **Display rules:**
-- Tags render only when at least one member ingredient is present in the product
+- Tags render only when at least one member ingredient is present in the product — **except** Heart Risk, which requires D-013 conditions (3+ legume/potato in top 7)
 - Maximum display: 3 tags above the fold (most severe first). If 4+ fire, "+N more" chip expands on tap.
 - Heart Risk tag renders for dogs only (DCM advisory is dog-specific per Layer 2 species rules)
 - Tags are informational badges — they do NOT modify scores. Score impact comes from the individual ingredient severity ratings already in Layer 1.

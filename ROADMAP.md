@@ -186,8 +186,8 @@ pet_conditions (D-097 — many-to-many)
 pet_allergens (D-097 — many-to-many, only populated when allergy condition exists)
 ├── id UUID PK
 ├── pet_id UUID FK → pets(id) ON DELETE CASCADE
-├── allergen TEXT NOT NULL            ← e.g. 'beef', 'chicken', 'dairy', or free text for 'other'
-├── is_custom BOOLEAN DEFAULT false   ← true for "Other" free text entries
+├── allergen TEXT NOT NULL            ← e.g. 'beef', 'chicken', 'dairy', or extended protein from searchable dropdown
+├── is_custom BOOLEAN DEFAULT false   ← true for "Other" dropdown entries (not in top-12 standard list)
 ├── created_at TIMESTAMPTZ DEFAULT now()
 ├── UNIQUE(pet_id, allergen)
 ├── RLS: pet_id IN (SELECT id FROM pets WHERE user_id = auth.uid())
