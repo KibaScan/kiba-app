@@ -43,59 +43,68 @@ export enum SymptomType {
   Refusal = 'refusal',
 }
 
-export enum AafcoStatement {
-  Complete = 'complete',
-  Supplemental = 'supplemental',
-  Treat = 'treat',
-  None = 'none',
-}
-
 export enum PreservativeType {
   Natural = 'natural',
-  Artificial = 'artificial',
-  None = 'none',
+  Synthetic = 'synthetic',
+  Mixed = 'mixed',
   Unknown = 'unknown',
 }
+
+export type ProductSource = 'scraped' | 'community' | 'curated';
+export type ServingFormat = 'bulk' | 'unit_count' | 'cans';
+export type NutritionalDataSource = 'manual' | 'llm_extracted';
 
 // ─── Product Entities ───────────────────────────────────
 
 export interface Product {
   id: string;
   brand: string;
-  product_name: string;
+  name: string;
   category: Category;
-  species: Species;
-  life_stages: LifeStage[];
-  image_url: string | null;
-
-  // Guaranteed Analysis columns
-  ga_protein_min: number | null;
-  ga_fat_min: number | null;
-  ga_fiber_max: number | null;
-  ga_moisture_max: number | null;
-  ga_ash_max: number | null;
-  ga_calcium_min: number | null;
-  ga_calcium_max: number | null;
-  ga_phosphorus_min: number | null;
-  ga_phosphorus_max: number | null;
-  ga_omega3: number | null;
-  ga_omega6: number | null;
-  ga_dha: number | null;
-  ga_epa: number | null;
-  ga_taurine: number | null;
-  ga_glucosamine: number | null;
-  ga_chondroitin: number | null;
-  ga_l_carnitine: number | null;
-  ga_zinc: number | null;
-  ga_probiotics: boolean | null;
+  target_species: Species;
+  source: ProductSource;
 
   // Formulation
-  aafco_statement: AafcoStatement;
-  preservative_type: PreservativeType;
-  has_named_protein: boolean;
+  aafco_statement: string | null;
+  life_stage_claim: string | null;
+  preservative_type: PreservativeType | null;
+
+  // Guaranteed Analysis — core macros
+  ga_protein_pct: number | null;
+  ga_fat_pct: number | null;
+  ga_fiber_pct: number | null;
+  ga_moisture_pct: number | null;
+
+  // Guaranteed Analysis — calorie info
+  ga_kcal_per_cup: number | null;
+  ga_kcal_per_kg: number | null;
+  kcal_per_unit: number | null;
+  unit_weight_g: number | null;
+  default_serving_format: ServingFormat | null;
+
+  // Guaranteed Analysis — bonus/supplemental nutrients
+  ga_taurine_pct: number | null;
+  ga_l_carnitine_mg: number | null;
+  ga_dha_pct: number | null;
+  ga_omega3_pct: number | null;
+  ga_omega6_pct: number | null;
+  ga_zinc_mg_kg: number | null;
+  ga_probiotics_cfu: string | null;
+
+  // Data provenance
+  nutritional_data_source: NutritionalDataSource | null;
+  ingredients_raw: string | null;
+  ingredients_hash: string | null;
+
+  // Flags
+  is_recalled: boolean;
+  is_grain_free: boolean;
+  score_confidence: string;
+  needs_review: boolean;
 
   // Tracking
-  ingredients_hash: string;
+  last_verified_at: string | null;
+  formula_change_log: Record<string, unknown> | null;
   affiliate_links: Record<string, string> | null;
 
   created_at: string;
