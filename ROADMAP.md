@@ -1,7 +1,7 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: February 24, 2026
+> Updated: February 27, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
@@ -12,7 +12,7 @@
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (103 decisions locked)
+- Decision log established (111 decisions, D-001 through D-111)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -91,6 +91,8 @@ ingredients_dict
 ├── id UUID PK
 ├── canonical_name TEXT UNIQUE NOT NULL
 ├── cluster_id TEXT                  ← for splitting detection (e.g. 'legume_pea')
+├── allergen_group TEXT              ← D-098: maps to protein family (e.g. 'chicken', 'beef')
+├── allergen_group_possible TEXT[]   ← D-098: unnamed terms that COULD contain allergens
 ├── dog_base_severity ENUM ('danger' | 'caution' | 'neutral' | 'good')
 ├── cat_base_severity ENUM ('danger' | 'caution' | 'neutral' | 'good')
 ├── is_unnamed_species BOOLEAN DEFAULT false
@@ -101,6 +103,12 @@ ingredients_dict
 ├── dog_context TEXT                 ← appended at render time
 ├── cat_context TEXT                 ← appended at render time
 ├── citation_sources TEXT[]
+├── display_name TEXT                ← D-105: full name with chemical name, e.g. "BHA (Butylated Hydroxyanisole)"
+├── definition TEXT                  ← D-105: one sentence — what this ingredient physically is
+├── tldr TEXT                        ← D-105: 2-3 sentences, engaging summary
+├── detail_body TEXT                 ← D-105: full explanation, 1-2 paragraphs
+├── citations_display JSONB          ← D-105: array of source strings for UI footer
+├── position_context TEXT            ← D-105: explains whether concern is amount-based or presence-based
 ├── created_at TIMESTAMPTZ DEFAULT NOW()
 
 product_ingredients (junction — links products to ingredients with position)
@@ -110,7 +118,7 @@ product_ingredients (junction — links products to ingredients with position)
 ├── position INT NOT NULL            ← label order (1 = first listed)
 ├── UNIQUE(product_id, position)
 
-pet_profiles
+pets
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id) ON DELETE CASCADE
 ├── name TEXT NOT NULL
@@ -130,7 +138,7 @@ pet_profiles
 scan_history
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pet_profiles(id)
+├── pet_id UUID FK → pets(id)
 ├── product_id UUID FK → products(id)
 ├── final_score INT
 ├── score_breakdown JSONB            ← full Layer 1/2/3 snapshot
@@ -139,7 +147,7 @@ scan_history
 pantry_items
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pet_profiles(id)
+├── pet_id UUID FK → pets(id)
 ├── product_id UUID FK → products(id)
 ├── role TEXT ('daily_food' | 'treat' | 'supplement' | 'topper')
 ├── serving_format TEXT ('bulk' | 'unit_count' | 'cans')  ← auto-detected from product category
@@ -152,7 +160,7 @@ pantry_items
 symptom_logs
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pet_profiles(id)
+├── pet_id UUID FK → pets(id)
 ├── product_id UUID FK → products(id)  ← what they were eating
 ├── symptom TEXT ('itchy' | 'vomit' | 'loose' | 'low_energy' | 'great')
 ├── logged_at TIMESTAMPTZ DEFAULT NOW()
@@ -160,12 +168,29 @@ symptom_logs
 kiba_index_votes
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pet_profiles(id)
+├── pet_id UUID FK → pets(id)
 ├── product_id UUID FK → products(id)
 ├── taste_vote TEXT ('loved' | 'picky' | 'refused')
 ├── tummy_vote TEXT ('perfect' | 'soft_stool' | 'upset')
 ├── voted_at TIMESTAMPTZ DEFAULT NOW()
 ├── UNIQUE(user_id, pet_id, product_id)  ← one vote per pet per product
+
+pet_conditions (D-097 — many-to-many)
+├── id UUID PK
+├── pet_id UUID FK → pets(id) ON DELETE CASCADE
+├── condition_tag TEXT NOT NULL       ← e.g. 'joint', 'ckd', 'allergy', 'obesity', 'underweight'
+├── created_at TIMESTAMPTZ DEFAULT now()
+├── UNIQUE(pet_id, condition_tag)
+├── RLS: pet_id IN (SELECT id FROM pets WHERE user_id = auth.uid())
+
+pet_allergens (D-097 — many-to-many, only populated when allergy condition exists)
+├── id UUID PK
+├── pet_id UUID FK → pets(id) ON DELETE CASCADE
+├── allergen TEXT NOT NULL            ← e.g. 'beef', 'chicken', 'dairy', or free text for 'other'
+├── is_custom BOOLEAN DEFAULT false   ← true for "Other" free text entries
+├── created_at TIMESTAMPTZ DEFAULT now()
+├── UNIQUE(pet_id, allergen)
+├── RLS: pet_id IN (SELECT id FROM pets WHERE user_id = auth.uid())
 ```
 
 ### Navigation Shell
@@ -174,11 +199,14 @@ kiba_index_votes
 - [ ] Placeholder screens for each tab
 - [ ] Search tab visible but gated (premium paywall on interaction)
 
-### Onboarding Flow (D-092 — Locked)
-- [ ] 2-screen intro: what Kiba does + "let's meet your pet"
-- [ ] Minimal profile screen: pet name (text) + species (dog/cat toggle) — one screen, two inputs
-- [ ] Camera opens immediately after profile creation
-- [ ] Post-first-result prompt: "Add [Pet Name]'s breed and age for breed-specific safety checks"
+### Onboarding Flow (D-092 — Locked: Scan-First)
+- [ ] Brief intro (1-2 screens: what Kiba does)
+- [ ] Camera opens immediately after intro — scan first
+- [ ] After first scan, light profile capture before score displays (D-094 compliance):
+  - One screen: pet name (text) + species (dog/cat toggle) — two fields, ≤10 seconds
+- [ ] Score displays with Layer 1 + Layer 2 active
+- [ ] Post-score personalization prompt: "Complete [Pet Name]'s profile — add breed, age, and health info for a more tailored score"
+- [ ] Alternative path: user can skip scanning and navigate to Me tab to set up full profile at any time
 - [ ] Score updates live when additional profile fields are added (Layer 3 activates)
 
 ### NOT at M0 (explicitly deferred)
@@ -235,18 +263,26 @@ kiba_index_votes
 - [ ] FDA recall check: boolean lookup against recall database
 - [ ] Score engine must be deterministic and independently testable per layer
 
-### Result Bottom Sheet UI
+### Result Screen — Progressive Disclosure (D-108)
+
+**Above the fold (no scrolling — 10-second store aisle answer):**
 - [ ] Score gauge (animated SVG ring) — displays "[X]% match for [Pet Name]" (D-094)
 - [ ] Pet name and photo always visible on result screen (legal requirement)
-- [ ] Verdict text + color coding
-- [ ] Benchmark bar (score vs category average)
-- [ ] Stat chips row (named protein, legume count, unnamed species, AAFCO, recall status)
-- [ ] Singleton modal for ingredient deep-dives
+- [ ] Concern tags: render up to 3 from D-107 tag map (Artificial Color, Added Sugar, Unnamed Source, Synthetic Additive, Heart Risk). Tap → tooltip explainer. Heart Risk → dogs only.
+- [ ] Severity badge strip: 4-5 worst-scoring ingredients as color-coded chips (red/orange), sorted worst-first, tappable → D-105 ingredient detail modal
+- [ ] Safe Swap CTA: placeholder slot, hidden until M6 Alternatives Engine provides data
+
+**Below the fold (scroll to explore):**
+- [ ] Kiba Index: placeholder slot, hidden until M8 community data available
 - [ ] Tappable waterfall breakdown showing score math (D-094):
   - "Ingredient Concerns: −[X] pts" with citation links
   - "[Pet Name]'s Nutritional Fit: ±[X] pts"
   - "[Pet Name]'s Breed & Age Adjustments: ±[X] pts"
+- [ ] Full ingredient list: ALL ingredients sorted worst→best, color-coded by severity, each tappable → D-105 detail modal. Competitive differentiator — do not hide behind a toggle.
+- [ ] "Track this food" CTA: adds to pantry (placeholder until M5)
 - [ ] ⓘ tooltip: "Suitability is an algorithmic estimate for [Pet Name]'s specific profile based on published research. It is not a universal product rating or a substitute for veterinary medical advice."
+
+**NOT on scan result screen:** Poop Check, Symptom Tracker → Me tab (pet-over-time, not product-specific)
 
 ### Loading Experience
 - [ ] 6-step terminal message sequence (see D-037)
