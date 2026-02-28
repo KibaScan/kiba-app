@@ -135,6 +135,7 @@ const MOCK_SCORED_RESULT: ScoredResult = {
   },
   layer2: { speciesAdjustment: 0, appliedRules: [] },
   layer3: { personalizations: [], allergenWarnings: [] },
+  ingredientPenalties: [],
   flags: [],
   isPartialScore: false,
   isRecalled: false,

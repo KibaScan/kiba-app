@@ -5,8 +5,27 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { ProductIngredient, IngredientSeverity } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+
+// ─── Severity Icon Map (WCAG colorblind support) ────────
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+const SEVERITY_ICONS: Record<IngredientSeverity, IoniconsName> = {
+  danger: 'warning-outline',
+  caution: 'alert-circle-outline',
+  neutral: 'ellipse-outline',
+  good: 'checkmark-circle-outline',
+};
+
+const SECTION_LABELS: Record<IngredientSeverity, string> = {
+  danger: 'Flagged',
+  caution: 'Caution',
+  neutral: 'Neutral',
+  good: 'Good',
+};
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -71,44 +90,67 @@ export function IngredientList({
     return a.position - b.position;
   });
 
+  // Build elements with section headers between severity groups
+  const elements: React.ReactNode[] = [];
+  let currentSeverity: IngredientSeverity | null = null;
+
+  for (const ingredient of sorted) {
+    const severity = getSeverity(ingredient, species);
+    const color = SEVERITY_COLORS[severity];
+    const label = SEVERITY_LABELS[severity];
+
+    // Insert section header when severity group changes
+    if (severity !== currentSeverity) {
+      currentSeverity = severity;
+      elements.push(
+        <View key={`section-${severity}`} style={styles.sectionDivider}>
+          <Ionicons name={SEVERITY_ICONS[severity]} size={14} color={color} />
+          <Text style={[styles.sectionDividerLabel, { color }]}>
+            {SECTION_LABELS[severity]}
+          </Text>
+        </View>,
+      );
+    }
+
+    elements.push(
+      <TouchableOpacity
+        key={`${ingredient.canonical_name}-${ingredient.position}`}
+        style={styles.row}
+        onPress={() => onIngredientPress(ingredient)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.rowTop}>
+          <View style={styles.rowLeft}>
+            <Ionicons
+              name={SEVERITY_ICONS[severity]}
+              size={14}
+              color={color}
+              style={styles.severityIcon}
+            />
+            <Text style={styles.ingredientName} numberOfLines={1}>
+              {formatName(ingredient)}
+            </Text>
+          </View>
+          <View style={styles.rowRight}>
+            <Text style={styles.positionBadge}>#{ingredient.position}</Text>
+            <Text style={[styles.severityLabel, { color }]}>{label}</Text>
+          </View>
+        </View>
+        {ingredient.definition && (
+          <Text style={styles.definition} numberOfLines={1}>
+            {ingredient.definition}
+          </Text>
+        )}
+      </TouchableOpacity>,
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionHeader}>
         All Ingredients ({ingredients.length})
       </Text>
-
-      {sorted.map((ingredient) => {
-        const severity = getSeverity(ingredient, species);
-        const color = SEVERITY_COLORS[severity];
-        const label = SEVERITY_LABELS[severity];
-
-        return (
-          <TouchableOpacity
-            key={`${ingredient.canonical_name}-${ingredient.position}`}
-            style={styles.row}
-            onPress={() => onIngredientPress(ingredient)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.rowTop}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.dot, { backgroundColor: color }]} />
-                <Text style={styles.ingredientName} numberOfLines={1}>
-                  {formatName(ingredient)}
-                </Text>
-              </View>
-              <View style={styles.rowRight}>
-                <Text style={styles.positionBadge}>#{ingredient.position}</Text>
-                <Text style={[styles.severityLabel, { color }]}>{label}</Text>
-              </View>
-            </View>
-            {ingredient.definition && (
-              <Text style={styles.definition} numberOfLines={1}>
-                {ingredient.definition}
-              </Text>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+      {elements}
     </View>
   );
 }
@@ -143,10 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  severityIcon: {
     marginRight: 8,
   },
   ingredientName: {
@@ -174,10 +213,21 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     fontWeight: '700',
   },
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  sectionDividerLabel: {
+    fontSize: FontSizes.sm,
+    fontWeight: '700',
+  },
   definition: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: 4,
-    marginLeft: 16, // align with name after dot
+    marginLeft: 22, // align with name after icon (14px + 8px gap)
   },
 });

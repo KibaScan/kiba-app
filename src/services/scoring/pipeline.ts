@@ -81,6 +81,7 @@ function makeEmptyResult(
         personalizations: [],
         allergenWarnings: [],
       },
+      ingredientPenalties: [],
       flags,
       isPartialScore: true,
       isRecalled: product.is_recalled,
