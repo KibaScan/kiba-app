@@ -108,13 +108,14 @@ export function ConcernTags({ ingredients, product, species }: ConcernTagsProps)
     if (tag.id === 'heart_risk') {
       // Dogs only (D-013)
       if (species !== 'dog') return false;
-      // D-013 gate: grain-free AND 3+ members in positions 1-7
+      // D-013 gate: grain-free AND 3+ legume/potato in positions 1-7
+      // Uses is_legume flag (same as speciesRules.ts DCM check) — robust
+      // against canonical_name format differences (spaces vs underscores).
       if (!product.is_grain_free) return false;
-      const top7 = ingredients.filter((i) => i.position <= 7);
-      const matchCount = top7.filter((i) =>
-        tag.members.includes(i.canonical_name),
+      const legumesInTop7 = ingredients.filter(
+        (i) => i.position <= 7 && i.is_legume,
       ).length;
-      return matchCount >= 3;
+      return legumesInTop7 >= 3;
     }
     // Other tags: any member present in ingredient list
     return tag.members.some((member) => ingredientNames.has(member));
