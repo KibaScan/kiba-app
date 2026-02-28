@@ -124,6 +124,7 @@ export interface CarbEstimate {
   confidence: 'exact' | 'estimated' | 'unknown';
   qualitativeLabel: string | null;  // 'Low' | 'Moderate' | 'High'
   species: 'dog' | 'cat';
+  ashUsedPct: number | null;        // as-fed ash % used in formula (display only)
 }
 
 /** Orchestrator final output — composite of all layers */
