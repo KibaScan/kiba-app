@@ -1,29 +1,27 @@
 // Kiba — Navigation Type Definitions
 // Typed param lists for React Navigation 7.x stack navigators
 
-import { Product } from './index';
-
 // ─── Stack Param Lists ─────────────────────────────────
 
 export type ScanStackParamList = {
   ScanMain: undefined;
-  Result: { product: Product; petId: string };
+  Result: { productId: string; petId: string | null };
   CommunityContribution: { scannedUpc: string };
 };
 
 export type HomeStackParamList = {
   HomeMain: undefined;
-  Result: { product: Product; petId: string };
+  Result: { productId: string; petId: string | null };
 };
 
 export type SearchStackParamList = {
   SearchMain: undefined;
-  Result: { product: Product; petId: string };
+  Result: { productId: string; petId: string | null };
 };
 
 export type PantryStackParamList = {
   PantryMain: undefined;
-  Result: { product: Product; petId: string };
+  Result: { productId: string; petId: string | null };
 };
 
 export type MeStackParamList = {

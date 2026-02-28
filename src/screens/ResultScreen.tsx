@@ -1,27 +1,186 @@
-// Kiba — Result Screen (Score Display Placeholder)
-// Accepts product + petId from navigation params.
-// Scoring engine is NOT wired — all scores display as "--" placeholders.
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+// Kiba — Result Screen
+// Single scrollable screen with progressive disclosure (D-108).
+// Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
+// Wires LoadingTerminal + scoreProduct pipeline.
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { ScanStackParamList } from '../types/navigation';
+import type { Product, PetProfile } from '../types';
+import type { ScoredResult } from '../types/scoring';
 import { usePetStore } from '../stores/usePetStore';
+import { useScanStore } from '../stores/useScanStore';
+import { supabase } from '../services/supabase';
+import { scoreProduct } from '../services/scoring/pipeline';
+import { LoadingTerminal } from '../components/LoadingTerminal';
+import { ScoreRing } from '../components/ScoreRing';
+
+// ─── Navigation Types ────────────────────────────────────
 
 type ScreenRoute = RouteProp<ScanStackParamList, 'Result'>;
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'Result'>;
 
+// ─── Component ───────────────────────────────────────────
+
 export default function ResultScreen() {
   const navigation = useNavigation<ScreenNav>();
   const route = useRoute<ScreenRoute>();
-  const { product, petId } = route.params;
+  const { productId, petId } = route.params;
 
+  // ─── Store reads ────────────────────────────────────────
   const pets = usePetStore((s) => s.pets);
-  const pet = pets.find((p) => p.id === petId);
-  const petName = pet?.name ?? 'your pet';
+  const scanCache = useScanStore((s) => s.scanCache);
+
+  const pet: PetProfile | null = petId
+    ? pets.find((p) => p.id === petId) ?? null
+    : null;
+
+  // D-094: never display a naked score — fall back to species name
+  const petName = pet?.name ?? null;
+  const species: 'dog' | 'cat' =
+    pet?.species === 'cat' ? 'cat' : 'dog';
+  const displayName = petName ?? (species === 'dog' ? 'your dog' : 'your cat');
+
+  // ─── State ──────────────────────────────────────────────
+  const [product, setProduct] = useState<Product | null>(
+    scanCache.find((p) => p.id === productId) ?? null,
+  );
+  const [scoredResult, setScoredResult] = useState<ScoredResult | null>(null);
+  const [terminalDone, setTerminalDone] = useState(false);
+  const [scoringDone, setScoringDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const phase: 'loading' | 'ready' =
+    terminalDone && scoringDone ? 'ready' : 'loading';
+
+  // ─── Product fallback fetch ─────────────────────────────
+  useEffect(() => {
+    if (product) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (cancelled) return;
+
+      if (fetchError || !data) {
+        console.error('[ResultScreen] Product fetch failed:', fetchError?.message);
+        setError('Could not load product data.');
+        return;
+      }
+      setProduct(data as Product);
+    })();
+
+    return () => { cancelled = true; };
+  }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Scoring pipeline ──────────────────────────────────
+  const scoringStarted = useRef(false);
+
+  useEffect(() => {
+    if (!product || scoringStarted.current) return;
+    scoringStarted.current = true;
+
+    (async () => {
+      try {
+        // M1: petAllergens and petConditions are empty
+        const result = await scoreProduct(product, pet, [], []);
+        setScoredResult(result);
+      } catch (err) {
+        console.error('[ResultScreen] Scoring failed:', err);
+        setError('Scoring failed. Please try again.');
+      } finally {
+        setScoringDone(true);
+      }
+    })();
+  }, [product, pet]);
+
+  // ─── Terminal complete handler ──────────────────────────
+  const handleTerminalComplete = useCallback(() => {
+    setTerminalDone(true);
+  }, []);
+
+  // ─── Error state ───────────────────────────────────────
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={Colors.severityAmber} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryText}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Loading state ─────────────────────────────────────
+  if (phase === 'loading') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          {product && (
+            <View style={styles.headerCenter}>
+              <Text style={styles.productBrand} numberOfLines={1}>
+                {product.brand}
+              </Text>
+              <Text style={styles.productName} numberOfLines={1}>
+                {product.name}
+              </Text>
+            </View>
+          )}
+          <View style={styles.headerSpacer} />
+        </View>
+        {product ? (
+          <LoadingTerminal
+            ingredientCount={15}
+            species={species}
+            petName={petName}
+            proteinPct={product.ga_protein_pct}
+            fatPct={product.ga_fat_pct}
+            onComplete={handleTerminalComplete}
+          />
+        ) : (
+          <View style={styles.loadingFallback}>
+            <Text style={styles.loadingText}>Loading product data...</Text>
+          </View>
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Ready state (scrollable result) ───────────────────
+  const score = scoredResult?.finalScore ?? 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,44 +190,95 @@ export default function ResultScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.productBrand} numberOfLines={1}>
-            {product.brand}
+            {product!.brand}
           </Text>
           <Text style={styles.productName} numberOfLines={1}>
-            {product.name}
+            {product!.name}
           </Text>
         </View>
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.scorePlaceholder}>
-          <Text style={styles.scoreValue}>--</Text>
-          <Text style={styles.scoreLabel}>% match for {petName}</Text>
-        </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Product image with gradient edge fade (D-093) */}
+        {product!.image_url && (
+          <View style={styles.productImageContainer}>
+            <Image
+              source={{ uri: product!.image_url }}
+              style={styles.productImage}
+              resizeMode="contain"
+            />
+            <LinearGradient
+              colors={['transparent', Colors.background]}
+              style={styles.imageGradientBottom}
+            />
+            <LinearGradient
+              colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.imageGradientSides}
+            />
+          </View>
+        )}
 
-        <View style={styles.waterfallCard}>
-          <Text style={styles.sectionTitle}>Score Breakdown</Text>
-          <View style={styles.layerRow}>
-            <Text style={styles.layerLabel}>Ingredient Concerns</Text>
-            <Text style={styles.layerValue}>--</Text>
-          </View>
-          <View style={styles.layerRow}>
-            <Text style={styles.layerLabel}>{petName}'s Nutritional Fit</Text>
-            <Text style={styles.layerValue}>--</Text>
-          </View>
-          <View style={[styles.layerRow, styles.layerRowLast]}>
-            <Text style={styles.layerLabel}>{petName}'s Breed & Age Adjustments</Text>
-            <Text style={styles.layerValue}>--</Text>
-          </View>
-        </View>
+        {/* ─── Above Fold ─────────────────────────────────── */}
 
-        <Text style={styles.placeholder}>
-          Scoring engine coming in M1.
-        </Text>
-      </View>
+        {/* Score Ring (D-094) */}
+        <ScoreRing
+          score={score}
+          petName={displayName}
+          petPhotoUri={pet?.photo_url ?? null}
+          species={species}
+          isPartialScore={scoredResult?.isPartialScore ?? false}
+        />
+
+        {/* Recall warning */}
+        {scoredResult?.isRecalled && (
+          <View style={styles.recallBanner}>
+            <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+            <Text style={styles.recallText}>
+              This product has been subject to a recall
+            </Text>
+          </View>
+        )}
+
+        {/* ConcernTags — Prompt 3 */}
+
+        {/* SeverityBadgeStrip — Prompt 3 */}
+
+        {/* ─── Below Fold ─────────────────────────────────── */}
+
+        {/* ScoreWaterfall — Prompt 4 */}
+
+        {/* GATable — Prompt 4 */}
+
+        {/* IngredientList — Prompt 5 */}
+
+        {/* BreedContraindicationCard — Prompt 5 */}
+
+        {/* Track this food (M5 placeholder) */}
+        <TouchableOpacity style={styles.trackButton} disabled>
+          <Ionicons name="add-circle-outline" size={20} color={Colors.textTertiary} />
+          <Text style={styles.trackButtonText}>Track this food</Text>
+          <Text style={styles.comingSoonBadge}>Coming soon</Text>
+        </TouchableOpacity>
+
+        {/* AAFCO statement */}
+        {product!.aafco_statement && (
+          <Text style={styles.aafcoText}>{product!.aafco_statement}</Text>
+        )}
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ─── Styles ──────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -100,69 +310,133 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    alignItems: 'center',
+    paddingTop: Spacing.md,
   },
-  scorePlaceholder: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 6,
-    borderColor: Colors.cardBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
-  scoreValue: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: Colors.textTertiary,
-  },
-  scoreLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-  },
-  waterfallCard: {
+
+  // ─── Product Image (D-093)
+  productImageContainer: {
     width: '100%',
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    height: 200,
     marginBottom: Spacing.lg,
+    position: 'relative',
   },
-  sectionTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.md,
+  productImage: {
+    width: '100%',
+    height: '100%',
   },
-  layerRow: {
+  imageGradientBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 60,
+  },
+  imageGradientSides: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  // ─── Recall Banner
+  recallBanner: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
+    borderRadius: 12,
+    marginBottom: Spacing.md,
+    gap: 8,
   },
-  layerRowLast: {
-    borderBottomWidth: 0,
-  },
-  layerLabel: {
+  recallText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
+    fontWeight: '600',
+    color: Colors.severityRed,
     flex: 1,
   },
-  layerValue: {
+
+  // ─── Track Button (M5 placeholder)
+  trackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: Spacing.lg,
+    gap: 8,
+    opacity: 0.5,
+  },
+  trackButtonText: {
     fontSize: FontSizes.md,
     fontWeight: '600',
     color: Colors.textTertiary,
   },
-  placeholder: {
-    fontSize: FontSizes.sm,
+  comingSoonBadge: {
+    fontSize: FontSizes.xs,
     color: Colors.textTertiary,
-    marginTop: Spacing.md,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+
+  // ─── AAFCO Statement
+  aafcoText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginTop: Spacing.lg,
+    lineHeight: 16,
+  },
+
+  // ─── Bottom Spacer
+  bottomSpacer: {
+    height: 40,
+  },
+
+  // ─── Error State
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    gap: 16,
+  },
+  errorText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.card,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  retryText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+
+  // ─── Loading Fallback
+  loadingFallback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
   },
 });
