@@ -32,6 +32,9 @@ import { ConcernTags } from '../components/ConcernTags';
 import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
 import { ScoreWaterfall } from '../components/ScoreWaterfall';
 import { GATable } from '../components/GATable';
+import { IngredientList } from '../components/IngredientList';
+import { IngredientDetailModal } from '../components/IngredientDetailModal';
+import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -68,6 +71,7 @@ export default function ResultScreen() {
   const [terminalDone, setTerminalDone] = useState(false);
   const [scoringDone, setScoringDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIngredient, setSelectedIngredient] = useState<ProductIngredient | null>(null);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -261,14 +265,21 @@ export default function ResultScreen() {
           />
         )}
 
+        {/* Breed Contraindication Cards (D-112) */}
+        {scoredResult && (
+          <BreedContraindicationCard
+            contraindications={scoredResult.layer3.personalizations.filter(
+              (p) => p.type === 'breed_contraindication',
+            )}
+          />
+        )}
+
         {/* Severity Badge Strip (D-108) */}
         {hydratedIngredients.length > 0 && (
           <SeverityBadgeStrip
             ingredients={hydratedIngredients}
             species={species}
-            onIngredientPress={() => {
-              // Wired to ingredient detail modal in Prompt 5
-            }}
+            onIngredientPress={setSelectedIngredient}
           />
         )}
 
@@ -292,9 +303,14 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* IngredientList — Prompt 5 */}
-
-        {/* BreedContraindicationCard — Prompt 5 */}
+        {/* Full Ingredient List (D-031, D-108) */}
+        {hydratedIngredients.length > 0 && (
+          <IngredientList
+            ingredients={hydratedIngredients}
+            species={species}
+            onIngredientPress={setSelectedIngredient}
+          />
+        )}
 
         {/* Track this food (M5 placeholder) */}
         <TouchableOpacity style={styles.trackButton} disabled>
@@ -310,6 +326,13 @@ export default function ResultScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Singleton ingredient detail modal (D-030) */}
+      <IngredientDetailModal
+        ingredient={selectedIngredient}
+        species={species}
+        onClose={() => setSelectedIngredient(null)}
+      />
     </SafeAreaView>
   );
 }

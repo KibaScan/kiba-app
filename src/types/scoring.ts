@@ -23,6 +23,10 @@ export interface ProductIngredient {
   allergen_group_possible: string[];       // D-098 unnamed terms
   is_protein_fat_source: boolean;          // Layer 1c protein naming denominator
   display_name?: string | null;            // D-105 consumer-facing name (UI only, not used in scoring)
+  definition?: string | null;              // D-105 one-sentence definition
+  tldr?: string | null;                    // D-105 2-3 sentence engaging summary
+  detail_body?: string | null;             // D-105 full explanation (1-2 paragraphs)
+  citations_display?: string | null;       // D-105 source strings for UI footer
 }
 
 // ─── Breed & Modifier Types ─────────────────────────────

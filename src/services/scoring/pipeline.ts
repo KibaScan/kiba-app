@@ -47,6 +47,11 @@ function hydrateIngredient(
     // For M1, defaults to false — formulation protein naming returns 50 (default).
     // Impact: 25% of 15% bucket = 3.75% of total score. Acceptable M1 limitation.
     is_protein_fat_source: false,
+    // D-105 display content (UI only — scoring engine never reads these)
+    definition: dict.definition,
+    tldr: dict.tldr,
+    detail_body: dict.detail_body,
+    citations_display: dict.citations_display,
   };
 }
 
