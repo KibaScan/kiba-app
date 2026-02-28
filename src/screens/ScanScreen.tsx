@@ -64,10 +64,13 @@ export default function ScanScreen() {
         const lookup = await lookupByUpc(result.data);
 
         if (lookup.status === 'error') {
-          Alert.alert(
-            'Lookup Failed',
-            'Could not connect to the database. Check your connection and try again.',
-          );
+          const errorMessage =
+            lookup.code === 'NETWORK_TIMEOUT'
+              ? 'Connection error — check your network'
+              : 'Something went wrong — try again';
+          Alert.alert('Scan Error', errorMessage, [
+            { text: 'OK', onPress: () => setIsLocked(false) },
+          ]);
           return;
         }
 
