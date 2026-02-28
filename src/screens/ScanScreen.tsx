@@ -27,6 +27,7 @@ import { Species, Product } from '../types';
 import { ScanStackParamList } from '../types/navigation';
 import { lookupByUpc } from '../services/scanner';
 import { usePetStore } from '../stores/usePetStore';
+import { useScanStore } from '../stores/useScanStore';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
 
@@ -81,7 +82,8 @@ export default function ScanScreen() {
           return;
         }
 
-        // Product found
+        // Product found — cache before routing
+        useScanStore.getState().addToScanCache(lookup.product);
         const hasPet = pets.length > 0 && activePetId !== null;
 
         if (!hasPet) {
