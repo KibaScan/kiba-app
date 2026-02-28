@@ -100,6 +100,9 @@ export interface Product {
   ingredients_raw: string | null;
   ingredients_hash: string | null;
 
+  // Image (D-093 — gradient edge fade on scan result screen)
+  image_url: string | null;
+
   // Flags
   is_recalled: boolean;
   is_grain_free: boolean;

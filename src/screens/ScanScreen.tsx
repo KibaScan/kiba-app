@@ -91,7 +91,7 @@ export default function ScanScreen() {
           setShowPetModal(true);
         } else {
           navigation.navigate('Result', {
-            product: lookup.product,
+            productId: lookup.product.id,
             petId: activePetId,
           });
         }
@@ -125,7 +125,7 @@ export default function ScanScreen() {
     setPendingProduct(null);
 
     navigation.navigate('Result', {
-      product: pendingProduct,
+      productId: pendingProduct.id,
       petId: newPetId,
     });
   };
