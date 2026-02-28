@@ -172,10 +172,9 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Neutral if no conflicts detected
 
 ### Reference Scores (Regression Tests)
-- **Pure Balance Grain-Free Salmon & Pea (Dog):** 66/100
-  - IQ: 60, NP: 82, FC: 78 → Base: 69.3 → DCM −8% → Mitigation +3% → 66
-- **Temptations Classic Tuna (Cat Treat):** 44/100
-  - IQ: 52 → Cat carb penalty −8 → 44
+- **Pure Balance Grain-Free Salmon & Pea (Dog):** 69/100
+  - IQ: 62.8, NP: 85, FC: 88 → Base: 73.2 → DCM −6 → Mitigation +2 → 69
+- **Temptations Classic Tuna (Cat Treat):** 44/100 (no Supabase seed data yet — original design estimate)
 
 ### Ingredient Splitting Detection
 Use `cluster_id` field in `ingredients_dict` table. Both "Dried Peas" and "Pea Starch" get `cluster_id = 'legume_pea'`. Detect via `GROUP BY cluster_id HAVING count >= 2`. NEVER use string matching — prevents false positives.
