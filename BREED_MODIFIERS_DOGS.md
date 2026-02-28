@@ -1,8 +1,8 @@
 # Kiba — Dog Breed Nutritional Modifiers
 
-> **Status:** DRAFT — Requires vet auditor review before production use
-> **Referenced by:** `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` §6a
-> **Purpose:** Structured breed-specific modifier data for the scoring engine. Each entry maps to a row in the `breed_modifiers` table.
+> **Status:** DRAFT — Requires vet auditor review before production use  
+> **Referenced by:** `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` §6a  
+> **Purpose:** Structured breed-specific modifier data for the scoring engine. Each entry maps to a row in the `breed_modifiers` table.  
 > **Cap rule:** Total breed modifiers within the nutritional bucket are capped at ±10 points (see spec §6c).
 
 ---
@@ -15,7 +15,7 @@ Each breed entry uses this structure. Fields marked `[DB]` are stored in Supabas
 interface BreedModifier {
   breed_name: string;                    // [DB] Canonical breed name
   breed_aliases: string[];               // [DB] AKC variants, common misspellings
-  trigger_type: 'ga_threshold' | 'ingredient_pattern' | 'combined' | 'advisory_only';  // [DB]
+  trigger_type: 'ga_threshold' | 'ingredient_pattern' | 'combined' | 'advisory_only' | 'breed_contraindication';  // [DB] — breed_contraindication added per D-112
   ga_conditions: GaCondition[] | null;   // [DB] Guaranteed analysis triggers
   ingredient_conditions: IngredientCondition[] | null;  // [DB] Ingredient list triggers
   modifier_points: number;               // [DB] Score adjustment (negative = penalty, positive = bonus)
@@ -28,7 +28,7 @@ interface BreedModifier {
   ui_callout: string;                    // [DB] User-facing explanation shown in score breakdown
   clinical_note: string;                 // [AUDIT] Extended explanation for vet auditor
   vet_audit_status: 'cleared' | 'pending' | 'blocked' | 'not_started';  // [AUDIT]
-  actionability: 'ga_actionable' | 'ingredient_actionable' | 'not_actionable_from_label';  // [DB]
+  actionability: 'ga_actionable' | 'ingredient_actionable' | 'not_actionable_from_label' | 'breed_contraindication';  // [DB] — breed_contraindication added per D-112
 }
 ```
 
@@ -65,7 +65,7 @@ evidence_strength:     strong
 
 **Mechanism:** Idiopathic hypertriglyceridemia affects 32.8% of healthy Miniature Schnauzers (75%+ by age 9). Reduced lipoprotein lipase (LPL) activity causes impaired clearance of triglyceride-rich lipoproteins. SPINK1 gene mutations confer independent pancreatitis risk. Hypertriglyceridemia >800 mg/dL triggers pancreatitis, proteinuria, gallbladder mucoceles. Dietary fat restriction resolves hyperlipidemia in ~50% of affected dogs.
 
-**UI callout:** `"Adjusted for Miniature Schnauzer: breed predisposition to hyperlipidemia and pancreatitis — lower-fat formulas preferred."`
+**UI callout:** `"Adjusted for Miniature Schnauzer: breed predisposition to hyperlipidemia and pancreatitis — lower-fat formulas align with clinical risk-reduction strategies."`
 
 **Citations:**
 - Xenoulis PG et al., *J Vet Intern Med*, 2007; DOI: 10.1111/j.1939-1676.2007.tb01939.x
@@ -148,7 +148,7 @@ evidence_strength:     strong (predisposition), moderate (dietary thresholds)
 
 **Mechanism:** NPHS1/KIRREL2 mutations on chromosome 1 → protein-losing nephropathy (PLN). Inflammatory bowel disease with intestinal lymphangiectasia → protein-losing enteropathy (PLE). 28% of affected dogs have both simultaneously, creating conflicting dietary demands: PLE needs adequate protein, PLN may benefit from moderation. High long-chain triglycerides stimulate lymph flow, worsening intestinal protein loss.
 
-**UI callout:** `"Adjusted for Wheaten Terrier: breed predisposition to protein-losing conditions — lower-fat, moderate-protein formulas preferred."`
+**UI callout:** `"Adjusted for Wheaten Terrier: breed predisposition to protein-losing conditions — lower-fat, moderate-protein formulas align with clinical management strategies."`
 
 **Citations:**
 - Littman MP et al., *J Vet Intern Med*, 2000; DOI: 10.1892/0891-6640(2000)014<0068:fpleap>2.3.co;2
@@ -184,7 +184,7 @@ evidence_strength:     strong (predisposition), moderate (dietary thresholds)
 
 **Mechanism:** Pancreatic acinar atrophy (PAA) is immune-mediated destruction of acinar cells by CD4+/CD8+ T-lymphocytes. Heritable with estimated heritability of 0.51, now considered polygenic. Clinical EPI appears when >90% of acinar cells are destroyed. Fiber decreases dry matter digestibility, increases fecal volume, and may decrease nutrient absorption.
 
-**UI callout:** `"Adjusted for German Shepherd: breed predisposition to exocrine pancreatic insufficiency — low-fiber, highly digestible formulas preferred."`
+**UI callout:** `"Adjusted for German Shepherd: breed predisposition to exocrine pancreatic insufficiency — low-fiber, highly digestible formulas align with clinical management strategies."`
 
 **Citations:**
 - Westermarck E & Wiberg ME, *JAVMA*, 2006; DOI: 10.2460/javma.228.2.225
@@ -212,22 +212,22 @@ evidence_strength:     strong (POMC mutation), moderate (compositional threshold
 | Condition | Modifier | Target | Rationale |
 |---|---|---|---|
 | fat_dmb > 18% | −2 | fat_sub | Obesity risk — POMC mutation in ~25% of pet Labs |
-| fiber_dmb ≥ 10% | +1 | fiber_sub | Higher fiber improves satiety in POMC carriers |
+| fiber_dmb ≥ 10% | +1 | fiber_sub | Higher fiber improves satiety in POMC carriers. Note: base §4b fiber curve still applies — this +1 is a small signal, not a suppression. D-106 obesity condition provides 50% fiber suppression when applicable. Vet audit flag: consider breed-gated fiber suppression if auditor confirms preventive benefit for healthy-weight Labs. |
 | protein_dmb ≥ 30% | +1 | protein_sub | Higher protein reduces short-term food intake |
-| caloric_density > 4.0 kcal/g | −1 | bucket_overall | High caloric density compounds POMC-driven overeating |
+| caloric_density > 4.0 kcal/g | Advisory only | — | **D-106 compliance:** caloric density is a portion calculator concern, not a score modifier. Surface as UI advisory card tied to portion calculator. |
 
 **Ingredient conditions:** None required — this is a GA-driven concern.
 
 **Mechanism:** 14-bp deletion in POMC gene disrupts β-MSH and β-endorphin production (satiety-signaling neuropeptides) while leaving α-MSH intact. This distinction is clinically significant — loss of β-MSH alone is sufficient to lower resting metabolic rate and increase hunger, even with normal α-MSH levels. ~25% of pet Labs carry the mutation. Per-allele effects: +1.90 kg body weight, +0.48 BCS points. Dual mechanism: increased hunger AND reduced resting metabolic rate.
 
-**UI callout:** `"Adjusted for Labrador Retriever: breed predisposition to obesity (POMC gene) — lower caloric density with higher fiber and protein preferred."`
+**UI callout:** `"Adjusted for Labrador Retriever: breed predisposition to obesity (POMC gene) — higher fiber and protein formulas support satiety. See portion calculator for caloric density guidance."`
 
 **Citations:**
 - Raffan E et al., *Cell Metabolism*, 2016; DOI: 10.1016/j.cmet.2016.04.012
 - Raffan E et al., *Science Advances*, 2024; DOI: 10.1126/sciadv.adj3823
 - Weber M et al., *J Vet Intern Med*, 2007; DOI: 10.1892/07-016.1
 
-**Clinical note:** Caloric density and satiety management are more important than any single nutrient threshold. L-carnitine ≥500 ppm in obesity management formulations aids fatty acid transport. Caloric density calculated from macronutrients using modified Atwater factors (protein 3.5, fat 8.5, carb 3.5 kcal/g DMB).
+**Clinical note:** Caloric density is managed via the portion calculator (D-106), not score penalties. D-106 obesity condition provides 50% fiber suppression for obese Labs — healthy-weight Labs get the +1 bonus only. L-carnitine ≥500 ppm in obesity management formulations aids fatty acid transport. Caloric density calculated from macronutrients using modified Atwater factors (protein 3.5, fat 8.5, carb 3.5 kcal/g DMB).
 
 ---
 
@@ -248,14 +248,14 @@ evidence_strength:     strong (obesity-BOAS link), moderate (compositional thres
 | Condition | Modifier | Target | Rationale |
 |---|---|---|---|
 | fat_dmb > 18% | −2 | fat_sub | Obesity directly worsens BOAS |
-| caloric_density > 3.5 kcal/g | −1 | bucket_overall | Weight management has outsized health impact |
+| caloric_density > 3.5 kcal/g | Advisory only | — | **D-106 compliance:** caloric density is a portion calculator concern, not a score modifier. Surface as UI advisory card: "Weight management has outsized health impact for brachycephalic breeds. See portion calculator." |
 | carb_dmb > 45% | −2 | carb_sub | Obesity-prone breeds; high-carb diets compound reduced exercise tolerance |
 
 **Ingredient conditions:** None required.
 
 **Mechanism:** No breed-specific genetic obesity mutation identified (unlike POMC in Labs). Obesity risk derives from anatomical positive-feedback loop: BOAS → reduced exercise tolerance → reduced caloric expenditure → weight gain → increased pharyngeal fat deposition → worsened BOAS. Pugs have OR 3.12 for overweight — highest of all breeds studied.
 
-**UI callout:** `"Adjusted for [breed_name]: brachycephalic breed — obesity directly worsens airway function. Lower caloric density preferred."`
+**UI callout:** `"Adjusted for [breed_name]: brachycephalic breed — obesity directly worsens airway function. See portion calculator for caloric density guidance."`
 
 **Citations:**
 - Pegram C et al., *J Small Anim Pract*, 2021; DOI: 10.1111/jsap.13325
@@ -282,34 +282,36 @@ evidence_strength:     strong (condition), weak (compositional thresholds)
 
 | Condition | Modifier | Target | Rationale |
 |---|---|---|---|
-| caloric_density_me < 2.8 kcal/g on ME basis (puppy formula) | −1 | bucket_overall | Insufficient caloric density for toy breed puppies. IMPORTANT: calculate on ME/DMB basis — most wet foods fall below 2.8 kcal/g as-fed due to moisture; this flag must not penalize high-quality wet food. Use modified Atwater on DMB values. |
-| fiber_dmb > 15% (puppy formula) | −1 | fiber_sub | May limit caloric intake dangerously in toy puppies |
+| caloric_density_me < 3.2 kcal/g as-fed (puppy formula) | Advisory only | — | **D-106 compliance:** caloric density is a portion calculator concern, not a score modifier. Surface as UI advisory card. **NOTE:** Original threshold of 2.8 kcal/g on DMB basis was physically impossible (modified Atwater minimum is ~3.5 kcal/g DMB for any food composition). Threshold corrected to 3.2 kcal/g **as-fed** — the clinical concern is stomach volume (toy puppies fill up on water before getting enough calories), which is an as-fed issue. |
+| fiber_dmb > 15% (puppy formula) | Advisory only | — | **D-106 compliance:** May limit caloric intake dangerously in toy puppies, but this is a portion/feeding management concern. Surface as UI advisory card. |
 
 **Ingredient conditions:** None — meal frequency is the primary intervention, not food composition.
 
 **Mechanism:** Transient juvenile hypoglycemia from limited hepatic glycogen stores, immature gluconeogenesis, and high metabolic rate. Yorkshire Terriers have ~36× greater risk of portosystemic liver shunts, which can cause hypoglycemia persisting into adulthood.
 
-**UI callout:** `"Note for Yorkshire Terrier puppy: toy breeds benefit from adequate caloric density and frequent meals (3–4×/day) to support stable blood sugar."`
+**UI callout:** `"Note for Yorkshire Terrier puppy: toy breeds benefit from adequate caloric density and steady, frequent caloric intake to support stable blood sugar."`
 
 **Citations:**
 - Idowu O & Heading K, *Can Vet J*, 2018; PMID: 29904216
 - Carciofi AC et al., *J Anim Physiol Anim Nutr*, 2008; DOI: 10.1111/j.1439-0396.2007.00794.x
 
-**Clinical note:** Primarily affects puppies <5 months; adults at minimal risk unless concurrent liver shunt. Scoring engine can flag caloric density and fiber but cannot enforce feeding frequency. Avoid "light" or weight management diets for Yorkie puppies. Complex carbohydrate sources (oats, brown rice, barley) preferred over refined starches.
+**Clinical note:** Primarily affects puppies <5 months; adults at minimal risk unless concurrent liver shunt. Scoring engine can flag caloric density and fiber as advisories but cannot enforce feeding frequency (D-106 compliance — caloric density is a portion calculator concern). Avoid "light" or weight management diets for Yorkie puppies. Complex carbohydrate sources (oats, brown rice, barley) preferred over refined starches.
 
 ---
 
-### Giant Breeds — Calcium (Puppy-Specific)
+### Large/Giant Breeds — Calcium (Puppy-Specific)
 
 ```
-breed_name:            Giant Breed Group (Calcium)
-breed_aliases:         [Great Dane, Saint Bernard, Irish Wolfhound, Mastiff, Newfoundland, Bernese Mountain Dog, Great Pyrenees, Leonberger, Tibetan Mastiff, Cane Corso]
+breed_name:            Large/Giant Breed Group (Calcium)
+breed_aliases:         [Great Dane, Saint Bernard, Irish Wolfhound, Mastiff, Newfoundland, Bernese Mountain Dog, Great Pyrenees, Leonberger, Tibetan Mastiff, Cane Corso, Labrador Retriever, Golden Retriever, German Shepherd, Rottweiler, Doberman Pinscher, Boxer]
 trigger_type:          ga_threshold
 actionability:         ga_actionable
 applies_to:            [puppy]  // growth phase ONLY — adult calcium concern is minimal
 vet_audit_status:      pending
 evidence_strength:     strong
 ```
+
+**Scope note:** AAFCO defines "Large Breed" for calcium limits as any dog expected to reach ≥70 lbs adult weight. This group includes breeds that have their own independent primary entries (Labrador, Golden Retriever, German Shepherd, Doberman, Boxer). The calcium modifier fires **puppy-only** and stacks with the breed's existing modifiers (subject to ±10 cap). Without this, Kiba gives a perfect score to a 2.2% calcium DMB puppy food for a Golden Retriever — actively putting them at risk for osteochondrosis.
 
 **GA conditions:**
 
@@ -325,7 +327,7 @@ evidence_strength:     strong
 
 **Mechanism:** Giant breed puppies cannot regulate intestinal calcium absorption — excess is absorbed and causes osteochondrosis, disturbed endochondral ossification, and chronic hypercalcitoninism. Hazewinkel et al. showed 3.3% calcium DMB caused skeletal abnormalities in Great Dane puppies but NOT in Miniature Poodles. Excess calcium suppresses osteoclast activity → retained cartilage cores → OCD, HOD, wobbler syndrome. A wide Ca:P ratio is MORE damaging than proportional excess.
 
-**UI callout:** `"Adjusted for [breed_name] puppy: giant breed puppies are sensitive to calcium levels — optimal range is 1.2–1.5% DMB with a Ca:P ratio of 1.1:1 to 1.3:1."`
+**UI callout:** `"Adjusted for [breed_name] puppy: large and giant breed puppies are sensitive to calcium levels — optimal range is 1.2–1.5% DMB with a Ca:P ratio of 1.1:1 to 1.3:1."`
 
 **Citations:**
 - Hazewinkel HAW et al., *JAAHA*, 1985
@@ -356,7 +358,7 @@ evidence_strength:     moderate-strong (observational)
 | Condition | Modifier | Target | Rationale |
 |---|---|---|---|
 | fat_source_in_first_4_ingredients | −2 | ingredient_quality | OR 2.59 for GDV; slows gastric emptying |
-| citric_acid_present | −2 | ingredient_quality | OR 3.16 for GDV (4.19 if food moistened) |
+| citric_acid_present | Advisory only | — | Glickman/Purdue found elevated GDV risk (OR 3.16, rising to 4.19 when moistened) specifically when dry food containing citric acid was moistened before feeding. Penalizing citric acid outright generates false positives on premium dry foods where the interaction doesn't apply. Surface as advisory: "Contains citric acid. For deep-chested breeds, research indicates elevated GDV risk when dry food containing citric acid is moistened before feeding." |
 | rendered_meat_meal_with_bone_in_first_4 | +2 | ingredient_quality | Protective factor, OR 0.47 |
 
 **Mechanism:** Fat in first 4 ingredients may slow gastric emptying; citric acid may promote gas production — both contributing to gastric distension. Glickman/Purdue prospective study of 1,637 dogs identified these as independent risk factors.
@@ -368,6 +370,78 @@ evidence_strength:     moderate-strong (observational)
 - Glickman LT et al., *JAVMA*, 2000; DOI: 10.2460/javma.2000.217.1492
 
 **Clinical note:** Raised food bowls (OR 2.18), fast eating speed, and once-daily feeding also increase GDV risk but are management factors, not food composition — surface as advisory text only.
+
+---
+
+### Calcium Oxalate (CaOx) Risk Group
+
+```
+breed_name:            Calcium Oxalate Risk Group
+breed_aliases:         [Bichon Frise, Bichon, Shih Tzu, Lhasa Apso, Miniature Poodle, Toy Poodle, Pomeranian, Havanese, Papillon]
+trigger_type:          combined
+actionability:         ga_actionable + ingredient_actionable
+applies_to:            [adult, senior]  // Uroliths are rare in puppies
+vet_audit_status:      pending
+evidence_strength:     strong (ACVIM Consensus)
+```
+
+**GA conditions:**
+
+| Condition | Modifier | Target | Rationale |
+|---|---|---|---|
+| calcium_dmb < 0.6% | −2 | bucket_overall | Paradoxical risk: deficient dietary calcium increases intestinal absorption of unbound oxalates, fueling stone formation. Severe calcium restriction is contraindicated. |
+| moisture_pct ≥ 65% | Advisory only | — | **D-106 principle:** High dietary moisture increases urine volume and decreases specific gravity, lowering relative supersaturation of calcium oxalate. This is the most effective non-pharmaceutical intervention (ACVIM Consensus), but it's a food form factor preference, not a nutritional quality signal. Surface as advisory: "High-moisture diets are clinically associated with reduced stone risk for predisposed breeds." |
+
+**Ingredient conditions:**
+
+| Condition | Modifier | Target | Rationale |
+|---|---|---|---|
+| high_oxalate_ingredients_in_top_10 (spinach, sweet potatoes, potatoes, beets, swiss chard, rhubarb) | −2 | ingredient_quality | Exogenous dietary oxalates are absorbed and excreted renally, contributing to urinary supersaturation. Dose-dependent (not binary like urate/SLC2A9), so a score modifier is appropriate rather than D-112 contraindication. |
+
+**Mechanism:** Polygenic predisposition to hypercalciuria and hyperoxaluria. CaOx crystals precipitate when urine is highly concentrated. CaOx stones cannot be medically dissolved — they require surgical removal. Increasing dietary moisture (feeding canned/wet diets) is the most effective non-pharmaceutical intervention. Intestinal calcium binds dietary oxalate in the gut; without adequate dietary calcium, free oxalate is rapidly absorbed into the bloodstream and excreted renally.
+
+**UI callout:** `"Adjusted for [breed_name]: breed predisposition to calcium oxalate urinary stones. High-moisture formulas and oxalate moderation align with clinical risk-reduction research."`
+
+**Citations:**
+- Lulich JP et al., *J Vet Intern Med*, 2016; DOI: 10.1111/jvim.14559 (ACVIM Consensus)
+- Stevenson AE et al., *Vet Rec*, 2004; DOI: 10.1136/vr.154.4.107
+- Dijcker JC et al., *Br J Nutr*, 2012; DOI: 10.1017/S0007114511007033
+
+**Clinical note:** CaOx accounts for ~50% of all canine urinary stones. Unlike struvite stones, CaOx cannot be dissolved medically — surgical removal is required. The moisture advisory is high-value clinical information even without a score modifier. Calcium restriction below 0.6% DMB is paradoxically harmful and should be penalized, not rewarded.
+
+---
+
+### Chinese Shar-Pei (SPAID / Renal Amyloidosis)
+
+```
+breed_name:            Chinese Shar-Pei
+breed_aliases:         [Shar-Pei, Shar Pei, Sharpei]
+trigger_type:          ga_threshold
+actionability:         ga_actionable
+applies_to:            [adult, senior]  // amyloid deposition is progressive; kittens/puppies excluded for growth needs
+vet_audit_status:      pending
+evidence_strength:     strong (genetic), strong (CKD management)
+```
+
+**GA conditions:**
+
+| Condition | Modifier | Target | Rationale |
+|---|---|---|---|
+| phosphorus_dmb > 1.8% | −3 | phosphorus_sub | Severely elevated phosphorus accelerates nephron destruction once amyloid deposits begin. |
+| phosphorus_dmb > 1.5% AND ≤ 1.8% | −2 | phosphorus_sub | Prophylactic renal protection — above optimal for breeds predisposed to CKD. |
+
+**NOTE:** Thresholds aligned with Persian/Exotic cat phosphorus logic rather than the reviewer's proposed 1.2% (which would flag most standard adult maintenance kibble at 0.8–1.5% DMB). The tiered approach provides progressive penalties without over-flagging normal foods.
+
+**Mechanism:** A regulatory mutation upstream of the HAS2 (hyaluronan synthase 2) gene causes excessive hyaluronan production, leading to Shar-Pei Autoinflammatory Disease (SPAID) — periodic fever syndromes and chronic systemic inflammation. This drives hepatic overproduction of Serum Amyloid A (SAA), which deposits as amyloid fibrils in the renal medulla, eventually causing terminal kidney failure.
+
+**UI callout:** `"Adjusted for Shar-Pei: breed predisposition to autoinflammatory renal amyloidosis (SPAID). Phosphorus moderation aligns with renal support research for breeds predisposed to amyloidosis."`
+
+**Citations:**
+- Olsson M et al., *PLoS Genet*, 2011; DOI: 10.1371/journal.pgen.1001332
+- Segev G et al., *J Vet Intern Med*, 2012; DOI: 10.1111/j.1939-1676.2011.00843.x
+- DiBartola SP et al., *JAVMA*, 1990
+
+**Clinical note:** Direct canine parallel to Persian/Abyssinian cat amyloidosis logic. SPAID affects an estimated 20–25% of Shar-Peis. Renal amyloidosis is the leading cause of death in the breed. The phosphorus penalty is prophylactic — once CKD is clinically diagnosed, therapeutic renal diets are prescribed by veterinarians. Kiba's role is flagging sub-optimal phosphorus levels before diagnosis.
 
 ---
 
@@ -467,7 +541,7 @@ evidence_strength:     strong (genetic), weak-moderate (dietary)
 
 **Mechanism:** DCM prevalence ~50% males, ~33% females. Primary drivers are genetic: PDK4 (16-bp deletion) and TTN (titin missense variant). Taurine deficiency is NOT the primary driver — most Dobermans with DCM have normal taurine levels.
 
-**UI callout:** `"Note for Doberman: DCM is primarily genetic in this breed (PDK4/TTN mutations). Dietary optimization (taurine, L-carnitine) is supportive only. Genetic screening recommended."`
+**UI callout:** `"Note for Doberman: DCM is primarily genetic in this breed (PDK4/TTN mutations). Dietary optimization (taurine, L-carnitine) is supportive only. Genetic screening (PDK4/TTN) provides definitive risk assessment."`
 
 **Citations:**
 - Meurs KM et al., *Human Genetics*, 2012; DOI: 10.1007/s00439-012-1158-2
@@ -513,22 +587,24 @@ evidence_strength:     strong (genetic ARVC), weak (dietary L-carnitine)
 ```
 breed_name:            Irish Setter
 breed_aliases:         [Irish Red Setter, Red Setter]
-trigger_type:          ingredient_pattern
-actionability:         ingredient_actionable
+trigger_type:          breed_contraindication
+actionability:         breed_contraindication
 applies_to:            [all]  // clinical onset typically 4–7 months but lifelong sensitivity
 vet_audit_status:      pending
 evidence_strength:     strong (in documented lines)
 ```
 
-**Ingredient conditions:**
+**Ingredient conditions (BREED CONTRAINDICATION per D-112):**
 
-| Condition | Modifier | Target | Rationale |
-|---|---|---|---|
-| any_gluten_grain_present (wheat, barley, rye, oats + derivatives) | −4 | ingredient_quality | Gluten-sensitive enteropathy — any amount can trigger |
+| Condition | Effect | Rationale |
+|---|---|---|
+| any_gluten_grain_present (wheat, barley, rye, oats + derivatives) | **Breed contraindication card** (zero score impact, red warning card above fold) | Gluten-sensitive enteropathy — any amount can trigger partial villous atrophy. A −4 ingredient penalty produces only ~2.2 points on the final composite (−4 × 0.55 IQ weight) — "91% match" for a food causing intestinal damage. **NOTE:** Oats (avenin) are RETAINED in this trigger list despite not containing classical gluten — Hall & Batt (1991) demonstrated partial villous atrophy in Irish Setters exposed to avenin specifically. |
+
+**Contraindication card text (D-112):** `"Contains gluten-containing grains. Irish Setters have documented gluten-sensitive enteropathy with partial villous atrophy. Clinical resolution occurs on gluten-free diets."`
 
 **Mechanism:** Autosomal recessive single-locus inheritance causes cell-mediated immune response to prolamin fractions (gliadin, hordein, secalin, avenin). Partial villous atrophy in proximal small intestine. Complete resolution on gluten-free diet.
 
-**UI callout:** `"Adjusted for Irish Setter: documented gluten-sensitive enteropathy — gluten-free formulas recommended."`
+**UI callout:** `"Flagged for Irish Setter: documented gluten-sensitive enteropathy — formulas without gluten-containing grains are associated with complete clinical resolution."`
 
 **Citations:**
 - Garden OA et al., *Am J Vet Res*, 2000; DOI: 10.2460/ajvr.2000.61.462
@@ -543,28 +619,62 @@ evidence_strength:     strong (in documented lines)
 ```
 breed_name:            Border Terrier
 breed_aliases:         [Border]
-trigger_type:          ingredient_pattern
-actionability:         ingredient_actionable
+trigger_type:          breed_contraindication
+actionability:         breed_contraindication
 applies_to:            [all]
 vet_audit_status:      pending
 evidence_strength:     strong
 ```
 
-**Ingredient conditions:**
+**Ingredient conditions (BREED CONTRAINDICATION per D-112):**
 
-| Condition | Modifier | Target | Rationale |
-|---|---|---|---|
-| any_gluten_grain_present (wheat, barley, rye) | −3 | ingredient_quality | Paroxysmal gluten-sensitive dyskinesia (PGSD) |
+| Condition | Effect | Rationale |
+|---|---|---|
+| any_gluten_grain_present (wheat, barley, rye) | **Breed contraindication card** (zero score impact, red warning card above fold) | Paroxysmal gluten-sensitive dyskinesia (PGSD). A −3 ingredient penalty produces only ~1.65 points on the final composite — insufficient to communicate binary neurological risk. **NOTE:** Oats are NOT included in this trigger (unlike Irish Setter) — Lowrie studies characterized PGSD with wheat-based triggers only. Oats (avenin) were not part of the documented PGSD profile. |
+
+**Contraindication card text (D-112):** `"Contains gluten-containing grains. Border Terriers have documented paroxysmal gluten-sensitive dyskinesia (PGSD). Clinical resolution occurs on gluten-free diets."`
 
 **Mechanism:** Immunologic response against transglutaminase-2 (TG2) and gliadin proteins produces elevated anti-gliadin IgG and anti-TG2 IgA. Triggers paroxysmal dyskinesia, GI signs, and dermatological signs. Complete resolution on gluten-free diet.
 
-**UI callout:** `"Adjusted for Border Terrier: documented gluten-sensitive dyskinesia — gluten-free formulas recommended."`
+**UI callout:** `"Flagged for Border Terrier: documented gluten-sensitive dyskinesia — formulas without gluten-containing grains are associated with complete clinical resolution."`
 
 **Citations:**
 - Lowrie M et al., *J Vet Intern Med*, 2015; DOI: 10.1111/jvim.13643
 - Lowrie M et al., *J Vet Intern Med*, 2018; DOI: 10.1111/jvim.15038
 
 **Clinical note:** The ONLY breed with formally characterized PGSD. Any amount of gluten can trigger episodes. GA provides no signal.
+
+---
+
+### Cavalier King Charles Spaniel (MMVD / Cardiac)
+
+```
+breed_name:            Cavalier King Charles Spaniel
+breed_aliases:         [Cavalier, CKCS, Cav, Cavie, King Charles]
+trigger_type:          ingredient_pattern
+actionability:         ingredient_actionable
+applies_to:            [adult, senior]  // MMVD is progressive; near-universal by age 10
+vet_audit_status:      pending
+evidence_strength:     strong (disease penetrance), moderate (sodium timing)
+```
+
+**Ingredient conditions:**
+
+| Condition | Modifier | Target | Rationale |
+|---|---|---|---|
+| salt_is_standalone_ingredient_in_top_10 | Advisory only | — | ACVIM 2019 guidelines indicate mild-to-moderate sodium restriction for progressive MMVD to delay volume overload. Advisory-only because salt position in ingredient list is an imperfect proxy for total sodium content. |
+| omega_3_supplement_present (fish oil, salmon oil, marine microalgae, EPA, DHA) | +1 | bucket_overall | EPA/DHA provides myocardial metabolic support and reduces inflammatory cytokines. Low-risk positive signal. |
+
+**Mechanism:** Polygenic inheritance leads to early-onset myxomatous degeneration of the mitral valve leaflets. By age 10, MMVD approaches 100% prevalence in CKCSs. As the disease progresses from Stage B1 → B2 → C, the Renin-Angiotensin-Aldosterone System (RAAS) activates, causing sodium and water retention, volume overload, and eventually congestive heart failure. The 2019 ACVIM consensus guidelines explicitly advise avoiding high-sodium diets in progressive stages.
+
+**UI callout:** `"Note for Cavalier: near-universal breed prevalence of mitral valve disease (MMVD). Sodium moderation and marine omega-3s align with cardiac support research for this breed."`
+
+**Citations:**
+- Keene BW et al., *J Vet Intern Med*, 2019; DOI: 10.1111/jvim.15488 (ACVIM Consensus)
+- Häggström J et al., *J Vet Intern Med*, 2004; DOI: 10.1111/j.1939-1676.2004.tb02612.x
+- Freeman LM et al., *JAVMA*, 2006; DOI: 10.2460/javma.228.10.1546
+
+**Clinical note:** MMVD is the leading cause of death in Cavaliers and one of the most common heart diseases in all dogs. Cavalier owners are a highly engaged demographic — not having this breed covered is a visible gap. Salt position in the ingredient list is an imperfect proxy (quantity matters more than position), so salt triggers advisory-only rather than a score penalty. Marine omega-3s (EPA/DHA specifically, not plant-based ALA) have the strongest evidence for cardiac support.
 
 ---
 
@@ -592,10 +702,11 @@ evidence_strength:     strong
 
 | Condition | Effect | Rationale |
 |---|---|---|
-| Organ meats in top 10 (beef liver, lamb liver, venison liver) | Flag as advisory | High copper content sources |
-| copper_sulfate OR copper_proteinate OR copper_amino_acid_chelate in supplement list | Flag as advisory | Copper chelates have ~2.3× bioavailability of copper sulfate |
+| Organ meats in top 10 (beef liver, lamb liver, venison liver) | Elevate advisory severity | High copper content sources — this is the meaningful signal |
 
-**Modifier:** Advisory note only — no score change. `"Bedlington Terriers have a genetic copper storage defect (COMMD1). Copper levels cannot be assessed from this label. Consult your veterinarian about dietary copper management."`
+**NOTE:** Copper supplement presence (copper_sulfate, copper_proteinate, copper_amino_acid_chelate) was **removed** as a trigger. AAFCO mandates minimum copper (7.3 mg/kg DM), so 99.9% of commercial foods contain these exact ingredients. Triggering on their presence fires the advisory on literally every scan a Bedlington owner performs, causing immediate alert fatigue and rendering the warning useless. The advisory now fires based on: (1) breed profile active → always show baseline advisory, (2) organ meats in top 10 → elevate severity.
+
+**Modifier:** Advisory note only — no score change. `"Bedlington Terriers have a genetic copper storage defect (COMMD1). Copper levels cannot be assessed from this label. Consult your veterinarian regarding your dog's copper status."`
 
 **Mechanism:** COMMD1 gene — 39.7 kb genomic deletion, autosomal recessive. Impaired biliary copper excretion → progressive hepatic copper accumulation reaching 2,000–15,000 µg/g DW. Clinical hepatitis at 2–5 years.
 
@@ -620,7 +731,7 @@ vet_audit_status:      pending
 evidence_strength:     strong (predisposition), moderate (mechanism — causal gene unknown)
 ```
 
-**Ingredient-level proxy flags:** Same as Bedlington Terrier.
+**Ingredient-level proxy flags:** Same as Bedlington Terrier (organ meats in top 10 only — copper supplement triggers removed due to alert fatigue, see Bedlington entry).
 
 **Modifier:** Advisory note only — no score change. `"West Highland White Terriers have documented familial copper storage disease. Copper levels cannot be assessed from this label. Consult your veterinarian."`
 
@@ -635,11 +746,11 @@ evidence_strength:     strong (predisposition), moderate (mechanism — causal g
 
 ---
 
-### Siberian Husky / Alaskan Malamute
+### Siberian Husky / Alaskan Malamute / Samoyed
 
 ```
 breed_name:            Northern Breed Group (Zinc)
-breed_aliases:         [Siberian Husky, Husky, Alaskan Malamute, Malamute]
+breed_aliases:         [Siberian Husky, Husky, Alaskan Malamute, Malamute, Samoyed, Sammy]
 trigger_type:          advisory_only
 actionability:         not_actionable_from_label
 applies_to:            [all]  // onset 6mo–10yr; 41% develop lesions before age 2
@@ -653,10 +764,10 @@ evidence_strength:     strong
 
 | Condition | Effect | Rationale |
 |---|---|---|
-| High-phytate ingredients in top 5 (soybean meal, soy flour, wheat bran, corn gluten meal) | Flag as advisory | Phytate chelates zinc, reducing absorption by up to 35% |
+| High-phytate ingredients in top 5 (soybean meal, soy flour, wheat bran, corn gluten meal, peas, chickpeas, lentils, pea protein, pea starch) | Flag as advisory | Phytate chelates zinc, reducing absorption by up to 35%. **NOTE:** Legumes added — they are among the highest phytate sources in modern grain-free pet foods and are heavily implicated in contemporary zinc-responsive dermatosis cases. |
 | calcium_dmb > 2% (if available) | Flag as advisory | Excess calcium interferes with zinc absorption |
 
-**Modifier:** Advisory note only — no score change. `"Northern breeds (Huskies, Malamutes) have a hereditary zinc absorption defect. High-phytate ingredients may worsen zinc availability. Consult your veterinarian about zinc supplementation."`
+**Modifier:** Advisory note only — no score change. `"Northern breeds (Huskies, Malamutes, Samoyeds) have a hereditary zinc absorption defect. High-phytate ingredients may worsen zinc availability. Consult your veterinarian regarding your dog's zinc status."`
 
 **Mechanism:** Suspected hereditary defect in intestinal zinc absorption — only 25% of zinc absorbed vs. normal controls. Deficiency → impaired keratinocyte differentiation → parakeratotic hyperkeratosis → crusting at mucocutaneous junctions.
 
@@ -669,47 +780,69 @@ evidence_strength:     strong
 
 ---
 
-### Shetland Sheepdog
+### Shetland Sheepdog (UPGRADED to Tier 1 — Gallbladder Mucoceles)
 
 ```
 breed_name:            Shetland Sheepdog
 breed_aliases:         [Sheltie, Shetland]
-trigger_type:          advisory_only
-actionability:         not_actionable_from_label
+trigger_type:          combined
+actionability:         ga_actionable + advisory (copper)
 applies_to:            [all]
 vet_audit_status:      pending
-evidence_strength:     emerging
+evidence_strength:     strong (GBM/dyslipidemia — OR 9.3), emerging (copper)
 ```
 
-**Modifier:** Advisory note only. `"Some reports of copper accumulation in Shetland Sheepdogs. Evidence is limited. General copper-conscious dietary choices may be beneficial."`
+**GA conditions (PRIMARY — Gallbladder Mucoceles):**
 
-**Mechanism:** No specific gene mutation identified. Not listed among classically predisposed breeds. If copper accumulation occurs, likely secondary to excessive dietary intake rather than primary genetic defect.
+| Condition | Modifier | Target | Rationale |
+|---|---|---|---|
+| fat_dmb > 16% | −4 | fat_sub | Exacerbates underlying dyslipidemia and biliary sludging. Shelties have OR 9.3 for GBM vs other breeds. High dietary fat requires high bile secretion, severely exacerbating the ABCB4-driven pathological cascade. |
+| fat_dmb > 12% AND ≤ 16% | −2 | fat_sub | Caution zone for susceptible dogs — intermediate biliary stress. |
+
+**NOTE:** This is NOT a D-106 violation. Fat restriction here targets biliary pathology (gallbladder mucocele prevention), not weight management. Same distinction as Miniature Schnauzer fat/pancreatitis.
+
+**Ingredient conditions (SECONDARY — Copper advisory, retained from original Tier 3):**
+
+Advisory note only (no score change): `"Some reports of copper accumulation in Shetland Sheepdogs. Evidence is limited. General copper-conscious dietary choices may be beneficial."`
+
+**Mechanism (GBM):** ABCB4 gene insertion causes a phospholipid flippase defect (highly prevalent in Shelties). Combined with breed-wide idiopathic hyperlipidemia, this results in toxic bile salt accumulation and biliary hypersecretion of mucus. High dietary fat increases bile secretion volume, directly exacerbating the pathological cascade. GBM rupture causes bile peritonitis — a surgical emergency with ~30% mortality.
+
+**Mechanism (Copper):** No specific gene mutation identified. If copper accumulation occurs, likely secondary to excessive dietary intake rather than primary genetic defect. Monitor for future research.
+
+**UI callout:** `"Adjusted for Shetland Sheepdog: strong breed predisposition to dyslipidemia and gallbladder mucoceles (OR 9.3). Lower-fat formulas reduce biliary stress."`
 
 **Citations:**
-- Strickland JM et al., *J Vet Intern Med*, 2018; DOI: 10.1111/jvim.15230
+- Cullen JM et al., *Vet Pathol*, 2006; DOI: 10.1354/vp.43-1-27
+- Allerton F et al., *J Vet Intern Med*, 2022; DOI: 10.1111/jvim.16370
+- Aguirre AL et al., *JAVMA*, 2007; DOI: 10.2460/javma.231.12.1868
+- Strickland JM et al., *J Vet Intern Med*, 2018; DOI: 10.1111/jvim.15230 (copper)
 
-**Clinical note:** Apply general copper-conscious awareness rather than breed-specific penalization. Monitor for future research. The broader trend of rising copper levels in commercial foods (Center et al., 2021) is relevant to all breeds.
+**Clinical note:** GBM is the primary, high-confidence dietary concern for Shelties (OR 9.3, identified gene, clear dietary mechanism). The copper concern remains advisory-only with emerging evidence. Both can coexist in the same breed profile — the fat modifier fires as a score adjustment, the copper advisory surfaces as a UI note.
 
 ---
 
-## Dalmatian (Hybrid — Ingredient + Advisory)
+## Urate Risk Group — SLC2A9 (Contraindication + GA Hybrid — D-112)
 
 ```
-breed_name:            Dalmatian
-breed_aliases:         [Dal, Dalmatian Dog]
+breed_name:            Urate Risk Group (SLC2A9)
+breed_aliases:         [Dalmatian, Dal, Dalmatian Dog, English Bulldog, British Bulldog, Black Russian Terrier, BRT]
 trigger_type:          combined
-actionability:         ingredient_actionable (purine sources) + ga_actionable (protein % as secondary)
+actionability:         breed_contraindication (purine sources) + ga_actionable (protein % as secondary)
 applies_to:            [all]
 vet_audit_status:      pending
 evidence_strength:     strong
 ```
 
-**Ingredient conditions (primary):**
+**Scope note:** The same SLC2A9 missense mutation (C188F) causing impaired hepatic urate transport has been confirmed in Dalmatians, English Bulldogs, and Black Russian Terriers (Karmi N et al., *PLoS Genet*, 2010). All breeds in this group share identical contraindication logic.
 
-| Condition | Modifier | Target | Rationale |
-|---|---|---|---|
-| high_purine_ingredients_in_top_10 (organ meats, sardines, anchovies, mackerel, brewer's yeast) | −5 | protein_sub | SLC2A9 mutation — 100% penetrance in standard Dalmatians |
-| no_high_purine AND protein_dmb > 30% from animal sources | −2 | protein_sub | Cumulative purine load even from moderate-purine proteins |
+**Ingredient conditions (primary — BREED CONTRAINDICATION per D-112):**
+
+| Condition | Effect | Rationale |
+|---|---|---|
+| high_purine_ingredients_present (organ meats, sardines, anchovies, mackerel, brewer's yeast) | **Breed contraindication card** (zero score impact, red warning card above fold) | SLC2A9 mutation — 100% penetrance. A sub-score penalty of −5 produces only ~0.5 points on the final composite after weighting — displaying "94% match" for a food that causes urate urinary blockage. This is a binary medical risk, not a nutritional preference. |
+| no_high_purine AND protein_dmb > 30% from meat/poultry/fish sources (EXCLUDING egg and dairy) | −2 | protein_sub | Cumulative purine load even from moderate-purine proteins. **NOTE:** Egg and dairy are explicitly excluded — they are virtually purine-free animal proteins and are the basis of most veterinary urological diets for SLC2A9-affected breeds. |
+
+**Contraindication card text (D-112):** `"Contains high-purine protein sources. [breed_name] has a genetic uric acid metabolism defect (SLC2A9) that causes urate stone formation when fed high-purine proteins. Egg and dairy-based proteins are low-purine alternatives."`
 
 **GA conditions (secondary):**
 
@@ -717,16 +850,17 @@ evidence_strength:     strong
 |---|---|---|---|
 | protein_dmb > 35% AND high_purine_ingredient_detected | −3 | protein_sub | Compounds purine load |
 
-**Mechanism:** SLC2A9 missense mutation (C188F) — impaired hepatic urate transport → 400–600 mg uric acid/day (vs. 10–60 mg normal). Precipitates as urate uroliths.
+**Mechanism:** SLC2A9 missense mutation (C188F) — impaired hepatic urate transport → 400–600 mg uric acid/day (vs. 10–60 mg normal). Precipitates as urate uroliths. Confirmed in Dalmatians (Bannasch 2008), English Bulldogs (Karmi 2010), and Black Russian Terriers (Karmi 2010).
 
-**UI callout:** `"Adjusted for Dalmatian: genetic uric acid metabolism defect — high-purine protein sources are a concern. Low-purine proteins (egg, dairy) preferred."`
+**UI callout:** `"Adjusted for [breed_name]: genetic uric acid metabolism defect (SLC2A9) — high-purine protein sources are flagged as a breed contraindication (D-112). Low-purine proteins (egg, dairy) are not penalized."`
 
 **Citations:**
 - Bannasch D et al., *PLoS Genetics*, 2008; DOI: 10.1371/journal.pgen.1000246
+- Karmi N et al., *PLoS Genetics*, 2010; DOI: 10.1371/journal.pgen.1001166
 - Bartges JW et al., *Vet Clin North Am Small Anim Pract*, 1999; DOI: 10.1016/S0195-5616(99)50009-5
 - Lulich JP et al., *J Vet Intern Med*, 2016; DOI: 10.1111/jvim.14559
 
-**Clinical note:** GA alone CANNOT detect purine risk. Two foods with identical protein % can differ radically in purine content (egg = low; organ meat = very high). Wet/high-moisture foods are mildly protective (promote urine dilution).
+**Clinical note:** GA alone CANNOT detect purine risk. Two foods with identical protein % can differ radically in purine content (egg = low; organ meat = very high). Wet/high-moisture foods are mildly protective (promote urine dilution). **D-112 rationale:** The original −5 protein_sub penalty produced only ~0.5 points on the final composite after weighting (−5 × 0.35 protein weight × 0.30 NP bucket = −0.525). A "94% match" for a food causing emergency urate blockage is a liability failure. Breed contraindication card (red, above fold, zero score impact) correctly communicates the binary risk. **Group note:** English Bulldogs may have incomplete penetrance compared to Dalmatians (not all carry the mutation homozygously). Vet audit should confirm whether contraindication vs. advisory is more appropriate for Bulldogs specifically.
 
 ---
 
@@ -747,10 +881,23 @@ This is NOT breed-specific but affects scoring for all dogs, with heightened rel
 ## Implementation Checklist
 
 - [ ] Each breed entry maps to a `breed_modifiers` row with all `[DB]` fields populated
-- [ ] Ingredient-pattern detection requires: grain-free flag, legume detection (peas, lentils, chickpeas, beans + derivatives), gluten grain detection (wheat, barley, rye, oats), taurine/L-carnitine in supplement list, organ meat detection, citric acid detection, fat source position detection
-- [ ] Life stage gating: Giant breed calcium modifiers fire ONLY for puppies; Yorkshire Terrier fires ONLY for puppies; all others fire for `[all]`
+- [ ] **D-112 Breed Contraindications** implemented for Urate Risk Group (Dalmatian, English Bulldog, BRT — purines), Irish Setter (gluten+oats), Border Terrier (gluten, no oats) — red warning card, zero score impact, same visual treatment as D-097 allergen `direct_match`
+- [ ] Ingredient-pattern detection requires: grain-free flag, legume detection (peas, lentils, chickpeas, beans + derivatives), gluten grain detection (wheat, barley, rye, oats), taurine/L-carnitine in supplement list, organ meat detection, citric acid detection, fat source position detection, **high-purine source detection** (organ meats, sardines, anchovies, mackerel, brewer's yeast), **egg/dairy protein exclusion** for urate group purine trigger, **high-oxalate ingredient detection** (spinach, sweet potatoes, potatoes, beets, swiss chard, rhubarb), **salt position detection** for CKCS, **omega-3 supplement detection** (fish oil, salmon oil, marine microalgae, EPA, DHA)
+- [ ] Life stage gating: Large/Giant breed calcium modifiers fire ONLY for puppies; Yorkshire Terrier fires ONLY for puppies; CaOx Group fires adult/senior only; Shar-Pei fires adult/senior only; CKCS fires adult/senior only; all others fire for `[all]`
 - [ ] Modifier cap: sum of all breed modifiers within the nutritional bucket ≤ |10|
 - [ ] Advisory-only entries (Tier 3) surface as UI callouts but produce zero score delta
+- [ ] **D-106 compliance verified:** Zero caloric density score penalties anywhere (Lab, Brachy, Yorkie all converted to advisory cards). CaOx moisture bonus converted to advisory-only (food form factor, not nutritional quality). D-106 obesity fiber suppression covers obese Labs; healthy-weight Labs get +1 bonus only. **Vet audit flag:** consider breed-gated fiber suppression if auditor confirms preventive benefit.
+- [ ] **GDV citric acid:** Advisory-only with moistening context (not a score penalty)
+- [ ] **Bedlington/WHWT copper:** Advisory triggered by breed profile + organ meats only (copper supplement triggers removed — alert fatigue)
+- [ ] **Northern breeds phytate list:** Includes legumes (peas, chickpeas, lentils, pea protein, pea starch) alongside legacy soy/wheat bran/corn gluten meal. **Samoyed added to group.**
+- [ ] **Oat handling:** Included in Irish Setter trigger (avenin evidence), excluded from Border Terrier trigger (no PGSD evidence)
 - [ ] Every entry has at least one citation in `citation_source`
 - [ ] `vet_audit_status` must be `cleared` before any modifier reaches production
 - [ ] Dual-constraint breeds (Cocker Spaniel, SCWT) can fire multiple modifiers simultaneously — cap still applies
+- [ ] **D-095 UPVM compliance:** All UI callouts reviewed — no "recommended," "consult your veterinarian about [treatment]," or prescriptive feeding schedules
+- [ ] **Urate Risk Group:** Dalmatian + English Bulldog + BRT share identical D-112 contraindication logic (SLC2A9). Egg/dairy protein exclusion applies to all.
+- [ ] **Large/Giant Breed Calcium:** Now includes Lab, Golden, GSD, Rottweiler, Doberman, Boxer (AAFCO ≥70 lbs definition). These breeds have independent primary entries — calcium modifier stacks puppy-only.
+- [ ] **CaOx Risk Group:** Calcium < 0.6% DMB is penalized (paradoxical oxalate risk). Moisture ≥65% is advisory-only. Oxalate ingredient flag at −2.
+- [ ] **CKCS / MMVD:** Salt position is advisory-only (imperfect proxy). Omega-3 supplement is +1 bonus.
+- [ ] **Shar-Pei / SPAID:** Phosphorus thresholds aligned with Persian cat approach (>1.5% → −2, >1.8% → −3). Adult/senior only.
+- [ ] **Shetland Sheepdog UPGRADED:** Now Tier 1 GA-actionable for fat (GBM, OR 9.3). Copper advisory retained as secondary.
