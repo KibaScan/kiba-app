@@ -1050,14 +1050,14 @@ Test 1: Pure Balance Grain-Free Salmon & Pea (Dog, default pet profile)
     taurine present, l_carnitine present
     GA: protein 26%, fat 16%, fiber 4%, moisture 10%
   Expected:
-    Layer 1a (IQ): ~60 (after severity penalties + unnamed −4)
-    Layer 1b (NP): ~82
-    Layer 1c (FC): ~78
-    Weighted composite: (60×0.55)+(82×0.30)+(78×0.15) = 33+24.6+11.7 = 69.3
-    Layer 2 DCM: −8% of 69.3 = −5.5 → 63.8
-    Layer 2 Mitigation: +3% of 69.3 = +2.1 → 65.9
+    Layer 1a (IQ): 62.8 (after severity penalties + unnamed −2)
+    Layer 1b (NP): 85
+    Layer 1c (FC): 88
+    Weighted composite: (62.8×0.55)+(85×0.30)+(88×0.15) = 34.54+25.5+13.2 = 73.24 → 73.2
+    Layer 2 DCM: −round(73.2×0.08) = −6 → 67.2
+    Layer 2 Mitigation: +round(73.2×0.03) = +2 → 69.2
     Layer 3: neutral
-    Final: ~66 (rounded)
+    Final: 69 (rounded)
 
 Test 2: Temptations Classic Tuna (Cat Treat, default pet profile)
   Inputs:
@@ -1072,7 +1072,7 @@ Test 2: Temptations Classic Tuna (Cat Treat, default pet profile)
 
 Show me both test outputs with full breakdown before declaring success.
 Debug against DECISIONS.md §11 reference scores if Test 1 doesn't
-produce 66.
+produce 69.
 ```
 
 ---
@@ -1151,7 +1151,7 @@ Paste the full ScoredResult interface exactly as implemented
 
 ## Regression Test Results
 Show actual vs expected for both reference products:
-- Pure Balance Grain-Free Salmon: expected 66, actual [X]
+- Pure Balance Grain-Free Salmon: expected 69, actual [X]
 - Temptations Classic Tuna: expected [X], actual [X]
 Include full score breakdown for each showing every layer's contribution
 
@@ -1275,4 +1275,4 @@ Commit to git. Session 2 is boxed.
 - Session 3 (Result Screen UI) is not included here yet. It needs the same level of structure — D-094 framing, D-107 concern tags with D-111 SF Symbols, D-108 progressive disclosure, D-105 ingredient modals, D-030 singleton pattern, D-037 loading terminal, D-086 colors. If you want me to draft Session 3 prompts, say the word.
 
 **The Temptations reference score:**
-- The original mock used base 52, cat carb penalty −8, final 44. The actual scoring engine may produce a slightly different number depending on exact ingredient severity assignments and whether −15% (percentage per D-014) lands differently than the original flat −8 mock. The Pure Balance test at 66 is the more important regression gate because it exercises all three layers plus DCM math.
+- The original mock used base 52, cat carb penalty −8, final 44. The actual scoring engine may produce a slightly different number depending on exact ingredient severity assignments and whether −15% (percentage per D-014) lands differently than the original flat −8 mock. The Pure Balance test at 69 is the more important regression gate because it exercises all three layers plus DCM math.

@@ -52,9 +52,9 @@ Session 4 completed 11 visual polish items across the Result Screen, focusing on
 
 ### Session 4 Specific Verifications
 
-- Ring color at 66% = AMBER (#FF9500) — confirmed via `score < 70` branch
+- Ring color at 69% = AMBER (#FF9500) — confirmed via `score < 70` branch
 - Ring color at 75% = CYAN (#00B4D8) — confirmed via `score < 80` branch
-- Verdict at 66% = "Fair match for Buster" in amber — confirmed
+- Verdict at 69% = "Fair match for Buster" in amber — confirmed
 - Verdict at 45% = "Poor match for Buster" in red — confirmed
 - All severity dots replaced with accompanying Ionicons (warning, alert-circle, ellipse, checkmark-circle)
 - Zero instances of "Safety Rules" in codebase — replaced with "[Species] Safety Checks"
@@ -94,7 +94,7 @@ Pre-existing TypeScript errors (3 — `PreservativeType` string literal vs enum 
 
 ## Visual Validation Checklist
 
-- [ ] Pure Balance at 66% → AMBER ring + "Fair match for Buster"
+- [ ] Pure Balance at 69% → AMBER ring + "Fair match for Buster"
 - [ ] Waterfall rows expand with real penalty data and citations
 - [ ] NaN% carb bug resolved — null GA shows "Unknown"
 - [ ] "Canine Safety Checks" replaces "Safety Rules"

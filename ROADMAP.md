@@ -400,7 +400,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: Full result screen with all UI components from mockups.
 
 ### Score Context
-- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 66% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
+- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 69% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
 
 ### Nutrition Panel
 - [ ] AAFCO progress bars with threshold markers
@@ -542,7 +542,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 66/100 (regression test)
+- [ ] Pure Balance Grain-Free Salmon → 69/100 (regression test)
 - [ ] Temptations Classic Tuna → 44/100 (regression test)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling

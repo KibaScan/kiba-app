@@ -72,7 +72,7 @@ function makeIngredient(
 // ─── Dog Rules ─────────────────────────────────────────────
 
 describe('applySpeciesRules — Dog rules', () => {
-  const BASE = 69.3; // Pure Balance reference baseScore
+  const BASE = 69.3; // test input (actual Pure Balance base is 73.2)
 
   test('DCM fires: grain-free + 4 legumes in top 7, no mitigation → −8%', () => {
     const product = makeProduct({ is_grain_free: true });
@@ -310,23 +310,23 @@ describe('applySpeciesRules — species isolation', () => {
 // ─── Reference Score (D-013) ───────────────────────────────
 
 describe('applySpeciesRules — reference scores', () => {
-  test('Pure Balance reference: 69.3 → DCM −8% + mitigation +3% → 66 (rounded)', () => {
+  test('Pure Balance reference: 73.2 → DCM −8% + mitigation +3% → 69 (rounded)', () => {
     const product = makeProduct({ is_grain_free: true });
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'pea_starch', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'canola_oil' }),
+      makeIngredient({ position: 2, canonical_name: 'salmon_meal' }),
+      makeIngredient({ position: 3, canonical_name: 'peas', is_legume: true }),
+      makeIngredient({ position: 4, canonical_name: 'dried_peas', is_legume: true }),
       makeIngredient({ position: 5, canonical_name: 'pea_protein', is_legume: true }),
-      makeIngredient({ position: 6, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 10, canonical_name: 'taurine' }),
-      makeIngredient({ position: 11, canonical_name: 'l-carnitine' }),
+      makeIngredient({ position: 6, canonical_name: 'canola_oil' }),
+      makeIngredient({ position: 13, canonical_name: 'taurine' }),
+      makeIngredient({ position: 14, canonical_name: 'l_carnitine' }),
     ];
-    const result = applySpeciesRules(product, 'dog', ingredients, 69.3);
-    // DCM: -round(69.3 * 0.08) = -round(5.544) = -6
-    // Mitigation: +round(69.3 * 0.03) = +round(2.079) = +2
-    // Net: 69.3 - 6 + 2 = 65.3
-    expect(result.adjustedScore).toBeCloseTo(65.3, 0);
+    const result = applySpeciesRules(product, 'dog', ingredients, 73.2);
+    // DCM: -round(73.2 * 0.08) = -round(5.856) = -6
+    // Mitigation: +round(73.2 * 0.03) = +round(2.196) = +2
+    // Net: 73.2 - 6 + 2 = 69.2
+    expect(result.adjustedScore).toBeCloseTo(69.2, 0);
   });
 });
 

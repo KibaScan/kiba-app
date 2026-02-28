@@ -548,18 +548,18 @@ When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%,
 ## 11. Reference Scores
 
 ### Pure Balance Grain-Free Salmon & Pea (Dog Food)
-**Score:** 66/100 — "Decent · Strong Nutrition, Heavy Legumes"
+**Score:** 69/100 — "Fair match · Heavy Legumes, DCM Concern"
 
 | Layer | Raw | Weight | Contribution |
 |-------|-----|--------|-------------|
-| Ingredient Quality (incl. −4 unnamed) | 60 | ×0.55 | 33.0 |
-| Nutritional Profile | 82 | ×0.30 | 24.6 |
-| Formulation Completeness | 78 | ×0.15 | 11.7 |
-| **Base** | | | **69.3** |
-| DCM Advisory | | | −8% |
-| Taurine + L-Carnitine Mitigation | | | +3% |
+| Ingredient Quality (incl. −2 unnamed) | 62.8 | ×0.55 | 34.54 |
+| Nutritional Profile | 85 | ×0.30 | 25.5 |
+| Formulation Completeness | 88 | ×0.15 | 13.2 |
+| **Base** | | | **73.2** |
+| DCM Advisory (−round(73.2×0.08)) | | | −6 |
+| Taurine + L-Carnitine Mitigation (+round(73.2×0.03)) | | | +2 |
 | Personalization (Buster) | | | Neutral |
-| **FINAL** | | | **66** |
+| **FINAL** | | | **69** |
 
 ### Temptations Classic Tuna (Cat Treat)
 **Score:** 44/100 — "Occasional treat only · not for daily use"
@@ -1307,11 +1307,11 @@ src/content/breedModifiers/
 - When petName is null: "Great match" / "Good match" / "Fair match" / "Poor match" (no pet name suffix)
 - Verdict words are suitability descriptors (D-094 compliant), not product quality ratings
 
-**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 66% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
+**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 69% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
 
 **Rejected:**
 - ❌ 3-tier system (green ≥70 / amber 50–69 / red <50) — insufficient granularity in the 60–80 decision zone
-- ❌ Wider cyan band (65–79) — puts 66% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
+- ❌ Wider cyan band (65–79) — puts 69% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
 - ❌ 5-tier system — diminishing returns, users can't distinguish 5 emotional states at a glance
 
 ---
