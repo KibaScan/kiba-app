@@ -243,6 +243,8 @@ export function computeScore(
       allergenWarnings,
     },
 
+    ingredientPenalties: iqResult.penalties,
+
     flags: [...allFlags],
 
     isPartialScore,

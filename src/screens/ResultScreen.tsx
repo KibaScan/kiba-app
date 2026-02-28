@@ -28,7 +28,7 @@ import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
 import { scoreProduct } from '../services/scoring/pipeline';
 import { LoadingTerminal } from '../components/LoadingTerminal';
-import { ScoreRing } from '../components/ScoreRing';
+import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/ScoreRing';
 import { ConcernTags } from '../components/ConcernTags';
 import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
 import { ScoreWaterfall } from '../components/ScoreWaterfall';
@@ -314,43 +314,32 @@ export default function ResultScreen() {
           isPartialScore={scoredResult?.isPartialScore ?? false}
         />
 
-        {/* Flag chips */}
-        {displayFlags.length > 0 && (
+        {/* Verdict text — qualitative suitability label (D-094 compliant) */}
+        <Text style={[styles.verdictText, { color: getScoreColor(score) }]}>
+          {getVerdictLabel(score, petName)}
+        </Text>
+
+        {/* Flag chips (non-splitting flags only — splitting chip relocated below fold) */}
+        {displayFlags.filter((f) => f !== 'ingredient_splitting_detected').length > 0 && (
           <View style={styles.flagChipsRow}>
-            {displayFlags.map((flag) => {
-              if (flag === 'ingredient_splitting_detected') {
+            {displayFlags
+              .filter((f) => f !== 'ingredient_splitting_detected')
+              .map((flag) => {
+                if (flag === 'partial_ingredient_data') {
+                  return (
+                    <View key={flag} style={styles.flagChipMuted}>
+                      <Text style={styles.flagChipMutedText}>Some ingredient data missing</Text>
+                    </View>
+                  );
+                }
+                // Generic flag
+                const label = flag.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
                 return (
-                  <TouchableOpacity
-                    key={flag}
-                    style={styles.flagChipAmber}
-                    onPress={() =>
-                      Alert.alert(
-                        'Ingredient splitting detected',
-                        'Two or more derivatives of the same source ingredient were detected, which may indicate the ingredient\'s true proportion is higher than individual positions suggest.',
-                      )
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="information-circle-outline" size={14} color={Colors.severityAmber} />
-                    <Text style={styles.flagChipAmberText}>Ingredient splitting detected</Text>
-                  </TouchableOpacity>
-                );
-              }
-              if (flag === 'partial_ingredient_data') {
-                return (
-                  <View key={flag} style={styles.flagChipMuted}>
-                    <Text style={styles.flagChipMutedText}>Some ingredient data missing</Text>
+                  <View key={flag} style={styles.flagChipGeneric}>
+                    <Text style={styles.flagChipGenericText}>{label}</Text>
                   </View>
                 );
-              }
-              // Generic flag
-              const label = flag.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
-              return (
-                <View key={flag} style={styles.flagChipGeneric}>
-                  <Text style={styles.flagChipGenericText}>{label}</Text>
-                </View>
-              );
-            })}
+              })}
           </View>
         )}
 
@@ -398,6 +387,7 @@ export default function ResultScreen() {
           <ScoreWaterfall
             scoredResult={scoredResult}
             petName={displayName}
+            species={species}
             category={scoredResult.category}
           />
         )}
@@ -409,6 +399,23 @@ export default function ResultScreen() {
             scoredResult={scoredResult}
             species={species}
           />
+        )}
+
+        {/* Ingredient Splitting Callout — relocated from above-fold flags */}
+        {displayFlags.includes('ingredient_splitting_detected') && (
+          <TouchableOpacity
+            style={styles.splittingChip}
+            onPress={() =>
+              Alert.alert(
+                'Ingredient splitting detected',
+                'Two or more derivatives of the same source ingredient were detected, which may indicate the ingredient\'s true proportion is higher than individual positions suggest.',
+              )
+            }
+            activeOpacity={0.7}
+          >
+            <Ionicons name="copy-outline" size={14} color={Colors.severityAmber} />
+            <Text style={styles.splittingChipText}>Ingredient Splitting Detected</Text>
+          </TouchableOpacity>
         )}
 
         {/* Full Ingredient List (D-031, D-108) */}
@@ -511,6 +518,14 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 
+  // ─── Verdict Text
+  verdictText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: Spacing.md,
+  },
+
   // ─── Recall Banner
   recallBanner: {
     flexDirection: 'row',
@@ -537,20 +552,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: Spacing.md,
   },
-  flagChipAmber: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  flagChipAmberText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    color: Colors.severityAmber,
-  },
   flagChipMuted: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -569,6 +570,25 @@ const styles = StyleSheet.create({
   flagChipGenericText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+  },
+
+  // ─── Splitting Chip (relocated above ingredient list)
+  splittingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.4)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  splittingChipText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.severityAmber,
   },
 
   // ─── No Ingredient Data

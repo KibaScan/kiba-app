@@ -149,6 +149,9 @@ export interface ScoredResult {
     allergenWarnings: PersonalizationDetail[];
   };
 
+  // Ingredient penalties (pass-through from Layer 1a for waterfall detail)
+  ingredientPenalties: Penalty[];
+
   // Flags for UI (merged from all layers)
   flags: string[];
 

@@ -399,6 +399,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 > Goal: Full result screen with all UI components from mockups.
 
+### Score Context
+- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 66% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
+
 ### Nutrition Panel
 - [ ] AAFCO progress bars with threshold markers
 - [ ] DMB conversion display for wet food

@@ -49,6 +49,12 @@ function confidenceBadgeColor(confidence: CarbEstimate['confidence']): string {
   return Colors.textTertiary;
 }
 
+function isCarbEstimateValid(
+  ce: CarbEstimate | null,
+): ce is CarbEstimate & { valueDmb: number } {
+  return ce != null && ce.valueDmb != null && !isNaN(ce.valueDmb);
+}
+
 interface BonusNutrient {
   label: string;
   value: string;
@@ -147,7 +153,7 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
       )}
 
       {/* Carb estimation (D-104) */}
-      {carbEstimate && carbEstimate.valueDmb != null && (
+      {isCarbEstimateValid(carbEstimate) ? (
         <View style={styles.carbSection}>
           <TouchableOpacity
             style={styles.carbRow}
@@ -220,6 +226,25 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
             </View>
           )}
         </View>
+      ) : (
+        <View style={styles.carbSection}>
+          <View style={styles.carbHeader}>
+            <Text style={styles.macroLabel}>Carbohydrate (est.)</Text>
+            <View style={styles.carbValueRow}>
+              <Text style={styles.macroValue}>Unknown</Text>
+              <View
+                style={[
+                  styles.confidenceBadge,
+                  { backgroundColor: `${Colors.severityNone}20` },
+                ]}
+              >
+                <Text style={[styles.confidenceText, { color: Colors.severityNone }]}>
+                  Unknown
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
       )}
 
       {/* DMB disclaimer (D-016) */}
@@ -265,12 +290,14 @@ function MacroRow({
   moisture,
   isWetFood,
   aafcoMin,
+  aafcoMax,
 }: {
   label: string;
   value: number;
   moisture: number;
   isWetFood: boolean;
   aafcoMin?: number;
+  aafcoMax?: number;
 }) {
   const dmbValue = isWetFood ? toDmb(value, moisture) : value;
   const displayColor = aafcoMin != null
@@ -287,27 +314,40 @@ function MacroRow({
             : `${value}%`}
         </Text>
       </View>
-      <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${Math.min(dmbValue, 100)}%`,
-              backgroundColor: displayColor,
-            },
-          ]}
-        />
+      <View style={styles.barContainer}>
+        <View style={styles.barTrack}>
+          <View
+            style={[
+              styles.barFill,
+              {
+                width: `${Math.min(dmbValue, 100)}%`,
+                backgroundColor: displayColor,
+              },
+            ]}
+          />
+        </View>
         {aafcoMin != null && (
           <View
             style={[
-              styles.aafcoMarker,
+              styles.aafcoMarkerLine,
               { left: `${Math.min(aafcoMin, 100)}%` },
+            ]}
+          />
+        )}
+        {aafcoMax != null && (
+          <View
+            style={[
+              styles.aafcoMarkerLineDashed,
+              { left: `${Math.min(aafcoMax, 100)}%` },
             ]}
           />
         )}
       </View>
       {aafcoMin != null && (
         <Text style={styles.aafcoLabel}>AAFCO min: {aafcoMin}%</Text>
+      )}
+      {aafcoMax != null && (
+        <Text style={styles.aafcoLabel}>AAFCO max: {aafcoMax}%</Text>
       )}
     </View>
   );
@@ -355,28 +395,40 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textSecondary,
   },
+  barContainer: {
+    position: 'relative',
+    height: 10,
+    justifyContent: 'center',
+  },
   barTrack: {
     height: 6,
     backgroundColor: Colors.background,
     borderRadius: 3,
     overflow: 'hidden',
-    position: 'relative',
   },
   barFill: {
     height: 6,
     borderRadius: 3,
   },
-  aafcoMarker: {
+  aafcoMarkerLine: {
     position: 'absolute',
-    top: -1,
-    width: 2,
-    height: 8,
-    backgroundColor: Colors.textPrimary,
-    borderRadius: 1,
+    top: 0,
+    width: 1,
+    height: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  aafcoMarkerLineDashed: {
+    position: 'absolute',
+    top: 0,
+    width: 0,
+    height: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
+    borderStyle: 'dashed',
   },
   aafcoLabel: {
     fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
+    color: '#A0A0A0',
     marginTop: 3,
   },
 

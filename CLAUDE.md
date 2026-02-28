@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: February 27, 2026
+> Last updated: February 28, 2026
 
 ---
 
@@ -29,7 +29,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (112 decisions)
+├── DECISIONS.md            ← canonical decision log (113 decisions)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -108,10 +108,23 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 - No "naked" scores — pet profile required before any score displays
 - All products start at 100; deductions are compatibility adjustments
 
-**User-facing layer names in waterfall breakdown:**
-- Layer 1: "Ingredient Concerns"
-- Layer 2: "[Pet Name]'s Nutritional Fit"
-- Layer 3: "[Pet Name]'s Breed & Age Adjustments"
+**User-facing layer names in waterfall breakdown (5 rows):**
+- Row 1: "Ingredient Concerns" (Layer 1 ingredient quality)
+- Row 2: "[Pet Name]'s Nutritional Fit" (Layer 1 nutritional profile)
+- Row 3: "Formulation Quality" (Layer 1 formulation completeness)
+- Row 4: "[Species] Safety Checks" — "Canine Safety Checks" or "Feline Safety Checks" (Layer 2)
+- Row 5: "[Pet Name]'s Breed & Age Adjustments" (Layer 3)
+
+**Score ring color breakpoints + verdict (D-113):**
+
+| Score | Ring Color | Verdict |
+|-------|-----------|---------|
+| 80–100 | Green #34C759 | "Great match for [Pet Name]" |
+| 70–79 | Cyan #00B4D8 | "Good match for [Pet Name]" |
+| 50–69 | Amber #FF9500 | "Fair match for [Pet Name]" |
+| 0–49 | Red #FF3B30 | "Poor match for [Pet Name]" |
+
+Ring color and verdict text always share the same tier. Verdict renders below the ring, 16pt semibold, color-matched.
 
 ## Scoring Engine Architecture
 

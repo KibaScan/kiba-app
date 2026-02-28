@@ -10,9 +10,19 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { ProductIngredient } from '../types/scoring';
 import type { IngredientSeverity } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+
+// ─── Severity Icon Map (WCAG colorblind support) ────────
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+const SEVERITY_ICONS: Record<'danger' | 'caution', IoniconsName> = {
+  danger: 'warning-outline',
+  caution: 'alert-circle-outline',
+};
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -82,26 +92,21 @@ export function SeverityBadgeStrip({
         contentContainerStyle={styles.scrollContent}
       >
         {visible.map((ingredient) => {
-          const severity = getSeverity(ingredient, species);
-          const isDanger = severity === 'danger';
+          const severity = getSeverity(ingredient, species) as 'danger' | 'caution';
+          const color = severity === 'danger' ? Colors.severityRed : Colors.severityAmber;
           return (
             <TouchableOpacity
               key={`${ingredient.canonical_name}-${ingredient.position}`}
               style={[
                 styles.chip,
-                isDanger ? styles.chipDanger : styles.chipCaution,
+                severity === 'danger' ? styles.chipDanger : styles.chipCaution,
               ]}
               onPress={() => onIngredientPress(ingredient)}
               activeOpacity={0.7}
             >
-              {isDanger && (
-                <View style={styles.dangerDot} />
-              )}
+              <Ionicons name={SEVERITY_ICONS[severity]} size={14} color={color} />
               <Text
-                style={[
-                  styles.chipText,
-                  { color: isDanger ? Colors.severityRed : Colors.severityAmber },
-                ]}
+                style={[styles.chipText, { color }]}
                 numberOfLines={1}
               >
                 {formatName(ingredient)}
@@ -126,10 +131,11 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 20,
     gap: 6,
+    minHeight: 36,
   },
   chipDanger: {
     backgroundColor: 'rgba(255, 59, 48, 0.15)',
@@ -140,11 +146,5 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: FontSizes.sm,
     fontWeight: '600',
-  },
-  dangerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.severityRed,
   },
 });

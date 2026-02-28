@@ -1,17 +1,36 @@
 // ScoreWaterfall — Visual breakdown of score calculation, layer by layer (D-094).
 // Shows how the final suitability score was derived from 100 down.
 // D-094: pet-named layer labels. D-084: zero emoji. D-095: no editorial copy.
+// Interactive accordion: expand/collapse each layer for detailed breakdown.
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import type { ScoredResult } from '../types/scoring';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ScoredResult, Penalty, AppliedRule, PersonalizationDetail } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+
+// Enable LayoutAnimation on Android
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // ─── Props ──────────────────────────────────────────────
 
 interface ScoreWaterfallProps {
   scoredResult: ScoredResult;
   petName: string;
+  species: 'dog' | 'cat';
   category: 'daily_food' | 'treat';
 }
 
@@ -23,16 +42,18 @@ const WEIGHTS = {
   treat: { iq: 1.0, np: 0, fc: 0 },
 } as const;
 
-// ─── Helpers ────────────────────────────────────────────
+// ─── Row Model ──────────────────────────────────────────
 
 interface WaterfallRow {
+  key: string;
   label: string;
-  points: number; // negative = deduction, positive = addition
+  points: number;
 }
 
 function buildRows(
   scoredResult: ScoredResult,
   petName: string,
+  species: 'dog' | 'cat',
   category: 'daily_food' | 'treat',
 ): WaterfallRow[] {
   const isPartial = scoredResult.isPartialScore && category === 'daily_food';
@@ -47,23 +68,24 @@ function buildRows(
 
   // Layer 1a — Ingredient Quality
   const iqDeduction = -Math.round((100 - layer1.ingredientQuality) * w.iq);
-  rows.push({ label: 'Ingredient Concerns', points: iqDeduction });
+  rows.push({ key: 'iq', label: 'Ingredient Concerns', points: iqDeduction });
 
   // Layer 1b — Nutritional Profile (daily food only, hidden when partial)
   if (category === 'daily_food' && !isPartial) {
     const npDeduction = -Math.round((100 - layer1.nutritionalProfile) * w.np);
-    rows.push({ label: `${petName}'s Nutritional Fit`, points: npDeduction });
+    rows.push({ key: 'np', label: `${petName}'s Nutritional Fit`, points: npDeduction });
   }
 
   // Layer 1c — Formulation (daily food only)
   if (category === 'daily_food') {
     const fcDeduction = -Math.round((100 - layer1.formulation) * w.fc);
-    rows.push({ label: 'Formulation Quality', points: fcDeduction });
+    rows.push({ key: 'fc', label: 'Formulation Quality', points: fcDeduction });
   }
 
-  // Layer 2 — Species Rules
-  const speciesLabel = scoredResult.category === 'treat' ? 'Safety Rules' : 'Safety Rules';
+  // Layer 2 — Species Rules (D-094: "[Species] Safety Checks")
+  const speciesLabel = species === 'dog' ? 'Canine Safety Checks' : 'Feline Safety Checks';
   rows.push({
+    key: 'species',
     label: speciesLabel,
     points: layer2.speciesAdjustment,
   });
@@ -73,10 +95,12 @@ function buildRows(
     (sum, p) => sum + p.adjustment,
     0,
   );
-  rows.push({ label: `${petName}'s Breed & Age Adjustments`, points: l3Total });
+  rows.push({ key: 'personalization', label: `${petName}'s Breed & Age Adjustments`, points: l3Total });
 
   return rows;
 }
+
+// ─── Helpers ────────────────────────────────────────────
 
 function formatPoints(points: number): string {
   if (points === 0) return '0 pts';
@@ -90,18 +114,174 @@ function getPointsColor(points: number): string {
   return Colors.textTertiary;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function formatIngredientName(canonicalName: string): string {
+  return canonicalName
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+// ─── Expanded Content Renderers ─────────────────────────
+
+function renderIqExpanded(penalties: Penalty[]): React.ReactNode {
+  if (penalties.length === 0) {
+    return (
+      <Text style={styles.expandedEmpty}>No ingredient concerns identified</Text>
+    );
+  }
+
+  return penalties.map((penalty, i) => (
+    <View
+      key={`${penalty.ingredientName}-${penalty.position}-${i}`}
+      style={styles.expandedItem}
+    >
+      <View style={styles.expandedItemRow}>
+        <Text style={styles.expandedItemName} numberOfLines={1}>
+          {formatIngredientName(penalty.ingredientName)}
+        </Text>
+        <Text style={styles.expandedItemPoints}>
+          {`\u2212${Math.round(penalty.positionAdjustedPenalty)} pts`}
+        </Text>
+      </View>
+      <Text style={styles.expandedItemReason} numberOfLines={2}>
+        {penalty.reason}
+      </Text>
+      <TouchableOpacity activeOpacity={0.7}>
+        <Text style={styles.expandedCitation}>{penalty.citationSource}</Text>
+      </TouchableOpacity>
+    </View>
+  ));
+}
+
+function renderNpExpanded(scoredResult: ScoredResult): React.ReactNode {
+  const npScore = scoredResult.layer1.nutritionalProfile;
+  return (
+    <View style={styles.expandedItem}>
+      <Text style={styles.expandedSummary}>
+        Nutritional adequacy scored {npScore}/100 based on guaranteed analysis values vs AAFCO thresholds
+      </Text>
+    </View>
+  );
+}
+
+function renderFcExpanded(scoredResult: ScoredResult): React.ReactNode {
+  const fcScore = scoredResult.layer1.formulation;
+  return (
+    <View style={styles.expandedItem}>
+      <Text style={styles.expandedSummary}>
+        Formulation completeness scored {fcScore}/100 based on AAFCO compliance, preservative quality, and protein source naming
+      </Text>
+    </View>
+  );
+}
+
+function renderSpeciesExpanded(appliedRules: AppliedRule[]): React.ReactNode {
+  const firedRules = appliedRules.filter((r) => r.fired);
+
+  if (firedRules.length === 0) {
+    return (
+      <Text style={styles.expandedEmpty}>
+        No species-specific adjustments applied
+      </Text>
+    );
+  }
+
+  return firedRules.map((rule) => (
+    <View key={rule.ruleId} style={styles.expandedItem}>
+      <View style={styles.expandedItemRow}>
+        <Text style={styles.expandedItemName} numberOfLines={1}>
+          {rule.label}
+        </Text>
+        <Text style={styles.expandedItemPoints}>
+          {rule.adjustment > 0 ? '+' : ''}{rule.adjustment} pts
+        </Text>
+      </View>
+      {rule.citation && (
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={styles.expandedCitation}>{rule.citation}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  ));
+}
+
+function renderPersonalizationExpanded(
+  personalizations: PersonalizationDetail[],
+  petName: string,
+): React.ReactNode {
+  // Filter out breed_contraindications (shown separately as cards)
+  const adjustments = personalizations.filter(
+    (p) => p.type !== 'breed_contraindication',
+  );
+
+  if (adjustments.length === 0) {
+    return (
+      <Text style={styles.expandedEmpty}>
+        No breed or age adjustments for {petName}'s profile
+      </Text>
+    );
+  }
+
+  return adjustments.map((p, i) => (
+    <View key={`${p.type}-${p.label}-${i}`} style={styles.expandedItem}>
+      <View style={styles.expandedItemRow}>
+        <Text style={styles.expandedItemName} numberOfLines={1}>
+          {p.label}
+        </Text>
+        <Text style={styles.expandedItemPoints}>
+          {p.adjustment > 0 ? '+' : ''}{p.adjustment} pts
+        </Text>
+      </View>
+    </View>
+  ));
+}
+
 // ─── Component ──────────────────────────────────────────
 
 export function ScoreWaterfall({
   scoredResult,
   petName,
+  species,
   category,
 }: ScoreWaterfallProps) {
-  const rows = buildRows(scoredResult, petName, category);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const rows = buildRows(scoredResult, petName, species, category);
   const maxMagnitude = Math.max(
     ...rows.map((r) => Math.abs(r.points)),
     1, // avoid division by zero
   );
+
+  const toggleRow = (key: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedKey((prev) => (prev === key ? null : key));
+  };
+
+  const renderExpandedContent = (key: string): React.ReactNode => {
+    switch (key) {
+      case 'iq':
+        return renderIqExpanded(scoredResult.ingredientPenalties);
+      case 'np':
+        return renderNpExpanded(scoredResult);
+      case 'fc':
+        return renderFcExpanded(scoredResult);
+      case 'species':
+        return renderSpeciesExpanded(scoredResult.layer2.appliedRules);
+      case 'personalization':
+        return renderPersonalizationExpanded(
+          scoredResult.layer3.personalizations,
+          petName,
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -115,29 +295,53 @@ export function ScoreWaterfall({
 
       {/* Layer rows */}
       {rows.map((row) => {
-        const barWidth = Math.abs(row.points) / maxMagnitude;
+        const isExpanded = expandedKey === row.key;
+        const barWidthPercent = Math.max(
+          (Math.abs(row.points) / maxMagnitude) * 100,
+          3, // ~8-9px minimum on typical screen
+        );
         const barColor = getPointsColor(row.points);
+        const barFillColor = hexToRgba(barColor, 0.6);
+
         return (
-          <View key={row.label} style={styles.row}>
-            <View style={styles.rowHeader}>
+          <View key={row.key} style={styles.row}>
+            <TouchableOpacity
+              style={styles.rowHeader}
+              onPress={() => toggleRow(row.key)}
+              activeOpacity={0.7}
+            >
               <Text style={styles.rowLabel} numberOfLines={1}>
                 {row.label}
               </Text>
-              <Text style={[styles.rowPoints, { color: barColor }]}>
-                {formatPoints(row.points)}
-              </Text>
-            </View>
+              <View style={styles.rowRight}>
+                <Text style={[styles.rowPoints, { color: barColor }]}>
+                  {formatPoints(row.points)}
+                </Text>
+                <Ionicons
+                  name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                  size={16}
+                  color={Colors.textSecondary}
+                />
+              </View>
+            </TouchableOpacity>
+
             {row.points !== 0 && (
               <View style={styles.barTrack}>
                 <View
                   style={[
                     styles.barFill,
                     {
-                      width: `${Math.max(barWidth * 100, 4)}%`,
-                      backgroundColor: barColor,
+                      width: `${barWidthPercent}%`,
+                      backgroundColor: barFillColor,
                     },
                   ]}
                 />
+              </View>
+            )}
+
+            {isExpanded && (
+              <View style={styles.expandedContainer}>
+                {renderExpandedContent(row.key)}
               </View>
             )}
           </View>
@@ -206,19 +410,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   rowPoints: {
     fontSize: FontSizes.md,
     fontWeight: '600',
   },
   barTrack: {
-    height: 4,
+    height: 6,
     backgroundColor: Colors.background,
-    borderRadius: 2,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   barFill: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 4,
   },
   finalRow: {
     flexDirection: 'row',
@@ -235,5 +444,57 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: '700',
     color: Colors.accent,
+  },
+
+  // ─── Expanded Content ─────────────────────────────────
+  expandedContainer: {
+    backgroundColor: Colors.card,
+    marginTop: 8,
+    paddingLeft: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.cardBorder,
+  },
+  expandedItem: {
+    marginBottom: 10,
+  },
+  expandedItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  expandedItemName: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: 8,
+  },
+  expandedItemPoints: {
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  expandedItemReason: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  expandedCitation: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    textDecorationLine: 'underline',
+    marginTop: 2,
+  },
+  expandedSummary: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  expandedEmpty: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
   },
 });

@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: February 27, 2026 (evening — QA review applied: D-033, D-065, D-090, D-093, D-097, D-098, D-100, D-104, D-107)
+> Updated: February 28, 2026 (D-094 waterfall labels corrected to 5 rows, D-108 skeleton updated, D-113 ring breakpoints added)
 
 ---
 
@@ -576,7 +576,12 @@ All scores display as "[X]% match for [Pet Name]" — never "This product scores
 **Required language:**
 - Always: "[X]% match for [Pet Name]" / "compatibility deduction" / "suitability estimate" / "adjustment"
 - Never: "This product scores [X]" / "quality rating" / "product grade" / "penalty" (user-facing)
-- Waterfall labels: "Ingredient Concerns" / "[Pet Name]'s Nutritional Fit" / "[Pet Name]'s Breed & Age Adjustments"
+- Waterfall labels (5 rows, top to bottom):
+  1. "Ingredient Concerns" (Layer 1 ingredient quality deductions)
+  2. "[Pet Name]'s Nutritional Fit" (Layer 1 nutritional profile bucket)
+  3. "Formulation Quality" (Layer 1 formulation completeness bucket)
+  4. "[Species] Safety Checks" — e.g. "Canine Safety Checks" / "Feline Safety Checks" (Layer 2 species rules)
+  5. "[Pet Name]'s Breed & Age Adjustments" (Layer 3 personalization)
 - No "naked" scores — pet name and photo must always be visible on scan result screen
 
 **Legal defensibility layers:**
@@ -1184,7 +1189,7 @@ Additionally, potatoes, sweet potatoes, and potato starch were added to the Hear
 
 **Below the fold (scroll to explore — for at-home deep dives):**
 5. **Kiba Index** — Taste Test + Tummy Check community ratings. (Placeholder until M8 — hidden until data available)
-6. **Score breakdown waterfall** — Three layers as tappable bars showing point deductions (D-094 layer names)
+6. **Score breakdown waterfall** — Five rows as tappable bars showing point deductions with expand/collapse (D-094 layer names). Rows: Ingredient Concerns → [Pet Name]'s Nutritional Fit → Formulation Quality → [Species] Safety Checks → [Pet Name]'s Breed & Age Adjustments.
 7. **Full ingredient list** — ALL ingredients sorted worst→best, color-coded by severity, each tappable into D-105 detail modal. This is competitive advantage — Pawdi/Doggo Eats lack ingredient-level depth. Visible on scroll (not hidden behind a toggle) so users discover depth naturally.
 8. **"Track this food" CTA** — Adds product to pet's pantry (M5). Connects to symptom tracking from Me tab without cluttering scan screen.
 
@@ -1194,7 +1199,7 @@ Additionally, potatoes, sweet potatoes, and potato starch were added to the Hear
 
 **Rationale:** 95% of scans are "should I buy this?" decisions made in under 10 seconds in a store aisle. 5% are at-home deep dives. The layout nails the 10-second answer above the fold while making depth available on scroll for curious users. Two separate views would create a navigation decision where there shouldn't be one. Progressive disclosure means scan → answer → scroll deeper if curious — no mode switching, no tabs, no cognitive load.
 
-**M1 implementation note:** M1 builds the full scroll structure but Safe Swap (M6) and Kiba Index (M8) sections are not rendered until their milestones. The skeleton is: score gauge → concern tags → severity badges → waterfall → full ingredient list.
+**M1 implementation note:** M1 builds the full scroll structure but Safe Swap (M6) and Kiba Index (M8) sections are not rendered until their milestones. The M1 skeleton is: score gauge + verdict → concern tags → severity badges → waterfall (5 rows, expand/collapse) → nutritional profile (GA table with AAFCO markers) → ingredient splitting chip (conditional) → full ingredient list.
 
 ### D-109: Breed Modifier Data Storage → Static JSON
 **Status:** LOCKED
@@ -1278,6 +1283,36 @@ src/content/breedModifiers/
 - ❌ Larger score penalties (−20, −30) — still produces misleading composite scores; a −30 on a 95 base = "65% match" which implies "mediocre" not "dangerous"
 - ❌ Score floor/cap for contraindicated products — conflates nutritional quality with medical compatibility
 - ❌ Blocking the scan entirely — user needs to see the product's nutritional profile even if contraindicated
+
+---
+
+### D-113: Score Ring Color Breakpoints + Verdict Tiers
+**Status:** LOCKED
+**Date:** Feb 28, 2026
+**Depends on:** D-094 (Suitability Framing), D-086 (Color Scheme)
+
+**Decision:** Four-tier color + verdict system for the score ring and verdict text below it. Ring color and verdict text always use the same tier — never green ring with "Fair match."
+
+| Score Range | Ring Color | Hex | Verdict Text | Emotional Read |
+|-------------|-----------|-----|-------------|----------------|
+| 80–100 | Green | #34C759 | "Great match for [Pet Name]" | Reassuring — this food is excellent for your pet |
+| 70–79 | Cyan | #00B4D8 | "Good match for [Pet Name]" | Positive — solid choice with minor notes |
+| 50–69 | Amber | #FF9500 | "Fair match for [Pet Name]" | Cautious — notable concerns, look closer |
+| 0–49 | Red | #FF3B30 | "Poor match for [Pet Name]" | Warning — serious issues for your pet |
+
+**Implementation:**
+- `getScoreColor(score: number): string` and `getVerdictLabel(score: number, petName: string | null): string` — both functions use identical breakpoint thresholds
+- Verdict text renders BELOW the ring, outside the ring component, 8–12px spacing
+- Font: 16pt, semibold, color matches ring tier
+- When petName is null: "Great match" / "Good match" / "Fair match" / "Poor match" (no pet name suffix)
+- Verdict words are suitability descriptors (D-094 compliant), not product quality ratings
+
+**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 66% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
+
+**Rejected:**
+- ❌ 3-tier system (green ≥70 / amber 50–69 / red <50) — insufficient granularity in the 60–80 decision zone
+- ❌ Wider cyan band (65–79) — puts 66% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
+- ❌ 5-tier system — diminishing returns, users can't distinguish 5 emotional states at a glance
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

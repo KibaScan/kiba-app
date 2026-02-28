@@ -33,11 +33,20 @@ const RING_BORDER = 8;
 const TRACK_COLOR = '#333333';
 const ANIMATION_DURATION = 800;
 
-function getScoreColor(score: number): string {
-  if (score < 40) return Colors.severityRed;
-  if (score < 60) return Colors.severityAmber;
+export function getScoreColor(score: number): string {
+  if (score < 50) return Colors.severityRed;
+  if (score < 70) return Colors.severityAmber;
   if (score < 80) return Colors.accent;
   return Colors.severityGreen;
+}
+
+export function getVerdictLabel(score: number, petName: string | null): string {
+  const tier =
+    score >= 80 ? 'Great' :
+    score >= 70 ? 'Good' :
+    score >= 50 ? 'Fair' :
+    'Poor';
+  return petName ? `${tier} match for ${petName}` : `${tier} match`;
 }
 
 // ─── Component ───────────────────────────────────────────
