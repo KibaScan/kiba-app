@@ -236,7 +236,7 @@ if carb_dmb <= 45%:       score = 30   (poor — high carb diet for a cat)
 if carb_dmb > 45%:        score = 10   (very poor)
 ```
 
-**Cat carb scoring is deliberately stricter.** Cats lack hepatic glucokinase (hexokinase IV) and have limited amylase activity. High-carb diets are epidemiologically associated with feline obesity and type 2 diabetes (Hoenig et al., 2007, *Domestic Animal Endocrinology*; Slingerland et al., 2009, *The Veterinary Journal*).
+**Cat carb scoring is deliberately stricter.** Cats lack hepatic glucokinase (hexokinase IV) and have limited amylase activity. High-carb diets are epidemiologically associated with feline type 2 diabetes (Hoenig et al., 2007, *Domestic Animal Endocrinology*; Slingerland et al., 2009, *The Veterinary Journal*).
 
 **Note:** This carb score within the nutritional bucket is separate from the Layer 2 cat carb penalty (which fires based on ingredient positions, not GA values). They assess different things — one is mathematical composition, the other is ingredient list analysis. Both can apply.
 
