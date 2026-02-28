@@ -207,8 +207,10 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
             <View style={styles.carbExplainer}>
               <Text style={styles.explainerFormula}>
                 100 - {ga_protein_pct ?? '?'}% protein - {ga_fat_pct ?? '?'}%
-                fat - {ga_fiber_pct ?? '?'}% fiber - {moisture}% moisture -
-                ash = ~{Math.round(carbEstimate.valueDmb)}%
+                fat - {ga_fiber_pct ?? '?'}% fiber - {moisture}% moisture -{' '}
+                {carbEstimate.ashUsedPct ?? '?'}% ash
+                {carbEstimate.confidence === 'estimated' ? ' (est.)' : ''} = ~
+                {Math.round(carbEstimate.valueDmb)}%
               </Text>
               <Text style={styles.explainerText}>
                 Ash is the mineral content remaining after incineration — an

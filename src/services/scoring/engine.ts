@@ -59,6 +59,7 @@ function estimateCarbDisplay(
       confidence: 'unknown',
       qualitativeLabel: null,
       species,
+      ashUsedPct: null,
     };
   }
 
@@ -107,6 +108,7 @@ function estimateCarbDisplay(
     confidence,
     qualitativeLabel,
     species,
+    ashUsedPct: Math.round(ashAf * 10) / 10,
   };
 }
 
