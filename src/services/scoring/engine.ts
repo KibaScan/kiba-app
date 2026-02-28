@@ -73,7 +73,7 @@ function estimateCarbDisplay(
 
   // Ash estimation (as-fed defaults, then DMB-convert)
   let ashAf: number;
-  const hasCaP = product.ga_calcium_pct !== null && product.ga_phosphorus_pct !== null;
+  const hasCaP = product.ga_calcium_pct != null && product.ga_phosphorus_pct != null;
 
   if (hasCaP) {
     ashAf = (product.ga_calcium_pct! + product.ga_phosphorus_pct!) * 2.5;
