@@ -21,13 +21,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
-import type { ScoredResult } from '../types/scoring';
+import type { ScoredResult, ProductIngredient } from '../types/scoring';
 import { usePetStore } from '../stores/usePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
 import { scoreProduct } from '../services/scoring/pipeline';
 import { LoadingTerminal } from '../components/LoadingTerminal';
 import { ScoreRing } from '../components/ScoreRing';
+import { ConcernTags } from '../components/ConcernTags';
+import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -60,6 +62,7 @@ export default function ResultScreen() {
     scanCache.find((p) => p.id === productId) ?? null,
   );
   const [scoredResult, setScoredResult] = useState<ScoredResult | null>(null);
+  const [hydratedIngredients, setHydratedIngredients] = useState<ProductIngredient[]>([]);
   const [terminalDone, setTerminalDone] = useState(false);
   const [scoringDone, setScoringDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +105,9 @@ export default function ResultScreen() {
     (async () => {
       try {
         // M1: petAllergens and petConditions are empty
-        const result = await scoreProduct(product, pet, [], []);
+        const { scoredResult: result, ingredients } = await scoreProduct(product, pet, [], []);
         setScoredResult(result);
+        setHydratedIngredients(ingredients);
       } catch (err) {
         console.error('[ResultScreen] Scoring failed:', err);
         setError('Scoring failed. Please try again.');
@@ -246,9 +250,25 @@ export default function ResultScreen() {
           </View>
         )}
 
-        {/* ConcernTags — Prompt 3 */}
+        {/* Concern Tags (D-107) */}
+        {hydratedIngredients.length > 0 && product && (
+          <ConcernTags
+            ingredients={hydratedIngredients}
+            product={product}
+            species={species}
+          />
+        )}
 
-        {/* SeverityBadgeStrip — Prompt 3 */}
+        {/* Severity Badge Strip (D-108) */}
+        {hydratedIngredients.length > 0 && (
+          <SeverityBadgeStrip
+            ingredients={hydratedIngredients}
+            species={species}
+            onIngredientPress={() => {
+              // Wired to ingredient detail modal in Prompt 5
+            }}
+          />
+        )}
 
         {/* ─── Below Fold ─────────────────────────────────── */}
 

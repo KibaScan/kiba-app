@@ -187,7 +187,8 @@ describe('scoreProduct', () => {
       error: null,
     };
 
-    const result = await scoreProduct(MOCK_PRODUCT, MOCK_PET, ['beef'], ['obesity']);
+    const { scoredResult, ingredients: returnedIngredients } =
+      await scoreProduct(MOCK_PRODUCT, MOCK_PET, ['beef'], ['obesity']);
 
     // Verify computeScore was called with hydrated ingredients
     expect(mockComputeScore).toHaveBeenCalledTimes(1);
@@ -215,7 +216,9 @@ describe('scoreProduct', () => {
       cluster_id: 'legume_pea',
     });
 
-    expect(result.finalScore).toBe(75);
+    expect(scoredResult.finalScore).toBe(75);
+    expect(returnedIngredients).toHaveLength(2);
+    expect(returnedIngredients).toBe(ingredients);
   });
 
   it('passes undefined for petProfile when null', async () => {
@@ -233,12 +236,13 @@ describe('scoreProduct', () => {
 
     queryResult = { data: null, error: { message: 'connection refused' } };
 
-    const result = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+    const { scoredResult, ingredients } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
 
-    expect(result.finalScore).toBe(0);
-    expect(result.isPartialScore).toBe(true);
-    expect(result.flags).toContain('no_ingredient_data');
-    expect(result.petName).toBe('Buddy');
+    expect(scoredResult.finalScore).toBe(0);
+    expect(scoredResult.isPartialScore).toBe(true);
+    expect(scoredResult.flags).toContain('no_ingredient_data');
+    expect(scoredResult.petName).toBe('Buddy');
+    expect(ingredients).toHaveLength(0);
     expect(mockComputeScore).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalled();
 
@@ -250,11 +254,12 @@ describe('scoreProduct', () => {
 
     queryResult = { data: [], error: null };
 
-    const result = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+    const { scoredResult, ingredients } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
 
-    expect(result.finalScore).toBe(0);
-    expect(result.isPartialScore).toBe(true);
-    expect(result.flags).toContain('no_ingredient_data');
+    expect(scoredResult.finalScore).toBe(0);
+    expect(scoredResult.isPartialScore).toBe(true);
+    expect(scoredResult.flags).toContain('no_ingredient_data');
+    expect(ingredients).toHaveLength(0);
     expect(mockComputeScore).not.toHaveBeenCalled();
 
     errorSpy.mockRestore();
@@ -272,7 +277,8 @@ describe('scoreProduct', () => {
       error: null,
     };
 
-    const result = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+    const { scoredResult, ingredients: returnedIngredients } =
+      await scoreProduct(MOCK_PRODUCT, MOCK_PET);
 
     // computeScore should be called with only 2 hydrated ingredients
     expect(mockComputeScore).toHaveBeenCalledTimes(1);
@@ -282,7 +288,8 @@ describe('scoreProduct', () => {
     expect(ingredients[1].canonical_name).toBe('rice');
 
     // partial flag should be merged
-    expect(result.flags).toContain('partial_ingredient_data');
+    expect(scoredResult.flags).toContain('partial_ingredient_data');
+    expect(returnedIngredients).toHaveLength(2);
 
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('ing-missing'),
@@ -302,11 +309,12 @@ describe('scoreProduct', () => {
       error: null,
     };
 
-    const result = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+    const { scoredResult, ingredients } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
 
-    expect(result.finalScore).toBe(0);
-    expect(result.isPartialScore).toBe(true);
-    expect(result.flags).toContain('no_ingredient_data');
+    expect(scoredResult.finalScore).toBe(0);
+    expect(scoredResult.isPartialScore).toBe(true);
+    expect(scoredResult.flags).toContain('no_ingredient_data');
+    expect(ingredients).toHaveLength(0);
     expect(mockComputeScore).not.toHaveBeenCalled();
 
     errorSpy.mockRestore();
@@ -317,11 +325,11 @@ describe('scoreProduct', () => {
     const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
     const recalledProduct = { ...MOCK_PRODUCT, is_recalled: true };
-    const result = await scoreProduct(recalledProduct, null);
+    const { scoredResult } = await scoreProduct(recalledProduct, null);
 
-    expect(result.isRecalled).toBe(true);
-    expect(result.petName).toBeNull();
-    expect(result.category).toBe('daily_food');
+    expect(scoredResult.isRecalled).toBe(true);
+    expect(scoredResult.petName).toBeNull();
+    expect(scoredResult.category).toBe('daily_food');
 
     errorSpy.mockRestore();
   });
@@ -341,5 +349,22 @@ describe('scoreProduct', () => {
 
     const [, ingredients] = mockComputeScore.mock.calls[0] as [Product, ProductIngredient[]];
     expect(ingredients[0].allergen_group_possible).toEqual([]);
+  });
+
+  it('hydrates display_name from ingredients_dict', async () => {
+    queryResult = {
+      data: [
+        makeDbRow(1, {
+          canonical_name: 'bha',
+          display_name: 'BHA (Butylated Hydroxyanisole)',
+        }),
+      ],
+      error: null,
+    };
+
+    const { ingredients } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+
+    expect(ingredients[0].display_name).toBe('BHA (Butylated Hydroxyanisole)');
+    expect(ingredients[0].canonical_name).toBe('bha');
   });
 });

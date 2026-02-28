@@ -15,6 +15,13 @@ interface ProductIngredientRow {
   ingredients_dict: IngredientDict | null;
 }
 
+// ─── Pipeline Result ────────────────────────────────────
+
+export interface PipelineResult {
+  scoredResult: ScoredResult;
+  ingredients: ProductIngredient[];
+}
+
 // ─── Hydration ───────────────────────────────────────────
 
 function hydrateIngredient(
@@ -26,6 +33,7 @@ function hydrateIngredient(
   return {
     position: row.position,
     canonical_name: dict.canonical_name,
+    display_name: dict.display_name,
     dog_base_severity: dict.dog_base_severity,
     cat_base_severity: dict.cat_base_severity,
     is_unnamed_species: dict.is_unnamed_species,
@@ -48,31 +56,34 @@ function makeEmptyResult(
   product: Product,
   petProfile: PetProfile | null,
   flags: string[],
-): ScoredResult {
+): PipelineResult {
   return {
-    finalScore: 0,
-    displayScore: 0,
-    petName: petProfile?.name ?? null,
-    layer1: {
-      ingredientQuality: 0,
-      nutritionalProfile: 0,
-      formulation: 0,
-      weightedComposite: 0,
+    scoredResult: {
+      finalScore: 0,
+      displayScore: 0,
+      petName: petProfile?.name ?? null,
+      layer1: {
+        ingredientQuality: 0,
+        nutritionalProfile: 0,
+        formulation: 0,
+        weightedComposite: 0,
+      },
+      layer2: {
+        speciesAdjustment: 0,
+        appliedRules: [],
+      },
+      layer3: {
+        personalizations: [],
+        allergenWarnings: [],
+      },
+      flags,
+      isPartialScore: true,
+      isRecalled: product.is_recalled,
+      llmExtracted: false,
+      carbEstimate: null,
+      category: product.category === 'treat' ? 'treat' : 'daily_food',
     },
-    layer2: {
-      speciesAdjustment: 0,
-      appliedRules: [],
-    },
-    layer3: {
-      personalizations: [],
-      allergenWarnings: [],
-    },
-    flags,
-    isPartialScore: true,
-    isRecalled: product.is_recalled,
-    llmExtracted: false,
-    carbEstimate: null,
-    category: product.category === 'treat' ? 'treat' : 'daily_food',
+    ingredients: [],
   };
 }
 
@@ -83,7 +94,7 @@ export async function scoreProduct(
   petProfile: PetProfile | null,
   petAllergens?: string[],
   petConditions?: string[],
-): Promise<ScoredResult> {
+): Promise<PipelineResult> {
   // Step 1: Fetch product_ingredients with ingredients_dict join
   const { data, error } = await supabase
     .from('product_ingredients')
@@ -142,10 +153,9 @@ export async function scoreProduct(
   );
 
   // Merge pipeline-level flags into engine result
-  if (flags.length > 0) {
-    const mergedFlags = new Set([...result.flags, ...flags]);
-    return { ...result, flags: [...mergedFlags] };
-  }
+  const scoredResult = flags.length > 0
+    ? { ...result, flags: [...new Set([...result.flags, ...flags])] }
+    : result;
 
-  return result;
+  return { scoredResult, ingredients: hydrated };
 }
