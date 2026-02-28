@@ -12,6 +12,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -191,7 +192,74 @@ export default function ResultScreen() {
 
   // ─── Ready state (scrollable result) ───────────────────
   const score = scoredResult?.finalScore ?? 0;
+  const hasNoIngredientData = scoredResult?.flags.includes('no_ingredient_data') ?? false;
 
+  // ─── Flags for display (below ScoreRing) ──────────────
+  const displayFlags = (scoredResult?.flags ?? []).filter(
+    (f) => f !== 'dcm_advisory' && f !== 'no_ingredient_data',
+  );
+
+  // ─── No ingredient data — simplified view ─────────────
+  if (hasNoIngredientData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.productBrand} numberOfLines={1}>
+              {product!.brand}
+            </Text>
+            <Text style={styles.productName} numberOfLines={1}>
+              {product!.name}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Recall warning (can still appear) */}
+          {scoredResult?.isRecalled && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+              <Text style={styles.recallText}>
+                This product has been subject to a recall
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.noDataCard}>
+            <Ionicons name="document-text-outline" size={40} color={Colors.textTertiary} />
+            <Text style={styles.noDataTitle}>
+              We found this product but don't have ingredient data yet
+            </Text>
+            <Text style={styles.noDataSubtext}>
+              Ingredient data is being added to our database. Check back soon.
+            </Text>
+            <TouchableOpacity style={styles.contributeButton} disabled>
+              <Ionicons name="camera-outline" size={18} color={Colors.textTertiary} />
+              <Text style={styles.contributeText}>Contribute ingredient list</Text>
+              <Text style={styles.comingSoonBadge}>Coming soon</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* AAFCO statement */}
+          {product!.aafco_statement && (
+            <Text style={styles.aafcoText}>{product!.aafco_statement}</Text>
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Full result view ─────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -245,6 +313,46 @@ export default function ResultScreen() {
           species={species}
           isPartialScore={scoredResult?.isPartialScore ?? false}
         />
+
+        {/* Flag chips */}
+        {displayFlags.length > 0 && (
+          <View style={styles.flagChipsRow}>
+            {displayFlags.map((flag) => {
+              if (flag === 'ingredient_splitting_detected') {
+                return (
+                  <TouchableOpacity
+                    key={flag}
+                    style={styles.flagChipAmber}
+                    onPress={() =>
+                      Alert.alert(
+                        'Ingredient splitting detected',
+                        'Two or more derivatives of the same source ingredient were detected, which may indicate the ingredient\'s true proportion is higher than individual positions suggest.',
+                      )
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="information-circle-outline" size={14} color={Colors.severityAmber} />
+                    <Text style={styles.flagChipAmberText}>Ingredient splitting detected</Text>
+                  </TouchableOpacity>
+                );
+              }
+              if (flag === 'partial_ingredient_data') {
+                return (
+                  <View key={flag} style={styles.flagChipMuted}>
+                    <Text style={styles.flagChipMutedText}>Some ingredient data missing</Text>
+                  </View>
+                );
+              }
+              // Generic flag
+              const label = flag.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+              return (
+                <View key={flag} style={styles.flagChipGeneric}>
+                  <Text style={styles.flagChipGenericText}>{label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* Recall warning */}
         {scoredResult?.isRecalled && (
@@ -419,6 +527,86 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.severityRed,
     flex: 1,
+  },
+
+  // ─── Flag Chips
+  flagChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: Spacing.md,
+  },
+  flagChipAmber: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  flagChipAmberText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: Colors.severityAmber,
+  },
+  flagChipMuted: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  flagChipMutedText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  flagChipGeneric: {
+    backgroundColor: Colors.card,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  flagChipGenericText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
+
+  // ─── No Ingredient Data
+  noDataCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    gap: 12,
+    marginTop: Spacing.xl,
+  },
+  noDataTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  noDataSubtext: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  contributeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 4,
+    opacity: 0.5,
+  },
+  contributeText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textTertiary,
   },
 
   // ─── Track Button (M5 placeholder)
