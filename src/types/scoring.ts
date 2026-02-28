@@ -22,6 +22,7 @@ export interface ProductIngredient {
   allergen_group: string | null;           // D-098 cross-reactivity
   allergen_group_possible: string[];       // D-098 unnamed terms
   is_protein_fat_source: boolean;          // Layer 1c protein naming denominator
+  display_name?: string | null;            // D-105 consumer-facing name (UI only, not used in scoring)
 }
 
 // ─── Breed & Modifier Types ─────────────────────────────
