@@ -30,6 +30,8 @@ import { LoadingTerminal } from '../components/LoadingTerminal';
 import { ScoreRing } from '../components/ScoreRing';
 import { ConcernTags } from '../components/ConcernTags';
 import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
+import { ScoreWaterfall } from '../components/ScoreWaterfall';
+import { GATable } from '../components/GATable';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -272,9 +274,23 @@ export default function ResultScreen() {
 
         {/* ─── Below Fold ─────────────────────────────────── */}
 
-        {/* ScoreWaterfall — Prompt 4 */}
+        {/* Score Waterfall (D-094) */}
+        {scoredResult && (
+          <ScoreWaterfall
+            scoredResult={scoredResult}
+            petName={displayName}
+            category={scoredResult.category}
+          />
+        )}
 
-        {/* GATable — Prompt 4 */}
+        {/* GA Table (D-038, D-104, D-016) */}
+        {scoredResult && product && (
+          <GATable
+            product={product}
+            scoredResult={scoredResult}
+            species={species}
+          />
+        )}
 
         {/* IngredientList — Prompt 5 */}
 
