@@ -271,3 +271,25 @@ RootStack (onboarding gate via useAppStore.hasCompletedOnboarding)
 - RevenueCat (M3-M4)
 - Community contribution workflow (M3)
 - Jest tests / reference product regression tests
+
+---
+
+## Debt Cleanup (Session 3 Pre-Work)
+
+### Files Modified
+- `src/services/scanner.ts` — added 5s timeout (Promise.race), structured error codes (NETWORK_TIMEOUT | DB_ERROR), orphaned UPC detection with console.warn, unchanged haptic on success
+- `src/screens/ScanScreen.tsx` — error-specific Alert.alert messages with camera unlock on dismiss
+- `src/stores/useScanStore.ts` — added scanCache (Product[], FIFO 10, dedup by product_id) and addToScanCache action
+
+### Files Created
+- `__tests__/services/scanner.test.ts` — 6 tests: happy path, not found, orphaned UPC, DB error ×2, timeout
+- `__tests__/stores/scanCache.test.ts` — 4 tests: add, dedup+reposition, cap at 10, order verification
+
+### Test Count
+- State after debt cleanup: 136 tests, 9 suites, zero failures
+- Scanner: 6 tests
+- Scan cache: 4 tests
+- Scoring (unchanged): 126 tests
+
+### Spec Fixes Applied
+- `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` line 239: removed "obesity" from feline carb rationale (contradicts §11 Global Finding #2)
