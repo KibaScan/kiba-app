@@ -229,6 +229,14 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
         </Text>
       )}
 
+      {/* LLM-extracted disclaimer */}
+      {scoredResult.llmExtracted && (
+        <Text style={styles.llmNote}>
+          Nutritional data extracted from label — verify with manufacturer for
+          precision use
+        </Text>
+      )}
+
       {/* Bonus nutrients */}
       {bonusNutrients.length > 0 && (
         <View style={styles.bonusSection}>
@@ -441,6 +449,14 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
     textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  llmNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    fontStyle: 'italic',
     marginTop: 4,
     marginBottom: 8,
   },
