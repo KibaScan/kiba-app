@@ -270,6 +270,21 @@ describe('computeScore — Orchestrator', () => {
     expect(result.carbEstimate!.qualitativeLabel).toBe('Moderate');
   });
 
+  test('carb estimate handles undefined Ca+P (missing DB columns) without NaN', () => {
+    // Simulate Supabase returning a product without ga_calcium_pct / ga_phosphorus_pct
+    // columns — fields are undefined, not null. Must fall through to ash defaults.
+    const product = makeProduct();
+    // Delete the fields to simulate missing DB columns
+    delete (product as Record<string, unknown>).ga_calcium_pct;
+    delete (product as Record<string, unknown>).ga_phosphorus_pct;
+    const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+    const result = computeScore(product, ingredients);
+    expect(result.carbEstimate).not.toBeNull();
+    expect(result.carbEstimate!.valueDmb).not.toBeNull();
+    expect(Number.isNaN(result.carbEstimate!.valueDmb)).toBe(false);
+    expect(result.carbEstimate!.confidence).toBe('estimated');
+  });
+
   // ─── Score Clamping ────────────────────────────────────
 
   test('finalScore clamped to [0, 100]', () => {

@@ -69,7 +69,7 @@ function estimateAshDmb(
 ): number {
   let ashAf: number;
 
-  if (calciumPct !== null && phosphorusPct !== null) {
+  if (calciumPct != null && phosphorusPct != null) {
     ashAf = (calciumPct + phosphorusPct) * 2.5;
   } else if (category === 'treat') {
     ashAf = 5.0;

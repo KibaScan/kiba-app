@@ -37,6 +37,8 @@ CREATE TABLE products (
   ga_fat_pct              DECIMAL(5,2),
   ga_fiber_pct            DECIMAL(5,2),
   ga_moisture_pct         DECIMAL(5,2),        -- CRITICAL for DMB conversion
+  ga_calcium_pct          DECIMAL(5,3),        -- D-104 ash estimation: ash ≈ (Ca + P) × 2.5
+  ga_phosphorus_pct       DECIMAL(5,3),        -- D-104 ash estimation: ash ≈ (Ca + P) × 2.5
 
   -- Guaranteed Analysis — calorie info
   ga_kcal_per_cup         INT,
