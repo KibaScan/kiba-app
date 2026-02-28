@@ -1,15 +1,25 @@
 // Kiba — Home Dashboard
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { usePetStore } from '../stores/usePetStore';
 import { useScanStore } from '../stores/useScanStore';
+import { supabase } from '../services/supabase';
+import type { HomeStackParamList } from '../types/navigation';
+import type { Product } from '../types';
+
+type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
 export default function HomeScreen() {
+  const navigation = useNavigation<HomeNav>();
   const activePetId = usePetStore((s) => s.activePetId);
   const pets = usePetStore((s) => s.pets);
   const weeklyCount = useScanStore((s) => s.weeklyCount);
+  const addToScanCache = useScanStore((s) => s.addToScanCache);
   const activePet = pets.find((p) => p.id === activePetId);
+  const [devLoading, setDevLoading] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -33,6 +43,40 @@ export default function HomeScreen() {
             Tap the scan button below to check{'\n'}a pet food, treat, or supplement.
           </Text>
         </View>
+
+        {/* DEV-ONLY: Test Result Screen — delete before M2 */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.devButton}
+            disabled={devLoading}
+            onPress={async () => {
+              const TEST_PRODUCT_ID = 'afd04040-425b-5742-9100-9e370c1c3cc9';
+              setDevLoading(true);
+              try {
+                const { data, error } = await supabase
+                  .from('products')
+                  .select('*')
+                  .eq('id', TEST_PRODUCT_ID)
+                  .single();
+                if (error || !data) {
+                  Alert.alert('DEV Error', error?.message ?? 'Product not found');
+                  return;
+                }
+                addToScanCache(data as Product);
+                navigation.navigate('Result', { productId: TEST_PRODUCT_ID, petId: activePetId });
+              } catch (e: unknown) {
+                Alert.alert('DEV Error', e instanceof Error ? e.message : 'Unknown error');
+              } finally {
+                setDevLoading(false);
+              }
+            }}
+          >
+            <Text style={styles.devBadge}>DEV</Text>
+            <Text style={styles.devButtonText}>
+              {devLoading ? 'Loading...' : 'Test Result Screen'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -112,5 +156,35 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  // DEV-ONLY — delete before M2
+  devButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#FF3B30',
+    borderRadius: 10,
+    marginBottom: Spacing.lg,
+  },
+  devBadge: {
+    fontSize: FontSizes.xs,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  devButtonText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: '#FF3B30',
   },
 });
