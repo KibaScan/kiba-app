@@ -29,11 +29,11 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (111 decisions)
+├── DECISIONS.md            ← canonical decision log (112 decisions)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
-├── BREED_MODIFIERS_DOGS.md             ← 20 dog breed entries (scoring engine lookup table)
-├── BREED_MODIFIERS_CATS.md             ← 18 cat breed entries (scoring engine lookup table)
+├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
+├── BREED_MODIFIERS_CATS.md             ← 21 cat breed entries (scoring engine lookup table)
 ├── app.json
 ├── tsconfig.json
 ├── supabase/
@@ -78,8 +78,8 @@ kiba-app/
 │   │   │   └── byProductMeal.ts     ← "What is by-product meal?"
 │   │   └── breedModifiers/          ← static typed breed data, shipped with app (D-109)
 │   │       ├── index.ts
-│   │       ├── dogs.ts              ← 20 breed entries from BREED_MODIFIERS_DOGS.md
-│   │       └── cats.ts              ← 18 breed entries from BREED_MODIFIERS_CATS.md
+│   │       ├── dogs.ts              ← 23 breed entries from BREED_MODIFIERS_DOGS.md
+│   │       └── cats.ts              ← 21 breed entries from BREED_MODIFIERS_CATS.md
 │   ├── stores/
 │   │   ├── useAppStore.ts
 │   │   ├── usePetStore.ts
@@ -117,8 +117,8 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 
 **Detailed specs (read these before implementing scoring):**
 - `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` — Full 30% nutritional bucket: AAFCO thresholds, DMB conversion, trapezoidal scoring curves, life stage modifiers, sub-nutrient weights
-- `BREED_MODIFIERS_DOGS.md` — 20 breed entries across 3 tiers (GA-actionable, ingredient-actionable, advisory-only)
-- `BREED_MODIFIERS_CATS.md` — 18 breed entries across 3 tiers, plus 3 global findings (taurine ≠ HCM, fat > carbs for obesity, phosphorus source matters)
+- `BREED_MODIFIERS_DOGS.md` — 23 breed entries across 3 tiers (GA-actionable, ingredient-actionable, advisory-only)
+- `BREED_MODIFIERS_CATS.md` — 21 breed entries across 3 tiers, plus 3 global findings (taurine ≠ HCM, fat > carbs for obesity, phosphorus source matters)
 
 ### Category-Adaptive Weighting
 | Category | Ingredient Quality | Nutritional Profile | Formulation |
@@ -150,9 +150,10 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 
 **Layer 3 — Personalization:**
 - Allergy cross-reference, life stage matching, breed-specific modifiers
-- **Breed data:** `BREED_MODIFIERS_DOGS.md` (20 breeds) and `BREED_MODIFIERS_CATS.md` (18 breeds)
+- **Breed data:** `BREED_MODIFIERS_DOGS.md` (23 breeds) and `BREED_MODIFIERS_CATS.md` (21 breeds)
 - **Breed runtime data:** Static JSON in `src/content/breedModifiers/` (D-109) — NOT in Supabase
 - Three actionability tiers: GA-actionable, ingredient-list-actionable, advisory-only
+- **D-112 breed contraindications:** Binary medical incompatibilities (e.g. Dalmatian/purines, Irish Setter/gluten) use `breed_contraindication` type — red warning card above fold, zero score impact, same visual treatment as D-097 allergen `direct_match`. These are NOT score modifiers.
 - Breed modifiers capped at ±10 total within the nutritional bucket
 - `no_modifier` breeds explicitly registered to prevent false penalties
 - Neutral if no conflicts detected

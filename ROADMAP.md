@@ -12,7 +12,7 @@
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (111 decisions, D-001 through D-111)
+- Decision log established (112 decisions, D-001 through D-112)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -20,8 +20,8 @@
 - Recall Event PR playbook written
 - LLM Nutritional Refinery pipeline designed
 - Nutritional Profile Bucket spec complete (`NUTRITIONAL_PROFILE_BUCKET_SPEC.md`) — AAFCO thresholds, DMB conversion, trapezoidal scoring curves, life stage modifiers, sub-nutrient weights
-- Dog breed modifier research complete (`BREED_MODIFIERS_DOGS.md`) — 20 breeds, 3 tiers, vet-reviewed for accuracy
-- Cat breed modifier research complete (`BREED_MODIFIERS_CATS.md`) — 18 breeds, 3 tiers, vet-reviewed for accuracy
+- Dog breed modifier research complete (`BREED_MODIFIERS_DOGS.md`) — 23 breeds, 3 tiers, clinically researched (pending formal vet audit M2)
+- Cat breed modifier research complete (`BREED_MODIFIERS_CATS.md`) — 21 breeds, 3 tiers, clinically researched (pending formal vet audit M2)
 - Suitability score reframing strategy complete (D-094) — attorney-approved legal strategy
 - UPVM compliance rules locked (D-095) — prohibited terms list for all UI copy
 
@@ -131,11 +131,11 @@ pets
 ├── activity_level TEXT DEFAULT 'moderate' ('sedentary' | 'moderate' | 'active' | 'working')
 ├── is_spayed_neutered BOOLEAN DEFAULT true
 ├── is_indoor BOOLEAN                ← cats only, affects DER multiplier
-├── allergies TEXT[]
+├── allergies TEXT[]                     ← DEPRECATED: superseded by pet_allergens junction table (D-097). Remove in next migration.
 ├── weight_loss_target_rate DECIMAL(5,3)  ← calculated, warns if >1% for cats
 ├── RLS: auth.uid() = user_id
 
-scan_history
+scans                                   ← canonical name per CLAUDE.md (was scan_history)
 ├── id UUID PK
 ├── user_id UUID FK → auth.users(id)
 ├── pet_id UUID FK → pets(id)

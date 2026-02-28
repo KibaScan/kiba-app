@@ -1245,5 +1245,39 @@ src/content/breedModifiers/
 
 **Final SF Symbol selections** will be locked during M1 build when visual design is finalized. The mapping above is directional — the constraint is D-084 compliance, not specific icon choices.
 
+### D-112: Breed Contraindications — Hard Warnings, Not Score Modifiers
+**Status:** LOCKED
+**Date:** Feb 27, 2026
+**Depends on:** D-094 (Suitability Framing), D-095 (UPVM Compliance), D-097 (Allergen Profile), D-109 (Breed Modifier Storage)
+
+**Decision:** Certain breed-specific metabolic incompatibilities are **binary medical risks** that cannot be adequately expressed through sub-score deductions. These are handled as `breed_contraindication` entries — visually identical to D-097 allergen warning cards — rather than nutritional bucket modifiers.
+
+**Problem:** A −5 penalty to `protein_sub` for a Dalmatian eating high-purine food produces a final composite impact of ~0.5 points (after sub-weight × bucket weight). Kiba would display "94% match" for a food that causes urate urinary blockage requiring emergency surgery. Sub-score deductions cannot express "this food will hospitalize your dog."
+
+**Mechanism:** Breed contraindications sit in Layer 3 (Personalization), alongside allergen warnings. They produce:
+- **Zero score impact** (adjustment: 0)
+- **Red warning card above the fold** — same visual treatment as `severity: 'direct_match'` allergen warnings
+- **Contraindication label** following D-094 framing and D-095 clinical copy rules
+- **type: 'breed_contraindication'** in PersonalizationDetail
+
+**Breeds with contraindications (dogs):**
+
+| Breed | Trigger | Card Text |
+|---|---|---|
+| Dalmatian | High-purine protein sources in ingredient list (organ meats, sardines, anchovies, mackerel, brewer's yeast) | "Contains high-purine protein sources. Dalmatians have a genetic uric acid metabolism defect (SLC2A9) that causes urate stone formation when fed high-purine proteins. Egg and dairy-based proteins are low-purine alternatives." |
+| Irish Setter | Any gluten grain present (wheat, barley, rye, oats + derivatives) | "Contains gluten-containing grains. Irish Setters have documented gluten-sensitive enteropathy with partial villous atrophy. Clinical resolution occurs on gluten-free diets." |
+| Border Terrier | Any gluten grain present (wheat, barley, rye — NOT oats) | "Contains gluten-containing grains. Border Terriers have documented paroxysmal gluten-sensitive dyskinesia (PGSD). Clinical resolution occurs on gluten-free diets." |
+
+**Relationship to score modifiers:** Breeds with contraindications may ALSO have nutritional bucket modifiers (e.g., Dalmatian retains its GA-based protein_dmb modifier for cumulative purine load from non-contraindicated sources). The contraindication card and the bucket modifier are independent systems.
+
+**Why not just set the score to 0?** A suitability score reflects overall nutritional fit. A food could be nutritionally excellent in every other dimension but contain one contraindicated ingredient. The warning card communicates the binary risk; the score communicates everything else. This parallels how allergen warnings work — a peanut-allergic person's meal isn't "0% nutritious," it just contains something dangerous for them specifically.
+
+**Rationale:** Binary metabolic incompatibilities (100% genetic penetrance enzyme defects, documented enteropathy with villous atrophy) are categorically different from "this breed does slightly better with less fat." The scoring engine's continuous 0-100 scale cannot express binary risk. Allergen-style warning cards can.
+
+**Rejected:**
+- ❌ Larger score penalties (−20, −30) — still produces misleading composite scores; a −30 on a 95 base = "65% match" which implies "mediocre" not "dangerous"
+- ❌ Score floor/cap for contraindicated products — conflates nutritional quality with medical compatibility
+- ❌ Blocking the scan entirely — user needs to see the product's nutritional profile even if contraindicated
+
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
