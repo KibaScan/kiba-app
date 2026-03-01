@@ -5,67 +5,7 @@ import { supabase } from './supabase';
 import type { Pet, BreedSize } from '../types/pet';
 import { deriveLifeStage, deriveBreedSize } from '../utils/lifeStage';
 import { useActivePetStore } from '../stores/useActivePetStore';
-
-// ─── Breed → Size Map ──────────────────────────────────────
-// Known breeds from BREED_MODIFIERS_DOGS.md + common breeds.
-// Unrecognized breeds fall back to weight-based derivation via deriveBreedSize().
-
-const BREED_SIZE_MAP: Record<string, BreedSize> = {
-  // Small (<25 lbs)
-  'Miniature Schnauzer': 'small',
-  'Yorkshire Terrier': 'small',
-  'Border Terrier': 'small',
-  'Cavalier King Charles Spaniel': 'small',
-  'Bedlington Terrier': 'small',
-  'West Highland White Terrier': 'small',
-  'Shetland Sheepdog': 'small',
-  'Chihuahua': 'small',
-  'Pomeranian': 'small',
-  'Maltese': 'small',
-  'Shih Tzu': 'small',
-  'Pug': 'small',
-  'Dachshund': 'small',
-  'Bichon Frise': 'small',
-  'Lhasa Apso': 'small',
-  'Miniature Poodle': 'small',
-  'French Bulldog': 'small',
-  'Boston Terrier': 'small',
-  'Pekingese': 'small',
-
-  // Medium (25–55 lbs)
-  'Cocker Spaniel': 'medium',
-  'Soft-Coated Wheaten Terrier': 'medium',
-  'Chinese Shar-Pei': 'medium',
-  'Beagle': 'medium',
-  'English Bulldog': 'medium',
-  'Australian Shepherd': 'medium',
-  'Border Collie': 'medium',
-  'Siberian Husky': 'medium',
-  'Staffordshire Bull Terrier': 'medium',
-  'Standard Poodle': 'medium',
-  'Samoyed': 'medium',
-
-  // Large (55–90 lbs)
-  'German Shepherd': 'large',
-  'Labrador Retriever': 'large',
-  'Golden Retriever': 'large',
-  'Doberman Pinscher': 'large',
-  'Boxer': 'large',
-  'Irish Setter': 'large',
-  'Dalmatian': 'large',
-  'Weimaraner': 'large',
-  'Rottweiler': 'large',
-  'Alaskan Malamute': 'large',
-
-  // Giant (>90 lbs)
-  'Newfoundland': 'giant',
-  'Great Dane': 'giant',
-  'Saint Bernard': 'giant',
-  'Irish Wolfhound': 'giant',
-  'Bernese Mountain Dog': 'giant',
-  'Mastiff': 'giant',
-  'Great Pyrenees': 'giant',
-};
+import { BREED_SIZE_MAP } from '../data/breeds';
 
 /**
  * Resolve breed size: known breed → map lookup, else → weight-based derivation.
