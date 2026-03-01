@@ -14,6 +14,9 @@ import PantryScreen from '../screens/PantryScreen';
 import MeScreen from '../screens/MeScreen';
 import ResultScreen from '../screens/ResultScreen';
 import PetProfileScreen from '../screens/PetProfileScreen';
+import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
+import CreatePetScreen from '../screens/CreatePetScreen';
+import EditPetScreen from '../screens/EditPetScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import CommunityContributionScreen from '../screens/CommunityContributionScreen';
 import { useAppStore } from '../stores/useAppStore';
@@ -76,6 +79,9 @@ function MeStackScreen() {
     <MeStack.Navigator screenOptions={{ headerShown: false }}>
       <MeStack.Screen name="MeMain" component={MeScreen} />
       <MeStack.Screen name="PetProfile" component={PetProfileScreen} />
+      <MeStack.Screen name="SpeciesSelect" component={SpeciesSelectScreen} />
+      <MeStack.Screen name="CreatePet" component={CreatePetScreen} />
+      <MeStack.Screen name="EditPet" component={EditPetScreen} />
     </MeStack.Navigator>
   );
 }
