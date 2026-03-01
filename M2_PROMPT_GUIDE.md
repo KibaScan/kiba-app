@@ -2,7 +2,7 @@
 
 > **Purpose:** Step-by-step prompts for building Pet Profiles + Portion Calculator in Claude Code.
 > Each prompt is copy-paste ready. Session boundaries, `/compact`, and `/clear` points are marked.
-> **Updated:** March 1, 2026 — incorporates D-116 through D-121 (M2 design decisions).
+> **Updated:** March 1, 2026 — incorporates D-116 through D-123 (M2 design decisions).
 
 ---
 
@@ -11,7 +11,7 @@
 Before starting any M2 work:
 
 1. Confirm CLAUDE.md says `Current phase: M2 Pet Profiles + Vet Audit`
-2. Confirm decision count says 121 (D-001 through D-121)
+2. Confirm decision count says 123 (D-001 through D-123)
 3. Confirm `pets` table description uses PET_PROFILE_SPEC column names: `weight_current_lbs` (not `weight_lbs`), `date_of_birth` (not `birth_date`), `is_neutered` (not `is_spayed_neutered`), activity levels `'low'|'moderate'|'high'|'working'` (not `'sedentary'|'active'`)
 4. Confirm project structure includes `useActivePetStore.ts` and `haptics.ts`
 5. Confirm M1 scoring engine tests still pass: `npx jest --passWithNoTests`
@@ -411,14 +411,25 @@ Before planning, read DECISIONS.md:
 - D-116 (DOB: Exact Date | Approximate Age toggle)
 - D-118 (sex: segmented control, optional, neither selected by default)
 - D-121 (haptics: import chipToggle, speciesToggle, saveSuccess)
+- D-122 (species selection on dedicated pre-create screen, not in form)
+- D-123 (species-specific activity labels: dogs=Low/Mod/High/Working, cats=Indoor/Indoor-Outdoor/Outdoor)
 
-Session scope — two screens, one component:
+Session scope — three screens, one component:
+
+0. src/screens/SpeciesSelectScreen.tsx
+   Full-screen "I have a..." with two large tappable cards:
+   [ Dog ] and [ Cat ] — using Ionicons 'paw' icon + text label.
+   Background: #1A1A1A. Cards: #242424, 12px radius.
+   Tapping fires haptics.speciesToggle() and navigates to
+   CreatePetScreen with species passed as a route param.
+   Species is NOT shown or editable on the create form.
 
 1. src/screens/CreatePetScreen.tsx
    The FULL profile creation form. This is NOT the onboarding light
    capture (which already exists from M1 with just name + species).
    This is accessed from the Me tab → "Add Pet" or from the Pet Hub
-   "+ Add Pet" button.
+   "+ Add Pet" button. Species is received as a route param from
+   SpeciesSelectScreen (D-122) — not a form field.
 
    Field order (top to bottom, matching PET_PROFILE_SPEC.md):
 
@@ -429,19 +440,16 @@ Session scope — two screens, one component:
    b. Pet Name — text input, required. 20 char max.
       Placeholder: "What's your pet's name?"
 
-   c. Species — segmented control: [ 🐕 Dog ] [ 🐈 Cat ]
-      Wait — D-084 says no emoji. Use SF Symbol equivalents.
-      Actually, use small text labels: [ Dog ] [ Cat ] with a
-      subtle species icon from @expo/vector-icons (Ionicons:
-      'paw' for dog, 'paw' for cat — or just text labels).
-      Species selection triggers haptics.speciesToggle().
-      Species change resets breed field and filters condition list.
+   c. Sex — D-118 segmented control: [ Male ] [ Female ]
+      Neither selected by default (null is valid).
+      Optional — no validation required.
+      Fires haptics.chipToggle() on selection.
 
    d. Breed — searchable dropdown per D-102.
       "Mixed Breed" and "Unknown / Other" always pinned at bottom.
       Alphabetical otherwise. Search filters as user types.
       Data source: src/data/breeds.ts (dog or cat list based on
-      species selection).
+      species from route param).
 
    e. Date of Birth — D-116 toggle:
       [ Exact Date ] | [ Approximate Age ]
@@ -456,30 +464,30 @@ Session scope — two screens, one component:
       One decimal place allowed. Placeholder: "Current weight"
       Stores as weight_current_lbs.
 
-   g. Sex — D-118 segmented control: [ Male ] [ Female ]
-      Neither selected by default (null is valid).
-      Optional — no validation required.
-      Fires haptics.chipToggle() on selection.
-
-   h. Activity Level — segmented control:
-      [ Low ] [ Moderate ] [ High ] [ Working ]
-      Default: Moderate (pre-selected).
+   g. Activity Level — species-specific labels per D-123:
+      Dogs: [ Low ] [ Moderate ] [ High ] [ Working ]
+        Default: Moderate (pre-selected).
+      Cats: [ Indoor ] [ Indoor/Outdoor ] [ Outdoor ]
+        Default: Indoor (pre-selected).
+        Maps to DB: Indoor='low', Indoor/Outdoor='moderate', Outdoor='high'
+        "Working" hidden for cats (no cat DER multiplier exists).
       Fires haptics.chipToggle() on change.
 
-   i. Neutered — toggle switch: "Spayed / Neutered"
+   h. Neutered — toggle switch: "Spayed / Neutered"
       Default: on (true) — majority of pets are.
 
-   j. "Continue to Health" button — saves basic profile via
+   i. "Continue to Health" button — saves basic profile via
       petService.createPet(), navigates to HealthConditionsScreen.
       Fires haptics.saveSuccess() on save.
-      Minimum required: name + species. All other fields optional.
+      Minimum required: name (species already captured via route param).
+      All other fields optional.
 
    Visual design:
    - Background: #1A1A1A
    - Card surfaces for field groups: #242424 with 12px border radius
    - Teal accent (#00B4D8) for active segmented controls and buttons
-   - Group related fields: Photo+Name+Species in one card,
-     Breed+DOB+Weight in second card, Sex+Activity+Neutered in third
+   - Group related fields: Photo+Name+Sex in one card,
+     Breed+DOB+Weight in second card, Activity+Neutered in third
    - Scroll view — form is longer than one screen
    - "Skip for now" link at bottom → saves with just name+species,
      navigates to Hub. Score shows Layer 1+2 only until profile
@@ -510,10 +518,11 @@ Do not build the Portion Calculator — that's Session 4.
 Show me the plan before writing code.
 ```
 
-**Review checkpoint:** Three things to check in the plan:
-1. The field order matches PET_PROFILE_SPEC.md exactly
+**Review checkpoint:** Four things to check in the plan:
+1. The field order matches PET_PROFILE_SPEC.md §11 exactly (Photo/Name/Sex, Breed/DOB/Weight, Activity/Neutered)
 2. The DOB toggle (D-116) has both modes implemented with synthesizeDob()
 3. No emoji anywhere — SF Symbols or text labels only per D-084
+4. Species comes from SpeciesSelectScreen route param (D-122), NOT a form field. Activity labels are species-specific (D-123).
 
 ```
 /execute
@@ -572,45 +581,36 @@ Required validations on CreatePetScreen / EditPetScreen:
 1. Name: required, 1-20 characters, trimmed
    Error: "Pet name is required" (shown inline, red text below field)
 
-2. Species: required
-   Error: "Please select a species" (should be impossible to miss
-   but handle defensively)
-
-3. Weight: optional but if entered, must be 0.5-300 lbs
+2. Weight: optional but if entered, must be 0.5-300 lbs
    Error: "Weight must be between 0.5 and 300 lbs"
 
-4. Date of Birth — Exact mode: cannot be in the future
+3. Date of Birth — Exact mode: cannot be in the future
    Error: "Birth date cannot be in the future"
 
-5. Date of Birth — Approximate mode:
+4. Date of Birth — Approximate mode:
    - Years + Months cannot both be 0 if age is provided
    - Years max 30 (no pet lives longer)
    - Months max 11
 
-6. Breed change resets breed_size derivation → re-derives life_stage
+5. Breed change resets breed_size derivation → re-derives life_stage
 
-7. Species change:
-   - Resets breed to null (dog breeds ≠ cat breeds)
-   - Resets conditions and allergens (species-filtered lists differ)
-   - Shows brief toast: "Breed and health info reset for [species]"
-
-8. Delete confirmation modal:
+6. Delete confirmation modal:
    - User must type exact pet name to confirm (case-insensitive)
    - Delete button disabled until name matches
    - "This will permanently delete [Name] and all associated scan
      history. This cannot be undone."
    - After delete: navigate to Pet Hub or create screen if no pets remain
 
-9. Keyboard avoidance: form must scroll properly when keyboard is open.
+7. Keyboard avoidance: form must scroll properly when keyboard is open.
    Use KeyboardAvoidingView or similar.
 
-10. Save button disabled while saving (prevent double-tap).
+8. Save button disabled while saving (prevent double-tap).
     Show loading spinner during save. On error: toast with message,
     re-enable button.
 
 Edge case tests (__tests__/screens/CreatePetScreen.test.ts):
 - Submit with empty name → error shown, save blocked
-- Submit with name only → succeeds (species has default)
+- Submit with name only → succeeds (species from route param)
 - Weight 0.3 → error shown
 - Weight 301 → error shown
 - Future date of birth → error shown

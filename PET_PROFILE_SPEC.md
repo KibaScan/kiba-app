@@ -2,8 +2,8 @@
 
 > Canonical reference for pet profile data model, editing UI, allergen system, and Layer 3 integration.
 > Read this before implementing any M2 pet profile work.
-> Updated: March 1, 2026 — D-116 through D-121 integrated, life stages expanded to 6 tiers, NEEDS DECISION flags resolved.
-> Depends on: D-064, D-092, D-094, D-095, D-097, D-098, D-102, D-106, D-109, D-110, D-112, D-116, D-117, D-118, D-119, D-120, D-121
+> Updated: March 1, 2026 — D-116 through D-121 integrated, life stages expanded to 6 tiers, NEEDS DECISION flags resolved. Species selection moved to pre-create screen (sex promoted to Card 1). D-123: species-specific activity labels.
+> Depends on: D-064, D-092, D-094, D-095, D-097, D-098, D-102, D-106, D-109, D-110, D-112, D-116, D-117, D-118, D-119, D-120, D-121, D-122, D-123
 
 ---
 
@@ -28,7 +28,7 @@ These two fields are the minimum for D-094 compliance ("no naked scores"). Captu
 | `weight_updated_at` | TIMESTAMPTZ | — | Auto-set | Set on every write to weight_current_lbs | D-117: stale weight guard (amber prompt >6 months) |
 | `date_of_birth` | DATE | No | null | Not in future, not >30 years ago | Used for age + life stage derivation (D-064) |
 | `dob_is_approximate` | BOOLEAN | No | false | — | D-116: true when DOB synthesized from approximate age inputs |
-| `activity_level` | ENUM | No | 'moderate' | 'low','moderate','high','working' | Affects DER multiplier (see PORTION_CALCULATOR_SPEC) |
+| `activity_level` | ENUM | No | Species-dependent | 'low','moderate','high','working' | D-123: Dogs default 'moderate', cats default 'low'. 'working' only valid for dogs. Affects DER multiplier (see PORTION_CALCULATOR_SPEC) |
 | `is_neutered` | BOOLEAN | No | true | — | Affects DER multiplier. Default true — majority of pets are neutered. |
 | `sex` | TEXT | No | null | 'male' or 'female', null valid | D-118: optional. For vet report credibility + pronoun personalization. Zero scoring impact. |
 | `photo_url` | TEXT | No | null | Valid Supabase storage path | Displayed on score ring per D-094 |
@@ -51,7 +51,7 @@ CREATE TABLE pets (
   weight_updated_at TIMESTAMPTZ,         -- D-117: set on every weight write
   date_of_birth DATE,
   dob_is_approximate BOOLEAN DEFAULT false, -- D-116: true for synthesized DOB
-  activity_level TEXT DEFAULT 'moderate' CHECK (activity_level IN ('low','moderate','high','working')),
+  activity_level TEXT DEFAULT 'moderate' CHECK (activity_level IN ('low','moderate','high','working')), -- D-123: DB default 'moderate'; app overrides to 'low' for cats, hides 'working' for cats
   is_neutered BOOLEAN DEFAULT true,
   sex TEXT CHECK (sex IN ('male', 'female')), -- D-118: optional, null valid
   photo_url TEXT,
@@ -489,26 +489,36 @@ Platform-check: no-op on unsupported platforms. Single import: `import { saveSuc
 
 ## 11. Profile Editing UI
 
+### Species Selection Screen (Pre-Create)
+
+Full-screen "I have a..." with two large tappable cards: `[ Dog ]` and `[ Cat ]`. Uses Ionicons 'paw' icon + text label.
+Background: #1A1A1A. Cards: #242424, 12px border radius. Tapping fires `haptics.speciesToggle()` and navigates to CreatePetScreen with species passed as a route param.
+
+Species is NOT shown or editable on the create/edit form — it is locked from this selection. This replaces the in-form species segmented control.
+
 ### Create Screen Layout
 
-Single scrollable form. Three grouped cards on #1A1A1A background, #242424 card surfaces, 12px border radius:
+Single scrollable form. Three grouped cards on #1A1A1A background, #242424 card surfaces, 12px border radius. Species is already captured via SpeciesSelectScreen (above) and passed as a route param — not a form field.
 
 **Card 1 — Identity:**
 - Photo — circular frame (96px), tap to select from gallery (Expo ImagePicker, square crop, quality 0.7). Default: species silhouette icon.
 - Name — text input, 1–20 chars, required. Placeholder: "What's your pet's name?"
-- Species — segmented control `[ Dog ] [ Cat ]`. Fires `haptics.speciesToggle()`. Species change resets breed and conditions.
+- Sex — D-118 segmented control `[ Male ] [ Female ]`, neither pre-selected. Fires `haptics.chipToggle()`. Optional.
 
 **Card 2 — Physical:**
-- Breed — searchable dropdown per D-102
+- Breed — searchable dropdown per D-102 (filtered by species from route param)
 - Date of Birth — D-116 toggle: `[ Exact Date ] | [ Approximate Age ]`
 - Weight — numeric input with "lbs" suffix, one decimal place
 
 **Card 3 — Details:**
-- Sex — D-118 segmented control `[ Male ] [ Female ]`, neither pre-selected
-- Activity Level — segmented `[ Low ] [ Moderate ] [ High ] [ Working ]`, default: Moderate
+- Activity Level — species-specific labels per D-123:
+  - Dogs: segmented `[ Low ] [ Moderate ] [ High ] [ Working ]`, default: Moderate
+  - Cats: segmented `[ Indoor ] [ Indoor/Outdoor ] [ Outdoor ]`, default: Indoor
+  - Label → DB mapping: Indoor='low', Indoor/Outdoor='moderate', Outdoor='high'
+  - "Working" hidden for cats (no cat DER multiplier exists)
 - Neutered — toggle switch "Spayed / Neutered", default: on
 
-Bottom: "Continue to Health" button → saves basic profile, navigates to Health Conditions screen. Minimum required: name + species.
+Bottom: "Continue to Health" button → saves basic profile (species from route param + form fields), navigates to Health Conditions screen. Minimum required: name (species already captured).
 
 "Skip for now" link → saves with just name + species, navigates to Hub.
 
@@ -516,7 +526,7 @@ Bottom: "Continue to Health" button → saves basic profile, navigates to Health
 
 - Pre-populated with existing pet data
 - "Save Changes" replaces "Continue to Health"
-- Species: locked after creation — changing species invalidates conditions, allergens, breed, and scan history. Users must delete pet and create new.
+- Species: not shown in form — locked at creation via SpeciesSelectScreen. Users must delete pet and create new to change species.
 - "Health & Diet" navigation link → Health Conditions screen
 - Delete button at bottom (red text): "Delete [Pet Name]" → confirmation modal requiring typed pet name (case-insensitive). Fires `haptics.deleteConfirm()`.
 
@@ -529,7 +539,7 @@ Bottom: "Continue to Health" button → saves basic profile, navigates to Health
 - Goal weight: only editable when obesity OR underweight condition active
 - Goal weight direction: goal < current for obesity, goal > current for underweight
 - Cat hepatic lipidosis guard (D-062): if cat + obesity + goal weight → check implied loss rate. If >1% body weight/week → red warning before save.
-- Species change on create: resets breed to null, resets conditions/allergens
+- Species: captured on SpeciesSelectScreen before form. Not editable in create or edit form. Breed list and condition list filter by species from route param.
 
 ### Auto-Derivation on Save
 
@@ -611,7 +621,7 @@ Tappable → Edit Profile. Cap at once per session or once per 3 scans. Do NOT s
 | No weight | Skip all portion calculations, hide portion card, skip hepatic lipidosis guard |
 | No conditions | Layer 3 condition modifiers = neutral (0 adjustment) |
 | Breed not in lookup | Treated as 'Mixed Breed' — no modifiers, no contraindications |
-| Species change | Locked after creation. Delete pet and create new as escape hatch. |
+| Species change | Not possible in form — species locked at creation via SpeciesSelectScreen. Delete pet and create new as escape hatch. |
 | Pet deleted | CASCADE deletes pet_conditions, pet_allergens, and all scan associations |
 | Allergen added after scans exist | Previously scanned products don't retroactively show warnings. Next scan of same product will. Pantry items should re-evaluate (M5). |
 | Stale weight (>6 months) | Amber prompt on Hub (D-117). Non-blocking. |
