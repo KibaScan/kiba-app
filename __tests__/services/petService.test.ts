@@ -5,6 +5,7 @@ import {
   getPetsForUser,
   savePetConditions,
   savePetAllergens,
+  petPhotoPath,
 } from '../../src/services/petService';
 import type { Pet } from '../../src/types/pet';
 
@@ -505,5 +506,19 @@ describe('savePetAllergens', () => {
 
     expect(deleteChain.delete).toHaveBeenCalled();
     expect(deleteChain.insert).not.toHaveBeenCalled();
+  });
+});
+
+// ─── petPhotoPath ──────────────────────────────────────────
+
+describe('petPhotoPath', () => {
+  test('generates correct storage path', () => {
+    expect(petPhotoPath('user-abc', 'pet-123')).toBe('user-abc/pet-123.jpg');
+  });
+
+  test('handles UUID-style IDs', () => {
+    const userId = '550e8400-e29b-41d4-a716-446655440000';
+    const petId = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    expect(petPhotoPath(userId, petId)).toBe(`${userId}/${petId}.jpg`);
   });
 });
