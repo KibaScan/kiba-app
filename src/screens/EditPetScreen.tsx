@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Image,
   Alert,
   Modal,
   StyleSheet,
@@ -21,7 +20,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
@@ -30,6 +28,7 @@ import { updatePet, deletePet } from '../services/petService';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
 import { useActivePetStore } from '../stores/useActivePetStore';
+import PetPhotoSelector from '../components/PetPhotoSelector';
 import BreedSelector from '../components/BreedSelector';
 import type { MeStackParamList } from '../types/navigation';
 import type { ActivityLevel, Sex } from '../types/pet';
@@ -130,17 +129,6 @@ export default function EditPetScreen({ navigation, route }: Props) {
 
   // ─── Handlers ────────────────────────────────────────────
 
-  async function handlePickPhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  }
-
   function handleSexSelect(value: Sex) {
     chipToggle();
     setSex((prev) => (prev === value ? null : value));
@@ -229,7 +217,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
 
       const weightNum = weight ? parseFloat(weight) : null;
 
-      await updatePet(petId, {
+      const updatedPet = await updatePet(petId, {
         name: trimmedName,
         breed,
         weight_current_lbs: weightNum,
@@ -242,6 +230,12 @@ export default function EditPetScreen({ navigation, route }: Props) {
       });
 
       saveSuccess();
+
+      // Photo upload failed silently — notify user
+      if (photoUri && !photoUri.startsWith('http') && !updatedPet.photo_url) {
+        Alert.alert('Photo Upload', "Photo couldn't be saved — you can try again later.");
+      }
+
       navigation.navigate('MeMain');
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
@@ -303,22 +297,11 @@ export default function EditPetScreen({ navigation, route }: Props) {
           {/* ── Card 1: Identity ──────────────────────────────── */}
           <View style={styles.card}>
             {/* Photo */}
-            <TouchableOpacity
-              style={styles.photoContainer}
-              onPress={handlePickPhoto}
-              activeOpacity={0.7}
-            >
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photo} />
-              ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name="paw" size={40} color={Colors.accent} />
-                </View>
-              )}
-              <View style={styles.photoEditBadge}>
-                <Ionicons name="camera" size={14} color={Colors.textPrimary} />
-              </View>
-            </TouchableOpacity>
+            <PetPhotoSelector
+              photoUrl={photoUri}
+              species={pet.species}
+              onPhotoSelected={setPhotoUri}
+            />
 
             {/* Name */}
             <Text style={styles.fieldLabel}>Name</Text>
@@ -734,36 +717,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
-  },
-
-  // ── Photo ──
-  photoContainer: {
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
-  },
-  photo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-  },
-  photoPlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#00B4D815',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  photoEditBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // ── Fields ──

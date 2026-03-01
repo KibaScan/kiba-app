@@ -1,5 +1,6 @@
 // M2 Pet CRUD — Supabase-backed with local state sync.
 // All derived fields (life_stage, breed_size) are computed here, never user-entered.
+// Photo upload to Supabase Storage 'pet-photos' bucket happens at save time.
 
 import { supabase } from './supabase';
 import type { Pet, BreedSize } from '../types/pet';
@@ -27,6 +28,69 @@ function lookupBreedSize(
   return weightLbs != null ? deriveBreedSize(weightLbs) : null;
 }
 
+// ─── Photo Upload ───────────────────────────────────────────
+
+/**
+ * Generate the storage path for a pet photo.
+ * Path: `{user_id}/{pet_id}.jpg` — matches RLS prefix policy on 'pet-photos' bucket.
+ */
+export function petPhotoPath(userId: string, petId: string): string {
+  return `${userId}/${petId}.jpg`;
+}
+
+/** Returns true if the URI is a local file (not an already-uploaded https URL). */
+function isLocalFileUri(uri: string | null): boolean {
+  if (!uri) return false;
+  return !uri.startsWith('http://') && !uri.startsWith('https://');
+}
+
+/**
+ * Upload a pet photo from a local URI to Supabase Storage.
+ * Returns the public URL on success, null on failure.
+ * Failures are logged but never throw — pet save must not be blocked.
+ */
+async function uploadPetPhoto(
+  userId: string,
+  petId: string,
+  localUri: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(localUri);
+    const blob = await response.blob();
+    const path = petPhotoPath(userId, petId);
+
+    const { error } = await supabase.storage
+      .from('pet-photos')
+      .upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (error) {
+      console.warn('Pet photo upload failed:', error.message);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('pet-photos')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
+  } catch (err) {
+    console.warn('Pet photo upload failed:', (err as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Get the authenticated user ID from Supabase session.
+ * Returns null if no active session.
+ */
+async function getAuthUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
+
 // ─── CRUD ───────────────────────────────────────────────────
 
 export async function createPet(
@@ -46,6 +110,9 @@ export async function createPet(
   const weight_updated_at =
     input.weight_current_lbs != null ? new Date().toISOString() : null;
 
+  // Separate local photo URI — upload happens after insert (need pet ID for path)
+  const localPhotoUri = isLocalFileUri(input.photo_url) ? input.photo_url : null;
+
   const { data, error } = await supabase
     .from('pets')
     .insert({
@@ -54,13 +121,35 @@ export async function createPet(
       breed_size,
       life_stage,
       weight_updated_at,
+      photo_url: localPhotoUri ? null : input.photo_url,
     })
     .select()
     .single();
 
   if (error) throw new Error(`Failed to create pet: ${error.message}`);
 
-  const pet = data as Pet;
+  let pet = data as Pet;
+
+  // Upload photo if local URI was provided
+  if (localPhotoUri) {
+    const userId = await getAuthUserId();
+    if (userId) {
+      const publicUrl = await uploadPetPhoto(userId, pet.id, localPhotoUri);
+      if (publicUrl) {
+        // Update pet record with public URL
+        const { data: updated, error: updateErr } = await supabase
+          .from('pets')
+          .update({ photo_url: publicUrl })
+          .eq('id', pet.id)
+          .select()
+          .single();
+        if (!updateErr && updated) {
+          pet = updated as Pet;
+        }
+      }
+    }
+  }
+
   useActivePetStore.getState().addPet(pet);
   return pet;
 }
@@ -102,6 +191,23 @@ export async function updatePet(
     patch.life_stage = dob
       ? deriveLifeStage(new Date(dob), species, breedSize)
       : null;
+  }
+
+  // Handle photo upload if a local file URI was provided
+  if ('photo_url' in updates && isLocalFileUri(updates.photo_url ?? null)) {
+    const userId = await getAuthUserId();
+    if (userId) {
+      const publicUrl = await uploadPetPhoto(userId, petId, updates.photo_url!);
+      if (publicUrl) {
+        patch.photo_url = publicUrl;
+      } else {
+        // Upload failed — keep existing photo, don't overwrite with local URI
+        delete patch.photo_url;
+      }
+    } else {
+      // No auth session — keep existing photo
+      delete patch.photo_url;
+    }
   }
 
   const { data, error } = await supabase
