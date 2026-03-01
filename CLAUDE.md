@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: February 28, 2026
+> Last updated: March 1, 2026 (6-tier life stages, DER tables locked, profile validation rules added)
 
 ---
 
@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M1 Scan → Score Pipeline
+**Current phase:** M2 Pet Profiles + Vet Audit (M1 Scan → Score Pipeline complete)
 
 ## Tech Stack
 
@@ -29,11 +29,13 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (113 decisions)
+├── DECISIONS.md            ← canonical decision log (121 decisions)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
 ├── BREED_MODIFIERS_CATS.md             ← 21 cat breed entries (scoring engine lookup table)
+├── PET_PROFILE_SPEC.md                 ← M2 canonical: profile fields, conditions, allergens, breed modifiers
+├── PORTION_CALCULATOR_SPEC.md          ← M2 canonical: RER/DER math, goal weight, cat safety guards
 ├── app.json
 ├── tsconfig.json
 ├── supabase/
@@ -82,10 +84,12 @@ kiba-app/
 │   │       └── cats.ts              ← 21 breed entries from BREED_MODIFIERS_CATS.md
 │   ├── stores/
 │   │   ├── useAppStore.ts
+│   │   ├── useActivePetStore.ts  ← D-120: global active pet context, consumed by all pet-aware screens
 │   │   ├── usePetStore.ts
 │   │   └── useScanStore.ts
 │   ├── utils/
 │   │   ├── permissions.ts   ← ONLY location for paywall checks
+│   │   ├── haptics.ts       ← D-121: named haptic functions wrapping expo-haptics
 │   │   └── constants.ts
 │   └── navigation/
 │       └── index.tsx
@@ -172,9 +176,10 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Neutral if no conflicts detected
 
 ### Reference Scores (Regression Tests)
-- **Pure Balance Grain-Free Salmon & Pea (Dog):** 69/100
-  - IQ: 62.8, NP: 85, FC: 88 → Base: 73.2 → DCM −6 → Mitigation +2 → 69
-- **Temptations Classic Tuna (Cat Treat):** 44/100 (no Supabase seed data yet — original design estimate)
+- **Pure Balance Grain-Free Salmon & Pea (Dog):** 66/100
+  - IQ: 60, NP: 82, FC: 78 → Base: 69.3 → DCM −8% → Mitigation +3% → **66**
+- **Temptations Classic Tuna (Cat Treat):** 44/100
+  - IQ: 52 → Cat carb penalty −8 → 44
 
 ### Ingredient Splitting Detection
 Use `cluster_id` field in `ingredients_dict` table. Both "Dried Peas" and "Pea Starch" get `cluster_id = 'legume_pea'`. Detect via `GROUP BY cluster_id HAVING count >= 2`. NEVER use string matching — prevents false positives.
@@ -220,7 +225,7 @@ See `supabase/migrations/001_initial_schema.sql` for full schema. Critical table
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — canonical ingredients with `cluster_id`, severity per species, `position_reduction_eligible` flag, `allergen_group` + `allergen_group_possible` (D-098), display content columns (D-105: `display_name`, `tldr`, `detail_body`, `citations_display`, `position_context`)
 - `product_ingredients` — junction linking products to ingredients with `position`
-- `pets` — RLS enforced, includes `goal_weight`, `life_stage` (derived, never user-entered). Canonical name per D-110 (NOT `pet_profiles`)
+- `pets` — RLS enforced, canonical name per D-110 (NOT `pet_profiles`). Key columns: `weight_current_lbs` (not `weight_lbs`), `weight_goal_lbs`, `date_of_birth` (not `birth_date`), `is_neutered` (not `is_spayed_neutered`), `activity_level` ('low'|'moderate'|'high'|'working'), `sex` ('male'|'female'|null, D-118), `dob_is_approximate` (D-116), `weight_updated_at` (D-117), `life_stage` (derived, never user-entered)
 - `pet_conditions` — D-097 many-to-many (pet → condition_tag). RLS via pets table join
 - `pet_allergens` — D-097 many-to-many (pet → allergen). Only populated when `allergy` condition exists. RLS via pets table join
 - `scans` — stores `score_breakdown` JSONB snapshot per scan
@@ -249,7 +254,10 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - Fiber penalty suppressed 50% when pet has `obesity` condition (same as "light/weight management" label logic)
 - UI advisory card shows goal-weight portions on scan result screen — not a score modifier
 - Cat hepatic lipidosis guard: warn if weight loss rate >1% body weight/week
-- Geriatric cats (12+): DER multiplier uses geriatric floor, never portioned below it
+- Geriatric cats (14+): DER multiplier uses 1.5× floor (D-063), never portioned below it — they need MORE calories, not fewer
+- Puppy/kitten goal weight: disabled. Growing animals should not restrict calories.
+- Cat default activity: `low` (most pet cats are indoor)
+- DER multiplier tables: LOCKED in PORTION_CALCULATOR_SPEC.md §3
 - ❌ No caloric density penalties, no fat/carb multipliers for weight — avoids bad food outscoring good food
 
 ## What NOT to Build
@@ -261,6 +269,43 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ `expo-barcode-scanner` (deprecated — use `expo-camera`)
 - ❌ Star ratings (replaced by Kiba Index: Taste Test + Tummy Check)
 - ❌ OPFF as data source (using Apify scraping + curated + community)
+- ❌ "Dislikes / Won't Eat" system (rejected M2 — scope creep, worse failure mode than allergen data pollution, revisit post-launch if measurable)
+- ❌ Breed-specific avatar silhouettes (rejected M2 — asset pipeline doesn't exist, use generic species silhouette)
+
+## M2 Profile Design (D-116 through D-121)
+
+### 6-Tier Life Stages (D-064)
+
+Life stage is auto-derived, never user-entered. Six tiers across both species — `junior` and `mature` added beyond the traditional 4-tier model. For DER calculation, these collapse to 4 metabolic buckets: junior/mature → `adult`. See PET_PROFILE_SPEC.md §2 for full age boundary tables per breed size.
+
+| Tier | Dogs | Cats | DER Bucket |
+|------|------|------|-----------|
+| Puppy/Kitten | 0–12mo (0–18mo giant) | 0–12mo | puppy |
+| Junior | 12–24mo | 1–2yr | adult |
+| Adult | 2–7yr (2–5yr giant) | 2–7yr | adult |
+| Mature | 7–10yr (5–8yr giant) | 7–11yr | adult |
+| Senior | 10–13yr (8–10yr giant) | 11–14yr | senior |
+| Geriatric | 13+yr (10+yr giant) | 14+yr | geriatric |
+
+### Profile Validation Rules
+
+- **Species:** locked after creation. Delete pet + create new as escape hatch.
+- **Name:** 1–20 chars, trimmed
+- **Breed:** default 'Mixed Breed' (not 'mixed'). Searchable dropdown per D-102.
+- **is_neutered:** default `true` (majority of pets are neutered)
+- **Breed size for mixed dogs:** derived from weight if available (<25 lbs=small, 25–55=medium, 55–90=large, >90=giant). Fallback: 'medium'.
+
+**Rescue pets (D-116):** Birthday field has `[Exact Date] | [Approximate Age]` toggle. Approximate mode takes years + months, backend synthesizes a DOB. `dob_is_approximate BOOLEAN` on `pets` table tracks provenance. Life stage derivation works identically.
+
+**Stale weight guard (D-117):** `weight_updated_at TIMESTAMPTZ` on `pets` table. If >6 months stale, amber prompt on Pet Hub: "Weight last updated [N] months ago — still accurate?" Tappable → edit screen.
+
+**Sex field (D-118):** `sex TEXT CHECK ('male'|'female')` on `pets` table. Optional (null valid). Primary driver: D-099 vet report clinical credibility. Secondary: pronoun personalization in D-094 copy. Zero scoring impact.
+
+**"Perfectly Healthy" chip (D-119):** Green (#34C759) chip in condition grid, mutual exclusion with all condition chips. Stores zero `pet_conditions` rows — same as skip, better emotional framing.
+
+**Multi-pet carousel (D-120):** Horizontal pet avatar row on Pet Hub. `useActivePetStore` in Zustand holds `activePetId`, consumed globally. Teal border on active, dimmed inactive. Free tier = no carousel (1 pet). "+ Add Pet" triggers D-052 gate.
+
+**Haptics (D-121):** `utils/haptics.ts` wraps `expo-haptics` behind named functions. Light for chip toggles, medium for species/scan, success for save/barcode, error for hepatic lipidosis warning, heavy for delete. No-op on unsupported platforms.
 
 ## Commit Convention
 

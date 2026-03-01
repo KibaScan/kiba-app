@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: February 27, 2026
+> Updated: March 1, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: Pre-Build (Data Collection + Design Sprint Complete)
+## Current Status: M2 Pet Profiles + Vet Audit (M0 + M1 Complete)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (112 decisions, D-001 through D-112)
+- Decision log established (121 decisions, D-001 through D-121)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -24,6 +24,11 @@
 - Cat breed modifier research complete (`BREED_MODIFIERS_CATS.md`) — 21 breeds, 3 tiers, clinically researched (pending formal vet audit M2)
 - Suitability score reframing strategy complete (D-094) — attorney-approved legal strategy
 - UPVM compliance rules locked (D-095) — prohibited terms list for all UI copy
+- M0 foundation complete: Expo + TypeScript project, Supabase schema with RLS, Zustand stores, navigation shell, onboarding flow (D-092)
+- M1 scan → score pipeline complete: camera + barcode, 3-layer scoring engine (126 tests across 7 suites), result screen with progressive disclosure, score ring with D-113 breakpoints, concern tags, waterfall breakdown, full ingredient list
+- M2 UI design concept reviewed, 6 new decisions locked (D-116 through D-121): approximate age mode, stale weight guard, sex field, "Perfectly Healthy" chip, multi-pet carousel, haptic feedback map
+- Pet Profile Spec complete (`PET_PROFILE_SPEC.md`) — profile fields, conditions, allergens, breed modifiers, editing UI
+- Portion Calculator Spec complete (`PORTION_CALCULATOR_SPEC.md`) — RER/DER math, goal weight, cat safety guards
 
 ---
 
@@ -32,12 +37,12 @@
 > Goal: Bootable app skeleton with type-safe data models, database schema, and navigation shell.
 
 ### Infrastructure
-- [ ] Register kibascan.com via Porkbun
-- [ ] Initialize Expo + TypeScript project (strict mode, no `any` types)
-- [ ] Set up Supabase project (see schema below)
-- [ ] Configure Zustand global store (active pet, modal state, scan cache)
-- [ ] Scaffold folder structure: `src/{components,screens,stores,types,utils,services,assets}`
-- [ ] Set up EAS Build for iOS development builds
+- [x] Register kibascan.com via Porkbun
+- [x] Initialize Expo + TypeScript project (strict mode, no `any` types)
+- [x] Set up Supabase project (see schema below)
+- [x] Configure Zustand global store (active pet, modal state, scan cache)
+- [x] Scaffold folder structure: `src/{components,screens,stores,types,utils,services,assets}`
+- [x] Set up EAS Build for iOS development builds
 
 ### Supabase Schema (Complete)
 The schema below corrects Gemini's incomplete version — includes all columns needed for the three scoring layers.
@@ -123,16 +128,20 @@ pets
 ├── user_id UUID FK → auth.users(id) ON DELETE CASCADE
 ├── name TEXT NOT NULL
 ├── species TEXT NOT NULL ('dog' | 'cat')
-├── breed TEXT
-├── weight_lbs DECIMAL(5,2) NOT NULL
-├── goal_weight_lbs DECIMAL(5,2)     ← null = no weight loss mode
-├── birth_date DATE                  ← used to derive life_stage
-├── life_stage TEXT                  ← derived, never user-entered
-├── activity_level TEXT DEFAULT 'moderate' ('sedentary' | 'moderate' | 'active' | 'working')
-├── is_spayed_neutered BOOLEAN DEFAULT true
-├── is_indoor BOOLEAN                ← cats only, affects DER multiplier
-├── allergies TEXT[]                     ← DEPRECATED: superseded by pet_allergens junction table (D-097). Remove in next migration.
-├── weight_loss_target_rate DECIMAL(5,3)  ← calculated, warns if >1% for cats
+├── breed TEXT DEFAULT 'mixed'
+├── weight_current_lbs DECIMAL(5,1)      ← renamed from weight_lbs per PET_PROFILE_SPEC
+├── weight_goal_lbs DECIMAL(5,1)         ← null = no weight management mode
+├── weight_updated_at TIMESTAMPTZ        ← D-117: stale weight guard (amber prompt >6 months)
+├── date_of_birth DATE                   ← renamed from birth_date per PET_PROFILE_SPEC
+├── dob_is_approximate BOOLEAN DEFAULT false  ← D-116: rescue pet approximate age mode
+├── life_stage TEXT                       ← derived, never user-entered (D-064)
+├── breed_size TEXT                       ← derived from breed lookup ('small'|'medium'|'large'|'giant')
+├── activity_level TEXT DEFAULT 'moderate' ('low' | 'moderate' | 'high' | 'working')
+├── is_neutered BOOLEAN                  ← renamed from is_spayed_neutered per PET_PROFILE_SPEC
+├── sex TEXT CHECK ('male' | 'female')   ← D-118: optional, null valid. For vet report + pronouns.
+├── photo_url TEXT                        ← Supabase storage path
+├── created_at TIMESTAMPTZ DEFAULT NOW()
+├── updated_at TIMESTAMPTZ DEFAULT NOW()
 ├── RLS: auth.uid() = user_id
 
 scans                                   ← canonical name per CLAUDE.md (was scan_history)
@@ -194,20 +203,20 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ```
 
 ### Navigation Shell
-- [ ] Bottom tab navigator per D-085: Home | Search | (SCAN raised) | Pantry | Me
-- [ ] Stack navigators nested per tab
-- [ ] Placeholder screens for each tab
-- [ ] Search tab visible but gated (premium paywall on interaction)
+- [x] Bottom tab navigator per D-085: Home | Search | (SCAN raised) | Pantry | Me
+- [x] Stack navigators nested per tab
+- [x] Placeholder screens for each tab
+- [x] Search tab visible but gated (premium paywall on interaction)
 
 ### Onboarding Flow (D-092 — Locked: Scan-First)
-- [ ] Brief intro (1-2 screens: what Kiba does)
-- [ ] Camera opens immediately after intro — scan first
-- [ ] After first scan, light profile capture before score displays (D-094 compliance):
+- [x] Brief intro (1-2 screens: what Kiba does)
+- [x] Camera opens immediately after intro — scan first
+- [x] After first scan, light profile capture before score displays (D-094 compliance):
   - One screen: pet name (text) + species (dog/cat toggle) — two fields, ≤10 seconds
-- [ ] Score displays with Layer 1 + Layer 2 active
-- [ ] Post-score personalization prompt: "Complete [Pet Name]'s profile — add breed, age, and health info for a more tailored score"
-- [ ] Alternative path: user can skip scanning and navigate to Me tab to set up full profile at any time
-- [ ] Score updates live when additional profile fields are added (Layer 3 activates)
+- [x] Score displays with Layer 1 + Layer 2 active
+- [x] Post-score personalization prompt: "Complete [Pet Name]'s profile — add breed, age, and health info for a more tailored score"
+- [x] Alternative path: user can skip scanning and navigate to Me tab to set up full profile at any time
+- [x] Score updates live when additional profile fields are added (Layer 3 activates)
 
 ### NOT at M0 (explicitly deferred)
 - ❌ RevenueCat / paywall SDK (→ M3)
@@ -222,71 +231,71 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: User scans a barcode and sees a score result within 2 seconds (perceived).
 
 ### Camera & Barcode
-- [ ] Implement `expo-camera` barcode scanning (NOT deprecated `expo-barcode-scanner`)
-- [ ] UPC lookup: scanned UPC → `product_upcs` → `product_id` → full product record
-- [ ] "Product not found" flow → community contribution prompt
-- [ ] Haptic feedback on successful scan (`expo-haptics`)
+- [x] Implement `expo-camera` barcode scanning (NOT deprecated `expo-barcode-scanner`)
+- [x] UPC lookup: scanned UPC → `product_upcs` → `product_id` → full product record
+- [x] "Product not found" flow → community contribution prompt
+- [x] Haptic feedback on successful scan (`expo-haptics`)
 
 ### Scoring Engine (Core)
-- [ ] Layer 1: Position-weighted ingredient scoring
-  - [ ] Load product ingredients with positions from `product_ingredients`
-  - [ ] Look up each ingredient in `ingredients_dict` for severity + flags
-  - [ ] Apply position reduction (proportion-based only, `position_reduction_eligible = true`)
-  - [ ] Calculate Ingredient Quality sub-score (0-100)
-  - [ ] Unnamed species penalty: −2 per unnamed fat/protein
-- [ ] Layer 1: Nutritional Profile (daily food only, 0 for treats)
-  - [ ] **Implement per `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`** — this is the authoritative reference
-  - [ ] DMB conversion when `ga_moisture_pct > 12%`
-  - [ ] 4 sub-nutrients with species-specific weights (Dog: 35/25/15/25, Cat: 45/20/10/25)
-  - [ ] Trapezoidal scoring curves per sub-nutrient (not binary pass/fail)
-  - [ ] Compare GA values to AAFCO thresholds by life stage
-  - [ ] Life stage modifiers (puppy/kitten, senior, large breed puppy)
-  - [ ] Bonus nutrient scoring (DHA, Omega-3, taurine, L-carnitine, zinc, probiotics)
-- [ ] Layer 1: Formulation Completeness (daily food only, 0 for treats)
-  - [ ] AAFCO statement compliance
-  - [ ] Preservative quality assessment
-  - [ ] Protein naming specificity
-- [ ] Category-adaptive weighting: 55/30/15 for daily food, 100/0/0 for treats
-- [ ] Layer 2: Species rules
-  - [ ] Dog: DCM advisory (−8% for grain-free + 3+ legumes in top 7)
-  - [ ] Dog: DCM mitigation (+3% for taurine + L-carnitine supplementation)
-  - [ ] Cat: Carb overload (−15% for 3+ high-glycemic carbs in top 5)
-  - [ ] Cat: Mandatory taurine check
-  - [ ] Cat: UGT1A6 enzyme warnings for specific compounds
-- [ ] Layer 3: Personalization
-  - [ ] Allergy cross-reference
-  - [ ] Life stage matching
-  - [ ] Breed-specific modifiers per `BREED_MODIFIERS_DOGS.md` and `BREED_MODIFIERS_CATS.md`
-  - [ ] Breed modifier cap: ±10 within nutritional bucket
-  - [ ] Register `no_modifier` breeds to prevent false penalties
-- [ ] Ingredient splitting detection: `GROUP BY cluster_id HAVING count >= 2`
-- [ ] FDA recall check: boolean lookup against recall database
-- [ ] Score engine must be deterministic and independently testable per layer
+- [x] Layer 1: Position-weighted ingredient scoring
+  - [x] Load product ingredients with positions from `product_ingredients`
+  - [x] Look up each ingredient in `ingredients_dict` for severity + flags
+  - [x] Apply position reduction (proportion-based only, `position_reduction_eligible = true`)
+  - [x] Calculate Ingredient Quality sub-score (0-100)
+  - [x] Unnamed species penalty: −2 per unnamed fat/protein
+- [x] Layer 1: Nutritional Profile (daily food only, 0 for treats)
+  - [x] **Implement per `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`** — this is the authoritative reference
+  - [x] DMB conversion when `ga_moisture_pct > 12%`
+  - [x] 4 sub-nutrients with species-specific weights (Dog: 35/25/15/25, Cat: 45/20/10/25)
+  - [x] Trapezoidal scoring curves per sub-nutrient (not binary pass/fail)
+  - [x] Compare GA values to AAFCO thresholds by life stage
+  - [x] Life stage modifiers (puppy/kitten, senior, large breed puppy)
+  - [x] Bonus nutrient scoring (DHA, Omega-3, taurine, L-carnitine, zinc, probiotics)
+- [x] Layer 1: Formulation Completeness (daily food only, 0 for treats)
+  - [x] AAFCO statement compliance
+  - [x] Preservative quality assessment
+  - [x] Protein naming specificity
+- [x] Category-adaptive weighting: 55/30/15 for daily food, 100/0/0 for treats
+- [x] Layer 2: Species rules
+  - [x] Dog: DCM advisory (−8% for grain-free + 3+ legumes in top 7)
+  - [x] Dog: DCM mitigation (+3% for taurine + L-carnitine supplementation)
+  - [x] Cat: Carb overload (−15% for 3+ high-glycemic carbs in top 5)
+  - [x] Cat: Mandatory taurine check
+  - [x] Cat: UGT1A6 enzyme warnings for specific compounds
+- [x] Layer 3: Personalization
+  - [x] Allergy cross-reference
+  - [x] Life stage matching
+  - [x] Breed-specific modifiers per `BREED_MODIFIERS_DOGS.md` and `BREED_MODIFIERS_CATS.md`
+  - [x] Breed modifier cap: ±10 within nutritional bucket
+  - [x] Register `no_modifier` breeds to prevent false penalties
+- [x] Ingredient splitting detection: `GROUP BY cluster_id HAVING count >= 2`
+- [x] FDA recall check: boolean lookup against recall database
+- [x] Score engine must be deterministic and independently testable per layer
 
 ### Result Screen — Progressive Disclosure (D-108)
 
 **Above the fold (no scrolling — 10-second store aisle answer):**
-- [ ] Score gauge (animated SVG ring) — displays "[X]% match for [Pet Name]" (D-094)
-- [ ] Pet name and photo always visible on result screen (legal requirement)
-- [ ] Concern tags: render up to 3 from D-107 tag map (Artificial Color, Added Sugar, Unnamed Source, Synthetic Additive, Heart Risk). Tap → tooltip explainer. Heart Risk → dogs only.
-- [ ] Severity badge strip: 4-5 worst-scoring ingredients as color-coded chips (red/orange), sorted worst-first, tappable → D-105 ingredient detail modal
-- [ ] Safe Swap CTA: placeholder slot, hidden until M6 Alternatives Engine provides data
+- [x] Score gauge (animated SVG ring) — displays "[X]% match for [Pet Name]" (D-094)
+- [x] Pet name and photo always visible on result screen (legal requirement)
+- [x] Concern tags: render up to 3 from D-107 tag map (Artificial Color, Added Sugar, Unnamed Source, Synthetic Additive, Heart Risk). Tap → tooltip explainer. Heart Risk → dogs only.
+- [x] Severity badge strip: 4-5 worst-scoring ingredients as color-coded chips (red/orange), sorted worst-first, tappable → D-105 ingredient detail modal
+- [x] Safe Swap CTA: placeholder slot, hidden until M6 Alternatives Engine provides data
 
 **Below the fold (scroll to explore):**
-- [ ] Kiba Index: placeholder slot, hidden until M8 community data available
-- [ ] Tappable waterfall breakdown showing score math (D-094):
+- [x] Kiba Index: placeholder slot, hidden until M8 community data available
+- [x] Tappable waterfall breakdown showing score math (D-094):
   - "Ingredient Concerns: −[X] pts" with citation links
   - "[Pet Name]'s Nutritional Fit: ±[X] pts"
   - "[Pet Name]'s Breed & Age Adjustments: ±[X] pts"
-- [ ] Full ingredient list: ALL ingredients sorted worst→best, color-coded by severity, each tappable → D-105 detail modal. Competitive differentiator — do not hide behind a toggle.
-- [ ] "Track this food" CTA: adds to pantry (placeholder until M5)
-- [ ] ⓘ tooltip: "Suitability is an algorithmic estimate for [Pet Name]'s specific profile based on published research. It is not a universal product rating or a substitute for veterinary medical advice."
+- [x] Full ingredient list: ALL ingredients sorted worst→best, color-coded by severity, each tappable → D-105 detail modal. Competitive differentiator — do not hide behind a toggle.
+- [x] "Track this food" CTA: adds to pantry (placeholder until M5)
+- [x] ⓘ tooltip: "Suitability is an algorithmic estimate for [Pet Name]'s specific profile based on published research. It is not a universal product rating or a substitute for veterinary medical advice."
 
 **NOT on scan result screen:** Poop Check, Symptom Tracker → Me tab (pet-over-time, not product-specific)
 
 ### Loading Experience
-- [ ] 6-step terminal message sequence (see D-037)
-- [ ] Minimum 1.2s display time even if data returns faster (perceived thoroughness)
+- [x] 6-step terminal message sequence (see D-037)
+- [x] Minimum 1.2s display time even if data returns faster (perceived thoroughness)
 
 ---
 
@@ -296,16 +305,21 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Pet Profiles
 - [ ] Create/edit/delete pet profiles
-- [ ] Species, breed, weight, birth date, activity level, spayed/neutered, indoor/outdoor (cats)
+- [ ] Species, breed, weight, birth date, activity level, neutered, sex (D-118)
 - [ ] Breed selector: alphabetical A→Z, searchable, "Mixed Breed" and "Other" pinned last (D-102)
-- [ ] Pet photo from device gallery (Expo ImagePicker → square crop → local storage + Supabase Storage sync). Default species silhouette if skipped. Renders on profile, scan result header (D-094), pet switcher, and vet report PDF header (D-099).
+- [ ] Pet photo from device gallery (Expo ImagePicker → square crop → local storage + Supabase Storage sync). Default **species silhouette** (generic dog/cat outline) if skipped. Renders on profile, scan result header (D-094), pet switcher (D-120), and vet report PDF header (D-099).
 - [ ] Health conditions multi-select (D-097) — species-filtered list
+- [ ] "Perfectly Healthy" chip (D-119) — green, mutual exclusion with all condition chips
 - [ ] Food allergen sub-picker when allergy condition selected (D-097) — with cross-reactivity expansion (D-098)
-- [ ] Allergies management (tag-based input)
-- [ ] life_stage auto-derivation from age + species + breed size
-- [ ] Active pet selector (persists across sessions)
-- [ ] Goal weight field (premium-gated)
+- [ ] Approximate age mode for rescue pets (D-116) — `[Exact Date] | [Approximate Age]` toggle, synthesized DOB
+- [ ] life_stage auto-derivation from age + species + breed size (D-064)
+- [ ] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
+- [ ] Active pet selector persists across sessions
+- [ ] Goal weight field (premium-gated, only editable when obesity/underweight condition set)
+- [ ] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
+- [ ] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
 - [ ] Pet deletion: type name to confirm + 30-day soft-delete grace period
+- [ ] Haptic feedback (D-121) — `utils/haptics.ts` utility with named functions, wired to all interactive elements
 
 ### Portion Calculator
 - [ ] RER calculation: `70 × (kg)^0.75`
@@ -321,8 +335,8 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Veterinary Audit (CRITICAL — Moved to M2)
 - [ ] Scope: danger-rated ingredients, species-specific physiological claims, scoring methodology
-- [ ] Review `BREED_MODIFIERS_DOGS.md` — 20 breed entries, all modifiers pending vet clearance
-- [ ] Review `BREED_MODIFIERS_CATS.md` — 18 breed entries, all modifiers pending vet clearance
+- [ ] Review `BREED_MODIFIERS_DOGS.md` — 23 breed entries, all modifiers pending vet clearance
+- [ ] Review `BREED_MODIFIERS_CATS.md` — 21 breed entries, all modifiers pending vet clearance
 - [ ] Review `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` — trapezoidal curves, AAFCO thresholds
 - [ ] Validate position_reduction_eligible flags
 - [ ] Review cat hepatic lipidosis warning copy
@@ -400,7 +414,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: Full result screen with all UI components from mockups.
 
 ### Score Context
-- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 69% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
+- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 66% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
 
 ### Nutrition Panel
 - [ ] AAFCO progress bars with threshold markers
@@ -542,7 +556,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 69/100 (regression test)
+- [ ] Pure Balance Grain-Free Salmon → 66/100 (regression test)
 - [ ] Temptations Classic Tuna → 44/100 (regression test)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling

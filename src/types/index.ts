@@ -13,8 +13,11 @@ export enum Species {
 export enum LifeStage {
   Puppy = 'puppy',
   Kitten = 'kitten',
+  Junior = 'junior',
   Adult = 'adult',
+  Mature = 'mature',
   Senior = 'senior',
+  Geriatric = 'geriatric',
 }
 
 export enum Category {
@@ -160,35 +163,10 @@ export interface ProductIngredientRow {
 }
 
 // ─── Pet Entities ───────────────────────────────────────
+// Canonical M2 types live in ./pet.ts — re-exported here for backwards compatibility
 
-export interface PetProfile {
-  id: string;
-  user_id: string;
-  name: string;
-  species: Species;
-  breed: string | null;
-  age_years: number | null;
-  age_months: number | null;
-  weight_kg: number | null;
-  goal_weight: number | null;
-  life_stage: LifeStage;
-  photo_url: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PetCondition {
-  id: string;
-  pet_id: string;
-  condition_tag: string;
-}
-
-export interface PetAllergen {
-  id: string;
-  pet_id: string;
-  allergen_group: string;
-}
+export type { Pet as PetProfile } from './pet';
+export type { PetCondition, PetAllergen } from './pet';
 
 // ─── Scan & Score Entities ──────────────────────────────
 
