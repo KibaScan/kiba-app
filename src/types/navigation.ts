@@ -27,6 +27,9 @@ export type PantryStackParamList = {
 export type MeStackParamList = {
   MeMain: undefined;
   PetProfile: { petId: string };
+  SpeciesSelect: undefined;
+  CreatePet: { species: 'dog' | 'cat' };
+  EditPet: { petId: string };
 };
 
 // ─── Root & Tab Navigators ─────────────────────────────
