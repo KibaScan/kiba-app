@@ -27,6 +27,8 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
 import { synthesizeDob } from '../utils/lifeStage';
 import { updatePet, deletePet } from '../services/petService';
+import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
+import type { PetFormErrors } from '../utils/petFormValidation';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import BreedSelector from '../components/BreedSelector';
 import type { MeStackParamList } from '../types/navigation';
@@ -73,6 +75,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [breedSelectorVisible, setBreedSelectorVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<PetFormErrors>({});
 
   // ─── Delete Modal State ──────────────────────────────────
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -119,7 +122,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.errorText}>Pet not found</Text>
+          <Text style={styles.notFoundText}>Pet not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -192,12 +195,21 @@ export default function EditPetScreen({ navigation, route }: Props) {
   }
 
   async function handleSave() {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      Alert.alert('Name Required', 'Please enter a name for your pet.');
-      return;
-    }
+    const formErrors = validatePetForm({
+      name,
+      weight,
+      dobMode,
+      dobSet,
+      dobMonth,
+      dobYear,
+      approxYears,
+      approxMonths,
+    });
 
+    setErrors(formErrors);
+    if (!isFormValid(formErrors)) return;
+
+    const trimmedName = name.trim();
     setSaving(true);
     try {
       let dateOfBirth: string | null = null;
@@ -244,7 +256,14 @@ export default function EditPetScreen({ navigation, route }: Props) {
       deleteConfirm();
       await deletePet(petId);
       setDeleteModalVisible(false);
-      navigation.navigate('MeMain');
+
+      // Navigate based on remaining pets
+      const remainingPets = useActivePetStore.getState().pets;
+      if (remainingPets.length === 0) {
+        navigation.navigate('SpeciesSelect');
+      } else {
+        navigation.navigate('MeMain');
+      }
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
     } finally {
@@ -255,8 +274,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
   // ─── Render ──────────────────────────────────────────────
 
   const canSave = name.trim().length > 0 && !saving;
-  const canDelete =
-    deleteInput.toLowerCase() === pet.name.toLowerCase() && !deleting;
+  const canConfirmDelete = canDeletePet(deleteInput, pet.name) && !deleting;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -305,15 +323,19 @@ export default function EditPetScreen({ navigation, route }: Props) {
             {/* Name */}
             <Text style={styles.fieldLabel}>Name</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, errors.name && styles.inputError]}
               placeholder="What's your pet's name?"
               placeholderTextColor={Colors.textTertiary}
               value={name}
-              onChangeText={setName}
+              onChangeText={(v) => {
+                setName(v);
+                if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+              }}
               maxLength={20}
               autoCapitalize="words"
               returnKeyType="done"
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
             {/* Sex */}
             <Text style={styles.fieldLabel}>Sex</Text>
@@ -502,20 +524,26 @@ export default function EditPetScreen({ navigation, route }: Props) {
               </View>
             )}
 
+            {errors.dob && <Text style={styles.errorText}>{errors.dob}</Text>}
+
             {/* Weight */}
             <Text style={styles.fieldLabel}>Weight</Text>
             <View style={styles.weightRow}>
               <TextInput
-                style={[styles.textInput, styles.weightInput]}
+                style={[styles.textInput, styles.weightInput, errors.weight && styles.inputError]}
                 placeholder="Current weight"
                 placeholderTextColor={Colors.textTertiary}
                 value={weight}
-                onChangeText={setWeight}
+                onChangeText={(v) => {
+                  setWeight(v);
+                  if (errors.weight) setErrors((e) => ({ ...e, weight: undefined }));
+                }}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
               />
               <Text style={styles.weightSuffix}>lbs</Text>
             </View>
+            {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
           </View>
 
           {/* ── Card 3: Details ──────────────────────────────── */}
@@ -620,7 +648,8 @@ export default function EditPetScreen({ navigation, route }: Props) {
           <View style={styles.deleteModal}>
             <Text style={styles.deleteTitle}>Delete {pet.name}?</Text>
             <Text style={styles.deleteDescription}>
-              This action cannot be undone. Type{' '}
+              This will permanently delete {pet.name} and all associated scan
+              history. This cannot be undone. Type{' '}
               <Text style={styles.deleteBold}>{pet.name}</Text> to confirm.
             </Text>
             <TextInput
@@ -642,10 +671,10 @@ export default function EditPetScreen({ navigation, route }: Props) {
               <TouchableOpacity
                 style={[
                   styles.deleteConfirmButton,
-                  !canDelete && styles.buttonDisabled,
+                  !canConfirmDelete && styles.buttonDisabled,
                 ]}
                 onPress={handleDelete}
-                disabled={!canDelete}
+                disabled={!canConfirmDelete}
               >
                 {deleting ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
@@ -674,7 +703,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorText: {
+  notFoundText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
   },
@@ -754,6 +783,14 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  inputError: {
+    borderColor: Colors.severityRed,
+  },
+  errorText: {
+    fontSize: FontSizes.xs,
+    color: Colors.severityRed,
+    marginTop: Spacing.xs,
   },
 
   // ── Segmented Controls ──

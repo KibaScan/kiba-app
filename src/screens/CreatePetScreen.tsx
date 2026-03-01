@@ -26,6 +26,8 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess } from '../utils/haptics';
 import { synthesizeDob } from '../utils/lifeStage';
 import { createPet } from '../services/petService';
+import { validatePetForm, isFormValid } from '../utils/petFormValidation';
+import type { PetFormErrors } from '../utils/petFormValidation';
 import BreedSelector from '../components/BreedSelector';
 import type { MeStackParamList } from '../types/navigation';
 import type { ActivityLevel, Sex } from '../types/pet';
@@ -75,6 +77,7 @@ export default function CreatePetScreen({ navigation, route }: Props) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [breedSelectorVisible, setBreedSelectorVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<PetFormErrors>({});
 
   // ─── Handlers ────────────────────────────────────────────
 
@@ -144,12 +147,22 @@ export default function CreatePetScreen({ navigation, route }: Props) {
   }
 
   async function handleSave(skipOptional = false) {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      Alert.alert('Name Required', 'Please enter a name for your pet.');
-      return;
-    }
+    // Skip-for-now only validates name
+    const formErrors = validatePetForm({
+      name,
+      weight: skipOptional ? '' : weight,
+      dobMode,
+      dobSet: skipOptional ? false : dobSet,
+      dobMonth,
+      dobYear,
+      approxYears,
+      approxMonths,
+    });
 
+    setErrors(formErrors);
+    if (!isFormValid(formErrors)) return;
+
+    const trimmedName = name.trim();
     setSaving(true);
     try {
       let dateOfBirth: string | null = null;
@@ -247,15 +260,19 @@ export default function CreatePetScreen({ navigation, route }: Props) {
             {/* Name */}
             <Text style={styles.fieldLabel}>Name</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, errors.name && styles.inputError]}
               placeholder="What's your pet's name?"
               placeholderTextColor={Colors.textTertiary}
               value={name}
-              onChangeText={setName}
+              onChangeText={(v) => {
+                setName(v);
+                if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+              }}
               maxLength={20}
               autoCapitalize="words"
               returnKeyType="done"
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
             {/* Sex */}
             <Text style={styles.fieldLabel}>Sex</Text>
@@ -444,20 +461,26 @@ export default function CreatePetScreen({ navigation, route }: Props) {
               </View>
             )}
 
+            {errors.dob && <Text style={styles.errorText}>{errors.dob}</Text>}
+
             {/* Weight */}
             <Text style={styles.fieldLabel}>Weight</Text>
             <View style={styles.weightRow}>
               <TextInput
-                style={[styles.textInput, styles.weightInput]}
+                style={[styles.textInput, styles.weightInput, errors.weight && styles.inputError]}
                 placeholder="Current weight"
                 placeholderTextColor={Colors.textTertiary}
                 value={weight}
-                onChangeText={setWeight}
+                onChangeText={(v) => {
+                  setWeight(v);
+                  if (errors.weight) setErrors((e) => ({ ...e, weight: undefined }));
+                }}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
               />
               <Text style={styles.weightSuffix}>lbs</Text>
             </View>
+            {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
           </View>
 
           {/* ── Card 3: Details ──────────────────────────────── */}
@@ -620,6 +643,14 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+  },
+  inputError: {
+    borderColor: Colors.severityRed,
+  },
+  errorText: {
+    fontSize: FontSizes.xs,
+    color: Colors.severityRed,
+    marginTop: Spacing.xs,
   },
 
   // ── Segmented Controls ──
