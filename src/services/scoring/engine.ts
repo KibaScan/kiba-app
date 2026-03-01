@@ -24,12 +24,24 @@ function resolveSpecies(product: Product): 'dog' | 'cat' {
   return product.target_species === 'cat' ? 'cat' : 'dog';
 }
 
+/**
+ * Maps 7-tier life stage → AAFCO/NP threshold selection.
+ * This is for nutritional profile scoring — distinct from getDerLifeStage() in lifeStage.ts.
+ * - puppy/kitten → Growth & Reproduction thresholds
+ * - junior/adult/mature → Adult Maintenance (growth complete)
+ * - senior/geriatric → Adult Maintenance (AAFCO has no senior-specific thresholds)
+ * - null → adult fallback (All Life Stages)
+ */
 function resolveLifeStage(pet: PetProfile | undefined): 'puppy' | 'kitten' | 'adult' | 'senior' {
-  if (!pet) return 'adult';
+  if (!pet || !pet.life_stage) return 'adult';
   switch (pet.life_stage) {
     case LifeStage.Puppy: return 'puppy';
     case LifeStage.Kitten: return 'kitten';
-    case LifeStage.Senior: return 'senior';
+    case LifeStage.Senior:
+    case LifeStage.Geriatric: return 'senior';
+    case LifeStage.Junior:
+    case LifeStage.Adult:
+    case LifeStage.Mature:
     default: return 'adult';
   }
 }
@@ -145,7 +157,7 @@ export function computeScore(
       gaOmega3Pct: product.ga_omega3_pct,
       species,
       lifeStage,
-      breedSize: null,  // M2: breed size lookup
+      breedSize: petProfile?.breed_size ?? null,
       petConditions: petConditions ?? [],
       aafcoStatement: product.aafco_statement,
       lifeStageClaim: product.life_stage_claim,

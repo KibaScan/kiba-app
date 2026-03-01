@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: February 28, 2026 (D-094 waterfall labels corrected to 5 rows, D-108 skeleton updated, D-113 ring breakpoints added)
+> Updated: March 1, 2026 (§11 reference scores updated to actual engine output, D-113 Pure Balance ref corrected, D-116 through D-121 appended)
 
 ---
 
@@ -548,18 +548,19 @@ When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%,
 ## 11. Reference Scores
 
 ### Pure Balance Grain-Free Salmon & Pea (Dog Food)
-**Score:** 69/100 — "Fair match · Heavy Legumes, DCM Concern"
+**Score:** 66/100 — "Fair match · Heavy Legumes, DCM Concern"
+**Note:** Updated March 1, 2026 — original §11 estimate was 69/100 with IQ 62.8, NP 85, FC 88. Actual M1 engine output after Session 4 bug fixes: IQ 60, NP 82, FC 78. The sub-score differences compound through the weighting. Engine output is now the source of truth.
 
 | Layer | Raw | Weight | Contribution |
 |-------|-----|--------|-------------|
-| Ingredient Quality (incl. −2 unnamed) | 62.8 | ×0.55 | 34.54 |
-| Nutritional Profile | 85 | ×0.30 | 25.5 |
-| Formulation Completeness | 88 | ×0.15 | 13.2 |
-| **Base** | | | **73.2** |
-| DCM Advisory (−round(73.2×0.08)) | | | −6 |
-| Taurine + L-Carnitine Mitigation (+round(73.2×0.03)) | | | +2 |
+| Ingredient Quality (incl. −2 unnamed) | 60 | ×0.55 | 33.0 |
+| Nutritional Profile | 82 | ×0.30 | 24.6 |
+| Formulation Completeness | 78 | ×0.15 | 11.7 |
+| **Base** | | | **69.3** |
+| DCM Advisory (−round(69.3×0.08)) | | | −6 |
+| Taurine + L-Carnitine Mitigation (+round(69.3×0.03)) | | | +2 |
 | Personalization (Buster) | | | Neutral |
-| **FINAL** | | | **69** |
+| **FINAL** | | | **66** |
 
 ### Temptations Classic Tuna (Cat Treat)
 **Score:** 44/100 — "Occasional treat only · not for daily use"
@@ -1307,12 +1308,122 @@ src/content/breedModifiers/
 - When petName is null: "Great match" / "Good match" / "Fair match" / "Poor match" (no pet name suffix)
 - Verdict words are suitability descriptors (D-094 compliant), not product quality ratings
 
-**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 69% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
+**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 66% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
 
 **Rejected:**
 - ❌ 3-tier system (green ≥70 / amber 50–69 / red <50) — insufficient granularity in the 60–80 decision zone
-- ❌ Wider cyan band (65–79) — puts 69% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
+- ❌ Wider cyan band (65–79) — puts 66% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
 - ❌ 5-tier system — diminishing returns, users can't distinguish 5 emotional states at a glance
+
+---
+
+## 12. M2 Profile Design
+
+### D-116: Approximate Age Mode for Rescue Pets
+**Status:** LOCKED
+**Date:** March 1, 2026
+**Depends on:** D-064 (life_stage derivation)
+
+**Decision:** Birthday field offers a toggle: `[Exact Date] | [Approximate Age]`. Approximate mode takes Years (0-30) + Months (0-11) inputs. Backend synthesizes a DOB: `today - (years×12 + months) months`, pinned to 1st of month. `pets.dob_is_approximate BOOLEAN DEFAULT false` tracks provenance.
+
+**Rationale:** ~25-30% of pet owners have rescue animals with unknown exact birthdays. Forcing an exact date causes friction (users guess inaccurately) or abandonment (users skip the field entirely). Either outcome degrades life stage derivation quality. The synthesized DOB feeds into D-064 identically — the life stage engine doesn't need to know whether the date is exact or approximate.
+
+**Schema:** `ALTER TABLE pets ADD COLUMN dob_is_approximate BOOLEAN DEFAULT false;`
+
+**UI:** Default to Exact Date. Approximate mode uses two compact stepper inputs side by side. Toggle fires haptics.chipToggle() (D-121).
+
+---
+
+### D-117: Stale Weight Indicator
+**Status:** LOCKED
+**Date:** March 1, 2026
+**Depends on:** D-060 (RER), D-062 (hepatic lipidosis guard)
+
+**Decision:** Track `pets.weight_updated_at TIMESTAMPTZ`. If weight is >6 months old, show persistent amber prompt on Pet Hub: "Weight last updated [N] months ago — still accurate?" Tappable → Edit Profile weight field.
+
+**Rationale:** Stale weight data corrupts DER calculations (D-060), goal weight math (D-061), and the cat hepatic lipidosis guard (D-062). A 15lb cat that actually weighs 12lb now gets a 25% wrong calorie target. The amber prompt is non-blocking (doesn't prevent scanning or scoring) but persistent — it won't disappear until the user updates weight or dismisses it.
+
+**Schema:** `ALTER TABLE pets ADD COLUMN weight_updated_at TIMESTAMPTZ;`
+**Trigger:** Set `weight_updated_at = NOW()` on any write to `weight_current_lbs`.
+
+---
+
+### D-118: Sex Field on Pet Profile
+**Status:** LOCKED
+**Date:** March 1, 2026
+**Depends on:** D-094 (suitability framing), D-099 (vet report)
+
+**Decision:** Add `pets.sex TEXT CHECK (sex IN ('male', 'female'))`. Optional field — null is valid. UI: segmented control `[ Male ] [ Female ]`, neither selected by default.
+
+**Uses:**
+1. **Vet report credibility (D-099):** Sex is standard on veterinary intake forms. Missing it undermines the clinical credibility of the PDF output.
+2. **Pronoun personalization:** "his score" / "her score" vs "their score" in D-094 suitability copy. Falls back to "their" when sex is null.
+3. **Future-proofing:** Spay/neuter timing recommendations, sex-linked condition prevalence.
+
+**Zero scoring impact.** Sex does not modify any scoring layer. This is a display and reporting field only.
+
+**Schema:** `ALTER TABLE pets ADD COLUMN sex TEXT CHECK (sex IN ('male', 'female'));`
+
+---
+
+### D-119: "Perfectly Healthy" Condition Chip
+**Status:** LOCKED
+**Date:** March 1, 2026
+**Depends on:** D-097 (health conditions)
+
+**Decision:** Add a special green chip (#34C759) with checkmark icon (SF Symbol `checkmark.shield`) to the top of the conditions grid. Label: "Perfectly Healthy."
+
+**Behavior:**
+- Tapping "Perfectly Healthy" deselects ALL condition chips.
+- Tapping any condition chip deselects "Perfectly Healthy."
+- Mutual exclusion: "Perfectly Healthy" OR condition chips, never both.
+- Stores zero rows in `pet_conditions` — functionally identical to skipping the section.
+
+**Rationale:** "None" or "Skip" feels like neglect. "Perfectly Healthy" reframes the same action as a positive declaration. Emotional upgrade at zero engineering cost. The green color (#34C759) and checkmark icon create a moment of pride for owners of healthy pets.
+
+**No schema change.** Zero `pet_conditions` rows === "Perfectly Healthy" state.
+
+---
+
+### D-120: Multi-Pet Switching — Hub Carousel
+**Status:** LOCKED
+**Date:** March 1, 2026
+**Depends on:** D-052 (paywall triggers), D-094 (suitability framing)
+
+**Decision:** Horizontal row of pet avatars at the top of Pet Hub (Instagram Stories-style).
+
+**Visual spec:**
+- Active pet: full opacity, teal border (#00B4D8, 2px), 48px diameter
+- Inactive pets: 50% opacity, no border, 36px diameter
+- Rightmost position: "+ Add Pet" circle with plus icon
+- Tap inactive → setActivePet(), all Hub cards update
+- Smooth crossfade animation (no complex transitions)
+
+**State:** `useActivePetStore` Zustand store holds `activePetId`, consumed globally by ScanScreen, ResultScreen, HomeScreen, and all pet-aware components.
+
+**Free tier:** Single avatar, no carousel (1 pet max per D-052 trigger #2). Premium: carousel appears when 2+ pets exist. "+ Add Pet" on free tier triggers paywall via permissions.ts.
+
+**M2 scope:** Carousel UI + store wiring only. Multi-pet pantry and multi-pet history are M5.
+
+---
+
+### D-121: Haptic Feedback Map
+**Status:** LOCKED
+**Date:** March 1, 2026
+
+**Decision:** Standardize `expo-haptics` usage across the app via a wrapper utility: `src/utils/haptics.ts`.
+
+| Interaction | Haptic Type | Function Name |
+|---|---|---|
+| Chip toggle (conditions, allergens, activity) | Light impact | `chipToggle()` |
+| Species toggle / Scan button press | Medium impact | `speciesToggle()` / `scanButton()` |
+| Save success / 100% profile / Barcode recognized | Success notification | `saveSuccess()` / `profileComplete()` / `barcodeRecognized()` |
+| Hepatic lipidosis warning displayed | Error notification | `hepaticWarning()` |
+| Delete confirmation tap | Heavy impact | `deleteConfirm()` |
+
+**Implementation:** Named functions wrapping expo-haptics calls. Platform-check for Android compatibility (no-op on unsupported platforms). Single import pattern: `import { saveSuccess, chipToggle } from '@/utils/haptics'`.
+
+**Rationale:** Haptics add tactile feedback that makes mobile interactions feel responsive and intentional. The mapped intensities match the emotional weight of each action — light for routine toggles, heavy for destructive actions, error notification for safety warnings.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

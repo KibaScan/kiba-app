@@ -5,6 +5,7 @@
 > **Prerequisite:** DMB conversion MUST run before this bucket. See §1.
 >
 > **Changelog:**
+> - Mar 1, 2026: §3 life stage tables aligned to PET_PROFILE_SPEC 6-tier system; breed size thresholds updated; §5c modifier triggers use life_stage enum; breed counts corrected (23 dog, 21 cat); geriatric cat DER locked at 1.5×
 > - Feb 27, 2026 (evening): Math.max(0) floor on NFE formulas (D-104)
 > - Feb 27, 2026 (night): §2c ash defaults corrected (As-Fed, not DMB — must convert before NFE); §4b fat curve decoupled by species (dog vs cat thresholds — cat excess at 25% DMB, not 40.5%); §4b fiber exception updated for D-106 pet conditions; §5c CKD gate on senior cat protein penalty; §5d advisory text D-095 compliant; §8 order of operations clarified (sub-score vs bucket-level modifiers); §8 worked example recalculated with corrected ash, exact trapezoidal math, and decoupled cat fat curve (regression target 93 → 90); §10 CKD gate test added; §11 Q4/Q5 updated
 
@@ -130,27 +131,31 @@ Life stages drive which AAFCO thresholds apply. These are derived from the pet p
 
 | Life Stage | Age Rule | AAFCO Profile | Notes |
 |---|---|---|---|
-| `puppy` | < 1yr (small/medium) or < 2yr (large/giant) | Growth & Reproduction | Higher protein, fat, Ca, P requirements |
-| `junior` | 1-2yr (small/medium) or 2-3yr (large/giant) | Adult Maintenance | Transitional — still benefits from slightly higher protein |
-| `adult` | 2-7yr (small/medium) or 3-5yr (large/giant) | Adult Maintenance | Standard |
-| `senior` | 7+yr (small/medium) or 5+yr (large/giant) | Adult Maintenance | Increased protein need for sarcopenia prevention; lower phosphorus preferred for kidney health |
+| `puppy` | 0–12mo (0–18mo giant) | Growth & Reproduction | Higher protein, fat, Ca, P requirements |
+| `junior` | 12–24mo (18–24mo giant) | Adult Maintenance | Transitional — still benefits from slightly higher protein |
+| `adult` | 2–7yr (2–5yr giant) | Adult Maintenance | Standard |
+| `mature` | 7–10yr (5–8yr giant) | Adult Maintenance | Standard multipliers; monitor weight trends |
+| `senior` | 10–13yr (8–10yr giant) | Adult Maintenance | Increased protein for sarcopenia prevention; lower phosphorus preferred |
+| `geriatric` | 13+yr (10+yr giant) | Adult Maintenance | Further reduced activity; monitor closely |
 
 **Breed size classification:**
-- Small: adult weight < 20 lbs
-- Medium: 20-50 lbs
-- Large: 50-90 lbs
-- Giant: 90+ lbs
+- Small: adult weight < 25 lbs
+- Medium: 25–55 lbs
+- Large: 55–90 lbs
+- Giant: > 90 lbs
+
+**M1→M2 note:** If M1 scoring engine hardcoded age checks (e.g. `ageMonths >= 144`), M2 Session 4 replaces them with `lifeStage === 'senior' || lifeStage === 'geriatric'` checks. The modifier conditions in §5 use life_stage labels, not raw ages.
 
 ### 3b. Cats
 
 | Life Stage | Age Rule | AAFCO Profile | Notes |
 |---|---|---|---|
-| `kitten` | < 1yr | Growth & Reproduction | Highest protein requirements; sensitive to protein quality |
-| `junior` | 1-2yr | Adult Maintenance | Transitional |
-| `adult` | 2-6yr | Adult Maintenance | Standard |
-| `mature` | 7-11yr | Adult Maintenance | Standard multipliers; monitor weight |
-| `senior` | 12-14yr | Adult Maintenance | **Needs MORE protein (≥ 30% DMB recommended) and MORE calories — sarcopenia risk** |
-| `geriatric` | 15+yr | Adult Maintenance | **Do NOT reduce calories linearly.** Geriatric cats often need 1.4-1.6× RER. Protein ≥ 30% DMB |
+| `kitten` | 0–12mo | Growth & Reproduction | Highest protein requirements; sensitive to protein quality |
+| `junior` | 1–2yr | Adult Maintenance | Transitional |
+| `adult` | 2–7yr | Adult Maintenance | Standard |
+| `mature` | 7–11yr | Adult Maintenance | Standard multipliers; monitor weight |
+| `senior` | 11–14yr | Adult Maintenance | **Needs MORE protein (≥ 30% DMB recommended) and MORE calories — sarcopenia risk** |
+| `geriatric` | 14+yr | Adult Maintenance | **Do NOT reduce calories linearly.** Geriatric cats need 1.5× RER (locked). Protein ≥ 30% DMB |
 
 **Critical:** AAFCO does not publish separate senior/geriatric profiles for cats or dogs. Our senior adjustments are based on veterinary nutrition research (see citations below), not AAFCO mandates. The UI must reflect this: `"Based on veterinary research for [life_stage] [species]"` not `"AAFCO requirement"`.
 
@@ -307,8 +312,8 @@ These modifiers come in two types — **sub-score modifiers** (adjust individual
 | Condition | Effect | Type | Rationale |
 |---|---|---|---|
 | Protein DMB ≥ 30% | +5 to protein sub-score (cap at 100) | Sub-score | Geriatric cats need ≥ 30% DMB protein to prevent muscle wasting; NRC (2006) |
-| Protein DMB < 30% (cat aged 12+ AND `petConditions` does NOT include `'ckd'`) | −10 from protein sub-score | Sub-score | Inadequate protein for geriatric obligate carnivore; **suppressed for CKD cats** where protein moderation (26–28% DMB) is the gold-standard veterinary treatment (IRIS guidelines). Without this gate, the engine penalizes cats for following their vet's dietary prescription. |
-| Phosphorus DMB > 1.2% (cat aged 12+) | −8 from overall bucket score | Bucket-level | Kidney disease is leading cause of death in senior cats; IRIS guidelines |
+| Protein DMB < 30% (life_stage is `senior` or `geriatric` AND `petConditions` does NOT include `'ckd'`) | −10 from protein sub-score | Sub-score | Inadequate protein for geriatric obligate carnivore; **suppressed for CKD cats** where protein moderation (26–28% DMB) is the gold-standard veterinary treatment (IRIS guidelines). Without this gate, the engine penalizes cats for following their vet's dietary prescription. |
+| Phosphorus DMB > 1.2% (life_stage is `senior` or `geriatric`) | −8 from overall bucket score | Bucket-level | Kidney disease is leading cause of death in senior cats; IRIS guidelines |
 | Product labeled "Kitten" fed to senior cat | −5 from overall bucket score | Bucket-level | Kitten food has excessive calories/minerals for seniors (though protein is adequate) |
 
 **⚠️ Vet audit flag:** Feline specialists sometimes recommend kitten food for underweight geriatric cats (15+) because it is highly palatable, calorie-dense, and protein-dense. Consider gating the −5 kitten food penalty: suppress if `petConditions` includes `'underweight'` OR `lifeStage === 'geriatric'`. Impact is small (−5 on bucket = −1.5 on final composite). See §11 Q7.
@@ -334,7 +339,7 @@ These are **small** adjustments (±3 to ±5 points within the bucket) that make 
 
 **Full reference:** `BREED_MODIFIERS_DOGS.md`
 
-20 breeds/breed groups across three tiers:
+23 breeds/breed groups across three tiers:
 
 - **Tier 1 — GA-Actionable** (8 entries): Miniature Schnauzer, Cocker Spaniel, Soft-Coated Wheaten Terrier, German Shepherd, Labrador Retriever, Brachycephalic Group, Yorkshire Terrier (puppy-only), Giant Breeds (calcium, puppy-only; GDV, all ages)
 - **Tier 2 — Ingredient-List-Actionable** (6 entries): Golden Retriever, Newfoundland, Doberman Pinscher, Boxer, Irish Setter, Border Terrier — plus Dalmatian (hybrid: ingredient + GA)
@@ -346,7 +351,7 @@ Each entry includes: trigger conditions, modifier points, modifier target, life 
 
 **Full reference:** `BREED_MODIFIERS_CATS.md`
 
-18 breeds across three tiers, plus three global findings:
+21 breeds across three tiers, plus three global findings:
 
 - **Global findings:** (1) Taurine does NOT modify genetic HCM — applies to all HCM breeds, (2) Fat — not carbohydrate — is the primary feline obesity driver, (3) Phosphorus source matters as much as amount (inorganic salts ~2× bioavailability)
 - **Tier 1 — GA-Actionable with score modifiers** (3 groups): Burmese (carb −3/−5), Persian/Exotic Shorthair (phosphorus −2 + ingredient −1), British Shorthair (fat −2, carb −1)
@@ -358,7 +363,7 @@ Only three breed groups (Burmese, Persian/Exotic, British Shorthair) have suffic
 ### 6c. Implementation Notes
 
 - Breed modifiers are **cumulative** but **capped at ±10 total** within the bucket to prevent breed alone from dominating the score
-- If breed is "Unknown" or "Mixed," no breed modifiers apply — only life stage and species rules
+- If breed is "Unknown / Other" or "Mixed Breed," no breed modifiers apply — only life stage and species rules
 - Every breed modifier entry must include `citation_source` and `vet_audit_status`
 - Breed modifiers surface as a named callout in the UI: `"Adjusted for [breed_name]: [reason]"` — this is the personalization users feel
 
@@ -545,7 +550,7 @@ Each of these must be independently verifiable in `nutritionalBucket.test.ts`:
 - [ ] Each sub-nutrient scoring curve hits expected values at threshold boundaries
 - [ ] Cat and dog weights sum to 100% within the bucket
 - [ ] Life stage correctly selects Growth vs Maintenance thresholds
-- [ ] Senior cat modifier fires for protein < 30% DMB in cats aged 12+ (without CKD)
+- [ ] Senior cat modifier fires for protein < 30% DMB when life_stage is `senior` or `geriatric` (without CKD)
 - [ ] Senior cat modifier does NOT fire for protein < 30% DMB when pet has CKD condition
 - [ ] Large breed puppy calcium modifier fires for Ca DMB > 1.8%
 - [ ] Breed modifiers are capped at ±10 total
@@ -554,7 +559,7 @@ Each of these must be independently verifiable in `nutritionalBucket.test.ts`:
 - [ ] Deterministic: same inputs → same output, every time
 - [ ] Weight management formula exception reduces fiber penalty by 50%
 - [ ] Obesity pet condition reduces fiber penalty by 50% (D-106)
-- [ ] Geriatric cat protein boost fires correctly at age 15+
+- [ ] Geriatric cat protein boost fires correctly when life_stage is `geriatric`
 - [ ] Sub-score modifiers apply before weighted sum, bucket-level modifiers apply after
 - [ ] Worked example produces bucket score of 90/100 for adult cat wet food
 - [ ] Fat curve uses species-specific thresholds (dog vs cat decoupled)

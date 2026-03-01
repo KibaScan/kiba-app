@@ -21,7 +21,13 @@ function lifeStageCovers(claim: string, petLifeStage: string): boolean {
   }
 
   const isGrowthPet = petLifeStage === 'puppy' || petLifeStage === 'kitten';
-  const isAdultPet = petLifeStage === 'adult' || petLifeStage === 'senior';
+  // junior/adult/mature/senior/geriatric are all post-growth — Adult Maintenance covers them
+  const isAdultPet =
+    petLifeStage === 'junior' ||
+    petLifeStage === 'adult' ||
+    petLifeStage === 'mature' ||
+    petLifeStage === 'senior' ||
+    petLifeStage === 'geriatric';
 
   if (isGrowthPet && GROWTH_KEYWORDS.some(k => lower.includes(k))) {
     return true;
@@ -95,7 +101,7 @@ export function applyPersonalization(
 
   // ─── 2. Life Stage Matching ──────────────────────────
 
-  if (product.life_stage_claim) {
+  if (product.life_stage_claim && petProfile.life_stage) {
     if (!lifeStageCovers(product.life_stage_claim, petProfile.life_stage)) {
       adjustment -= 10;
       personalizations.push({
