@@ -1426,4 +1426,48 @@ src/content/breedModifiers/
 **Rationale:** Haptics add tactile feedback that makes mobile interactions feel responsive and intentional. The mapped intensities match the emotional weight of each action — light for routine toggles, heavy for destructive actions, error notification for safety warnings.
 
 ---
+
+### D-122: Species Selection Screen (Pre-Create)
+**Date:** 2026-03-01
+**Status:** Locked
+**Context:** Species as an in-form segmented control felt wrong — it's the most fundamental choice and shouldn't sit alongside name and breed. Sex (D-118) was buried in Card 3 despite being a natural identity field.
+**Decision:**
+- Species captured on dedicated `SpeciesSelectScreen` before the create form — two large tappable cards: Dog / Cat
+- Species passed as route param to `CreatePetScreen`, not a form field
+- Sex (D-118) promoted from Card 3 → Card 1 (Identity), replacing species slot
+- Card layout: Card 1 = Photo/Name/Sex, Card 2 = Breed/DOB/Weight, Card 3 = Activity/Neutered
+- Edit screen: species not shown — immutable, delete + recreate as escape hatch (unchanged)
+- No backend impact — `createPet()` receives species from route param instead of form state
+**Depends on:** D-118, D-084, D-121
+
+---
+
+### D-123: Species-Specific Activity Labels
+**Date:** 2026-03-01
+**Status:** Locked
+**Context:** "Low / Moderate / High / Working" means nothing to cat owners. Cat owners think in terms of indoor vs outdoor. Cats also have no "Working" DER multiplier in PORTION_CALCULATOR_SPEC.
+**Decision:**
+- Dogs: `[ Low ] [ Moderate ] [ High ] [ Working ]` — default: Moderate
+- Cats: `[ Indoor ] [ Indoor/Outdoor ] [ Outdoor ]` — default: Indoor
+- UI labels map to same DB enum: Indoor='low', Indoor/Outdoor='moderate', Outdoor='high'
+- "Working" hidden for cats (no cat DER multiplier defined)
+- DB column unchanged — `activity_level TEXT CHECK (IN ('low','moderate','high','working'))`
+- No scoring/DER engine changes — mapping is purely UI-side
+**Depends on:** PORTION_CALCULATOR_SPEC §3
+```
+
+And here's the **prompt to fix the existing CreatePetScreen** (since it was already built with the old labels):
+```
+Fix activity level in CreatePetScreen.tsx and EditPetScreen.tsx per D-123:
+
+- Dogs: segmented control [ Low ] [ Moderate ] [ High ] [ Working ], default: Moderate
+- Cats: segmented control [ Indoor ] [ Indoor/Outdoor ] [ Outdoor ], default: Indoor
+- Species comes from route param (create) or pet data (edit) — use it to pick which labels to show
+- UI label → DB value mapping: Indoor='low', Indoor/Outdoor='moderate', Outdoor='high'
+- "Working" only shown for dogs
+- DB values unchanged — this is purely a label change
+
+@PET_PROFILE_SPEC.md §11 for the spec. Run full test suite after.
+
+---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
