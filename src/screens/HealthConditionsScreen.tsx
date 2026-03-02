@@ -27,6 +27,7 @@ import {
   getPetAllergens,
   savePetConditions,
   savePetAllergens,
+  updatePet,
 } from '../services/petService';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
@@ -152,6 +153,9 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
         // Clear orphaned allergens if allergy not selected
         await savePetAllergens(petId, []);
       }
+
+      // Mark health as reviewed (distinguishes "Perfectly Healthy" from "never visited")
+      await updatePet(petId, { health_reviewed_at: new Date().toISOString() });
 
       saveSuccess();
 
