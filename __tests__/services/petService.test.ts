@@ -3,6 +3,8 @@ import {
   updatePet,
   deletePet,
   getPetsForUser,
+  getPetConditions,
+  getPetAllergens,
   savePetConditions,
   savePetAllergens,
   petPhotoPath,
@@ -506,6 +508,62 @@ describe('savePetAllergens', () => {
 
     expect(deleteChain.delete).toHaveBeenCalled();
     expect(deleteChain.insert).not.toHaveBeenCalled();
+  });
+});
+
+// ─── getPetConditions ──────────────────────────────────────
+
+describe('getPetConditions', () => {
+  test('returns condition rows for a pet', async () => {
+    const data = [
+      { id: 'c1', pet_id: 'pet-1', condition_tag: 'joint', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'c2', pet_id: 'pet-1', condition_tag: 'allergy', created_at: '2026-01-01T00:00:00Z' },
+    ];
+    const chain = mockChain({ data, error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await getPetConditions('pet-1');
+
+    expect(supabase.from).toHaveBeenCalledWith('pet_conditions');
+    expect(chain.eq).toHaveBeenCalledWith('pet_id', 'pet-1');
+    expect(result).toHaveLength(2);
+    expect(result[0].condition_tag).toBe('joint');
+  });
+
+  test('returns empty array when no conditions exist', async () => {
+    const chain = mockChain({ data: [], error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await getPetConditions('pet-1');
+    expect(result).toEqual([]);
+  });
+});
+
+// ─── getPetAllergens ──────────────────────────────────────
+
+describe('getPetAllergens', () => {
+  test('returns allergen rows for a pet', async () => {
+    const data = [
+      { id: 'a1', pet_id: 'pet-1', allergen: 'chicken', is_custom: false, created_at: '2026-01-01T00:00:00Z' },
+    ];
+    const chain = mockChain({ data, error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await getPetAllergens('pet-1');
+
+    expect(supabase.from).toHaveBeenCalledWith('pet_allergens');
+    expect(chain.eq).toHaveBeenCalledWith('pet_id', 'pet-1');
+    expect(result).toHaveLength(1);
+    expect(result[0].allergen).toBe('chicken');
+    expect(result[0].is_custom).toBe(false);
+  });
+
+  test('returns empty array when no allergens exist', async () => {
+    const chain = mockChain({ data: [], error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await getPetAllergens('pet-1');
+    expect(result).toEqual([]);
   });
 });
 
