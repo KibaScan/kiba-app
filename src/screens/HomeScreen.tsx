@@ -41,7 +41,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📷</Text>
+          <Ionicons name="camera-outline" size={48} color={Colors.textTertiary} style={{ marginBottom: Spacing.md }} />
           <Text style={styles.emptyTitle}>Scan your first product</Text>
           <Text style={styles.emptySubtitle}>
             Tap the scan button below to check{'\n'}a pet food, treat, or supplement.
@@ -148,10 +148,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 100,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
   },
   emptyTitle: {
     fontSize: FontSizes.xl,

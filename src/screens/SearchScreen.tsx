@@ -1,6 +1,7 @@
 // Kiba — Search (Premium Feature)
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 
 export default function SearchScreen() {
@@ -19,7 +20,7 @@ export default function SearchScreen() {
         />
 
         <View style={styles.premiumBadge}>
-          <Text style={styles.premiumIcon}>🔒</Text>
+          <Ionicons name="lock-closed" size={32} color={Colors.textTertiary} style={{ marginBottom: Spacing.md }} />
           <Text style={styles.premiumTitle}>Premium Feature</Text>
           <Text style={styles.premiumSubtitle}>
             Text search is available with Kiba Premium.{'\n'}
@@ -67,10 +68,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 100,
-  },
-  premiumIcon: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
   },
   premiumTitle: {
     fontSize: FontSizes.xl,

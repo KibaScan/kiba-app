@@ -42,6 +42,11 @@ export function hepaticWarning(): void {
   if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 }
 
+/** Scan error / general error */
+export function scanError(): void {
+  if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+}
+
 /** Delete confirmation tap */
 export function deleteConfirm(): void {
   if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
