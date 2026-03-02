@@ -3,7 +3,7 @@
 // Photo upload to Supabase Storage 'pet-photos' bucket happens at save time.
 
 import { supabase } from './supabase';
-import type { Pet, BreedSize } from '../types/pet';
+import type { Pet, PetCondition, PetAllergen, BreedSize } from '../types/pet';
 import { deriveLifeStage, deriveBreedSize } from '../utils/lifeStage';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { BREED_SIZE_MAP } from '../data/breeds';
@@ -255,6 +255,24 @@ export async function getPetsForUser(): Promise<Pet[]> {
 }
 
 // ─── Conditions & Allergens ─────────────────────────────────
+
+export async function getPetConditions(petId: string): Promise<PetCondition[]> {
+  const { data, error } = await supabase
+    .from('pet_conditions')
+    .select('*')
+    .eq('pet_id', petId);
+  if (error) throw new Error(`Failed to fetch conditions: ${error.message}`);
+  return (data ?? []) as PetCondition[];
+}
+
+export async function getPetAllergens(petId: string): Promise<PetAllergen[]> {
+  const { data, error } = await supabase
+    .from('pet_allergens')
+    .select('*')
+    .eq('pet_id', petId);
+  if (error) throw new Error(`Failed to fetch allergens: ${error.message}`);
+  return (data ?? []) as PetAllergen[];
+}
 
 export async function savePetConditions(
   petId: string,

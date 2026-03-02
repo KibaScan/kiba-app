@@ -30,6 +30,7 @@ export type MeStackParamList = {
   SpeciesSelect: undefined;
   CreatePet: { species: 'dog' | 'cat' };
   EditPet: { petId: string };
+  HealthConditions: { petId: string; fromCreate?: boolean };
 };
 
 // ─── Root & Tab Navigators ─────────────────────────────
