@@ -16,13 +16,13 @@ import {
   Modal,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { barcodeRecognized, speciesToggle, scanError } from '../utils/haptics';
 import { Species, Product } from '../types';
 import { ScanStackParamList } from '../types/navigation';
 import { lookupByUpc } from '../services/scanner';
@@ -84,6 +84,7 @@ export default function ScanScreen() {
         }
 
         // Product found — cache before routing
+        barcodeRecognized();
         useScanStore.getState().addToScanCache(lookup.product);
         const hasPet = pets.length > 0 && activePetId !== null;
 
@@ -98,9 +99,7 @@ export default function ScanScreen() {
         }
       } catch (err) {
         console.error('[ScanScreen] Unexpected error:', err);
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Error,
-        );
+        scanError();
         Alert.alert('Error', 'Something went wrong. Please try again.');
       } finally {
         setIsLoading(false);
@@ -270,7 +269,7 @@ export default function ScanScreen() {
                   styles.speciesOption,
                   petSpecies === Species.Dog && styles.speciesActive,
                 ]}
-                onPress={() => setPetSpecies(Species.Dog)}
+                onPress={() => { speciesToggle(); setPetSpecies(Species.Dog); }}
               >
                 <Ionicons
                   name="paw-outline"
@@ -295,7 +294,7 @@ export default function ScanScreen() {
                   styles.speciesOption,
                   petSpecies === Species.Cat && styles.speciesActive,
                 ]}
-                onPress={() => setPetSpecies(Species.Cat)}
+                onPress={() => { speciesToggle(); setPetSpecies(Species.Cat); }}
               >
                 <Ionicons
                   name="paw-outline"

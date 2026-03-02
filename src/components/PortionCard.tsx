@@ -228,7 +228,7 @@ export default function PortionCard({ pet, product, conditions }: PortionCardPro
         <View style={styles.hepaticCard}>
           <View style={styles.hepaticHeader}>
             <Ionicons name="alert-circle" size={18} color={Colors.severityAmber} />
-            <Text style={styles.hepaticTitle}>Gradual weight loss recommended</Text>
+            <Text style={styles.hepaticTitle}>Gradual weight loss is important</Text>
           </View>
           <Text style={styles.hepaticBody}>
             Losing weight too quickly can strain the liver in cats. Consider discussing

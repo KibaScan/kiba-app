@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { Species } from '../types';
+import { speciesToggle } from '../utils/haptics';
 import { useAppStore } from '../stores/useAppStore';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import type { Pet } from '../types/pet';
@@ -93,9 +95,13 @@ export default function OnboardingScreen() {
           <View style={styles.speciesToggle}>
             <TouchableOpacity
               style={[styles.speciesOption, species === Species.Dog && styles.speciesActive]}
-              onPress={() => setSpecies(Species.Dog)}
+              onPress={() => { speciesToggle(); setSpecies(Species.Dog); }}
             >
-              <Text style={styles.speciesEmoji}>🐕</Text>
+              <Ionicons
+                name="paw-outline"
+                size={40}
+                color={species === Species.Dog ? Colors.accent : Colors.textTertiary}
+              />
               <Text
                 style={[styles.speciesLabel, species === Species.Dog && styles.speciesLabelActive]}
               >
@@ -104,9 +110,13 @@ export default function OnboardingScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.speciesOption, species === Species.Cat && styles.speciesActive]}
-              onPress={() => setSpecies(Species.Cat)}
+              onPress={() => { speciesToggle(); setSpecies(Species.Cat); }}
             >
-              <Text style={styles.speciesEmoji}>🐈</Text>
+              <Ionicons
+                name="paw-outline"
+                size={40}
+                color={species === Species.Cat ? Colors.accent : Colors.textTertiary}
+              />
               <Text
                 style={[styles.speciesLabel, species === Species.Cat && styles.speciesLabelActive]}
               >
@@ -204,10 +214,6 @@ const styles = StyleSheet.create({
   speciesActive: {
     borderColor: Colors.accent,
     backgroundColor: '#00B4D815',
-  },
-  speciesEmoji: {
-    fontSize: 40,
-    marginBottom: Spacing.sm,
   },
   speciesLabel: {
     fontSize: FontSizes.md,
