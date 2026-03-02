@@ -11,9 +11,8 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ScanScreen from '../screens/ScanScreen';
 import PantryScreen from '../screens/PantryScreen';
-import MeScreen from '../screens/MeScreen';
+import PetHubScreen from '../screens/PetHubScreen';
 import ResultScreen from '../screens/ResultScreen';
-import PetProfileScreen from '../screens/PetProfileScreen';
 import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
 import CreatePetScreen from '../screens/CreatePetScreen';
 import EditPetScreen from '../screens/EditPetScreen';
@@ -78,8 +77,7 @@ const MeStack = createNativeStackNavigator<MeStackParamList>();
 function MeStackScreen() {
   return (
     <MeStack.Navigator screenOptions={{ headerShown: false }}>
-      <MeStack.Screen name="MeMain" component={MeScreen} />
-      <MeStack.Screen name="PetProfile" component={PetProfileScreen} />
+      <MeStack.Screen name="MeMain" component={PetHubScreen} />
       <MeStack.Screen name="SpeciesSelect" component={SpeciesSelectScreen} />
       <MeStack.Screen name="CreatePet" component={CreatePetScreen} />
       <MeStack.Screen name="EditPet" component={EditPetScreen} />

@@ -42,6 +42,7 @@ export interface Pet {
   photo_url: string | null;
   life_stage: LifeStage | null;
   breed_size: BreedSize | null;
+  health_reviewed_at: string | null;
 
   created_at: string;
   updated_at: string;
