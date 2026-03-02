@@ -570,7 +570,11 @@ export default function EditPetScreen({ navigation, route }: Props) {
           </View>
 
           {/* ── Health & Diet Link ────────────────────────────── */}
-          <TouchableOpacity style={styles.linkRow} activeOpacity={0.6}>
+          <TouchableOpacity
+            style={styles.linkRow}
+            activeOpacity={0.6}
+            onPress={() => navigation.navigate('HealthConditions', { petId })}
+          >
             <Ionicons
               name="heart-outline"
               size={22}
