@@ -197,7 +197,7 @@ export default function CreatePetScreen({ navigation, route }: Props) {
         Alert.alert('Photo Upload', "Photo couldn't be saved — you can try again later.");
       }
 
-      navigation.navigate('MeMain');
+      navigation.navigate('HealthConditions', { petId: pet.id, fromCreate: true });
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
     } finally {
