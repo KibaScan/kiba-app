@@ -26,8 +26,9 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { Species, Product } from '../types';
 import { ScanStackParamList } from '../types/navigation';
 import { lookupByUpc } from '../services/scanner';
-import { usePetStore } from '../stores/usePetStore';
+import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
+import type { Pet } from '../types/pet';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
 
@@ -48,9 +49,9 @@ export default function ScanScreen() {
   const [petSpecies, setPetSpecies] = useState<Species>(Species.Dog);
 
   // Store
-  const activePetId = usePetStore((s) => s.activePetId);
-  const pets = usePetStore((s) => s.pets);
-  const addPet = usePetStore((s) => s.addPet);
+  const activePetId = useActivePetStore((s) => s.activePetId);
+  const pets = useActivePetStore((s) => s.pets);
+  const addPet = useActivePetStore((s) => s.addPet);
 
   // ─── Scan Handler ──────────────────────────────────────
 
@@ -114,11 +115,30 @@ export default function ScanScreen() {
   const handlePetSubmit = () => {
     if (!petName.trim() || !pendingProduct) return;
 
-    addPet({ name: petName.trim(), species: petSpecies });
-
-    // Read new pet ID synchronously from Zustand
-    const newPetId = usePetStore.getState().activePetId;
-    if (!newPetId) return;
+    const id = `local_${Date.now()}`;
+    const now = new Date().toISOString();
+    const newPet: Pet = {
+      id,
+      user_id: 'local',
+      name: petName.trim(),
+      species: petSpecies === Species.Dog ? 'dog' : 'cat',
+      breed: null,
+      weight_current_lbs: null,
+      weight_goal_lbs: null,
+      weight_updated_at: null,
+      date_of_birth: null,
+      dob_is_approximate: false,
+      activity_level: 'moderate',
+      is_neutered: true,
+      sex: null,
+      photo_url: null,
+      life_stage: null,
+      breed_size: null,
+      health_reviewed_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+    addPet(newPet);
 
     setShowPetModal(false);
     setPetName('');
@@ -126,7 +146,7 @@ export default function ScanScreen() {
 
     navigation.navigate('Result', {
       productId: pendingProduct.id,
-      petId: newPetId,
+      petId: id,
     });
   };
 

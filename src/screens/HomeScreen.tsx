@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import { usePetStore } from '../stores/usePetStore';
+import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
 import type { HomeStackParamList } from '../types/navigation';
@@ -14,8 +15,8 @@ type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
-  const activePetId = usePetStore((s) => s.activePetId);
-  const pets = usePetStore((s) => s.pets);
+  const activePetId = useActivePetStore((s) => s.activePetId);
+  const pets = useActivePetStore((s) => s.pets);
   const weeklyCount = useScanStore((s) => s.weeklyCount);
   const addToScanCache = useScanStore((s) => s.addToScanCache);
   const activePet = pets.find((p) => p.id === activePetId);
@@ -26,7 +27,10 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Kiba</Text>
         {activePet && (
-          <Text style={styles.petBadge}>{activePet.name}</Text>
+          <View style={styles.petBadgeRow}>
+            <Ionicons name="paw-outline" size={14} color={Colors.accent} />
+            <Text style={styles.petBadge}>Scanning for {activePet.name}</Text>
+          </View>
         )}
       </View>
 
@@ -101,15 +105,19 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     letterSpacing: 1,
   },
-  petBadge: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.accent,
+  petBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#00B4D815',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: 20,
-    overflow: 'hidden',
+  },
+  petBadge: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
   content: {
     flex: 1,
