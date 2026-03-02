@@ -36,7 +36,10 @@ import {
   getDerMultiplier,
   lbsToKg,
 } from '../services/portionCalculator';
-import { getAgeMonths, formatCalories } from '../components/PortionCard';
+import { getAgeMonths } from '../components/PortionCard';
+import PortionCard from '../components/PortionCard';
+import TreatBatteryGauge from '../components/TreatBatteryGauge';
+import { calculateTreatBudget } from '../services/treatBattery';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
 import type { MeStackParamList } from '../types/navigation';
 
@@ -205,6 +208,7 @@ export default function PetHubScreen({ navigation }: Props) {
     return def?.label ?? c.condition_tag;
   });
 
+  const conditionTags = conditions.map((c) => c.condition_tag);
   const showCarousel = isPremium() && pets.length >= 2;
 
   // ─── Handlers ───────────────────────────────────────────
@@ -430,16 +434,6 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.statsRow}>
           <View style={styles.statChip}>
             <Ionicons
-              name="flame-outline"
-              size={16}
-              color={Colors.accent}
-            />
-            <Text style={styles.statValue}>
-              {der != null ? `${formatCalories(der)} kcal/day` : 'No weight set'}
-            </Text>
-          </View>
-          <View style={styles.statChip}>
-            <Ionicons
               name="walk-outline"
               size={16}
               color={Colors.accent}
@@ -476,6 +470,18 @@ export default function PetHubScreen({ navigation }: Props) {
                 : 'Not set'}
             </Text>
           </View>
+        </View>
+
+        {/* Portion card — daily calorie summary */}
+        <View style={styles.portionSection}>
+          <PortionCard pet={activePet} product={null} conditions={conditionTags} />
+          {der != null && (
+            <TreatBatteryGauge
+              treatBudgetKcal={calculateTreatBudget(der)}
+              consumedKcal={0}
+              petName={activePet.name}
+            />
+          )}
         </View>
 
         {/* (f) Health conditions summary */}
@@ -900,6 +906,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FontSizes.sm,
     color: Colors.textPrimary,
+  },
+
+  // ─── Portion Section ─────────────────────────────────
+  portionSection: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
 
   // ─── Health Card ───────────────────────────────────────
