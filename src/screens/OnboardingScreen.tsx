@@ -14,7 +14,8 @@ import {
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { Species } from '../types';
 import { useAppStore } from '../stores/useAppStore';
-import { usePetStore } from '../stores/usePetStore';
+import { useActivePetStore } from '../stores/useActivePetStore';
+import type { Pet } from '../types/pet';
 
 type Step = 'welcome' | 'meet_pet';
 
@@ -24,11 +25,35 @@ export default function OnboardingScreen() {
   const [species, setSpecies] = useState<Species>(Species.Dog);
 
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
-  const addPet = usePetStore((s) => s.addPet);
+  const addPet = useActivePetStore((s) => s.addPet);
 
   const handleSubmit = () => {
     if (!petName.trim()) return;
-    addPet({ name: petName.trim(), species });
+
+    const id = `local_${Date.now()}`;
+    const now = new Date().toISOString();
+    const pet: Pet = {
+      id,
+      user_id: 'local',
+      name: petName.trim(),
+      species: species === Species.Dog ? 'dog' : 'cat',
+      breed: null,
+      weight_current_lbs: null,
+      weight_goal_lbs: null,
+      weight_updated_at: null,
+      date_of_birth: null,
+      dob_is_approximate: false,
+      activity_level: 'moderate',
+      is_neutered: true,
+      sex: null,
+      photo_url: null,
+      life_stage: null,
+      breed_size: null,
+      health_reviewed_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+    addPet(pet);
     completeOnboarding();
   };
 

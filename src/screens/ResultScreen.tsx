@@ -23,7 +23,7 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
 import type { ScoredResult, ProductIngredient } from '../types/scoring';
-import { usePetStore } from '../stores/usePetStore';
+import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
 import { scoreProduct } from '../services/scoring/pipeline';
@@ -50,7 +50,7 @@ export default function ResultScreen() {
   const { productId, petId } = route.params;
 
   // ─── Store reads ────────────────────────────────────────
-  const pets = usePetStore((s) => s.pets);
+  const pets = useActivePetStore((s) => s.pets);
   const scanCache = useScanStore((s) => s.scanCache);
 
   const pet: PetProfile | null = petId
