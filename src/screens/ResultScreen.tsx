@@ -3,7 +3,7 @@
 // Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
 // Wires LoadingTerminal + scoreProduct pipeline.
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -36,6 +36,11 @@ import { GATable } from '../components/GATable';
 import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
 import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
+import PortionCard from '../components/PortionCard';
+import { getAgeMonths } from '../components/PortionCard';
+import TreatBatteryGauge from '../components/TreatBatteryGauge';
+import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
+import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -56,6 +61,27 @@ export default function ResultScreen() {
   const pet: PetProfile | null = petId
     ? pets.find((p) => p.id === petId) ?? null
     : null;
+
+  // DER computation for portion/treat advisory (D-106: display-only)
+  const petDer = useMemo(() => {
+    if (!pet || pet.weight_current_lbs == null) return null;
+    const ageMonths = getAgeMonths(pet.date_of_birth) ?? undefined;
+    const rer = calculateRER(lbsToKg(pet.weight_current_lbs));
+    const { multiplier } = getDerMultiplier({
+      species: pet.species,
+      lifeStage: pet.life_stage,
+      isNeutered: pet.is_neutered,
+      activityLevel: pet.activity_level,
+      ageMonths,
+    });
+    return Math.round(rer * multiplier);
+  }, [pet]);
+
+  const treatBudget = petDer != null ? calculateTreatBudget(petDer) : 0;
+  const treatsPerDay =
+    product?.kcal_per_unit && treatBudget > 0
+      ? calculateTreatsPerDay(treatBudget, product.kcal_per_unit)
+      : null;
 
   // D-094: never display a naked score — fall back to species name
   const petName = pet?.name ?? null;
@@ -392,6 +418,34 @@ export default function ResultScreen() {
           />
         )}
 
+        {/* Portion advisory — daily food (D-106: display-only, no score impact) */}
+        {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
+          <View style={styles.portionSection}>
+            <PortionCard pet={pet} product={product} conditions={[]} />
+          </View>
+        )}
+
+        {/* Treat advisory — treat budget + per-day count */}
+        {scoredResult && pet && product && product.category === 'treat' && petDer != null && (
+          <View style={styles.portionSection}>
+            <TreatBatteryGauge
+              treatBudgetKcal={treatBudget}
+              consumedKcal={0}
+              petName={displayName}
+            />
+            {treatsPerDay != null && treatsPerDay.count > 0 && (
+              <Text style={styles.treatCountText}>
+                {displayName} can have {treatsPerDay.count} of these per day
+              </Text>
+            )}
+            {treatsPerDay?.warning && (
+              <Text style={styles.treatWarningText}>
+                A single treat exceeds {displayName}'s daily treat budget
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* GA Table (D-038, D-104, D-016) */}
         {scoredResult && product && (
           <GATable
@@ -570,6 +624,23 @@ const styles = StyleSheet.create({
   flagChipGenericText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+  },
+
+  // ─── Portion / Treat Section
+  portionSection: {
+    marginBottom: Spacing.md,
+  },
+  treatCountText: {
+    fontSize: FontSizes.md,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+  },
+  treatWarningText: {
+    fontSize: FontSizes.sm,
+    color: Colors.severityAmber,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
   },
 
   // ─── Splitting Chip (relocated above ingredient list)
