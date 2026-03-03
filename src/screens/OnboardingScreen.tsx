@@ -10,14 +10,15 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { Species } from '../types';
 import { speciesToggle } from '../utils/haptics';
 import { useAppStore } from '../stores/useAppStore';
-import { useActivePetStore } from '../stores/useActivePetStore';
-import type { Pet } from '../types/pet';
+import { createPet } from '../services/petService';
 
 type Step = 'welcome' | 'meet_pet';
 
@@ -25,38 +26,40 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState<Step>('welcome');
   const [petName, setPetName] = useState('');
   const [species, setSpecies] = useState<Species>(Species.Dog);
+  const [isSaving, setIsSaving] = useState(false);
 
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
-  const addPet = useActivePetStore((s) => s.addPet);
 
-  const handleSubmit = () => {
-    if (!petName.trim()) return;
+  const handleSubmit = async () => {
+    if (!petName.trim() || isSaving) return;
 
-    const id = `local_${Date.now()}`;
-    const now = new Date().toISOString();
-    const pet: Pet = {
-      id,
-      user_id: 'local',
-      name: petName.trim(),
-      species: species === Species.Dog ? 'dog' : 'cat',
-      breed: null,
-      weight_current_lbs: null,
-      weight_goal_lbs: null,
-      weight_updated_at: null,
-      date_of_birth: null,
-      dob_is_approximate: false,
-      activity_level: 'moderate',
-      is_neutered: true,
-      sex: null,
-      photo_url: null,
-      life_stage: null,
-      breed_size: null,
-      health_reviewed_at: null,
-      created_at: now,
-      updated_at: now,
-    };
-    addPet(pet);
-    completeOnboarding();
+    setIsSaving(true);
+    try {
+      await createPet({
+        user_id: '', // Supabase RLS provides the real user_id
+        name: petName.trim(),
+        species: species === Species.Dog ? 'dog' : 'cat',
+        breed: null,
+        weight_current_lbs: null,
+        weight_goal_lbs: null,
+        weight_updated_at: null,
+        date_of_birth: null,
+        dob_is_approximate: false,
+        activity_level: 'moderate',
+        is_neutered: true,
+        sex: null,
+        photo_url: null,
+        life_stage: null,
+        breed_size: null,
+        health_reviewed_at: null,
+      });
+      completeOnboarding();
+    } catch (err) {
+      console.error('[Onboarding] Failed to create pet:', err);
+      Alert.alert('Something went wrong', 'Could not save your pet. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (step === 'welcome') {
@@ -139,11 +142,15 @@ export default function OnboardingScreen() {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.primaryButton, !petName.trim() && styles.buttonDisabled]}
+            style={[styles.primaryButton, (!petName.trim() || isSaving) && styles.buttonDisabled]}
             onPress={handleSubmit}
-            disabled={!petName.trim()}
+            disabled={!petName.trim() || isSaving}
           >
-            <Text style={styles.primaryButtonText}>Continue</Text>
+            {isSaving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
