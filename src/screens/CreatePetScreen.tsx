@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess } from '../utils/haptics';
-import { synthesizeDob } from '../utils/lifeStage';
+import { synthesizeDob, formatLocalDate } from '../utils/lifeStage';
 import { createPet } from '../services/petService';
 import { validatePetForm, isFormValid } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
@@ -158,12 +158,9 @@ export default function CreatePetScreen({ navigation, route }: Props) {
 
       if (!skipOptional && dobSet) {
         if (dobMode === 'exact') {
-          dateOfBirth = new Date(dobYear, dobMonth, 1)
-            .toISOString()
-            .split('T')[0];
+          dateOfBirth = formatLocalDate(new Date(dobYear, dobMonth, 1));
         } else {
-          const synth = synthesizeDob(approxYears, approxMonths);
-          dateOfBirth = synth.toISOString().split('T')[0];
+          dateOfBirth = formatLocalDate(synthesizeDob(approxYears, approxMonths));
           dobIsApproximate = true;
         }
       }

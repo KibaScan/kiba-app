@@ -83,6 +83,9 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
 
         if (existingConditions.length > 0) {
           setSelectedConditions(existingConditions.map((c) => c.condition_tag));
+        } else if (pet?.health_reviewed_at) {
+          // D-119: 0 conditions + health_reviewed_at set = "Perfectly Healthy"
+          setSelectedConditions([HEALTHY_TAG]);
         }
 
         if (existingAllergens.length > 0) {

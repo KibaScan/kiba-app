@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
-import { synthesizeDob } from '../utils/lifeStage';
+import { synthesizeDob, formatLocalDate, parseDateString } from '../utils/lifeStage';
 import { updatePet, deletePet } from '../services/petService';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
@@ -98,21 +98,20 @@ export default function EditPetScreen({ navigation, route }: Props) {
 
     if (pet.date_of_birth) {
       setDobSet(true);
+      const { year, month } = parseDateString(pet.date_of_birth);
       if (pet.dob_is_approximate) {
         setDobMode('approximate');
         // Reverse-calculate approximate years/months from stored DOB
-        const dob = new Date(pet.date_of_birth);
         const now = new Date();
         const totalMonths =
-          (now.getFullYear() - dob.getFullYear()) * 12 +
-          (now.getMonth() - dob.getMonth());
+          (now.getFullYear() - year) * 12 +
+          (now.getMonth() - month);
         setApproxYears(Math.floor(totalMonths / 12));
         setApproxMonths(totalMonths % 12);
       } else {
         setDobMode('exact');
-        const dob = new Date(pet.date_of_birth);
-        setDobMonth(dob.getMonth());
-        setDobYear(dob.getFullYear());
+        setDobMonth(month);
+        setDobYear(year);
       }
     }
   }, [pet]);
@@ -205,12 +204,9 @@ export default function EditPetScreen({ navigation, route }: Props) {
 
       if (dobSet) {
         if (dobMode === 'exact') {
-          dateOfBirth = new Date(dobYear, dobMonth, 1)
-            .toISOString()
-            .split('T')[0];
+          dateOfBirth = formatLocalDate(new Date(dobYear, dobMonth, 1));
         } else {
-          const synth = synthesizeDob(approxYears, approxMonths);
-          dateOfBirth = synth.toISOString().split('T')[0];
+          dateOfBirth = formatLocalDate(synthesizeDob(approxYears, approxMonths));
           dobIsApproximate = true;
         }
       }
