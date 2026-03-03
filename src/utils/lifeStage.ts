@@ -94,6 +94,27 @@ export function synthesizeDob(years: number, months: number): Date {
 }
 
 /**
+ * Format a local Date as "YYYY-MM-DD" without timezone conversion.
+ * Avoids the `.toISOString().split('T')[0]` trap where local midnight
+ * shifts to the previous day in UTC for positive UTC offsets.
+ */
+export function formatLocalDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Parse a "YYYY-MM-DD" date string into { year, month (0-indexed), day }
+ * without going through `new Date()` which parses date-only strings as UTC.
+ */
+export function parseDateString(dateStr: string): { year: number; month: number; day: number } {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return { year: y, month: m - 1, day: d }; // month: 0-indexed for JS Date compat
+}
+
+/**
  * Maps 7-tier life stage → 4-bucket DER metabolic classification.
  * Used by portion calculator — distinct from resolveLifeStage() in engine.ts (AAFCO thresholds).
  *

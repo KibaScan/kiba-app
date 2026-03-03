@@ -101,6 +101,9 @@ export async function createPet(
   if (name.length > 20) throw new Error('Pet name must be 20 characters or fewer');
   if (!input.species) throw new Error('Species is required');
 
+  const userId = await getAuthUserId();
+  if (!userId) throw new Error('Not authenticated');
+
   const breed_size = lookupBreedSize(input.breed, input.species, input.weight_current_lbs);
 
   const life_stage = input.date_of_birth
@@ -117,6 +120,7 @@ export async function createPet(
     .from('pets')
     .insert({
       ...input,
+      user_id: userId,
       name,
       breed_size,
       life_stage,
@@ -132,20 +136,17 @@ export async function createPet(
 
   // Upload photo if local URI was provided
   if (localPhotoUri) {
-    const userId = await getAuthUserId();
-    if (userId) {
-      const publicUrl = await uploadPetPhoto(userId, pet.id, localPhotoUri);
-      if (publicUrl) {
-        // Update pet record with public URL
-        const { data: updated, error: updateErr } = await supabase
-          .from('pets')
-          .update({ photo_url: publicUrl })
-          .eq('id', pet.id)
-          .select()
-          .single();
-        if (!updateErr && updated) {
-          pet = updated as Pet;
-        }
+    const publicUrl = await uploadPetPhoto(userId, pet.id, localPhotoUri);
+    if (publicUrl) {
+      // Update pet record with public URL
+      const { data: updated, error: updateErr } = await supabase
+        .from('pets')
+        .update({ photo_url: publicUrl })
+        .eq('id', pet.id)
+        .select()
+        .single();
+      if (!updateErr && updated) {
+        pet = updated as Pet;
       }
     }
   }
@@ -220,6 +221,18 @@ export async function updatePet(
   if (error) throw new Error(`Failed to update pet: ${error.message}`);
 
   const pet = data as Pet;
+
+  // Defensive: preserve health_reviewed_at if this update didn't touch it.
+  // Prevents "Perfectly Healthy" from disappearing after profile edits
+  // if the Supabase response unexpectedly returns null for untouched columns.
+  if (
+    !('health_reviewed_at' in updates) &&
+    currentPet?.health_reviewed_at &&
+    !pet.health_reviewed_at
+  ) {
+    pet.health_reviewed_at = currentPet.health_reviewed_at;
+  }
+
   store.updatePet(petId, pet);
   return pet;
 }

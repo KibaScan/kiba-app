@@ -15,7 +15,14 @@ import type { Pet } from '../../src/types/pet';
 
 // Mock Supabase client
 jest.mock('../../src/services/supabase', () => ({
-  supabase: { from: jest.fn() },
+  supabase: {
+    from: jest.fn(),
+    auth: {
+      getSession: jest.fn().mockResolvedValue({
+        data: { session: { user: { id: 'user-1' } } },
+      }),
+    },
+  },
 }));
 
 // Mock useActivePetStore — keep methods as jest.fn() for assertions
