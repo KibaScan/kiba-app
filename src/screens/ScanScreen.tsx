@@ -28,7 +28,7 @@ import { ScanStackParamList } from '../types/navigation';
 import { lookupByUpc } from '../services/scanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
-import type { Pet } from '../types/pet';
+import { createPet } from '../services/petService';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
 
@@ -51,7 +51,6 @@ export default function ScanScreen() {
   // Store
   const activePetId = useActivePetStore((s) => s.activePetId);
   const pets = useActivePetStore((s) => s.pets);
-  const addPet = useActivePetStore((s) => s.addPet);
 
   // ─── Scan Handler ──────────────────────────────────────
 
@@ -111,42 +110,47 @@ export default function ScanScreen() {
 
   // ─── Pet Modal Submit ──────────────────────────────────
 
-  const handlePetSubmit = () => {
-    if (!petName.trim() || !pendingProduct) return;
+  const [isSavingPet, setIsSavingPet] = useState(false);
 
-    const id = `local_${Date.now()}`;
-    const now = new Date().toISOString();
-    const newPet: Pet = {
-      id,
-      user_id: 'local',
-      name: petName.trim(),
-      species: petSpecies === Species.Dog ? 'dog' : 'cat',
-      breed: null,
-      weight_current_lbs: null,
-      weight_goal_lbs: null,
-      weight_updated_at: null,
-      date_of_birth: null,
-      dob_is_approximate: false,
-      activity_level: 'moderate',
-      is_neutered: true,
-      sex: null,
-      photo_url: null,
-      life_stage: null,
-      breed_size: null,
-      health_reviewed_at: null,
-      created_at: now,
-      updated_at: now,
-    };
-    addPet(newPet);
+  const handlePetSubmit = async () => {
+    if (!petName.trim() || !pendingProduct || isSavingPet) return;
 
-    setShowPetModal(false);
-    setPetName('');
-    setPendingProduct(null);
+    const productId = pendingProduct.id;
+    setIsSavingPet(true);
+    try {
+      const pet = await createPet({
+        user_id: '', // Supabase RLS provides the real user_id
+        name: petName.trim(),
+        species: petSpecies === Species.Dog ? 'dog' : 'cat',
+        breed: null,
+        weight_current_lbs: null,
+        weight_goal_lbs: null,
+        weight_updated_at: null,
+        date_of_birth: null,
+        dob_is_approximate: false,
+        activity_level: 'moderate',
+        is_neutered: true,
+        sex: null,
+        photo_url: null,
+        life_stage: null,
+        breed_size: null,
+        health_reviewed_at: null,
+      });
 
-    navigation.navigate('Result', {
-      productId: pendingProduct.id,
-      petId: id,
-    });
+      setShowPetModal(false);
+      setPetName('');
+      setPendingProduct(null);
+
+      navigation.navigate('Result', {
+        productId,
+        petId: pet.id,
+      });
+    } catch (err) {
+      console.error('[ScanScreen] Failed to create pet:', err);
+      Alert.alert('Something went wrong', 'Could not save your pet. Please try again.');
+    } finally {
+      setIsSavingPet(false);
+    }
   };
 
   // ─── Permission Denied View ────────────────────────────
@@ -331,12 +335,16 @@ export default function ScanScreen() {
             <TouchableOpacity
               style={[
                 styles.modalButton,
-                !petName.trim() && styles.buttonDisabled,
+                (!petName.trim() || isSavingPet) && styles.buttonDisabled,
               ]}
               onPress={handlePetSubmit}
-              disabled={!petName.trim()}
+              disabled={!petName.trim() || isSavingPet}
             >
-              <Text style={styles.modalButtonText}>Continue</Text>
+              {isSavingPet ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.modalButtonText}>Continue</Text>
+              )}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
