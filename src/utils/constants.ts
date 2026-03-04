@@ -67,7 +67,7 @@ export const ScoringWeights = {
 
 export const Limits = {
   freeScansPerWeek: 5,
-  freePetsMax: 1,
+  freePetsMax: 10, // M3-TODO: revert to 1 when RevenueCat paywall is wired
   premiumPetsMax: 10,
 } as const;
 
