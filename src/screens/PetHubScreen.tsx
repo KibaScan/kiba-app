@@ -209,7 +209,9 @@ export default function PetHubScreen({ navigation }: Props) {
   });
 
   const conditionTags = conditions.map((c) => c.condition_tag);
-  const showCarousel = isPremium() && pets.length >= 2;
+  // Always show carousel so "+ Add Pet" is visible (D-120).
+  // Paywall gating on the button itself deferred to M3.
+  const showCarousel = pets.length >= 1;
 
   // ─── Handlers ───────────────────────────────────────────
   function handleAddPet() {
