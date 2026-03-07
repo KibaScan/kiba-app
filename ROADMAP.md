@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 1, 2026
+> Updated: March 3, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M2 Pet Profiles + Vet Audit (M0 + M1 Complete)
+## Current Status: M2 Pet Profiles + Vet Audit (M0 + M1 Complete, M2 CRUD Functional)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (121 decisions, D-001 through D-121)
+- Decision log established (124 decisions, D-001 through D-124)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -26,9 +26,10 @@
 - UPVM compliance rules locked (D-095) — prohibited terms list for all UI copy
 - M0 foundation complete: Expo + TypeScript project, Supabase schema with RLS, Zustand stores, navigation shell, onboarding flow (D-092)
 - M1 scan → score pipeline complete: camera + barcode, 3-layer scoring engine (126 tests across 7 suites), result screen with progressive disclosure, score ring with D-113 breakpoints, concern tags, waterfall breakdown, full ingredient list
-- M2 UI design concept reviewed, 6 new decisions locked (D-116 through D-121): approximate age mode, stale weight guard, sex field, "Perfectly Healthy" chip, multi-pet carousel, haptic feedback map
+- M2 UI design concept reviewed, 9 new decisions locked (D-116 through D-124): approximate age mode, stale weight guard, sex field, "Perfectly Healthy" chip, multi-pet carousel, haptic feedback map, species selection pre-screen, species-specific activity labels, treat logging entry points
 - Pet Profile Spec complete (`PET_PROFILE_SPEC.md`) — profile fields, conditions, allergens, breed modifiers, editing UI
 - Portion Calculator Spec complete (`PORTION_CALCULATOR_SPEC.md`) — RER/DER math, goal weight, cat safety guards
+- M2 pet profile CRUD functional: create/edit/delete via petService + Supabase, anonymous auth, photo upload to Storage, species selection pre-screen (D-122), species-specific activity labels (D-123), health conditions + allergen picker, "Perfectly Healthy" chip (D-119), approximate age mode (D-116), stale weight indicator (D-117), multi-pet carousel (D-120), score accuracy bar, DER/treat battery display. 447 tests passing.
 
 ---
 
@@ -304,33 +305,33 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: Personalized scanning for multi-pet households. Veterinary validation of critical data.
 
 ### Pet Profiles
-- [ ] Create/edit/delete pet profiles
-- [ ] Species, breed, weight, birth date, activity level, neutered, sex (D-118)
-- [ ] Breed selector: alphabetical A→Z, searchable, "Mixed Breed" and "Other" pinned last (D-102)
-- [ ] Pet photo from device gallery (Expo ImagePicker → square crop → local storage + Supabase Storage sync). Default **species silhouette** (generic dog/cat outline) if skipped. Renders on profile, scan result header (D-094), pet switcher (D-120), and vet report PDF header (D-099).
-- [ ] Health conditions multi-select (D-097) — species-filtered list
-- [ ] "Perfectly Healthy" chip (D-119) — green, mutual exclusion with all condition chips
-- [ ] Food allergen sub-picker when allergy condition selected (D-097) — with cross-reactivity expansion (D-098)
-- [ ] Approximate age mode for rescue pets (D-116) — `[Exact Date] | [Approximate Age]` toggle, synthesized DOB
-- [ ] life_stage auto-derivation from age + species + breed size (D-064)
-- [ ] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
-- [ ] Active pet selector persists across sessions
+- [x] Create/edit/delete pet profiles
+- [x] Species, breed, weight, birth date, activity level, neutered, sex (D-118)
+- [x] Breed selector: alphabetical A→Z, searchable, "Mixed Breed" and "Other" pinned last (D-102)
+- [x] Pet photo from device gallery (Expo ImagePicker → square crop → local storage + Supabase Storage sync). Default **species silhouette** (generic dog/cat outline) if skipped. Renders on profile, scan result header (D-094), pet switcher (D-120), and vet report PDF header (D-099).
+- [x] Health conditions multi-select (D-097) — species-filtered list
+- [x] "Perfectly Healthy" chip (D-119) — green, mutual exclusion with all condition chips
+- [x] Food allergen sub-picker when allergy condition selected (D-097) — with cross-reactivity expansion (D-098)
+- [x] Approximate age mode for rescue pets (D-116) — `[Exact Date] | [Approximate Age]` toggle, synthesized DOB
+- [x] life_stage auto-derivation from age + species + breed size (D-064)
+- [x] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
+- [x] Active pet selector persists across sessions
 - [ ] Goal weight field (premium-gated, only editable when obesity/underweight condition set)
-- [ ] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
-- [ ] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
-- [ ] Pet deletion: type name to confirm + 30-day soft-delete grace period
-- [ ] Haptic feedback (D-121) — `utils/haptics.ts` utility with named functions, wired to all interactive elements
+- [x] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
+- [x] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
+- [x] Pet deletion: type name to confirm + 30-day soft-delete grace period
+- [ ] Haptic feedback (D-121) — `utils/haptics.ts` utility with named functions, wired to all interactive elements (code exists, untested on iOS)
 
 ### Portion Calculator
-- [ ] RER calculation: `70 × (kg)^0.75`
-- [ ] DER multiplier tables (species-specific, see D-060 through D-063)
-- [ ] Daily portion display (cups/day or grams/day based on kcal/cup)
+- [x] RER calculation: `70 × (kg)^0.75`
+- [x] DER multiplier tables (species-specific, see D-060 through D-063)
+- [x] Daily portion display (cups/day or grams/day based on kcal/cup)
 - [ ] Goal weight mode: RER at goal weight, not current weight (premium)
 
 ### Treat Battery
-- [ ] 10% of DER = daily treat budget in kcal
-- [ ] Per-treat calculation: budget ÷ kcal_per_treat = safe count
-- [ ] Visual battery gauge (% of daily budget consumed)
+- [x] 10% of DER = daily treat budget in kcal
+- [x] Per-treat calculation: budget ÷ kcal_per_treat = safe count
+- [x] Visual battery gauge (% of daily budget consumed)
 - [ ] Cat hepatic lipidosis guard: warn if implied weekly loss >1% body weight
 
 ### Veterinary Audit (CRITICAL — Moved to M2)
@@ -378,28 +379,38 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Integrate external UPC API (UPCitemdb free tier: 100 lookups/day)
 - [ ] UPC miss → external lookup → return product name + brand + category
 - [ ] User confirmation step: "Is this [Product Name]?"
+- [ ] Haiku product classification (D-128): Edge Function returns suggested category (daily_food/treat/supplement/grooming) + species (dog/cat/all) alongside parsed ingredients. User confirms via tappable chips on ProductConfirmScreen.
+- [ ] Supplement/grooming exit paths: store product but do NOT score (D-096, D-083). Show "coming soon" message, return to ScanScreen.
 - [ ] OCR prompt: photograph ingredient list
 - [ ] On-device text extraction + Claude Haiku ingredient parsing
-- [ ] Layer 1 instant partial score with 78/22 missing-GA reweight
+- [ ] Layer 1 instant partial score with 78/22 missing-GA reweight (daily_food) or 100/0/0 (treat)
 - [ ] "Partial — nutritional data unavailable" badge on result
-- [ ] Auto-save parsed product to Kiba DB (`source = 'community'`, `needs_review = true`)
+- [ ] Auto-save parsed product to Kiba DB (`source = 'community'`, `needs_review = true`, `contributed_by = auth.uid()`)
+- [ ] Store Haiku classification suggestions + user corrections for accuracy auditing
 - [ ] If external UPC also misses → skip confirmation, go straight to OCR prompt
 - [ ] Add `needs_review BOOLEAN DEFAULT false` to products table
+
+### Scan Experience Polish (Session 6)
+- [ ] Haptic feedback on barcode detection (`expo-haptics` Success type, Warning for miss)
+- [ ] Scanner frame: corner brackets + animated green scan line + "locked on" snap animation
+- [ ] Confirmation tone: bundled short chime via `expo-av`, with mute toggle (persisted in AsyncStorage)
+- [ ] Mute toggle icon on ScanScreen (Ionicon speaker, D-084 compliant)
 
 ### Paywall Implementation
 - [ ] Install RevenueCat SDK (NOW, not at M0)
 - [ ] Configure annual ($24.99/yr) and monthly ($5.99/mo) products in App Store Connect
 - [ ] Build paywall screen: lead with annual, monthly as "pay more" option
 - [ ] Personalized copy: "About $2/month to protect [pet name] for a full year"
-- [ ] Implement 5 trigger moments (see D-052):
-  1. 6th scan in a week
+- [ ] Implement 5 active trigger moments (see D-052, updated by D-125):
+  1. 6th scan in a week (rolling 7-day window, NOT calendar week)
   2. Second pet profile
   3. First safe swap tap
-  4. Recall alert signup
-  5. Search by product name (text lookup without barcode)
+  4. Search by product name (text lookup without barcode)
+  5. Compare (side-by-side product comparison)
+  + 2 pre-wired (hidden until feature ships): vet report, elimination diet
 - [ ] `src/utils/permissions.ts` — centralized paywall boundary (ONLY location for paywall checks)
-- [ ] Free tier: 5 scans/week (rolling), 1 pet profile, barcode scan only, basic score
-- [ ] Premium: unlimited scans, multi-pet, search by name, goal weight, treat battery, compare, recall siren, safe swaps
+- [ ] Free tier: 5 scans/week (rolling), 1 pet profile, barcode scan only, basic score, recall alerts
+- [ ] Premium: unlimited scans, multi-pet, search by name, goal weight, treat battery, compare, safe swaps
 
 ### Legal — Onboarding Clickwrap (D-094)
 - [ ] TOS checkbox during account creation / first use (Tier 1 disclaimer)
@@ -448,6 +459,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Pantry
 - [ ] Add scanned products to pantry
+- [ ] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
 - [ ] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
 - [ ] Pantry dashboard showing all products with scores
 - [ ] Bag/pack countdown with days remaining (D-065) — 3 serving formats: bulk (cups/day from DER ÷ kcal_per_cup), unit count (pouches/cans), treats (units from Treat Battery budget)
@@ -467,10 +479,10 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Upcoming appointments visible on pet profile and home screen
 - [ ] Past appointments archived for future vet report integration
 
-### Recall Siren (Premium)
+### Recall Siren (Free Tier — D-125)
 - [ ] FDA recall RSS feed monitoring (automated, not manual checking)
 - [ ] Cross-reference recalled products against user pantry
-- [ ] Push notification to affected users
+- [ ] Push notification to affected users — NOT premium-gated
 - [ ] Product score → 0 with recall banner on scan result
 - [ ] Recall detail screen with FDA link and recommended actions
 - [ ] Historical recall log per product
@@ -525,12 +537,11 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Data visualization (calendar heatmap of symptoms)
 
 ### Community Contributions (M10)
-- [ ] Submit missing products (photo → OCR → review)
-- [ ] Two-step OCR pipeline: on-device text extraction + Claude parsing
-- [ ] Moderation queue for submitted products
-- [ ] XP engine: points for scanning, contributing, streaks
+- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
+- [ ] Moderation queue UI for submitted products (M3 stores with `needs_review = true`, M10 adds admin/review interface)
+- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
 - [ ] Cosmetic rewards (profile borders, badges) — positioned as contributor thank-you, not primary hook
-- [ ] Top contributor leaderboard
+- [ ] Top contributor leaderboard (query `contributed_by` from M3 community products)
 - [ ] Community safety flags (users flag suspect scores → review queue)
 
 ---
@@ -556,7 +567,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 66/100 (regression test)
+- [ ] Pure Balance Grain-Free Salmon → 69/100 (regression test — may change at M3 with full ingredient data)
 - [ ] Temptations Classic Tuna → 44/100 (regression test)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling

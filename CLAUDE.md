@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 1, 2026 (6-tier life stages, DER tables locked, profile validation rules added)
+> Last updated: March 5, 2026 (M3 pre-session checklist applied)
 
 ---
 
@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M2 Pet Profiles + Vet Audit (M1 Scan → Score Pipeline complete)
+**Current phase:** M3 Data Pipeline + Paywall (M0 + M1 + M2 Complete)
 
 ## Tech Stack
 
@@ -22,14 +22,14 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Navigation:** React Navigation (bottom tabs + stack navigators)
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat — NOT installed until M3-M4
-- **Testing:** Jest for scoring engine, reference product regression tests
+- **Testing:** Jest for scoring engine, reference product regression tests (447 tests passing)
 
 ## Project Structure
 
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (121 decisions)
+├── DECISIONS.md            ← canonical decision log (128 decisions)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -38,9 +38,13 @@ kiba-app/
 ├── PORTION_CALCULATOR_SPEC.md          ← M2 canonical: RER/DER math, goal weight, cat safety guards
 ├── app.json
 ├── tsconfig.json
+├── scripts/                   ← Python pipeline scripts (M3 data ingestion)
 ├── supabase/
+│   ├── functions/             ← Edge Functions (M3 server-side logic)
 │   └── migrations/
-│       └── 001_initial_schema.sql
+│       ├── 001_initial_schema.sql
+│       ├── 002_m2_pet_profiles.sql   ← renames, new columns, constraint updates
+│       └── 003_m2_health_reviewed.sql ← health_reviewed_at column
 ├── src/
 │   ├── types/              ← all TypeScript interfaces
 │   │   └── index.ts
@@ -48,17 +52,24 @@ kiba-app/
 │   │   ├── ScoreGauge.tsx
 │   │   ├── BenchmarkBar.tsx
 │   │   ├── IngredientList.tsx
+│   │   ├── PetPhotoSelector.tsx ← 96px circle, paw silhouette, ImagePicker (square crop, quality 0.7)
 │   │   └── StatChips.tsx
 │   ├── screens/
-│   │   ├── OnboardingScreen.tsx    ← 2-screen intro + minimal pet profile (D-092)
+│   │   ├── OnboardingScreen.tsx    ← 2-screen intro + minimal pet profile (D-092), creates pet via petService
 │   │   ├── HomeScreen.tsx          ← dashboard: recent scans, weekly counter, alerts
 │   │   ├── SearchScreen.tsx        ← premium-gated text search
 │   │   ├── ScanScreen.tsx          ← camera + barcode (raised center tab)
 │   │   ├── ResultScreen.tsx        ← "[X]% match for [Pet Name]" + waterfall
+│   │   ├── PetHubScreen.tsx        ← Me tab: pet carousel, score accuracy, DER, treat battery, health conditions
+│   │   ├── SpeciesSelectScreen.tsx ← D-122: species selection pre-create (dog/cat cards)
+│   │   ├── CreatePetScreen.tsx     ← 3-card form: Identity/Details/Settings
+│   │   ├── EditPetScreen.tsx       ← same 3-card layout, species immutable
+│   │   ├── HealthConditionsScreen.tsx ← D-097/D-119: condition multi-select + allergen picker
 │   │   ├── PantryScreen.tsx
-│   │   ├── MeScreen.tsx            ← pet profiles, settings, subscription
-│   │   └── PetProfileScreen.tsx
+│   │   └── MeScreen.tsx            ← pet profiles, settings, subscription
 │   ├── services/
+│   │   ├── auth.ts              ← ensureAuth(): anonymous sign-in on app mount
+│   │   ├── petService.ts        ← CRUD: createPet, updatePet, deletePet, getPetsForUser, photo upload
 │   │   ├── scoring/
 │   │   │   ├── engine.ts           ← main scoring orchestrator
 │   │   │   ├── ingredientQuality.ts ← Layer 1: 55% bucket
@@ -90,6 +101,7 @@ kiba-app/
 │   ├── utils/
 │   │   ├── permissions.ts   ← ONLY location for paywall checks
 │   │   ├── haptics.ts       ← D-121: named haptic functions wrapping expo-haptics
+│   │   ├── lifeStage.ts     ← deriveLifeStage, synthesizeDob, formatLocalDate, parseDateString
 │   │   └── constants.ts
 │   └── navigation/
 │       └── index.tsx
@@ -99,6 +111,8 @@ kiba-app/
     │   ├── ingredientQuality.test.ts
     │   ├── speciesRules.test.ts
     │   └── dmbConversion.test.ts
+    ├── services/
+    │   └── petService.test.ts    ← 25 tests: CRUD, validation, auth, photo upload
     └── referenceProducts.test.ts  ← regression tests
 ```
 
@@ -176,8 +190,9 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Neutral if no conflicts detected
 
 ### Reference Scores (Regression Tests)
-- **Pure Balance Grain-Free Salmon & Pea (Dog):** 66/100
-  - IQ: 60, NP: 82, FC: 78 → Base: 69.3 → DCM −8% → Mitigation +3% → **66**
+- **Pure Balance Grain-Free Salmon & Pea (Dog):** 69/100
+  - IQ: 60, NP: 82, FC: 78 → Base: 69.3 → DCM −8% → Mitigation +3% → **69**
+  - Note: Score may change at M3 when full ingredient data is populated
 - **Temptations Classic Tuna (Cat Treat):** 44/100
   - IQ: 52 → Cat carb penalty −8 → 44
 
@@ -230,6 +245,18 @@ See `supabase/migrations/001_initial_schema.sql` for full schema. Critical table
 - `pet_allergens` — D-097 many-to-many (pet → allergen). Only populated when `allergy` condition exists. RLS via pets table join
 - `scans` — stores `score_breakdown` JSONB snapshot per scan
 
+## Supabase Auth & Storage
+
+**Auth:** Anonymous sign-in enabled. `ensureAuth()` in `src/services/auth.ts` runs on app mount (App.tsx useEffect), guarantees `auth.uid()` before any screen renders. Session persists via AsyncStorage.
+
+**Storage bucket:** `pet-photos` (public). RLS policies:
+- INSERT: authenticated users can upload to `{auth.uid()}/` folder prefix
+- UPDATE: authenticated users can update their own folder
+- SELECT: public read access
+- Photo path convention: `{userId}/{petId}.jpg` — deterministic, upsert on re-upload
+
+**`health_reviewed_at`:** TIMESTAMPTZ column on `pets` table. Distinguishes "Perfectly Healthy" (0 condition rows + `health_reviewed_at` set) from "never visited HealthConditionsScreen" (0 rows + null). Used by PetHubScreen score accuracy calculation (15% of total).
+
 ## Non-Negotiable Rules
 
 1. **Scoring engine is brand-blind.** Zero awareness of brand names. No brand-specific modifiers.
@@ -271,6 +298,8 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ OPFF as data source (using Apify scraping + curated + community)
 - ❌ "Dislikes / Won't Eat" system (rejected M2 — scope creep, worse failure mode than allergen data pollution, revisit post-launch if measurable)
 - ❌ Breed-specific avatar silhouettes (rejected M2 — asset pipeline doesn't exist, use generic species silhouette)
+- ❌ Modify scoring engine (M1 complete, M3 only populates data)
+- ❌ Score supplements (M16+, D-096 — store only)
 
 ## M2 Profile Design (D-116 through D-121)
 
@@ -307,6 +336,12 @@ Life stage is auto-derived, never user-entered. Six tiers across both species �
 
 **Haptics (D-121):** `utils/haptics.ts` wraps `expo-haptics` behind named functions. Light for chip toggles, medium for species/scan, success for save/barcode, error for hepatic lipidosis warning, heavy for delete. No-op on unsupported platforms.
 
+**Species selection pre-screen (D-122):** Species captured on dedicated `SpeciesSelectScreen` before create form — two large tappable cards: Dog / Cat. Species passed as route param to `CreatePetScreen`. Sex promoted from Card 3 → Card 1. Card layout: Card 1 = Photo/Name/Sex, Card 2 = Breed/DOB/Weight, Card 3 = Activity/Neutered. Edit screen: species not shown (immutable).
+
+**Species-specific activity labels (D-123):** Dogs: Low/Moderate/High/Working (default: Moderate). Cats: Indoor/Indoor-Outdoor/Outdoor (default: Indoor). UI labels map to DB: Indoor='low', Indoor/Outdoor='moderate', Outdoor='high'. "Working" hidden for cats. DB column unchanged.
+
+**Treat logging entry points (D-124):** Three entry points for treat consumption: (1) Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal immediately, (2) Scan Result "Track this food" CTA — adds to pantry, no deduction, (3) Pantry quick-add (M5) — one-tap deduction. Central scan button behavior deferred to M5+.
+
 ## Commit Convention
 
 Use descriptive commit messages referencing the milestone:
@@ -314,7 +349,15 @@ Use descriptive commit messages referencing the milestone:
 M0: initial Supabase schema with RLS policies
 M1: Layer 1 ingredient quality scoring function
 M1: DMB conversion for wet food nutritional profile
+M2: pet profile CRUD with Supabase auth integration
 ```
+
+## Known Issues / Web Testing Notes
+
+- **Zustand `import.meta` on Expo Web:** Metro bundles Zustand devtools as a regular script, breaking `import.meta.env`. Temporary fix: `sed -i 's/import\.meta\.env/process.env/g' node_modules/zustand/esm/middleware.mjs`. Wiped on `npm install`. Use `patch-package` for persistence.
+- **Haptics:** `expo-haptics` is no-op on web. Must test on physical iOS device.
+- **Score accuracy:** 6 fields × weighted points = 100%. Name (20) + Species (20) + Breed (15) + DOB (15) + Weight (15) + Health Reviewed (15). `health_reviewed_at` must be set for the last 15%.
+- **`checkmark-shield-outline` icon:** Invalid Ionicons name. Should be `shield-checkmark-outline` for "Perfectly Healthy" chip. Fix in ConditionChip.tsx.
 
 ## When You're Unsure
 
@@ -349,3 +392,7 @@ M1: DMB conversion for wet food nutritional profile
 □ Score displayed as "[X]% match for [Pet Name]" — never naked?
 □ No UPVM-prohibited terms in UI copy (prescribe, treat, cure, prevent, diagnose)?
 □ Breed modifiers capped at ±10 and all have citations?
+□ Paywall logic ONLY in permissions.ts? (D-051)
+□ LLM-extracted GA validated before DB insertion? (D-043)
+□ API keys server-side only, never in app binary? (D-127)
+□ Hash normalization applied before ingredients_hash? (D-044)
