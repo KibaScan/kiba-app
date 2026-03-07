@@ -19,6 +19,8 @@ import EditPetScreen from '../screens/EditPetScreen';
 import HealthConditionsScreen from '../screens/HealthConditionsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import CommunityContributionScreen from '../screens/CommunityContributionScreen';
+import ProductConfirmScreen from '../screens/ProductConfirmScreen';
+import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -59,6 +61,8 @@ function ScanStackScreen() {
       <ScanStack.Screen name="ScanMain" component={ScanScreen} />
       <ScanStack.Screen name="Result" component={ResultScreen} />
       <ScanStack.Screen name="CommunityContribution" component={CommunityContributionScreen} />
+      <ScanStack.Screen name="ProductConfirm" component={ProductConfirmScreen} />
+      <ScanStack.Screen name="IngredientCapture" component={IngredientCaptureScreen} />
     </ScanStack.Navigator>
   );
 }

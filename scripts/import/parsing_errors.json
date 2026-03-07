@@ -1,0 +1,128 @@
+{
+  "timestamp": "2026-03-07T01:15:27.255405+00:00",
+  "parsing_errors": [
+    {
+      "product_ids": [
+        "cf2c8282-f60c-486d-a0c8-0d6bd71fd15e"
+      ],
+      "status": "contaminated",
+      "raw_preview": "that do not contain any by-product meals, corn, wheat, soy, artificial flavors or preservatives.\",\"offers\":{\"itemCondition\":\"https://schema.org/NewCondition\",\"priceCurrency\":\"USD\",\"seller\":{\"name\":\"Ch"
+    },
+    {
+      "product_ids": [
+        "b5f85baf-9ef2-445a-a68e-373fc206d835"
+      ],
+      "status": "contaminated",
+      "raw_preview": "for precisely balanced nutrition in dogs with grain sensitivities. Highly digestible protein from fresh chicken helps maintain a healthy heart, while natural prebiotics from beet pulp nourish the dige"
+    },
+    {
+      "product_ids": [
+        "57cdbd75-51f8-47a7-a8cd-1537c767dd49"
+      ],
+      "status": "contaminated",
+      "raw_preview": "that will keep your pup energized for any daily adventure ahead. Treat your dog to quality and taste with American Journey Grain-Free Oven Baked Treats. Available exclusively at Chewy.com.\\n\",\"offers\""
+    },
+    {
+      "product_ids": [
+        "99752a22-2a79-4c24-99a6-bc6e3e514b6e"
+      ],
+      "status": "contaminated",
+      "raw_preview": "can help alleviate nervous tension, support normal sleep patterns, and improve vitality. Plus, it won\u2019t make her drowsy. Grown naturally in the USA, this blend is free of preservatives, pesticides, fi"
+    },
+    {
+      "product_ids": [
+        "ed11a20d-a8ab-4b77-b83e-51358c31004b"
+      ],
+      "status": "contaminated",
+      "raw_preview": "used in this recipe are of human consumption quality, making it a simple and nourishing option for your purring pal. Free from preservatives and additives, this highly digestible and low-calorie meal "
+    },
+    {
+      "product_ids": [
+        "2a0ba62d-647c-4c6e-9188-7e34793bdd48"
+      ],
+      "status": "contaminated",
+      "raw_preview": "can help alleviate nervous tension, support normal sleep patterns, and improve vitality. Plus, it won\u2019t make her drowsy. Grown naturally in the USA, this blend is free of preservatives, pesticides, fi"
+    },
+    {
+      "product_ids": [
+        "5f7c2e3c-a635-49e9-bd84-4f88ad55de7a"
+      ],
+      "status": "contaminated",
+      "raw_preview": "can help alleviate nervous tension, support normal sleep patterns, and improve vitality. Plus, it won\u2019t make her drowsy. Grown naturally in the USA, this blend is free of preservatives, pesticides, fi"
+    },
+    {
+      "product_ids": [
+        "f97e0ec1-84ed-4188-87df-990ab0015dcd"
+      ],
+      "status": "contaminated",
+      "raw_preview": "can help alleviate nervous tension, support normal sleep patterns, and improve vitality. Plus, it won\u2019t make her drowsy. Grown naturally in the USA, this blend is free of preservatives, pesticides, fi"
+    },
+    {
+      "product_ids": [
+        "f7eaef60-2089-41c4-92a3-36591e7d0fbb"
+      ],
+      "status": "contaminated",
+      "raw_preview": "grown in Canada and the USA. So, let your cat get the Ka-Zoomies with this potent, high-quality mix!\",\"offers\":{\"itemCondition\":\"https://schema.org/NewCondition\",\"priceCurrency\":\"USD\",\"seller\":{\"name\""
+    },
+    {
+      "product_ids": [
+        "fa80bdcc-fc3e-4455-a265-2dc912390979"
+      ],
+      "status": "contaminated",
+      "raw_preview": "help support digestive health and immune function. These duck and pumpkin treats are perfect for training or simply as a reward for good behavior. They come in a resealable bag to ensure freshness and"
+    },
+    {
+      "product_ids": [
+        "2fc06ee8-7603-48b3-8f7d-633bf3c7e418"
+      ],
+      "status": "contaminated",
+      "raw_preview": "that you can find in your own pantry. These wheat-free treats are not only drool-worthy but also healthy for your furbaby. Give them a treat that they\u2019ll love, and that\u2019s good for them too.\",\"offers\":"
+    },
+    {
+      "product_ids": [
+        "c1638540-cb3a-4449-bea7-145feb8f43c9"
+      ],
+      "status": "contaminated",
+      "raw_preview": "and enhanced with vitamins and minerals. This delectable recipe features real chicken as the very first ingredient, followed by wholesome grains, veggies and fruit. Plus, the irresistible bold flavor "
+    },
+    {
+      "product_ids": [
+        "00daafea-09cb-454d-bd1d-0655d87471e8"
+      ],
+      "status": "contaminated",
+      "raw_preview": "help support digestive health and immune function. These duck and pumpkin treats are perfect for training or simply as a reward for good behavior. They come in a resealable bag to ensure freshness and"
+    },
+    {
+      "product_ids": [
+        "0f4f0611-d62d-48b9-a0c3-3ea314fe14df"
+      ],
+      "status": "contaminated",
+      "raw_preview": "have properties that may support digestive health and soothe an upset stomach by reducing gas. With each crunchy chomp, your furry friend is also supporting his dental health and removing plaque. You\u2019"
+    }
+  ],
+  "dict_insert_errors": [],
+  "junction_insert_errors": [],
+  "summary": {
+    "products_processed": 4634,
+    "unique_formulas": 4356,
+    "total_positions": 175775,
+    "matched_positions": 173809,
+    "match_rate_pct": 98.9,
+    "new_ingredients_found": 513,
+    "new_ingredients_inserted": 513,
+    "pi_rows_inserted": 175760,
+    "pi_dupes_skipped": 15,
+    "pi_errors": 0,
+    "status_breakdown": {
+      "clean": 4301,
+      "truncated": 41,
+      "contaminated": 14
+    },
+    "match_tiers": {
+      "exact": 157534,
+      "fuzzy": 7634,
+      "new": 1878,
+      "empty": 14
+    }
+  }
+}

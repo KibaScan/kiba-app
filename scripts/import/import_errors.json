@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-03-06T23:56:55.184574+00:00",
+  "validation_errors": [],
+  "insert_errors": [],
+  "upc_errors": [],
+  "summary": {
+    "total_records": 8868,
+    "valid": 8868,
+    "products_inserted": 8868,
+    "upcs_inserted": 8952,
+    "validation_failures": 0,
+    "insert_failures": 0,
+    "upc_failures": 0
+  }
+}

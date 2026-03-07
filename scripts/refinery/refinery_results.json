@@ -1,0 +1,40 @@
+{
+  "run_at": "2026-03-07T01:39:22.282872+00:00",
+  "dry_run": true,
+  "summary": {
+    "total_processed": 5,
+    "extracted": 0,
+    "flagged": 0,
+    "all_null": 5,
+    "failed": 0,
+    "input_tokens": 3098,
+    "output_tokens": 420
+  },
+  "results": [
+    {
+      "product_id": "1b38a2f4-b828-494d-a13b-e1ec8c6811ef",
+      "name": "Hill's Science Diet Adult Multiple Benefit Chicken Recipe Dry Cat Food, 7-lb bag",
+      "status": "all_null"
+    },
+    {
+      "product_id": "602440e2-8f43-48c8-a618-b59db93dd7c7",
+      "name": "Rachael Ray Nutrish Variety Pack Wet Dog Food, 8-oz tub, case of 6",
+      "status": "all_null"
+    },
+    {
+      "product_id": "16e41585-5eb3-4a12-ab22-ad3180f37753",
+      "name": "Moist & Meaty Steak Flavor Dry Dog Food, 6-oz pouch, case of 12",
+      "status": "all_null"
+    },
+    {
+      "product_id": "7f225820-d99c-48fd-8fd1-344ed1534f47",
+      "name": "Hill's Science Diet Adult Perfect Weight Management Chicken Recipe Dry Dog Food, 12-lb bag",
+      "status": "all_null"
+    },
+    {
+      "product_id": "0e8503ac-8c6b-4c43-8ee2-718cfdd81c6c",
+      "name": "Reveal Natural Complete & Balanced Grain-Free Chicken Recipe Dry Cat Food, 3-lb bag",
+      "status": "all_null"
+    }
+  ]
+}

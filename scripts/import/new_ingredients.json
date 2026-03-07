@@ -1,0 +1,6111 @@
+[
+  {
+    "canonical_name": "bacillus_subtilis",
+    "display_name": "dried Bacillus subtilis fermentation product",
+    "count": 256,
+    "example_products": [
+      "eb4b8e86-6f2d-4a4f-96b8-29bc7c31e45f",
+      "8390b2d7-8886-4d0a-be93-aa802dde4a58",
+      "afd4ced2-35c9-405d-899c-7ac50c39964f"
+    ],
+    "example_positions": [
+      24,
+      33,
+      49
+    ]
+  },
+  {
+    "canonical_name": "trichoderma_longibrachiatum",
+    "display_name": "Dried Trichoderma Longibrachiatum Fermentation Extract",
+    "count": 118,
+    "example_products": [
+      "0fa04689-badc-4116-bf54-5b413ac64dc2",
+      "32832240-c65e-4082-8575-dbc2f2463d99",
+      "653867b8-498d-4d24-9223-e44a90674f65"
+    ],
+    "example_positions": [
+      53,
+      66,
+      50
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_animalis_fermentation_product",
+    "display_name": "dried Bifidobacterium animalis fermentation product",
+    "count": 111,
+    "example_products": [
+      "eb4b8e86-6f2d-4a4f-96b8-29bc7c31e45f",
+      "8390b2d7-8886-4d0a-be93-aa802dde4a58",
+      "39f6a3b1-64c3-4f9b-8e93-d5150cd4b06f"
+    ],
+    "example_positions": [
+      27,
+      36,
+      25
+    ]
+  },
+  {
+    "canonical_name": "aspergillus_oryzae",
+    "display_name": "Dried Aspergillus Oryzae Fermentation Extract",
+    "count": 92,
+    "example_products": [
+      "0fa04689-badc-4116-bf54-5b413ac64dc2",
+      "0a894293-6914-4b69-8c9b-c8fe3009b150",
+      "653867b8-498d-4d24-9223-e44a90674f65"
+    ],
+    "example_positions": [
+      52,
+      24,
+      49
+    ]
+  },
+  {
+    "canonical_name": "aspergillus_niger_fermentation_extract",
+    "display_name": "Dried Aspergillus niger Fermentation Extract",
+    "count": 77,
+    "example_products": [
+      "afd4ced2-35c9-405d-899c-7ac50c39964f",
+      "32832240-c65e-4082-8575-dbc2f2463d99",
+      "cd42aded-192a-4e0a-a1e7-182465efa84d"
+    ],
+    "example_positions": [
+      47,
+      65,
+      60
+    ]
+  },
+  {
+    "canonical_name": "yam",
+    "display_name": "Dried Yam",
+    "count": 70,
+    "example_products": [
+      "5bbce5dd-045b-4140-9b41-92d961069c19",
+      "b4cd018a-1ea6-448d-92ae-27471b6f5fe1",
+      "574b773b-6777-4049-8b25-89a9742af386"
+    ],
+    "example_positions": [
+      15,
+      19,
+      18
+    ]
+  },
+  {
+    "canonical_name": "bacillus_licheniformis_fermentation_product",
+    "display_name": "Dried Bacillus licheniformis Fermentation Product",
+    "count": 68,
+    "example_products": [
+      "1e4b804c-789f-49b7-9c49-f890f88aac95",
+      "b043926f-5b69-4621-b5e5-781b9eb79530",
+      "05669b3a-bbc0-4493-ac8a-a18eccdf9a92"
+    ],
+    "example_positions": [
+      48,
+      48,
+      38
+    ]
+  },
+  {
+    "canonical_name": "coconut",
+    "display_name": "Coconut",
+    "count": 58,
+    "example_products": [
+      "8390b2d7-8886-4d0a-be93-aa802dde4a58",
+      "a04544ec-4e5b-4e2f-a17b-bd83aa65aeac",
+      "d73f03b6-df1c-4988-8832-5ccaad66e32b"
+    ],
+    "example_positions": [
+      26,
+      26,
+      29
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_longum_fermentation_product",
+    "display_name": "Dried Bifidobacterium Longum Fermentation Product",
+    "count": 45,
+    "example_products": [
+      "8ce08972-5ec8-4725-aa8d-941fa38c979a",
+      "4624ab70-1629-48e4-92b8-7cc1a55e048d",
+      "5b20ff25-26e0-40ce-bd28-ff37afaf8eff"
+    ],
+    "example_positions": [
+      23,
+      21,
+      21
+    ]
+  },
+  {
+    "canonical_name": "pediococcus_acidilactici_fermentation_product",
+    "display_name": "Dried Pediococcus Acidilactici Fermentation Product",
+    "count": 40,
+    "example_products": [
+      "8ce08972-5ec8-4725-aa8d-941fa38c979a",
+      "4624ab70-1629-48e4-92b8-7cc1a55e048d",
+      "5b20ff25-26e0-40ce-bd28-ff37afaf8eff"
+    ],
+    "example_positions": [
+      21,
+      19,
+      19
+    ]
+  },
+  {
+    "canonical_name": "pecan_shells",
+    "display_name": "Ground Pecan Shells",
+    "count": 35,
+    "example_products": [
+      "d214c989-c717-4a0b-b9be-75b7f07dba1d",
+      "3d066100-7c7f-4be5-a161-d6bc5bbf22cb",
+      "e77b2f01-b319-4364-82df-e1ffb14a49c0"
+    ],
+    "example_positions": [
+      11,
+      12,
+      14
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_reuteri_fermentation_product",
+    "display_name": "Dried Lactobacillus Reuteri Fermentation Product",
+    "count": 26,
+    "example_products": [
+      "b7f7f5e2-2c24-4775-bc91-7fed1256d27c",
+      "cc5cb56e-6c2d-40f7-9d45-17b0644b4e71",
+      "2d49e4eb-2fe2-4542-b1c8-aa25635ff8b0"
+    ],
+    "example_positions": [
+      56,
+      50,
+      48
+    ]
+  },
+  {
+    "canonical_name": "beet_fiber",
+    "display_name": "Dried Plain Beet Fiber",
+    "count": 24,
+    "example_products": [
+      "91cafd86-fd0e-4fc9-9e27-a8f01305cc90",
+      "88e969db-6187-43ef-8a8b-54979d7ae910",
+      "88e969db-6187-43ef-8a8b-54979d7ae910"
+    ],
+    "example_positions": [
+      9,
+      14,
+      45
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_bifidum_fermentation_product",
+    "display_name": "Dried Bifidobacterium bifidum Fermentation Product",
+    "count": 24,
+    "example_products": [
+      "ade70ddd-db72-40d1-8c05-043fb7fd19d7",
+      "95f9a0b1-5b13-4000-8f26-d38a854331a3",
+      "01b70fe3-823f-475d-b9c1-f0956b9ac625"
+    ],
+    "example_positions": [
+      29,
+      36,
+      27
+    ]
+  },
+  {
+    "canonical_name": "aspergillus_niger_fermentation_product",
+    "display_name": "Dried Aspergillus niger Fermentation Product",
+    "count": 23,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "11d06790-ede1-4cc3-91e1-449227d601a0",
+      "26227562-a7fe-4483-a93f-dc3964af5f37"
+    ],
+    "example_positions": [
+      73,
+      61,
+      74
+    ]
+  },
+  {
+    "canonical_name": "sweet_orange",
+    "display_name": "Dried Sweet Orange",
+    "count": 19,
+    "example_products": [
+      "d510c6bd-75cd-4ef6-be88-f4c17b5be1f6",
+      "59e8465f-a002-49ca-9824-03e9acca8aa6",
+      "b1dc33e6-7e1c-4337-8586-35323c946935"
+    ],
+    "example_positions": [
+      20,
+      28,
+      23
+    ]
+  },
+  {
+    "canonical_name": "milk_protein",
+    "display_name": "Dried Milk Protein",
+    "count": 15,
+    "example_products": [
+      "ee6de6c5-2da1-4fbb-bd04-b589fa17bae7",
+      "1476b89a-e876-45ae-9e24-abc2a8fadfd4",
+      "fb580ca6-2c69-4868-ad98-ac3678962554"
+    ],
+    "example_positions": [
+      10,
+      11,
+      10
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_casei_fermentation_product",
+    "display_name": "Dehydrated Lactobacillus Casei Fermentation Product",
+    "count": 10,
+    "example_products": [
+      "314d1019-5a3b-4eab-8c5e-9adbb07d44df",
+      "0371cfe6-fbb4-4446-8a64-1c798fcdee18",
+      "6f4d4437-6d87-48cb-9e88-49bac3137dde"
+    ],
+    "example_positions": [
+      45,
+      45,
+      44
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_thermophilum_fermentation_product",
+    "display_name": "Dehydrated Bifidobacterium Thermophilum Fermentation Product",
+    "count": 10,
+    "example_products": [
+      "314d1019-5a3b-4eab-8c5e-9adbb07d44df",
+      "0371cfe6-fbb4-4446-8a64-1c798fcdee18",
+      "6f4d4437-6d87-48cb-9e88-49bac3137dde"
+    ],
+    "example_positions": [
+      46,
+      46,
+      45
+    ]
+  },
+  {
+    "canonical_name": "enterococcus_faecium_fermentation_product",
+    "display_name": "Dehydrated Enterococcus Faecium Fermentation Product",
+    "count": 10,
+    "example_products": [
+      "314d1019-5a3b-4eab-8c5e-9adbb07d44df",
+      "0371cfe6-fbb4-4446-8a64-1c798fcdee18",
+      "6f4d4437-6d87-48cb-9e88-49bac3137dde"
+    ],
+    "example_positions": [
+      47,
+      47,
+      46
+    ]
+  },
+  {
+    "canonical_name": "bacillus_amyloliquefaciens_fermentation_product",
+    "display_name": "Dried Bacillus amyloliquefaciens Fermentation Product",
+    "count": 10,
+    "example_products": [
+      "f29b8e53-5656-497e-971b-4dd474780e3e",
+      "4298899e-a483-43e0-99ba-3b8c9c3c7774",
+      "fc23876a-92e5-4f02-b177-6e75958eae44"
+    ],
+    "example_positions": [
+      36,
+      34,
+      39
+    ]
+  },
+  {
+    "canonical_name": "manganese_glycine_complex",
+    "display_name": "Manganese Glycine Complex",
+    "count": 9,
+    "example_products": [
+      "dcbb26ad-644c-4283-a5ac-288c216a51f1",
+      "a6314bbc-7b0f-44a2-8b43-d6621bf04ae7",
+      "2b44ef29-cef7-48a2-af0d-f1af024ee12c"
+    ],
+    "example_positions": [
+      28,
+      28,
+      29
+    ]
+  },
+  {
+    "canonical_name": "dlalphatocopherol_acetate",
+    "display_name": "Dl-Alpha-Tocopherol Acetate",
+    "count": 9,
+    "example_products": [
+      "a1aa76a6-2e6a-4c18-8d0b-1bfa51395376",
+      "87550458-966e-47bf-9fd5-f6c317c3519a",
+      "87550458-966e-47bf-9fd5-f6c317c3519a"
+    ],
+    "example_positions": [
+      30,
+      19,
+      51
+    ]
+  },
+  {
+    "canonical_name": "can_one",
+    "display_name": "Can One",
+    "count": 9,
+    "example_products": [
+      "7bb2a891-1d62-41f3-b75f-ddd0289dc014",
+      "08e585fa-68eb-4c6b-81fb-5932f569571a",
+      "616df3b2-6b30-44d5-8897-a30e9a2dbf04"
+    ],
+    "example_positions": [
+      1,
+      62,
+      1
+    ]
+  },
+  {
+    "canonical_name": "lions_mane",
+    "display_name": "Organic Lion's Mane",
+    "count": 8,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      40,
+      39,
+      41
+    ]
+  },
+  {
+    "canonical_name": "reishi",
+    "display_name": "Organic Reishi",
+    "count": 8,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      41,
+      40,
+      42
+    ]
+  },
+  {
+    "canonical_name": "cheese_product",
+    "display_name": "Dried Cheese Product",
+    "count": 8,
+    "example_products": [
+      "ac1c51eb-b096-4d3c-97b7-9145fb8abbf3",
+      "97882603-4ead-4f71-8a2f-54e43136f115",
+      "b19642ec-b59e-4860-ad72-90dbc9fae0ff"
+    ],
+    "example_positions": [
+      10,
+      5,
+      17
+    ]
+  },
+  {
+    "canonical_name": "bonito",
+    "display_name": "Dried Bonito",
+    "count": 8,
+    "example_products": [
+      "584956fa-7308-42d5-9086-b9d864e95d7d",
+      "9285a1b6-e60c-46db-8028-de84cb3bfdb5",
+      "85e978a5-9e9e-449c-91cd-735baef17301"
+    ],
+    "example_positions": [
+      4,
+      12,
+      4
+    ]
+  },
+  {
+    "canonical_name": "trichoderma_longibrachiatum_fermentation_product",
+    "display_name": "Dried Trichoderma longibrachiatum Fermentation Product",
+    "count": 7,
+    "example_products": [
+      "afd4ced2-35c9-405d-899c-7ac50c39964f",
+      "312f52c8-6f0f-423b-8de8-8618ce616de9",
+      "09dbe044-6601-40be-8862-a216bbe31058"
+    ],
+    "example_positions": [
+      48,
+      37,
+      16
+    ]
+  },
+  {
+    "canonical_name": "cultured_milk",
+    "display_name": "Dried Cultured Milk",
+    "count": 7,
+    "example_products": [
+      "44008801-654d-4d3a-a958-5a0bb4bdc0a4",
+      "66da961d-c249-419f-9ccd-6ec087a62e5e",
+      "1580f173-344d-4690-99ca-9c76447738c6"
+    ],
+    "example_positions": [
+      14,
+      14,
+      14
+    ]
+  },
+  {
+    "canonical_name": "dpantothenic_acid",
+    "display_name": "D-Pantothenic Acid",
+    "count": 7,
+    "example_products": [
+      "5a98ec7b-b399-4c2d-8ccb-5ee9ab2c71f2",
+      "5fc2b0cd-0067-46b8-bc5e-312a4402256b",
+      "9d5d708a-a167-480a-9461-f7def67eb59f"
+    ],
+    "example_positions": [
+      25,
+      65,
+      22
+    ]
+  },
+  {
+    "canonical_name": "goji_berries",
+    "display_name": "Organic Goji Berries",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      20,
+      19,
+      21
+    ]
+  },
+  {
+    "canonical_name": "ashwagandha",
+    "display_name": "Organic Ashwagandha",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      38,
+      37,
+      39
+    ]
+  },
+  {
+    "canonical_name": "turkey_tail",
+    "display_name": "Organic Turkey Tail",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      42,
+      41,
+      43
+    ]
+  },
+  {
+    "canonical_name": "shiitake",
+    "display_name": "Organic Shiitake",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      43,
+      42,
+      44
+    ]
+  },
+  {
+    "canonical_name": "maitake",
+    "display_name": "Organic Maitake",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      44,
+      43,
+      45
+    ]
+  },
+  {
+    "canonical_name": "cordyceps",
+    "display_name": "Organic Cordyceps",
+    "count": 7,
+    "example_products": [
+      "aa4d72a7-b9f3-4c40-8e7a-3d74cd02f813",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "41197bd0-34cb-4add-92c4-8ce9c599939d"
+    ],
+    "example_positions": [
+      45,
+      44,
+      46
+    ]
+  },
+  {
+    "canonical_name": "mushroom",
+    "display_name": "Dried Mushroom",
+    "count": 7,
+    "example_products": [
+      "ade70ddd-db72-40d1-8c05-043fb7fd19d7",
+      "e682ee55-db96-4aa3-b413-2c12ff1d2919",
+      "281b96c9-f7da-4839-b302-45022e605d0b"
+    ],
+    "example_positions": [
+      26,
+      26,
+      26
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d2",
+    "display_name": "Vitamin D2 Supplement",
+    "count": 7,
+    "example_products": [
+      "b5a5ac15-a5d5-441a-a244-d2406c6c647e",
+      "8177caad-4579-45d9-8cc1-bc084902bb1b",
+      "68c22b2a-16c1-4382-8b79-72b0f564b691"
+    ],
+    "example_positions": [
+      34,
+      28,
+      20
+    ]
+  },
+  {
+    "canonical_name": "whey_product",
+    "display_name": "Dried Whey Product",
+    "count": 7,
+    "example_products": [
+      "b0a2d986-d5e6-4d68-98c0-7ecf6cc134b9",
+      "ab81785d-e15e-4365-94d3-3fe1cef48e78",
+      "2f2130d1-2b49-42d6-8e30-e86796577164"
+    ],
+    "example_positions": [
+      12,
+      47,
+      12
+    ]
+  },
+  {
+    "canonical_name": "boneless_chicken",
+    "display_name": "Boneless Chicken",
+    "count": 7,
+    "example_products": [
+      "a2a6e270-e098-407d-860e-799d88304259",
+      "b0897f4a-84c3-4af8-add6-4a5d784102d5",
+      "b021ee59-c8ca-47ac-9da7-bfafc104fd23"
+    ],
+    "example_positions": [
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_fermentum_fermentation_product",
+    "display_name": "Dried Lactobacillus Fermentum Fermentation Product",
+    "count": 6,
+    "example_products": [
+      "48033d4d-fa9a-4573-8c27-dc9c369df7cf",
+      "e0a4c607-259c-40cc-86ca-189a657c14a2",
+      "78d8dfdc-8cbe-4a47-b4f1-3093796226f7"
+    ],
+    "example_positions": [
+      51,
+      51,
+      41
+    ]
+  },
+  {
+    "canonical_name": "whole_chicken",
+    "display_name": "Hydrolyzed Whole Chicken",
+    "count": 6,
+    "example_products": [
+      "3d014ac7-8915-41bc-8339-326e6d0bf852",
+      "d1d7f47c-f80f-461a-9714-6ffe0409fcf1",
+      "53103ea5-40f4-4cfd-9654-5c8c7aa49bdc"
+    ],
+    "example_positions": [
+      9,
+      8,
+      11
+    ]
+  },
+  {
+    "canonical_name": "dcalcium_panthothenate",
+    "display_name": "D-Calcium Panthothenate",
+    "count": 6,
+    "example_products": [
+      "3758f706-b9ea-4339-ae14-8e0f90d1e7b9",
+      "30a46a97-3db2-41f3-8ddc-308b81834235",
+      "e4acf78a-2f14-48c1-b05e-34a6c7677998"
+    ],
+    "example_positions": [
+      19,
+      18,
+      19
+    ]
+  },
+  {
+    "canonical_name": "casein",
+    "display_name": "Dried Hydrolyzed Casein",
+    "count": 6,
+    "example_products": [
+      "16591c25-7698-4a85-a230-ed7477242b0b",
+      "fd3593f0-efa6-4a18-a248-89256fc86016",
+      "410378ab-649c-4341-a3df-a9994639340e"
+    ],
+    "example_positions": [
+      7,
+      31,
+      33
+    ]
+  },
+  {
+    "canonical_name": "fish_protein",
+    "display_name": "Hydrolyzed Fish Protein",
+    "count": 5,
+    "example_products": [
+      "6416f8f0-2a5e-48e7-b023-53832eec2ee2",
+      "5a98ec7b-b399-4c2d-8ccb-5ee9ab2c71f2",
+      "5a98ec7b-b399-4c2d-8ccb-5ee9ab2c71f2"
+    ],
+    "example_positions": [
+      5,
+      3,
+      10
+    ]
+  },
+  {
+    "canonical_name": "poultry_protein",
+    "display_name": "Hydrolyzed Poultry Protein",
+    "count": 5,
+    "example_products": [
+      "5a98ec7b-b399-4c2d-8ccb-5ee9ab2c71f2",
+      "8afbd79d-55f0-41b4-b440-b5ee0445cc9e",
+      "6a4872aa-261a-4b37-9897-73173a910e81"
+    ],
+    "example_positions": [
+      13,
+      11,
+      11
+    ]
+  },
+  {
+    "canonical_name": "barley_grass_powder",
+    "display_name": "Organic Barley Grass Powder",
+    "count": 5,
+    "example_products": [
+      "2e8d37ef-1397-419a-af31-2a69a35cdc52",
+      "05ed894b-6f6d-4c0c-b319-f3991ecd46c9",
+      "a5bc57c0-eba4-46c6-97d0-1e1d2f9f1bd4"
+    ],
+    "example_positions": [
+      24,
+      19,
+      23
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b",
+    "display_name": "Vitamin B Supplement",
+    "count": 5,
+    "example_products": [
+      "bafd4b75-66f7-43d8-aebc-53d4d1d5e26e",
+      "f6e33ee7-a43a-42f8-af5a-43cbe62864e1",
+      "d755c187-5b24-4cb1-8f2f-bd0b2dae6a1f"
+    ],
+    "example_positions": [
+      44,
+      41,
+      10
+    ]
+  },
+  {
+    "canonical_name": "iodine_amino_acid_chelate",
+    "display_name": "Iodine Amino Acid Chelate",
+    "count": 5,
+    "example_products": [
+      "e750956b-a542-4c04-99a2-ba581865223c",
+      "e943b401-0d75-4f90-ad3e-f188509f5568",
+      "ae68ef24-d85a-4caa-a1bc-1153dd5dfd02"
+    ],
+    "example_positions": [
+      28,
+      28,
+      18
+    ]
+  },
+  {
+    "canonical_name": "dehydrated_alfalfa_meal",
+    "display_name": "Organic Dehydrated Alfalfa Meal",
+    "count": 5,
+    "example_products": [
+      "d17cbf13-762c-42ea-97ee-d85fd0773600",
+      "500bdf4b-fb5c-4692-a8f6-a7b720c3c63e",
+      "8592f51f-412e-448e-9332-a6d1032b97e9"
+    ],
+    "example_positions": [
+      18,
+      18,
+      9
+    ]
+  },
+  {
+    "canonical_name": "rhizopus_oryzae_fermentation_product",
+    "display_name": "Dried Rhizopus Oryzae Fermentation Product",
+    "count": 5,
+    "example_products": [
+      "09dbe044-6601-40be-8862-a216bbe31058",
+      "2e2235fd-2a5a-4946-a16a-6e0a400287c8",
+      "15dc10ad-c065-4fc6-9cc2-7dd82258ed36"
+    ],
+    "example_positions": [
+      17,
+      17,
+      16
+    ]
+  },
+  {
+    "canonical_name": "distarch_phosphate",
+    "display_name": "Hydrolyzed Distarch Phosphate",
+    "count": 5,
+    "example_products": [
+      "2de4b967-7636-457f-bd33-b0dfcb5ba5ff",
+      "69bc5ba0-a14a-47d0-8e94-4e67bbeaf31e",
+      "fef55878-966e-4352-beaf-4d09e521a653"
+    ],
+    "example_positions": [
+      3,
+      3,
+      3
+    ]
+  },
+  {
+    "canonical_name": "cheddar_cheese_flavor",
+    "display_name": "Natural Cheddar Cheese Flavor",
+    "count": 4,
+    "example_products": [
+      "b0ee4305-c8b9-4fb9-9317-5d0c06b49e91",
+      "8b84789c-4f34-40cc-9525-57e7303fc14a"
+    ],
+    "example_positions": [
+      33,
+      35
+    ]
+  },
+  {
+    "canonical_name": "maple_flavor",
+    "display_name": "Natural Maple Flavor",
+    "count": 4,
+    "example_products": [
+      "75003a07-5da9-4168-a934-3d2a878bc516",
+      "ea90ea0d-86a9-4934-8ed1-b9e5f6376612"
+    ],
+    "example_positions": [
+      6,
+      15
+    ]
+  },
+  {
+    "canonical_name": "niacinamide_vitamin_e_dcalcium_pantothenate_riboflavin_supplement_thiamine_hydrochloride_pyridoxine_hydrochloride_manganese_sulfate_vitamin_b12",
+    "display_name": "(Niacinamide, Vitamin E, D-Calcium Pantothenate, Riboflavin Supplement, Thiamine Hydrochloride, Pyridoxine Hydrochloride, Manganese Sulfate, Vitamin B12 Supplement",
+    "count": 4,
+    "example_products": [
+      "f6fe151a-063a-4c18-8fb4-9c5ab740356a",
+      "8f0b266e-d044-4ebc-bc36-f93cf63f6859"
+    ],
+    "example_positions": [
+      35,
+      34
+    ]
+  },
+  {
+    "canonical_name": "chicken_flavored_gravy",
+    "display_name": "Dried Chicken Flavored Gravy",
+    "count": 4,
+    "example_products": [
+      "6564fde2-819f-428b-82b7-373fcb9ee541",
+      "69cb7a6f-fb40-45f6-8b98-7c6f7368b08f",
+      "57c46c35-9157-4869-99c0-a009a36872c7"
+    ],
+    "example_positions": [
+      14,
+      11,
+      11
+    ]
+  },
+  {
+    "canonical_name": "white_meat_chicken_flavor",
+    "display_name": "Natural White Meat Chicken Flavor",
+    "count": 4,
+    "example_products": [
+      "422ec75c-dfc7-42a3-853c-cf4994421b6e",
+      "6e211d7d-d759-41ab-9e34-921bf28234e2",
+      "d9802265-eb08-46d5-a4be-224ad16d98ba"
+    ],
+    "example_positions": [
+      47,
+      46,
+      48
+    ]
+  },
+  {
+    "canonical_name": "meatbyproducts",
+    "display_name": "Meat-by-products",
+    "count": 4,
+    "example_products": [
+      "1f6bf41f-e8ee-4b50-94b9-0eef481e461e",
+      "2a3554a1-3f1f-47e9-aa26-ddefa763537c",
+      "9ec19a75-a0c1-4fcb-9540-b1dca22e41ee"
+    ],
+    "example_positions": [
+      4,
+      2,
+      4
+    ]
+  },
+  {
+    "canonical_name": "cheese_tempting_tuna_chicken_byproduct_meal",
+    "display_name": "Dried Cheese. Tempting Tuna: Chicken By-Product Meal",
+    "count": 4,
+    "example_products": [
+      "01e862f5-e6a5-4027-9cc0-7895d6769aad",
+      "502601f8-e29e-4888-aca7-1dec99a4e4df",
+      "e317a9ed-dc58-4ae8-8d98-973162ac4821"
+    ],
+    "example_positions": [
+      31,
+      30,
+      66
+    ]
+  },
+  {
+    "canonical_name": "wheatgrass_powder",
+    "display_name": "Ground Wheatgrass Powder",
+    "count": 4,
+    "example_products": [
+      "c2807483-5c83-449a-a13a-174582bfd28f",
+      "755425f4-0fb9-45da-bff5-260a8bb9c8d7",
+      "2ed02926-6248-4f18-8f01-9ec136e33775"
+    ],
+    "example_positions": [
+      8,
+      8,
+      8
+    ]
+  },
+  {
+    "canonical_name": "porterhouse_flavor",
+    "display_name": "Natural Porterhouse Flavor",
+    "count": 3,
+    "example_products": [
+      "53ea9db2-e8b8-48f3-9850-2cde27a42cc7",
+      "9a02096a-dd28-4cfd-bec7-c9a3ee04624b",
+      "4c251b81-b757-4ebb-94a8-75b884051f43"
+    ],
+    "example_positions": [
+      20,
+      48,
+      17
+    ]
+  },
+  {
+    "canonical_name": "yellow_mustard",
+    "display_name": "Ground Yellow Mustard",
+    "count": 3,
+    "example_products": [
+      "b7f7f5e2-2c24-4775-bc91-7fed1256d27c",
+      "e51bc3f5-888d-42cd-a288-93b248bdb9fb",
+      "a84ab82d-04c1-4350-a57c-a4eedcd43f80"
+    ],
+    "example_positions": [
+      32,
+      29,
+      33
+    ]
+  },
+  {
+    "canonical_name": "beef_flavoring",
+    "display_name": "Natural Beef Flavoring",
+    "count": 3,
+    "example_products": [
+      "96fd54fa-7277-4de7-a851-39b9fe37726e",
+      "f3a49934-746b-4f66-957d-6faaec8b3336"
+    ],
+    "example_positions": [
+      4,
+      4
+    ]
+  },
+  {
+    "canonical_name": "dehydrated_kelp",
+    "display_name": "Organic Dehydrated Kelp",
+    "count": 3,
+    "example_products": [
+      "11d06790-ede1-4cc3-91e1-449227d601a0",
+      "26227562-a7fe-4483-a93f-dc3964af5f37",
+      "2affdf4e-6159-4220-9149-4e2c65cef828"
+    ],
+    "example_positions": [
+      44,
+      57,
+      44
+    ]
+  },
+  {
+    "canonical_name": "mushrooms",
+    "display_name": "Dried Mushrooms",
+    "count": 3,
+    "example_products": [
+      "01b70fe3-823f-475d-b9c1-f0956b9ac625",
+      "8a14448b-9bc2-4072-94d5-d3d85495fff6",
+      "f32f17c5-2baf-4cfb-b969-d062e8240c3a"
+    ],
+    "example_positions": [
+      24,
+      24,
+      24
+    ]
+  },
+  {
+    "canonical_name": "tbone_steak_flavor",
+    "display_name": "Natural T-Bone Steak Flavor",
+    "count": 3,
+    "example_products": [
+      "2b057f0a-f4c5-4865-a1fb-1fcf8d04b23c",
+      "bbe55ea4-f598-468b-868b-6ffd118e20eb",
+      "b7dbb719-75e7-4772-bdf6-86e586276fcb"
+    ],
+    "example_positions": [
+      30,
+      61,
+      31
+    ]
+  },
+  {
+    "canonical_name": "brown_caramel_color",
+    "display_name": "Natural Brown Caramel Color",
+    "count": 3,
+    "example_products": [
+      "39c7f3d8-d6d1-4a2a-a8cc-91a3b4bd2134",
+      "98f9baf6-140d-44fb-be3f-adc542c5ea9e",
+      "ced8903c-abfb-46a0-b60c-c67c5326f6b4"
+    ],
+    "example_positions": [
+      10,
+      8,
+      10
+    ]
+  },
+  {
+    "canonical_name": "blue_catfish",
+    "display_name": "Whole Blue Catfish",
+    "count": 3,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c",
+      "a2dc7343-414a-4ad0-a8b0-35bebe27ddb7",
+      "6356c216-db05-46e4-9292-12eb8eeb0a1f"
+    ],
+    "example_positions": [
+      43,
+      71,
+      70
+    ]
+  },
+  {
+    "canonical_name": "cod_liver",
+    "display_name": "Freeze-Dried Cod Liver",
+    "count": 3,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c",
+      "3d2d9dbe-0986-44fe-9a49-728058106e76",
+      "3d2d9dbe-0986-44fe-9a49-728058106e76"
+    ],
+    "example_positions": [
+      66,
+      25,
+      72
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_two",
+    "display_name": "Vitamin B12 Supplement. Round Cup Two",
+    "count": 3,
+    "example_products": [
+      "f7e9a6a1-7494-426e-86e1-2a6ee66e03a4",
+      "f7e9a6a1-7494-426e-86e1-2a6ee66e03a4",
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      25,
+      104,
+      25
+    ]
+  },
+  {
+    "canonical_name": "kiwi",
+    "display_name": "Dried Kiwi",
+    "count": 3,
+    "example_products": [
+      "012bcb3e-4a1d-4a38-a4a9-62defd797477",
+      "cb89339f-b8af-4853-b1c0-3d4b3364681f"
+    ],
+    "example_positions": [
+      16,
+      19
+    ]
+  },
+  {
+    "canonical_name": "ground_alfalfa",
+    "display_name": "Organic Ground Alfalfa",
+    "count": 3,
+    "example_products": [
+      "cdbb7381-25f8-443d-a569-6dfaa0546625",
+      "cd5aa4ec-d800-4eb8-b9d0-deb20bfe780a",
+      "963dfd8d-19fd-45e8-aa83-c5012267bba7"
+    ],
+    "example_positions": [
+      18,
+      20,
+      21
+    ]
+  },
+  {
+    "canonical_name": "whiting",
+    "display_name": "Whole Whiting",
+    "count": 3,
+    "example_products": [
+      "5152f2b7-2fbf-4287-8102-cc4a527f6535",
+      "9410a12d-bf5c-4429-9b11-99b3d7f4f5cc",
+      "cfed3446-3875-4704-8481-df0e0b68d78c"
+    ],
+    "example_positions": [
+      3,
+      6,
+      1
+    ]
+  },
+  {
+    "canonical_name": "cupric_sulfate_pentahydrate",
+    "display_name": "cupric sulfate pentahydrate",
+    "count": 3,
+    "example_products": [
+      "abf92e65-dd03-4415-8f3e-471785d58cd0",
+      "e01d41bb-6592-4764-801c-a37813ee93dc",
+      "1957320e-696a-41f4-bada-dff2c792aa96"
+    ],
+    "example_positions": [
+      11,
+      11,
+      13
+    ]
+  },
+  {
+    "canonical_name": "dandelion_root_extract",
+    "display_name": "dried dandelion root extract",
+    "count": 3,
+    "example_products": [
+      "abf92e65-dd03-4415-8f3e-471785d58cd0",
+      "ab10f73c-416c-493f-ad71-4fa04410adaf",
+      "cd98d1b0-f32e-40e2-9b6e-69179c399940"
+    ],
+    "example_positions": [
+      18,
+      16,
+      22
+    ]
+  },
+  {
+    "canonical_name": "clover_extract",
+    "display_name": "dried clover extract",
+    "count": 3,
+    "example_products": [
+      "abf92e65-dd03-4415-8f3e-471785d58cd0",
+      "ab10f73c-416c-493f-ad71-4fa04410adaf",
+      "cd98d1b0-f32e-40e2-9b6e-69179c399940"
+    ],
+    "example_positions": [
+      19,
+      17,
+      20
+    ]
+  },
+  {
+    "canonical_name": "a",
+    "display_name": "A",
+    "count": 3,
+    "example_products": [
+      "7d4776cd-d3a2-45cb-a0ab-d0376e44cf94",
+      "177a4a25-07b6-4535-8d57-c72c58f7288f",
+      "7a808820-9f7b-44c2-84f4-d3b9e14a71fa"
+    ],
+    "example_positions": [
+      17,
+      12,
+      11
+    ]
+  },
+  {
+    "canonical_name": "banana_flavor",
+    "display_name": "Natural Banana Flavor",
+    "count": 3,
+    "example_products": [
+      "fd252fad-546f-4be1-8e91-a84498bbaef0",
+      "fe4c8dbd-e887-498d-8d82-d11d4fb5f941"
+    ],
+    "example_positions": [
+      12,
+      36
+    ]
+  },
+  {
+    "canonical_name": "cultured_whey_product",
+    "display_name": "Dried Cultured Whey Product",
+    "count": 3,
+    "example_products": [
+      "d13ae147-c80e-44c2-8870-3b504ca0c70f",
+      "7f483b94-399f-4ccd-a6c4-13b9bfb26cf8",
+      "d1f23853-e5c9-45ae-a78a-f1f9ad154c70"
+    ],
+    "example_positions": [
+      11,
+      11,
+      11
+    ]
+  },
+  {
+    "canonical_name": "calcium_carbonateguaranteed_analysis_crude_protein40_min_crude_fat10_min_crude_fiber80_max_moisture150_max_close",
+    "display_name": "Calcium Carbonate.Guaranteed AnalysisCrude Protein4.0% minCrude Fat1.0% minCrude Fiber8.0% maxMoisture15.0% maxClose",
+    "count": 3,
+    "example_products": [
+      "cefe62b3-ac4f-4751-a349-185175d548e1"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "cheddar_cheese_powder",
+    "display_name": "Dried Cheddar Cheese Powder",
+    "count": 3,
+    "example_products": [
+      "d2a77b5b-3cb9-4067-9f2c-ab24e6c341e2",
+      "69cb899b-4f27-4377-a225-5bf3166b503f",
+      "626b227e-bfb4-4217-9aef-89ccb8569d37"
+    ],
+    "example_positions": [
+      25,
+      3,
+      12
+    ]
+  },
+  {
+    "canonical_name": "honey_flavor",
+    "display_name": "Natural Honey Flavor",
+    "count": 3,
+    "example_products": [
+      "3f96277e-e56c-4c8b-9f92-d910e4b1c846",
+      "d35a91df-c2f9-4d20-b26b-7ed86f2d51d8"
+    ],
+    "example_positions": [
+      32,
+      13
+    ]
+  },
+  {
+    "canonical_name": "cultured_grade_a_dairy",
+    "display_name": "Cultured Grade A Dairy",
+    "count": 3,
+    "example_products": [
+      "295411db-f724-4c8a-b685-d702a59e1329",
+      "d0a879af-1ae7-4837-a2fc-0500f2a75a68"
+    ],
+    "example_positions": [
+      10,
+      13
+    ]
+  },
+  {
+    "canonical_name": "orange_pulp",
+    "display_name": "Dried Orange Pulp",
+    "count": 3,
+    "example_products": [
+      "9c30a60a-4771-43a1-bfc9-5fa61d5cc18c",
+      "7799392a-0685-4197-94a1-1967e7a3358b",
+      "a4ef7737-07c4-436f-85c1-19d27d88642d"
+    ],
+    "example_positions": [
+      6,
+      4,
+      11
+    ]
+  },
+  {
+    "canonical_name": "dried_alfalfa_meal",
+    "display_name": "Organic Dried Alfalfa Meal",
+    "count": 3,
+    "example_products": [
+      "951b4185-5043-4355-90df-c4585c591dbf",
+      "2d91ee17-b82a-4599-88ba-e9712257fdbf",
+      "1fea1782-5667-4cf2-ab60-38e2769cacb8"
+    ],
+    "example_positions": [
+      20,
+      20,
+      18
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_can_two",
+    "display_name": "Potassium Iodide. Can Two",
+    "count": 3,
+    "example_products": [
+      "7bb2a891-1d62-41f3-b75f-ddd0289dc014",
+      "6ab9d602-6b88-42bf-a8e1-7f7cb51be91b",
+      "020bf9da-685f-40e7-9dad-1a8be930868e"
+    ],
+    "example_positions": [
+      26,
+      26,
+      28
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_lamb_recipe_lamb",
+    "display_name": "Folic Acid). **Lamb Recipe:** Lamb",
+    "count": 3,
+    "example_products": [
+      "3943d7c7-30dd-4a54-b7ab-be9ca2aa4bbf",
+      "e390142d-ebf0-4234-b189-80458f7cea59",
+      "e8850b44-c004-46ed-b0e2-05851312f544"
+    ],
+    "example_positions": [
+      53,
+      54,
+      53
+    ]
+  },
+  {
+    "canonical_name": "zucchini_powder",
+    "display_name": "Dried Zucchini Powder",
+    "count": 3,
+    "example_products": [
+      "448797ff-0235-4926-b3eb-bbd8c69a2628",
+      "56436109-ebac-471e-b89c-fca9a3678ae2",
+      "38337230-6c5a-4a0d-b95e-efe682fcd733"
+    ],
+    "example_positions": [
+      94,
+      10,
+      78
+    ]
+  },
+  {
+    "canonical_name": "crab_flavored_broth",
+    "display_name": "Natural Crab Flavored Broth",
+    "count": 3,
+    "example_products": [
+      "2295ee4e-581f-44ef-adbd-148d8ff5fca6",
+      "8976da03-790b-4584-9547-703820e13959",
+      "1927cd18-8a3e-4e1c-a1b2-391cdd8124d2"
+    ],
+    "example_positions": [
+      2,
+      5,
+      2
+    ]
+  },
+  {
+    "canonical_name": "shrimp_flavored_broth",
+    "display_name": "Natural Shrimp Flavored Broth",
+    "count": 3,
+    "example_products": [
+      "9d8dde28-6bd8-4b22-9a69-761b40ed84e3",
+      "23ae9a09-638f-40bd-8d0e-f94674856274",
+      "8976da03-790b-4584-9547-703820e13959"
+    ],
+    "example_positions": [
+      2,
+      12,
+      11
+    ]
+  },
+  {
+    "canonical_name": "kelp_flavor",
+    "display_name": "Natural Kelp Flavor",
+    "count": 3,
+    "example_products": [
+      "ac2c3f9a-3d52-434f-a22f-6ca27e2413e2",
+      "fe6fc1f9-a424-401f-b06e-e7e4742649aa",
+      "15579729-833d-4c3b-9312-869ce7f60c40"
+    ],
+    "example_positions": [
+      11,
+      11,
+      11
+    ]
+  },
+  {
+    "canonical_name": "lobster_flavor",
+    "display_name": "Natural Lobster Flavor",
+    "count": 3,
+    "example_products": [
+      "fdd42fa2-e4ef-423f-87ff-8b58b6c68871",
+      "d1c1a839-f096-4418-9484-b64a1a8d1c1e",
+      "c657c652-0543-42c2-a1b7-fadbd5c42eaf"
+    ],
+    "example_positions": [
+      20,
+      18,
+      17
+    ]
+  },
+  {
+    "canonical_name": "scallop_flavored_broth",
+    "display_name": "Natural Scallop Flavored Broth",
+    "count": 3,
+    "example_products": [
+      "23ae9a09-638f-40bd-8d0e-f94674856274",
+      "8976da03-790b-4584-9547-703820e13959",
+      "79ac4877-614f-4830-b24e-d45b4cae545a"
+    ],
+    "example_positions": [
+      5,
+      8,
+      2
+    ]
+  },
+  {
+    "canonical_name": "corn_protein",
+    "display_name": "Hydrolyzed Corn Protein",
+    "count": 2,
+    "example_products": [
+      "bd35853b-2547-4ea7-bdbc-98fc62766ea1",
+      "6435b5ce-d58a-4768-a6b5-6c61c94b45ee"
+    ],
+    "example_positions": [
+      38,
+      38
+    ]
+  },
+  {
+    "canonical_name": "top_sirloin_flavor",
+    "display_name": "Natural Top Sirloin Flavor",
+    "count": 2,
+    "example_products": [
+      "28d92187-c7c3-4619-96c2-099d991ff19a",
+      "59fd73c2-7e6b-463c-9032-e31210931d21"
+    ],
+    "example_positions": [
+      42,
+      51
+    ]
+  },
+  {
+    "canonical_name": "dried_potatoes",
+    "display_name": "Whole Dried Potatoes",
+    "count": 2,
+    "example_products": [
+      "2c4d53f4-2612-4644-a86a-42dd9d312d61",
+      "10085f16-4b69-4cff-9a0c-cb9c45ffe85c"
+    ],
+    "example_positions": [
+      6,
+      1
+    ]
+  },
+  {
+    "canonical_name": "enterococcus_fecium_fermentation_product",
+    "display_name": "Dried Enterococcus Fecium Fermentation Product",
+    "count": 2,
+    "example_products": [
+      "d1b71177-b468-4469-ac2c-3c85b74baf94"
+    ],
+    "example_positions": [
+      47
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_plantarum_fermentation_extract",
+    "display_name": "Dried Lactobacillus Plantarum Fermentation Extract",
+    "count": 2,
+    "example_products": [
+      "bb224de1-efe6-484b-ab4a-68ad640608c8"
+    ],
+    "example_positions": [
+      47
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_chicken_casserole_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Chicken Casserole: Ingredients: Sufficient Water For Processing",
+    "count": 2,
+    "example_products": [
+      "6885b4ce-a445-48b3-bba2-7925be588dc1",
+      "525d0a8b-8e4e-497e-99b6-88a1b3625b2c"
+    ],
+    "example_positions": [
+      61,
+      92
+    ]
+  },
+  {
+    "canonical_name": "hickory_smoked_chicken_flavor",
+    "display_name": "Natural Hickory Smoked Chicken Flavor",
+    "count": 2,
+    "example_products": [
+      "67631455-e644-47c7-aa53-2a4ef15ddb58",
+      "525d0a8b-8e4e-497e-99b6-88a1b3625b2c"
+    ],
+    "example_positions": [
+      18,
+      78
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_beef_noodles_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Beef Noodles: Ingredients: Sufficient Water For Processing",
+    "count": 2,
+    "example_products": [
+      "67631455-e644-47c7-aa53-2a4ef15ddb58",
+      "525d0a8b-8e4e-497e-99b6-88a1b3625b2c"
+    ],
+    "example_positions": [
+      61,
+      30
+    ]
+  },
+  {
+    "canonical_name": "vegetable_and_fruit_blend",
+    "display_name": "dehydrated vegetable and fruit blend",
+    "count": 2,
+    "example_products": [
+      "e970a95c-b75d-427f-b4c6-3f0a37a7a6b3",
+      "32d50c8f-efad-4975-8ec9-fa3f006004c0"
+    ],
+    "example_positions": [
+      11,
+      12
+    ]
+  },
+  {
+    "canonical_name": "ergocalciferol",
+    "display_name": "Ergocalciferol",
+    "count": 2,
+    "example_products": [
+      "b2ca3bda-8dfd-417a-b576-c966c6c55342",
+      "8a2296b2-9c5e-4005-af65-c46fbca91118"
+    ],
+    "example_positions": [
+      36,
+      33
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_paracasei_fermentation_product",
+    "display_name": "Dried Lactobacillus Paracasei Fermentation Product",
+    "count": 2,
+    "example_products": [
+      "5a4bdb01-55df-4878-9caa-6bdc11c7e79d",
+      "5a4bdb01-55df-4878-9caa-6bdc11c7e79d"
+    ],
+    "example_positions": [
+      34,
+      70
+    ]
+  },
+  {
+    "canonical_name": "freshwater_drum",
+    "display_name": "Whole Freshwater Drum",
+    "count": 2,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c",
+      "eeff9605-98b3-4c07-9ece-645552cc57c2"
+    ],
+    "example_positions": [
+      11,
+      13
+    ]
+  },
+  {
+    "canonical_name": "cod_flavor",
+    "display_name": "Natural Cod Flavor",
+    "count": 2,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c",
+      "3d2d9dbe-0986-44fe-9a49-728058106e76"
+    ],
+    "example_positions": [
+      57,
+      67
+    ]
+  },
+  {
+    "canonical_name": "bacillus_subtilis_fermentation_product_contains_a_source_of_live",
+    "display_name": "Dried Bacillus Subtilis Fermentation Product. Contains a Source Of Live",
+    "count": 2,
+    "example_products": [
+      "a468937b-038a-4615-a885-60ce3d1262d2",
+      "01a9f1e9-71c8-4dc7-8d14-b24441c8cf8b"
+    ],
+    "example_positions": [
+      54,
+      52
+    ]
+  },
+  {
+    "canonical_name": "lascorbyl2polyphoshate",
+    "display_name": "L-Ascorbyl-2-Polyphoshate",
+    "count": 2,
+    "example_products": [
+      "eba9df4c-89e9-4e0b-852c-1cb622d5bd2f",
+      "fc815f18-f6cf-437a-9cee-9696d582a832"
+    ],
+    "example_positions": [
+      32,
+      32
+    ]
+  },
+  {
+    "canonical_name": "rosemary_contains_a_source_of_live",
+    "display_name": "Rosemary. Contains A Source Of Live",
+    "count": 2,
+    "example_products": [
+      "ad97014f-e371-4e38-a443-62e65469e2e7",
+      "06fcb7ab-60ea-409b-965a-81d7d5dab5ed"
+    ],
+    "example_positions": [
+      57,
+      58
+    ]
+  },
+  {
+    "canonical_name": "club_cup_one",
+    "display_name": "Club Cup One",
+    "count": 2,
+    "example_products": [
+      "547b54c1-0f06-4cb3-8d18-755b63b29aea",
+      "3c3e7bb8-6f45-4017-8437-932da9979411"
+    ],
+    "example_positions": [
+      1,
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_club_cup_two",
+    "display_name": "Vitamin B12 Supplement. Club Cup Two",
+    "count": 2,
+    "example_products": [
+      "547b54c1-0f06-4cb3-8d18-755b63b29aea",
+      "3c3e7bb8-6f45-4017-8437-932da9979411"
+    ],
+    "example_positions": [
+      31,
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_club_cup_three",
+    "display_name": "Vitamin B12 Supplement. Club Cup Three",
+    "count": 2,
+    "example_products": [
+      "547b54c1-0f06-4cb3-8d18-755b63b29aea",
+      "3c3e7bb8-6f45-4017-8437-932da9979411"
+    ],
+    "example_positions": [
+      60,
+      59
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_club_cup_four",
+    "display_name": "Vitamin B12 Supplement. Club Cup Four",
+    "count": 2,
+    "example_products": [
+      "547b54c1-0f06-4cb3-8d18-755b63b29aea",
+      "3c3e7bb8-6f45-4017-8437-932da9979411"
+    ],
+    "example_positions": [
+      90,
+      90
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_fermentation_product",
+    "display_name": "Dried Bifidobacterium Fermentation Product",
+    "count": 2,
+    "example_products": [
+      "98500e88-907e-4b53-a4df-f52ffe2fd40b",
+      "54c5e4a2-bcc5-4e30-921b-6764cc8d0ed5"
+    ],
+    "example_positions": [
+      43,
+      53
+    ]
+  },
+  {
+    "canonical_name": "round_cup_one",
+    "display_name": "Round Cup One",
+    "count": 2,
+    "example_products": [
+      "f7e9a6a1-7494-426e-86e1-2a6ee66e03a4",
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      1,
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_three",
+    "display_name": "Vitamin B12 Supplement. Round Cup Three",
+    "count": 2,
+    "example_products": [
+      "f7e9a6a1-7494-426e-86e1-2a6ee66e03a4",
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      51,
+      51
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_four",
+    "display_name": "Vitamin B12 Supplement. Round Cup Four",
+    "count": 2,
+    "example_products": [
+      "f7e9a6a1-7494-426e-86e1-2a6ee66e03a4",
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      76,
+      78
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_chicken_chicken",
+    "display_name": "Calcium Iodate). Chicken: Chicken",
+    "count": 2,
+    "example_products": [
+      "eb0a2c1b-faf2-459f-99dc-37cd1fdc277c"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "pyridoxine_hydrochloride_vitamin_d3",
+    "display_name": "Pyridoxine Hydrochloride Vitamin D3 Supplement",
+    "count": 2,
+    "example_products": [
+      "b89ec594-cebf-495c-ac47-ef0c97769947",
+      "4bfd6c53-e519-4057-af6a-e4cf747ddd08"
+    ],
+    "example_positions": [
+      32,
+      31
+    ]
+  },
+  {
+    "canonical_name": "dehydrated_chicken",
+    "display_name": "Organic Dehydrated Chicken",
+    "count": 2,
+    "example_products": [
+      "4b3c3c76-5762-4ec8-a075-9e85d6ad4f5d",
+      "0999a2de-f229-4666-adb2-711a109454f8"
+    ],
+    "example_positions": [
+      2,
+      2
+    ]
+  },
+  {
+    "canonical_name": "hake",
+    "display_name": "Whole Hake",
+    "count": 2,
+    "example_products": [
+      "d31fdc62-b05b-47f3-a1c5-76b483d50fb8",
+      "239e0ce3-8e82-46c0-914c-1627db0c3781"
+    ],
+    "example_positions": [
+      6,
+      6
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_chicken_broth",
+    "display_name": "Calcium Iodate). Chicken Broth",
+    "count": 2,
+    "example_products": [
+      "179f989c-6aa2-4ad3-99c9-7ba7e44bd021",
+      "271d485c-1f52-41f8-9a93-a85f81a0a019"
+    ],
+    "example_positions": [
+      41,
+      38
+    ]
+  },
+  {
+    "canonical_name": "eucalyptus_oil",
+    "display_name": "Eucalyptus Oil",
+    "count": 2,
+    "example_products": [
+      "1798e745-a611-42af-a32a-917089841cc6",
+      "38b53041-452c-4110-b572-52976c325074"
+    ],
+    "example_positions": [
+      28,
+      27
+    ]
+  },
+  {
+    "canonical_name": "ribeye_flavor",
+    "display_name": "Natural Ribeye Flavor",
+    "count": 2,
+    "example_products": [
+      "77627b87-94d5-465a-ae39-d30b59dde714"
+    ],
+    "example_positions": [
+      22
+    ]
+  },
+  {
+    "canonical_name": "monterey_jack_cheese_powder",
+    "display_name": "Dried Monterey Jack Cheese Powder",
+    "count": 2,
+    "example_products": [
+      "d2a77b5b-3cb9-4067-9f2c-ab24e6c341e2",
+      "626b227e-bfb4-4217-9aef-89ccb8569d37"
+    ],
+    "example_positions": [
+      26,
+      14
+    ]
+  },
+  {
+    "canonical_name": "swiss_cheese_powder",
+    "display_name": "Dried Swiss Cheese Powder",
+    "count": 2,
+    "example_products": [
+      "d2a77b5b-3cb9-4067-9f2c-ab24e6c341e2",
+      "626b227e-bfb4-4217-9aef-89ccb8569d37"
+    ],
+    "example_positions": [
+      27,
+      13
+    ]
+  },
+  {
+    "canonical_name": "pretzel_flavor",
+    "display_name": "Natural Pretzel Flavor",
+    "count": 2,
+    "example_products": [
+      "ae863161-d299-46dc-8d08-80ee17965c50",
+      "1a00ff6e-b0ed-4e43-be3c-5487206d6473"
+    ],
+    "example_positions": [
+      20,
+      20
+    ]
+  },
+  {
+    "canonical_name": "propionibacterium_freudenreichii_fermentation_product",
+    "display_name": "Dried Propionibacterium Freudenreichii Fermentation Product",
+    "count": 2,
+    "example_products": [
+      "26cd4005-7b88-40ee-a998-0b6fd6be9e58",
+      "274c4678-5611-4edc-9899-7776b2367661"
+    ],
+    "example_positions": [
+      11,
+      11
+    ]
+  },
+  {
+    "canonical_name": "8_kcalchip_",
+    "display_name": "8 kcal/chip |",
+    "count": 2,
+    "example_products": [
+      "b9212be2-5dff-458d-87a7-c710eeda1ccc",
+      "b9212be2-5dff-458d-87a7-c710eeda1ccc"
+    ],
+    "example_positions": [
+      3,
+      7
+    ]
+  },
+  {
+    "canonical_name": "maple_flavored_syrup",
+    "display_name": "Natural Maple Flavored Syrup",
+    "count": 2,
+    "example_products": [
+      "d572a391-e83f-4f81-a818-ad82c2700783",
+      "c5d870b7-98cd-4483-a56c-5b3fe685bd01"
+    ],
+    "example_positions": [
+      3,
+      4
+    ]
+  },
+  {
+    "canonical_name": "peppermint_flavor",
+    "display_name": "Natural Peppermint Flavor",
+    "count": 2,
+    "example_products": [
+      "a54822cb-e9d8-4662-961c-62353dd8a83a",
+      "38b53041-452c-4110-b572-52976c325074"
+    ],
+    "example_positions": [
+      22,
+      24
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f667622_ocean_whitefish",
+    "display_name": "Vitamin D-3 Supplement]. F667622 Ocean Whitefish",
+    "count": 2,
+    "example_products": [
+      "4e84cc7f-84f1-4b32-a4e1-5ca922d0d6dc",
+      "1051b483-9ea6-4f2c-8931-23b349dc0d12"
+    ],
+    "example_positions": [
+      61,
+      61
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a512423",
+    "display_name": "Vitamin D-3 Supplement]. A512423",
+    "count": 2,
+    "example_products": [
+      "5109e981-a818-4470-aef1-6856528f88b6",
+      "97373010-fbb3-4711-adbd-ca0216ba27bc"
+    ],
+    "example_positions": [
+      124,
+      32
+    ]
+  },
+  {
+    "canonical_name": "parmesan_and_butter_flavor",
+    "display_name": "Natural Parmesan And Butter Flavor",
+    "count": 2,
+    "example_products": [
+      "e672667f-0c29-485c-82dd-496790b5460b",
+      "bf9d7977-a7c9-4527-b1b1-c645fb859051"
+    ],
+    "example_positions": [
+      18,
+      18
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_hearty_cuts_with_real_chicken__fish_in_gravy",
+    "display_name": "Sodium Selenite). Hearty Cuts with Real Chicken & Fish In Gravy",
+    "count": 2,
+    "example_products": [
+      "a67c79c7-a1bb-47ae-ac5e-6769f11a37cc",
+      "4594f66f-531a-47b0-9a43-f224be07f7af"
+    ],
+    "example_positions": [
+      70,
+      69
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_can_three",
+    "display_name": "Potassium Iodide. Can Three",
+    "count": 2,
+    "example_products": [
+      "7bb2a891-1d62-41f3-b75f-ddd0289dc014",
+      "020bf9da-685f-40e7-9dad-1a8be930868e"
+    ],
+    "example_positions": [
+      53,
+      55
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a600925",
+    "display_name": "Vitamin D-3 Supplement]. A600925",
+    "count": 2,
+    "example_products": [
+      "b8654b99-d976-4345-8a85-cc88fec306c5",
+      "06f95165-fcb2-4158-ad8c-506d4b8cfa55"
+    ],
+    "example_positions": [
+      31,
+      61
+    ]
+  },
+  {
+    "canonical_name": "chicken_flavored_broth",
+    "display_name": "Natural Chicken Flavored Broth",
+    "count": 2,
+    "example_products": [
+      "42998a02-702e-47d1-8822-976edda6318d",
+      "8976da03-790b-4584-9547-703820e13959"
+    ],
+    "example_positions": [
+      2,
+      2
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_mackerel__lamb_recipe_mackerel",
+    "display_name": "Folic Acid). **Mackerel & Lamb Recipe:** Mackerel",
+    "count": 2,
+    "example_products": [
+      "3943d7c7-30dd-4a54-b7ab-be9ca2aa4bbf",
+      "e8850b44-c004-46ed-b0e2-05851312f544"
+    ],
+    "example_positions": [
+      81,
+      26
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g466422_turkey__giblets_entree_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. G466422; Turkey & Giblets Entree: Meat By-Products",
+    "count": 2,
+    "example_products": [
+      "56575ca4-6f92-418c-9a77-fd2c8a154732",
+      "f6d7fdac-573f-40a1-a86d-7849653f3ad8"
+    ],
+    "example_positions": [
+      61,
+      61
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d470720",
+    "display_name": "Vitamin D-3 Supplement]. D470720",
+    "count": 2,
+    "example_products": [
+      "a6f66a64-8412-4d64-b953-0c3e55c4a14c",
+      "6a347262-7189-41b8-8a5c-023c47b17039"
+    ],
+    "example_positions": [
+      87,
+      30
+    ]
+  },
+  {
+    "canonical_name": "southern_blue_whiting",
+    "display_name": "Whole Southern Blue Whiting",
+    "count": 2,
+    "example_products": [
+      "29c48a61-18ae-4723-96af-20a9ed7e2d48",
+      "b380ee06-62ba-4dc1-a288-4274444c8918"
+    ],
+    "example_positions": [
+      3,
+      3
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_sodium_carbonate",
+    "display_name": "Sodium Selenite) Sodium Carbonate",
+    "count": 2,
+    "example_products": [
+      "c86cde87-e9ff-4405-a7ba-1e2c133e17ac",
+      "ea798c61-6ee8-44f7-b7c9-2c0a2472a2aa"
+    ],
+    "example_positions": [
+      33,
+      113
+    ]
+  },
+  {
+    "canonical_name": "menadion_sodium_bisulfite_complex",
+    "display_name": "Menadion Sodium Bisulfite Complex",
+    "count": 2,
+    "example_products": [
+      "c9254bb3-6ff6-4385-9675-3a23002db4e8",
+      "384c1559-b553-499f-b7d1-901b68f63dc6"
+    ],
+    "example_positions": [
+      27,
+      27
+    ]
+  },
+  {
+    "canonical_name": "1_chicken",
+    "display_name": "1 - Chicken",
+    "count": 2,
+    "example_products": [
+      "6987e1d2-e62e-42b2-894a-0f0cd78e38d0",
+      "e0408e46-2acb-46a2-9257-dca48b7c8981"
+    ],
+    "example_positions": [
+      1,
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b466220",
+    "display_name": "Vitamin D-3 Supplement]. B466220;",
+    "count": 2,
+    "example_products": [
+      "66007b73-df08-42af-afd4-7ac38d4f275a",
+      "9c8ab29f-ac95-4e2a-9fe4-b68dedb893ee"
+    ],
+    "example_positions": [
+      58,
+      29
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_product_contains_a_source_of_live",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product* *Contains a source of Live",
+    "count": 2,
+    "example_products": [
+      "788a9ba9-d63f-400e-b066-c82d46dd48d3",
+      "896b95ff-a637-4f3a-820c-8e47eeae1342"
+    ],
+    "example_positions": [
+      43,
+      45
+    ]
+  },
+  {
+    "canonical_name": "turkey__catnip_flavor",
+    "display_name": "Natural Turkey & Catnip Flavor",
+    "count": 2,
+    "example_products": [
+      "4f927e0b-6635-45e2-8684-5895b3023bd0"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "they_contain_no_chicken",
+    "display_name": "They contain no chicken",
+    "count": 2,
+    "example_products": [
+      "e4bd582e-a721-441b-a0e9-a7b119e23d43",
+      "56fad37e-994e-4c72-87bf-df3a540256ec"
+    ],
+    "example_positions": [
+      1,
+      1
+    ]
+  },
+  {
+    "canonical_name": "cheese_seafood_medley_chicken_byproduct_meal",
+    "display_name": "Dried Cheese. Seafood Medley: Chicken By-Product Meal",
+    "count": 2,
+    "example_products": [
+      "01e862f5-e6a5-4027-9cc0-7895d6769aad",
+      "502601f8-e29e-4888-aca7-1dec99a4e4df"
+    ],
+    "example_positions": [
+      95,
+      92
+    ]
+  },
+  {
+    "canonical_name": "tuna_shrimp__salmon_flavor",
+    "display_name": "Natural Tuna Shrimp & Salmon Flavor",
+    "count": 2,
+    "example_products": [
+      "72fe8173-1fba-4f92-812b-550f39a43452",
+      "2dae16cc-7d08-4bd0-b870-b8f57d73594c"
+    ],
+    "example_positions": [
+      17,
+      112
+    ]
+  },
+  {
+    "canonical_name": "soybean_protein",
+    "display_name": "Hydrolyzed Soybean Protein",
+    "count": 2,
+    "example_products": [
+      "5ea90a8c-b92b-4ee5-bfc1-c3255a27743e"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "tuna_flavored_broth",
+    "display_name": "Natural Tuna Flavored Broth",
+    "count": 2,
+    "example_products": [
+      "23ae9a09-638f-40bd-8d0e-f94674856274",
+      "23ae9a09-638f-40bd-8d0e-f94674856274"
+    ],
+    "example_positions": [
+      2,
+      8
+    ]
+  },
+  {
+    "canonical_name": "bacillus_licheninformis_fermentation_product",
+    "display_name": "Dried Bacillus Licheninformis Fermentation Product",
+    "count": 2,
+    "example_products": [
+      "62459ee9-122a-4a66-87e2-fbd48e1db7d9",
+      "ece323f3-d5b8-461d-9107-9a0bf93d73d8"
+    ],
+    "example_positions": [
+      17,
+      17
+    ]
+  },
+  {
+    "canonical_name": "grian_corn",
+    "display_name": "Ground Whole Grian Corn",
+    "count": 1,
+    "example_products": [
+      "fbdc307b-954a-4789-9da9-94686c2e8db1"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "grain_barley",
+    "display_name": "Ground Whole Grain Barley",
+    "count": 1,
+    "example_products": [
+      "245c19ed-37b8-451b-8f31-ba69395095c8"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "vitamin_asupplement",
+    "display_name": "Vitamin ASupplement",
+    "count": 1,
+    "example_products": [
+      "d5a7107e-26eb-4c2a-adce-539aa8ad4420"
+    ],
+    "example_positions": [
+      18
+    ]
+  },
+  {
+    "canonical_name": "paw_lickin_chicken_recipe_plus",
+    "display_name": "Paw Lickin' Chicken Recipe Plus",
+    "count": 1,
+    "example_products": [
+      "87e94b19-3abc-4395-bd43-cbf2ee1057a2"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_grilled_chicken_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Grilled Chicken: Ingredients: Sufficient Water For Processing",
+    "count": 1,
+    "example_products": [
+      "38f952dc-0093-424d-a6cf-f464f1f685cd"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "chicken_entre_with_sweet_potatoes_and_broccoli_chicken",
+    "display_name": "Roasted Chicken Entr\u00e9e With Sweet Potatoes And Broccoli: Chicken",
+    "count": 1,
+    "example_products": [
+      "91cafd86-fd0e-4fc9-9e27-a8f01305cc90"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_beef_noodles_veg_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Beef Noodles Veg: Ingredients: Sufficient Water For Processing",
+    "count": 1,
+    "example_products": [
+      "6885b4ce-a445-48b3-bba2-7925be588dc1"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_filet_mignon_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Filet Mignon: Ingredients: Sufficient Water For Processing",
+    "count": 1,
+    "example_products": [
+      "67631455-e644-47c7-aa53-2a4ef15ddb58"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "black_soldier_fly_larvae",
+    "display_name": "Dried Black Soldier Fly Larvae",
+    "count": 1,
+    "example_products": [
+      "a65d42db-cb6c-423e-8d07-fcc30df6f14e"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "pyri_doxine_hydrochloride",
+    "display_name": "Pyri- doxine Hydrochloride",
+    "count": 1,
+    "example_products": [
+      "f0ae4de1-7f35-4e84-b7db-31c85ef1986e"
+    ],
+    "example_positions": [
+      24
+    ]
+  },
+  {
+    "canonical_name": "flavor_morsels_in_sauce_with_beef_water",
+    "display_name": "Natural Flavor. Morsels In Sauce With Beef: Water",
+    "count": 1,
+    "example_products": [
+      "f06eef14-ca22-495e-9cc6-a26933a262a9"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_morsels_in_sauce_with_turkey_water",
+    "display_name": "Vitamin B12 Supplement). Morsels In Sauce With Turkey: Water",
+    "count": 1,
+    "example_products": [
+      "f06eef14-ca22-495e-9cc6-a26933a262a9"
+    ],
+    "example_positions": [
+      62
+    ]
+  },
+  {
+    "canonical_name": "dry_eggs",
+    "display_name": "Whole Dry Eggs",
+    "count": 1,
+    "example_products": [
+      "8f7340f9-5e37-4f30-92ca-c56b464f1845"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_dried_lactobacillus_acidophilus_fermentation_product",
+    "display_name": "Vitamin B12 Supplement) Dried Lactobacillus Acidophilus Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "cc5cb56e-6c2d-40f7-9d45-17b0644b4e71"
+    ],
+    "example_positions": [
+      48
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_animalis_fermaentation_product",
+    "display_name": "Dried Bifidobacterium Animalis Fermaentation Product",
+    "count": 1,
+    "example_products": [
+      "cc5cb56e-6c2d-40f7-9d45-17b0644b4e71"
+    ],
+    "example_positions": [
+      51
+    ]
+  },
+  {
+    "canonical_name": "entercoccus_faecium_fermentation_product",
+    "display_name": "Dried Entercoccus Faecium Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "cc5cb56e-6c2d-40f7-9d45-17b0644b4e71"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_2c37070",
+    "display_name": "Vitamin D3 Supplement). 2C37070",
+    "count": 1,
+    "example_products": [
+      "71fdbcca-ef2e-4836-b2b0-1b8e8fb3f120"
+    ],
+    "example_positions": [
+      38
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_hickory_smoked_chicken_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Hickory Smoked Chicken: Ingredients: Sufficient Water For Processing",
+    "count": 1,
+    "example_products": [
+      "525d0a8b-8e4e-497e-99b6-88a1b3625b2c"
+    ],
+    "example_positions": [
+      61
+    ]
+  },
+  {
+    "canonical_name": "bacillus_subtilus_fermentation_extract",
+    "display_name": "Dried Bacillus Subtilus Fermentation Extract",
+    "count": 1,
+    "example_products": [
+      "97248502-a073-4565-be0f-8fc7b2cfc49b"
+    ],
+    "example_positions": [
+      27
+    ]
+  },
+  {
+    "canonical_name": "cranberries_salt",
+    "display_name": "Dried Cranberries Salt",
+    "count": 1,
+    "example_products": [
+      "6968a1ee-5b4c-4175-90fb-bb7882550c9b"
+    ],
+    "example_positions": [
+      17
+    ]
+  },
+  {
+    "canonical_name": "_vitamin_b12_supplement_vitamin_a_supplement_niacin_riboflavin_supplement_pyridoxine_hydrochloride_vitamin_d3_supplement_folic_acid",
+    "display_name": "(Vitamin E Supplement, Ascorbic Acid, D-Calcium Pantothenate, Biotin, Thiamine Mononitrate (Vitamin B1), Vitamin B12 Supplement, Vitamin A Supplement, Niacin, Riboflavin Supplement (Vitamin B2), Pyridoxine Hydrochloride (Vitamin B6), Vitamin D3 Supplement, Folic Acid)",
+    "count": 1,
+    "example_products": [
+      "38cc55aa-ad5e-4cba-bdcc-8f6d9f1d90ea"
+    ],
+    "example_positions": [
+      21
+    ]
+  },
+  {
+    "canonical_name": "ferrous_proteinate",
+    "display_name": "Ferrous Proteinate",
+    "count": 1,
+    "example_products": [
+      "fa9022ce-b9dc-426f-b271-7b9828798348"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_fermentation_product",
+    "display_name": "Dried Lactobacillus Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "fa9022ce-b9dc-426f-b271-7b9828798348"
+    ],
+    "example_positions": [
+      43
+    ]
+  },
+  {
+    "canonical_name": "enterococcus_faecium_fermentati_on_product",
+    "display_name": "Dried Enterococcus Faecium Fermentati On Product",
+    "count": 1,
+    "example_products": [
+      "c223db0a-36c1-4725-b0e6-e7f1943e273f"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "anchovy",
+    "display_name": "Dehydrated anchovy",
+    "count": 1,
+    "example_products": [
+      "024de657-805b-49f7-a951-114317773fec"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "animal_protein",
+    "display_name": "hydrolyzed animal protein",
+    "count": 1,
+    "example_products": [
+      "024de657-805b-49f7-a951-114317773fec"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "lthreonine",
+    "display_name": "L-Threonine;",
+    "count": 1,
+    "example_products": [
+      "20e8e4bb-64a1-487d-bad2-90978b849a9a"
+    ],
+    "example_positions": [
+      66
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_animalis_fermentaion_product",
+    "display_name": "Dried Bifidobacterium Animalis Fermentaion Product",
+    "count": 1,
+    "example_products": [
+      "4a0426bd-9fff-4a1c-add8-a4425a83faa8"
+    ],
+    "example_positions": [
+      44
+    ]
+  },
+  {
+    "canonical_name": "blood",
+    "display_name": "Dried Blood",
+    "count": 1,
+    "example_products": [
+      "3773c1e6-1ca1-40f5-8c96-25f0e31184a2"
+    ],
+    "example_positions": [
+      54
+    ]
+  },
+  {
+    "canonical_name": "golden_algae",
+    "display_name": "Dried Golden Algae",
+    "count": 1,
+    "example_products": [
+      "5b4c448d-0ae1-4eea-ab1c-0cb7d89179f8"
+    ],
+    "example_positions": [
+      58
+    ]
+  },
+  {
+    "canonical_name": "aspergillus_oryzae_fermenation_extract",
+    "display_name": "Dried Aspergillus Oryzae Fermenation Extract",
+    "count": 1,
+    "example_products": [
+      "a8575112-5a6c-4dde-a9c3-194b24b59c7f"
+    ],
+    "example_positions": [
+      46
+    ]
+  },
+  {
+    "canonical_name": "kelp_beef_stew_beef",
+    "display_name": "Dried Kelp. Beef Stew: Beef",
+    "count": 1,
+    "example_products": [
+      "0f264e5d-1eab-4a5a-9a09-1083de3f8f2f"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "kelp_turkey__salmon_stew_turkey",
+    "display_name": "Dried Kelp. Turkey & Salmon Stew: Turkey",
+    "count": 1,
+    "example_products": [
+      "0f264e5d-1eab-4a5a-9a09-1083de3f8f2f"
+    ],
+    "example_positions": [
+      69
+    ]
+  },
+  {
+    "canonical_name": "lmethionine",
+    "display_name": "L-Methionine",
+    "count": 1,
+    "example_products": [
+      "32d50c8f-efad-4975-8ec9-fa3f006004c0"
+    ],
+    "example_positions": [
+      18
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_roasted_chicken",
+    "display_name": "Sodium Selenite]. Roasted Chicken",
+    "count": 1,
+    "example_products": [
+      "6476b653-cbb5-4eaa-be35-e2e4206be5f4"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_tender_chicken",
+    "display_name": "Sodium Selenite]. Tender Chicken",
+    "count": 1,
+    "example_products": [
+      "6476b653-cbb5-4eaa-be35-e2e4206be5f4"
+    ],
+    "example_positions": [
+      72
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_shredded_medley_with_roasted_chicken",
+    "display_name": "Sodium Selenite]. Shredded Medley With Roasted Chicken",
+    "count": 1,
+    "example_products": [
+      "6476b653-cbb5-4eaa-be35-e2e4206be5f4"
+    ],
+    "example_positions": [
+      172
+    ]
+  },
+  {
+    "canonical_name": "lascorbyl2polyphosphat",
+    "display_name": "L-Ascorbyl-2-Polyphosphat",
+    "count": 1,
+    "example_products": [
+      "b5a5ac15-a5d5-441a-a244-d2406c6c647e"
+    ],
+    "example_positions": [
+      49
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_casei_fermentation_product_original_rainbow_trout",
+    "display_name": "Dried Lactobacillus Casei Fermentation Product. Original: Rainbow Trout",
+    "count": 1,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c"
+    ],
+    "example_positions": [
+      42
+    ]
+  },
+  {
+    "canonical_name": "white_perch",
+    "display_name": "Whole White Perch",
+    "count": 1,
+    "example_products": [
+      "c3ee8978-699b-4348-bfbb-aed79f6bc75c"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "dimethionine",
+    "display_name": "di-Methionine",
+    "count": 1,
+    "example_products": [
+      "60bdda89-3c8f-41a6-af86-becacccdb536"
+    ],
+    "example_positions": [
+      13
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_k444422",
+    "display_name": "Vitamin D-3 Supplement]. K444422",
+    "count": 1,
+    "example_products": [
+      "08ea013e-10fb-410f-9cf4-a2e6fd4ce7cd"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "poultry_byproducts_aggregate",
+    "display_name": "Hydrolyzed Poultry By-Products Aggregate",
+    "count": 1,
+    "example_products": [
+      "0b8b92d1-5cc2-425b-acf6-fbfcd8ae5832"
+    ],
+    "example_positions": [
+      2
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_beef_ingredients_sufficient_water_for_processing",
+    "display_name": "Folic Acid). Beef: Ingredients: Sufficient Water For Processing",
+    "count": 1,
+    "example_products": [
+      "27e8668a-f52a-4251-bf0d-b0fa5d660259"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_with_chicken__turkey_sufficient_water_for_processing",
+    "display_name": "VITAMIN B12 SUPPLEMENT). With Chicken & Turkey: SUFFICIENT WATER FOR PROCESSING",
+    "count": 1,
+    "example_products": [
+      "f0141472-8db5-4416-91d7-98d8f9430c02"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_guar_gum",
+    "display_name": "VITAMIN B12 SUPPLEMENT) GUAR GUM",
+    "count": 1,
+    "example_products": [
+      "f0141472-8db5-4416-91d7-98d8f9430c02"
+    ],
+    "example_positions": [
+      59
+    ]
+  },
+  {
+    "canonical_name": "flavor_beef__pork_tenderloin_flavor_sufficient_water_for_processing",
+    "display_name": "NATURAL FLAVOR. Beef & Pork Tenderloin Flavor: SUFFICIENT WATER FOR PROCESSING",
+    "count": 1,
+    "example_products": [
+      "f0141472-8db5-4416-91d7-98d8f9430c02"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "pork_tenderloin_flavor",
+    "display_name": "NATURAL PORK TENDERLOIN FLAVOR",
+    "count": 1,
+    "example_products": [
+      "f0141472-8db5-4416-91d7-98d8f9430c02"
+    ],
+    "example_positions": [
+      80
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_real_beef__pumpkin_beef",
+    "display_name": "Calcium Iodate). Real Beef & Pumpkin: Beef",
+    "count": 1,
+    "example_products": [
+      "89c7a315-9d9b-43f8-93ae-5663db88b72b"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "_kale_guaranteed_analysis__crude_protein100_min_crude_fat40_min_crude_fiber05_max_moisture830_max_chicken__green_beans_guaranteed_analysis__crude_protein100_min_crude_fat20_min_crude_fiber05_max_moisture860_max_chicken",
+    "display_name": "& Kale** |Guaranteed Analysis|| |---|---:| |Crude Protein|10.0% min| |Crude Fat|4.0% min| |Crude Fiber|0.5% max| |Moisture|83.0% max| **Chicken & Green Beans** |Guaranteed Analysis|| |---|---:| |Crude Protein|10.0% min| |Crude Fat|2.0% min| |Crude Fiber|0.5% max| |Moisture|86.0% max| **Chicken",
+    "count": 1,
+    "example_products": [
+      "5eadec8f-4d6f-418a-8ae8-33cba193bf36"
+    ],
+    "example_positions": [
+      3
+    ]
+  },
+  {
+    "canonical_name": "_kale_guaranteed_analysis__crude_protein100_min_crude_fat20_min_crude_fiber05_max_moisture860_max_lamb",
+    "display_name": "& Kale** |Guaranteed Analysis|| |---|---:| |Crude Protein|10.0% min| |Crude Fat|2.0% min| |Crude Fiber|0.5% max| |Moisture|86.0% max| **Lamb",
+    "count": 1,
+    "example_products": [
+      "5eadec8f-4d6f-418a-8ae8-33cba193bf36"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "_kelp_guaranteed_analysis__crude_protein100_min_crude_fat50_min_crude_fiber05_max_moisture805_max_mackerel",
+    "display_name": "& Kelp** |Guaranteed Analysis|| |---|---:| |Crude Protein|10.0% min| |Crude Fat|5.0% min| |Crude Fiber|0.5% max| |Moisture|80.5% max| **Mackerel",
+    "count": 1,
+    "example_products": [
+      "5eadec8f-4d6f-418a-8ae8-33cba193bf36"
+    ],
+    "example_positions": [
+      7
+    ]
+  },
+  {
+    "canonical_name": "_mussel_guaranteed_analysis__crude_protein100_min_crude_fat10_min_crude_fiber05_max_moisture870_max_chicken",
+    "display_name": "& Mussel** |Guaranteed Analysis|| |---|---:| |Crude Protein|10.0% min| |Crude Fat|1.0% min| |Crude Fiber|0.5% max| |Moisture|87.0% max| **Chicken",
+    "count": 1,
+    "example_products": [
+      "5eadec8f-4d6f-418a-8ae8-33cba193bf36"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "_carrot_guaranteed_analysis__crude_protein120_min_crude_fat20_min_crude_fiber05_max_moisture840_max",
+    "display_name": "& Carrot** |Guaranteed Analysis|| |---|---:| |Crude Protein|12.0% min| |Crude Fat|2.0% min| |Crude Fiber|0.5% max| |Moisture|84.0% max|",
+    "count": 1,
+    "example_products": [
+      "5eadec8f-4d6f-418a-8ae8-33cba193bf36"
+    ],
+    "example_positions": [
+      11
+    ]
+  },
+  {
+    "canonical_name": "dbiotin",
+    "display_name": "D-Biotin",
+    "count": 1,
+    "example_products": [
+      "a1aa76a6-2e6a-4c18-8d0b-1bfa51395376"
+    ],
+    "example_positions": [
+      45
+    ]
+  },
+  {
+    "canonical_name": "biotin_minerals",
+    "display_name": "Biotin) Minerals:",
+    "count": 1,
+    "example_products": [
+      "98bf3e56-821a-4a1d-a472-8828ed9decdf"
+    ],
+    "example_positions": [
+      27
+    ]
+  },
+  {
+    "canonical_name": "bifido_bacterium_bifidium_fermentation_product",
+    "display_name": "Dried Bifido Bacterium Bifidium Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "e9afc0bf-e9dd-453a-abf5-2cc5cb42dfef"
+    ],
+    "example_positions": [
+      47
+    ]
+  },
+  {
+    "canonical_name": "saccharomyces_cerevisiae_fermentation_product",
+    "display_name": "Dried Saccharomyces Cerevisiae Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "c93f6ec3-06e0-4da0-8fd8-43a45262716a"
+    ],
+    "example_positions": [
+      18
+    ]
+  },
+  {
+    "canonical_name": "beets_and_organic_beet_fiber",
+    "display_name": "Organic Beets And Organic Beet Fiber",
+    "count": 1,
+    "example_products": [
+      "e858e6dc-c921-4c33-acd6-4fae7ead1450"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "bifido_bacterium_bifidium_thermophilum_fermentation_product",
+    "display_name": "Dried Bifido Bacterium Bifidium Thermophilum Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "86d550f3-8af7-4149-9fc9-4c84f163f2dc"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "streptococcus_faecium_fermentation_product",
+    "display_name": "Dried Streptococcus Faecium Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "86d550f3-8af7-4149-9fc9-4c84f163f2dc"
+    ],
+    "example_positions": [
+      53
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_bifidium_fermentation_product",
+    "display_name": "Dried Bifidobacterium Bifidium Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "dc32f746-fb1c-4caf-9476-af3d32ba8c51"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "pineapple_extract",
+    "display_name": "Dried Pineapple Extract",
+    "count": 1,
+    "example_products": [
+      "dc32f746-fb1c-4caf-9476-af3d32ba8c51"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "whey_dried_blueberries",
+    "display_name": "Dried Whey. Dried Blueberries",
+    "count": 1,
+    "example_products": [
+      "8e3bcd5b-1cec-439d-8536-bc6fe7e51a4c"
+    ],
+    "example_positions": [
+      39
+    ]
+  },
+  {
+    "canonical_name": "ethylenediamine_dihydrdiodide",
+    "display_name": "Ethylenediamine Dihydrdiodide",
+    "count": 1,
+    "example_products": [
+      "28392465-741f-4eef-af55-bea6af7ffbf5"
+    ],
+    "example_positions": [
+      41
+    ]
+  },
+  {
+    "canonical_name": "vegetable_flavouring",
+    "display_name": "Natural Vegetable Flavouring",
+    "count": 1,
+    "example_products": [
+      "68c22b2a-16c1-4382-8b79-72b0f564b691"
+    ],
+    "example_positions": [
+      11
+    ]
+  },
+  {
+    "canonical_name": "eggshells_pork_meal_pork",
+    "display_name": "Powdered Eggshells; Pork Meal: Pork",
+    "count": 1,
+    "example_products": [
+      "5132c0a7-c113-4008-aa7a-62f210479ece"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "eggshells_chicken_meal_chicken",
+    "display_name": "Powdered Eggshells; Chicken Meal: Chicken",
+    "count": 1,
+    "example_products": [
+      "5132c0a7-c113-4008-aa7a-62f210479ece"
+    ],
+    "example_positions": [
+      17
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c287324_lil_plates_petite_pate_beef_dinner__deboned_beef",
+    "display_name": "Vitamin D-3 Supplement]. C287324; Lil' Plates Petite Pate Beef Dinner : Deboned Beef",
+    "count": 1,
+    "example_products": [
+      "1bb3dd24-2efa-4203-878a-faa6631598d2"
+    ],
+    "example_positions": [
+      66
+    ]
+  },
+  {
+    "canonical_name": "biotin_chicken_chicken",
+    "display_name": "Biotin Chicken: Chicken",
+    "count": 1,
+    "example_products": [
+      "d41e568b-b520-46f3-84f9-7b8d2606dcc4"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_plantarum_fermentation_product_c299524",
+    "display_name": "Dried Lactobacillus Plantarum Fermentation Product C299524",
+    "count": 1,
+    "example_products": [
+      "3a7fd917-0166-456d-ad18-a4ca377d8b4d"
+    ],
+    "example_positions": [
+      50
+    ]
+  },
+  {
+    "canonical_name": "thiamine_mononitrate_vitamin_b1_dcalcium_pantothenate",
+    "display_name": "Thiamine Mononitrate {Vitamin B1} d-Calcium Pantothenate",
+    "count": 1,
+    "example_products": [
+      "1e934f69-84bd-4427-a554-5a6629cdc3d7"
+    ],
+    "example_positions": [
+      22
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_guar_gum",
+    "display_name": "Vitamin D3 Supplement) Guar Gum",
+    "count": 1,
+    "example_products": [
+      "1c8ce86b-aa70-4e52-930a-04546de83cd0"
+    ],
+    "example_positions": [
+      24
+    ]
+  },
+  {
+    "canonical_name": "d3_supplements",
+    "display_name": "D3 Supplements",
+    "count": 1,
+    "example_products": [
+      "7d4776cd-d3a2-45cb-a0ab-d0376e44cf94"
+    ],
+    "example_positions": [
+      19
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_five",
+    "display_name": "Vitamin B12 Supplement. Round Cup Five",
+    "count": 1,
+    "example_products": [
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      103
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_six",
+    "display_name": "Vitamin B12 Supplement. Round Cup Six",
+    "count": 1,
+    "example_products": [
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      131
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_seven",
+    "display_name": "Vitamin B12 Supplement. Round Cup Seven",
+    "count": 1,
+    "example_products": [
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      159
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_round_cup_eight",
+    "display_name": "Vitamin B12 Supplement. Round Cup Eight",
+    "count": 1,
+    "example_products": [
+      "2db8a4a6-9b5f-4b79-a15f-8fac7f801fdb"
+    ],
+    "example_positions": [
+      186
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_casei_fermentation_product_original_deboned_beef",
+    "display_name": "Dried Lactobacillus Casei Fermentation Product. Original: Deboned Beef",
+    "count": 1,
+    "example_products": [
+      "e46ef3e7-ee06-4db4-9418-a2e31e4f9c97"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_acidophilus_fermentation_product_dried_bifidobacterium_longum_fermentation_product",
+    "display_name": "Dried Lactobacillus Acidophilus Fermentation Product. Dried Bifidobacterium Longum Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "8b6db633-38d2-45b3-a8d1-888fade02597"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_acidophilus_fermentation",
+    "display_name": "Dried Lactobacillus Acidophilus Fermentation",
+    "count": 1,
+    "example_products": [
+      "2c16f057-6651-4630-a0ae-2fa18a1d3f48"
+    ],
+    "example_positions": [
+      28
+    ]
+  },
+  {
+    "canonical_name": "apple_and_banana_flavors",
+    "display_name": "Natural Apple and Banana Flavors",
+    "count": 1,
+    "example_products": [
+      "54347770-cf13-4865-81f7-fb8e1963c090"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "vitamin_bl2",
+    "display_name": "Vitamin Bl2 Supplement",
+    "count": 1,
+    "example_products": [
+      "1d9afe71-7fbb-4ab8-9bfd-b454d02613a4"
+    ],
+    "example_positions": [
+      27
+    ]
+  },
+  {
+    "canonical_name": "rhizopus_oryzae_fermentation_extract",
+    "display_name": "Dried Rhizopus Oryzae Fermentation Extract",
+    "count": 1,
+    "example_products": [
+      "f50fe7e8-3bc5-47e5-a513-ceb82a593dbb"
+    ],
+    "example_positions": [
+      21
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus",
+    "display_name": "Dried Lactobacillus",
+    "count": 1,
+    "example_products": [
+      "f50fe7e8-3bc5-47e5-a513-ceb82a593dbb"
+    ],
+    "example_positions": [
+      26
+    ]
+  },
+  {
+    "canonical_name": "pediococcus_acidilactici_fermentation_product_dried_lactobacillus_acidophilus_fermentation_product",
+    "display_name": "Dried Pediococcus Acidilactici Fermentation Product. Dried Lactobacillus Acidophilus Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "06fcb7ab-60ea-409b-965a-81d7d5dab5ed"
+    ],
+    "example_positions": [
+      55
+    ]
+  },
+  {
+    "canonical_name": "toasted_marshmallow_flavor_with_other_natural_flavors",
+    "display_name": "Natural Toasted Marshmallow Flavor With Other Natural Flavors",
+    "count": 1,
+    "example_products": [
+      "a47806a3-e6be-45a6-b996-e023dbdc5d3f"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "and_vitamin_d3",
+    "display_name": "and Vitamin D3 Supplement",
+    "count": 1,
+    "example_products": [
+      "b4fba69f-d0a7-4448-b3b7-baa13fb90ab9"
+    ],
+    "example_positions": [
+      48
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation",
+    "display_name": "Dried Bacillus Coagulans Fermentation",
+    "count": 1,
+    "example_products": [
+      "5ee26d63-067d-4956-bc54-fa50be3674c2"
+    ],
+    "example_positions": [
+      47
+    ]
+  },
+  {
+    "canonical_name": "porcine_flavor",
+    "display_name": "Natural Porcine Flavor",
+    "count": 1,
+    "example_products": [
+      "7b456f6e-dc5c-4d18-b930-339dba970b81"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_casei_fermentation_product_original_deboned_chicken",
+    "display_name": "Dried Lactobacillus Casei Fermentation Product. Original: Deboned Chicken",
+    "count": 1,
+    "example_products": [
+      "6356c216-db05-46e4-9292-12eb8eeb0a1f"
+    ],
+    "example_positions": [
+      56
+    ]
+  },
+  {
+    "canonical_name": "amino_acid_complex",
+    "display_name": "Amino Acid Complex",
+    "count": 1,
+    "example_products": [
+      "ef979be2-9787-45c4-bfde-f8ed6ea45bf0"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "trichoderma_longibrachiatum_fermentation_extract_contains_a_source_of_live_naturally_occuring_microorganisms",
+    "display_name": "Dried Trichoderma Longibrachiatum Fermentation Extract. Contains A Source Of Live Naturally Occuring Microorganisms",
+    "count": 1,
+    "example_products": [
+      "77e09709-3b13-4f97-847f-4335078acdd2"
+    ],
+    "example_positions": [
+      40
+    ]
+  },
+  {
+    "canonical_name": "flavor_cranberries",
+    "display_name": "Natural Flavor Cranberries",
+    "count": 1,
+    "example_products": [
+      "546601bb-7df6-4b26-a2f6-e1a354e73ded"
+    ],
+    "example_positions": [
+      16
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplementa481824",
+    "display_name": "Vitamin D-3 Supplement].A481824",
+    "count": 1,
+    "example_products": [
+      "10071f4e-cdd7-4374-ac34-961f48c584d7"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "cranberries_llysine",
+    "display_name": "Dried Cranberries L-Lysine",
+    "count": 1,
+    "example_products": [
+      "0303346a-aa33-4a39-943c-3ec7f95a49ad"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "bifido_bacterium_thermophilum_fermentation_product",
+    "display_name": "Dried Bifido Bacterium Thermophilum Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "4e1a73f1-4a7a-4cc1-a0f3-24effc291670"
+    ],
+    "example_positions": [
+      55
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_casei_fermentation_product_original_whole_mackerel",
+    "display_name": "Dried Lactobacillus Casei Fermentation Product. Original: Whole Mackerel",
+    "count": 1,
+    "example_products": [
+      "3d2d9dbe-0986-44fe-9a49-728058106e76"
+    ],
+    "example_positions": [
+      49
+    ]
+  },
+  {
+    "canonical_name": "hickory_smoke",
+    "display_name": "Natural Hickory Smoke",
+    "count": 1,
+    "example_products": [
+      "a3699c41-e67e-443e-accb-01c4ef8c3650"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "peanut_butter_and_banana_flavors",
+    "display_name": "Natural Peanut Butter and Banana Flavors",
+    "count": 1,
+    "example_products": [
+      "ae940d09-6313-4aa5-a84b-9b18ed3786c3"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "bbq_flavor",
+    "display_name": "Natural BBQ Flavor",
+    "count": 1,
+    "example_products": [
+      "3b471397-17cf-482f-bc56-4c6f09532397"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "ribeye_steak_flavor",
+    "display_name": "Natural Ribeye Steak Flavor",
+    "count": 1,
+    "example_products": [
+      "382d0059-56db-435d-8676-9a6d6aa23e3e"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "top_sirloin_steak_flavor",
+    "display_name": "Natural Top Sirloin Steak Flavor",
+    "count": 1,
+    "example_products": [
+      "382d0059-56db-435d-8676-9a6d6aa23e3e"
+    ],
+    "example_positions": [
+      13
+    ]
+  },
+  {
+    "canonical_name": "ny_strip_steak_flavor",
+    "display_name": "Natural Ny Strip Steak Flavor",
+    "count": 1,
+    "example_products": [
+      "382d0059-56db-435d-8676-9a6d6aa23e3e"
+    ],
+    "example_positions": [
+      14
+    ]
+  },
+  {
+    "canonical_name": "sodium_copper_chlorophyllin",
+    "display_name": "Sodium Copper Chlorophyllin",
+    "count": 1,
+    "example_products": [
+      "1798e745-a611-42af-a32a-917089841cc6"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "niacina_mide",
+    "display_name": "Niacina- mide",
+    "count": 1,
+    "example_products": [
+      "a9e8aab1-e843-4e39-8b25-be71cfc49244"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "sausage_flavor",
+    "display_name": "Natural Sausage Flavor",
+    "count": 1,
+    "example_products": [
+      "003aa468-2b3c-439f-b67e-0763ae910ed5"
+    ],
+    "example_positions": [
+      11
+    ]
+  },
+  {
+    "canonical_name": "honey_ham_flavor",
+    "display_name": "Natural Honey Ham Flavor",
+    "count": 1,
+    "example_products": [
+      "d4c84fac-8e73-4012-9b5b-6984d28f94b6"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "apple_cinnamon_flavor",
+    "display_name": "Natural Apple Cinnamon Flavor",
+    "count": 1,
+    "example_products": [
+      "588667fd-94fc-4fa5-b8f1-4c309939fc66"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "proprionibacterium_freudenreichii_fermentation_product",
+    "display_name": "Dried Proprionibacterium Freudenreichii Fermentation Product",
+    "count": 1,
+    "example_products": [
+      "fba02df9-7ffb-4d69-82c8-7622fcd27602"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "beef_jerky",
+    "display_name": "Beef Jerky",
+    "count": 1,
+    "example_products": [
+      "2468bf97-8ee3-4aa9-8bc7-5ae7ce585348"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "duck_flavoring",
+    "display_name": "Natural Duck Flavoring",
+    "count": 1,
+    "example_products": [
+      "f32b797b-aa3f-45e9-9ade-1f06799581f4"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "dried_sweet_potatoes",
+    "display_name": "Whole Dried Sweet Potatoes",
+    "count": 1,
+    "example_products": [
+      "10085f16-4b69-4cff-9a0c-cb9c45ffe85c"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "churro_flavor",
+    "display_name": "Natural Churro Flavor",
+    "count": 1,
+    "example_products": [
+      "ff6df8dc-f6af-4fc5-8c3f-cf3df8916b7e"
+    ],
+    "example_positions": [
+      13
+    ]
+  },
+  {
+    "canonical_name": "cheese_flavor_whole_wheat_flour",
+    "display_name": "Natural Cheese Flavor: Whole Wheat Flour",
+    "count": 1,
+    "example_products": [
+      "8b84789c-4f34-40cc-9525-57e7303fc14a"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "dalphatocopherol_acetate",
+    "display_name": "D-Alpha-Tocopherol Acetate",
+    "count": 1,
+    "example_products": [
+      "0872d259-042b-4e53-99a2-d6acae5d0c67"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "gingerbread_spice_flavor",
+    "display_name": "Natural Gingerbread Spice Flavor",
+    "count": 1,
+    "example_products": [
+      "7f744ffe-5d44-4cd8-9b24-f5f2a17ef862"
+    ],
+    "example_positions": [
+      19
+    ]
+  },
+  {
+    "canonical_name": "7_kcalchip_",
+    "display_name": "7 kcal/chip |",
+    "count": 1,
+    "example_products": [
+      "b9212be2-5dff-458d-87a7-c710eeda1ccc"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "carrot_flavor",
+    "display_name": "Natural Carrot Flavor",
+    "count": 1,
+    "example_products": [
+      "a3b8256c-48e6-42dc-942d-148dd32e803f"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "wood_smoke_flavoring",
+    "display_name": "Natural Wood Smoke Flavoring",
+    "count": 1,
+    "example_products": [
+      "7e4ba3cc-2928-4aa4-9077-9083e2414a34"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "riboflavin_supplement_dcalcium_pantothenate",
+    "display_name": "Riboflavin Supplement D-Calcium Pantothenate",
+    "count": 1,
+    "example_products": [
+      "555c8781-8e0a-4b87-be4a-ca8a6fe6221d"
+    ],
+    "example_positions": [
+      23
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_menadione_sodium_bisulfite_complex",
+    "display_name": "Folic Acid Menadione Sodium Bisulfite Complex",
+    "count": 1,
+    "example_products": [
+      "555c8781-8e0a-4b87-be4a-ca8a6fe6221d"
+    ],
+    "example_positions": [
+      26
+    ]
+  },
+  {
+    "canonical_name": "evaporated_cane_syrup",
+    "display_name": "Organic Evaporated Cane Syrup",
+    "count": 1,
+    "example_products": [
+      "6900ee5c-1c2c-477f-8b1b-4a32ef12d078"
+    ],
+    "example_positions": [
+      2
+    ]
+  },
+  {
+    "canonical_name": "ground_celery",
+    "display_name": "Organic Ground Celery",
+    "count": 1,
+    "example_products": [
+      "6900ee5c-1c2c-477f-8b1b-4a32ef12d078"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "cultured_dextrose",
+    "display_name": "Organic Cultured Dextrose",
+    "count": 1,
+    "example_products": [
+      "6900ee5c-1c2c-477f-8b1b-4a32ef12d078"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "proteinrich__rawhidefree_crafted_from_freerange",
+    "display_name": "Protein-Rich & Rawhide-FreeCrafted from free-range",
+    "count": 1,
+    "example_products": [
+      "e17e9a35-c9cc-446d-b233-1e6022366a89"
+    ],
+    "example_positions": [
+      2
+    ]
+  },
+  {
+    "canonical_name": "pizza_flavor",
+    "display_name": "Natural Pizza Flavor",
+    "count": 1,
+    "example_products": [
+      "f06d9f3b-fa8f-43c7-bc9b-b7eeda80855e"
+    ],
+    "example_positions": [
+      19
+    ]
+  },
+  {
+    "canonical_name": "pumpkin_flavor",
+    "display_name": "Natural Pumpkin Flavor",
+    "count": 1,
+    "example_products": [
+      "95b5c062-1f19-4a7b-8232-43c7ddc156f6"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "2025the_8oz_bag_contains_approximately_1011_chews_and_the_1_lb_bag_contains_approximately_2021_chews0_likes_report_answer_this_question_how_many_chews_per_8oz_baganswer_by_chewy__nov_05",
+    "display_name": "2025The 8-oz bag contains approximately 10-11 chews and the 1 lb bag contains approximately 20-21 chews.0 LikesReportAnswer This QuestionHow many chews per 8-oz bag?Answer by Chewy \u2022 Nov 05",
+    "count": 1,
+    "example_products": [
+      "c5c744c9-e229-45fc-b622-166adce78493"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "not_by_count_this_means_that_the_number_of_treats_per_bag_can_vary_somewhat0_likes_report_answer_this_question_how_many_calories_are_there_in_nature_gnaws_4_5_beef_tendon_chews_dog_treatsanswer_by_chewy__oct_12",
+    "display_name": "not by count - this means that the number of treats per bag can vary somewhat.0 LikesReportAnswer This QuestionHow many calories are there in Nature Gnaws 4 - 5\" Beef Tendon Chews Dog Treats?Answer by Chewy \u2022 Oct 12",
+    "count": 1,
+    "example_products": [
+      "c5c744c9-e229-45fc-b622-166adce78493"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "cranberry_flavor",
+    "display_name": "Natural Cranberry Flavor",
+    "count": 1,
+    "example_products": [
+      "f6fa66a0-2a9f-4b65-bc2f-2be3c8091681"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "pomegranate_flavor",
+    "display_name": "Natural Pomegranate Flavor",
+    "count": 1,
+    "example_products": [
+      "f6fa66a0-2a9f-4b65-bc2f-2be3c8091681"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "calcium_carbonateguaranteed_analysis_crude_protein20_min_crude_fat05_min_crude_fiber80_max_moisture150_max_close",
+    "display_name": "Calcium Carbonate.Guaranteed AnalysisCrude Protein2.0% minCrude Fat0.5% minCrude Fiber8.0% maxMoisture15.0% maxClose",
+    "count": 1,
+    "example_products": [
+      "1355b643-b7da-46cb-bd0d-3a51c9b2fb04"
+    ],
+    "example_positions": [
+      10
+    ]
+  },
+  {
+    "canonical_name": "smoke_tbone_steak_flavor",
+    "display_name": "natural smoke t-bone steak flavor",
+    "count": 1,
+    "example_products": [
+      "5c60a07e-4462-435d-8d27-d1e30b0fdeaf"
+    ],
+    "example_positions": [
+      13
+    ]
+  },
+  {
+    "canonical_name": "rotisserie_chicken_flavor_with_other_natural_flavors",
+    "display_name": "Natural Rotisserie Chicken Flavor With Other Natural Flavors",
+    "count": 1,
+    "example_products": [
+      "1272e7d3-07bd-4252-90d7-0a250be1e419"
+    ],
+    "example_positions": [
+      14
+    ]
+  },
+  {
+    "canonical_name": "uncured_bacon_",
+    "display_name": "Uncured Bacon {",
+    "count": 1,
+    "example_products": [
+      "f4036156-c206-4e2a-9e82-6ce0f5c20b02"
+    ],
+    "example_positions": [
+      3
+    ]
+  },
+  {
+    "canonical_name": "bacon_fat_powder",
+    "display_name": "Dried Bacon Fat Powder",
+    "count": 1,
+    "example_products": [
+      "69cb899b-4f27-4377-a225-5bf3166b503f"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "carrot_fragments",
+    "display_name": "Dried Carrot Fragments",
+    "count": 1,
+    "example_products": [
+      "69cb899b-4f27-4377-a225-5bf3166b503f"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "spinach_flakes",
+    "display_name": "Dried Spinach Flakes",
+    "count": 1,
+    "example_products": [
+      "69cb899b-4f27-4377-a225-5bf3166b503f"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "prime_rib_beef_flavor",
+    "display_name": "Natural Prime Rib Beef Flavor",
+    "count": 1,
+    "example_products": [
+      "eb628492-8f1b-4410-ac64-80e4f92665cd"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "barbecue_flavor",
+    "display_name": "Natural Barbecue Flavor",
+    "count": 1,
+    "example_products": [
+      "eb628492-8f1b-4410-ac64-80e4f92665cd"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "pineapple_pulp",
+    "display_name": "Dried Pineapple Pulp",
+    "count": 1,
+    "example_products": [
+      "ec64cf54-5620-45f7-adb5-585b232a856c"
+    ],
+    "example_positions": [
+      3
+    ]
+  },
+  {
+    "canonical_name": "flaxseed_glycerin",
+    "display_name": "Organic Flaxseed Glycerin",
+    "count": 1,
+    "example_products": [
+      "09b90877-7416-4fdd-bce2-c79fea68b55c"
+    ],
+    "example_positions": [
+      5
+    ]
+  },
+  {
+    "canonical_name": "blackberry",
+    "display_name": "Dried Blackberry",
+    "count": 1,
+    "example_products": [
+      "b0f011ce-8a8b-43f9-95be-17a6701e5059"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g612222_shreds_turkey__cheese_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G612222. Shreds Turkey & Cheese Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "c90bb796-1235-4bd1-8e2c-85c4cc744683"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h612122_shreds_with_ocean_whitefish__tuna_in_sauce_water",
+    "display_name": "Vitamin D-3 Supplement]. H612122. Shreds With Ocean Whitefish & Tuna in Sauce: Water",
+    "count": 1,
+    "example_products": [
+      "c90bb796-1235-4bd1-8e2c-85c4cc744683"
+    ],
+    "example_positions": [
+      67
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g612422_shreds_chicken__salmon_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G612422. Shreds Chicken & Salmon Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "c90bb796-1235-4bd1-8e2c-85c4cc744683"
+    ],
+    "example_positions": [
+      99
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g612022",
+    "display_name": "Vitamin D-3 Supplement]. G612022",
+    "count": 1,
+    "example_products": [
+      "c90bb796-1235-4bd1-8e2c-85c4cc744683"
+    ],
+    "example_positions": [
+      130
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d702422_chicken_feast_in_grilled_chicken_flavor_gravy_chicken_broth",
+    "display_name": "Vitamin D-3 Supplement]. D702422 Chicken Feast In Grilled Chicken Flavor Gravy: Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "a9a264c7-901d-4290-93e6-083ee4fe785a"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d702122_beef_feast_in_roasted_beef_flavor_gravy_beef_broth",
+    "display_name": "Vitamin D-3 Supplement]. D702122 Beef Feast In Roasted Beef Flavor Gravy: Beef Broth",
+    "count": 1,
+    "example_products": [
+      "a9a264c7-901d-4290-93e6-083ee4fe785a"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b627723_with_turkey_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. B627723 With Turkey In Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "5db49ec8-4c33-40d6-9bff-9f82eed3a400"
+    ],
+    "example_positions": [
+      62
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b627623_with_ocean_fish__tuna_water",
+    "display_name": "Vitamin D-3 Supplement]. B627623 With Ocean Fish & Tuna: Water",
+    "count": 1,
+    "example_products": [
+      "5db49ec8-4c33-40d6-9bff-9f82eed3a400"
+    ],
+    "example_positions": [
+      92
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i605423s_chicken__tuna_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. I605423-S. Chicken & Tuna: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "0811d07a-e4a6-470a-a8de-4f8191ef62d6"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e605023_salmon_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. E605023. Salmon: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "0811d07a-e4a6-470a-a8de-4f8191ef62d6"
+    ],
+    "example_positions": [
+      96
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d6928_grilled_tuna_feast_in_gravy_fish_broth",
+    "display_name": "Vitamin D-3 Supplement). D-6928 Grilled Tuna Feast In Gravy: Fish Broth",
+    "count": 1,
+    "example_products": [
+      "42659670-1ff8-45ad-96b7-c7fbdc9d5839"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "tuna_flavor_with_tuna_ingredients_water",
+    "display_name": "Natural Tuna Flavor with Tuna Ingredients: Water",
+    "count": 1,
+    "example_products": [
+      "c56ec062-aa23-43f7-97ad-1f2374421c6e"
+    ],
+    "example_positions": [
+      7
+    ]
+  },
+  {
+    "canonical_name": "tuna_flavor_with_tuna__salmon_ingredients_water",
+    "display_name": "Natural Tuna Flavor with Tuna & Salmon Ingredients: Water",
+    "count": 1,
+    "example_products": [
+      "c56ec062-aa23-43f7-97ad-1f2374421c6e"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_with_ocean_whitefish__tuna_in_sauce_water",
+    "display_name": "Vitamin D-3 Supplement]. With Ocean Whitefish & Tuna In Sauce: Water",
+    "count": 1,
+    "example_products": [
+      "552ad28f-ca96-4bed-ba4d-f0b84b5c7fc2"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_with_salmon__beef_in_sauce_water",
+    "display_name": "Vitamin D-3 Supplement. With Salmon & Beef In Sauce: Water",
+    "count": 1,
+    "example_products": [
+      "552ad28f-ca96-4bed-ba4d-f0b84b5c7fc2"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f467520_chicken__vegetable_entree_water",
+    "display_name": "Vitamin D-3 Supplement]. F467520; Chicken & Vegetable Entree: Water",
+    "count": 1,
+    "example_products": [
+      "90e074e6-b0cb-4861-9c6f-70b682aa057a"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a603625_friskies_glazd_infuzd_w_gravy_glazd_shrimp__water",
+    "display_name": "Vitamin D-3 Supplement]. A603625 Friskies Glazd Infuzd w Gravy Glazd Shrimp : Water",
+    "count": 1,
+    "example_products": [
+      "e1a9c3d8-e23d-497f-9e07-5cc8316a6abd"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a603725_friskies_glazd_infuzd_w_gravy_glazd_chicken__water",
+    "display_name": "Vitamin D-3 Supplement]. A603725 Friskies Glazd Infuzd w Gravy Glazd Chicken : Water",
+    "count": 1,
+    "example_products": [
+      "e1a9c3d8-e23d-497f-9e07-5cc8316a6abd"
+    ],
+    "example_positions": [
+      69
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e704022_grilled_turkey__cheddar_cheese_feast_in_gravy_poultry_broth",
+    "display_name": "Vitamin D-3 Supplement]. E704022 Grilled Turkey & Cheddar Cheese Feast In Gravy: Poultry Broth",
+    "count": 1,
+    "example_products": [
+      "84e5dac4-e928-4505-8b41-5cc11755a69d"
+    ],
+    "example_positions": [
+      37
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e704222_grilled_whitefish__cheddar_cheese_feast_fish_broth",
+    "display_name": "Vitamin D-3 Supplement]. E704222 Grilled Whitefish & Cheddar Cheese Feast: Fish Broth",
+    "count": 1,
+    "example_products": [
+      "84e5dac4-e928-4505-8b41-5cc11755a69d"
+    ],
+    "example_positions": [
+      73
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h606123_pat_mixed_grill_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. H606123. Pat\u00e9 Mixed Grill: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "2f7e1f8d-93cc-4f38-b5b3-1c0cf1492431"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h605523_pat_liver__chicken_dinner_water",
+    "display_name": "Vitamin D-3 Supplement]. H605523. Pat\u00e9 Liver & Chicken Dinner: Water",
+    "count": 1,
+    "example_products": [
+      "2f7e1f8d-93cc-4f38-b5b3-1c0cf1492431"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e605322_pat_poultry_platter_poultry",
+    "display_name": "Vitamin D-3 Supplement]. E605322; Pat\u00e9 Poultry Platter: Poultry",
+    "count": 1,
+    "example_products": [
+      "2f7e1f8d-93cc-4f38-b5b3-1c0cf1492431"
+    ],
+    "example_positions": [
+      96
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a649923_gravy_lovers_chicken_feast_chicken_broth",
+    "display_name": "Vitamin D-3 Supplement]. A649923; Gravy Lovers Chicken Feast: Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "5109e981-a818-4470-aef1-6856528f88b6"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a512323_gravy_lovers_beef_feast_beef_broth",
+    "display_name": "Vitamin D-3 Supplement]. A512323; Gravy Lovers Beef Feast: Beef Broth",
+    "count": 1,
+    "example_products": [
+      "5109e981-a818-4470-aef1-6856528f88b6"
+    ],
+    "example_positions": [
+      62
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a649823_gravy_lovers_ocean_whitefish__tuna_feast_fish_broth",
+    "display_name": "Vitamin D-3 Supplement]. A649823; Gravy Lovers Ocean Whitefish & Tuna Feast: Fish Broth",
+    "count": 1,
+    "example_products": [
+      "5109e981-a818-4470-aef1-6856528f88b6"
+    ],
+    "example_positions": [
+      93
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c626922_extra_gravy_chunk_with_turkey_water",
+    "display_name": "Vitamin D-3 Supplement]. C626922 Extra Gravy Chunk with Turkey: Water",
+    "count": 1,
+    "example_products": [
+      "61073c67-389d-4a37-8044-d48f60a878b1"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_extra_gravy_chunk_with_chicken_water",
+    "display_name": "Vitamin D-3 Supplement Extra Gravy Chunk with Chicken: Water",
+    "count": 1,
+    "example_products": [
+      "61073c67-389d-4a37-8044-d48f60a878b1"
+    ],
+    "example_positions": [
+      61
+    ]
+  },
+  {
+    "canonical_name": "tuna_flavor_with_tuna",
+    "display_name": "Natural Tuna Flavor with Tuna",
+    "count": 1,
+    "example_products": [
+      "624552be-b170-4749-93b2-4ab3846b94a9"
+    ],
+    "example_positions": [
+      7
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d671021_turkey_primavera_poultry_broth",
+    "display_name": "Vitamin D-3 Supplement). D671021. Turkey Primavera: Poultry Broth",
+    "count": 1,
+    "example_products": [
+      "11cdf718-2cd7-414c-b86a-5280f22c7b24"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d671321_tuna_primavera_fish_broth",
+    "display_name": "Vitamin D-3 Supplement). D671321. Tuna Primavera: Fish Broth",
+    "count": 1,
+    "example_products": [
+      "11cdf718-2cd7-414c-b86a-5280f22c7b24"
+    ],
+    "example_positions": [
+      69
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i608123_saucy_seafood_bake_water",
+    "display_name": "Vitamin D-3 Supplement]. I608123 Saucy Seafood Bake: Water",
+    "count": 1,
+    "example_products": [
+      "fb8aac6e-a2ee-4096-a41c-b7d393819602"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_j608723_homestyle_turkey_dinner_meaty_bits_homestyle_turkey_dinner_with_garden_greens_water",
+    "display_name": "Vitamin D-3 Supplement]. J608723 Homestyle Turkey Dinner: Meaty Bits Homestyle Turkey Dinner With Garden Greens: Water",
+    "count": 1,
+    "example_products": [
+      "fb8aac6e-a2ee-4096-a41c-b7d393819602"
+    ],
+    "example_positions": [
+      67
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d668122_tender_beef__chicken_feast_beef",
+    "display_name": "Vitamin D-3 Supplement]. D668122; Tender Beef & Chicken Feast: Beef",
+    "count": 1,
+    "example_products": [
+      "4252e26c-4597-4f86-a3fb-2ad3e87547c6"
+    ],
+    "example_positions": [
+      58
+    ]
+  },
+  {
+    "canonical_name": "alfalfa_pellets",
+    "display_name": "Dehydrated Alfalfa Pellets",
+    "count": 1,
+    "example_products": [
+      "5b6629ed-2386-4eaf-87f3-a308a287a4ea"
+    ],
+    "example_positions": [
+      11
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_grilled_turkey_feast_in_gravy_turkey_broth",
+    "display_name": "Vitamin D-3 Supplement]. Grilled Turkey Feast In Gravy - Turkey Broth",
+    "count": 1,
+    "example_products": [
+      "fb3f3b1b-13b1-4125-8559-d895bc06f9a7"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_grilled_chicken_feast_in_gravy_chicken_broth",
+    "display_name": "Vitamin D-3 Supplement]. Grilled Chicken Feast In Gravy - Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "fb3f3b1b-13b1-4125-8559-d895bc06f9a7"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b615423_friskies_tasty_treasures_prime_filets_with_ocean_fish__tuna_in_sauce_scallop_water",
+    "display_name": "Vitamin D-3 Supplement] B615423. Friskies Tasty Treasures Prime Filets With Ocean Fish & Tuna In Sauce Scallop: Water",
+    "count": 1,
+    "example_products": [
+      "e004eb85-24fe-474f-b3f2-3f5f32b6a606"
+    ],
+    "example_positions": [
+      38
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b615523_indoor_flaked_ocean_whitefish_dinner_with_garden_greens_water",
+    "display_name": "Vitamin D-3 Supplement]. B615523. Indoor Flaked Ocean Whitefish Dinner With Garden Greens: Water",
+    "count": 1,
+    "example_products": [
+      "e004eb85-24fe-474f-b3f2-3f5f32b6a606"
+    ],
+    "example_positions": [
+      76
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_j608323_prime_filets_with_ocean_whitefish__tuna_in_sauce_water",
+    "display_name": "Vitamin D-3 Supplement]. J608323. Prime Filets With Ocean Whitefish & Tuna In Sauce: Water",
+    "count": 1,
+    "example_products": [
+      "e004eb85-24fe-474f-b3f2-3f5f32b6a606"
+    ],
+    "example_positions": [
+      109
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h611423",
+    "display_name": "Vitamin D-3 Supplement]. H611423",
+    "count": 1,
+    "example_products": [
+      "e004eb85-24fe-474f-b3f2-3f5f32b6a606"
+    ],
+    "example_positions": [
+      141
+    ]
+  },
+  {
+    "canonical_name": "ferric_pyrophosphate",
+    "display_name": "Ferric Pyrophosphate",
+    "count": 1,
+    "example_products": [
+      "7059fe6d-d049-493c-8da0-d35914622a8a"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h605523_turkey__giblets_dinner_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. H605523 Turkey & Giblets Dinner: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "7478b13e-98af-4d1a-8eb0-4d606e4dbe18"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i61132_prime_filets_chicken__tuna_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. I61132 Prime Filets Chicken & Tuna Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "d027b174-a4d3-4932-b3a5-1656d9c31a9b"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h611023_shreds_chicken__salmon_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. H611023 Shreds Chicken & Salmon Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "d027b174-a4d3-4932-b3a5-1656d9c31a9b"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g612022_shreds_with_chicken_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G612022 Shreds With Chicken in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "d027b174-a4d3-4932-b3a5-1656d9c31a9b"
+    ],
+    "example_positions": [
+      91
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_beef_recipe_beef",
+    "display_name": "Vitamin D-3 Supplement]. Beef Recipe: Beef",
+    "count": 1,
+    "example_products": [
+      "58399acd-7701-4a99-8e2a-a0e8df5afaf9"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_trout__tuna_recipe_trout",
+    "display_name": "Vitamin D-3 Supplement]. Trout & Tuna Recipe: Trout",
+    "count": 1,
+    "example_products": [
+      "58399acd-7701-4a99-8e2a-a0e8df5afaf9"
+    ],
+    "example_positions": [
+      87
+    ]
+  },
+  {
+    "canonical_name": "hearty_cuts_with_real_chicken__fish_in_gravy",
+    "display_name": "Hearty Cuts with Real Chicken & Fish In Gravy",
+    "count": 1,
+    "example_products": [
+      "ab81785d-e15e-4365-94d3-3fe1cef48e78"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a632019_with_tuna",
+    "display_name": "Vitamin D-3 Supplement]. A632019. With Tuna",
+    "count": 1,
+    "example_products": [
+      "375cdc71-c66a-4ee1-93b8-a5eb73c22309"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a632119_with_tuna",
+    "display_name": "Vitamin D-3 Supplement]. A632119. With Tuna",
+    "count": 1,
+    "example_products": [
+      "375cdc71-c66a-4ee1-93b8-a5eb73c22309"
+    ],
+    "example_positions": [
+      66
+    ]
+  },
+  {
+    "canonical_name": "preserved_with_mixed_tocopherols_fishshrimpfish",
+    "display_name": "preserved with Mixed TocopherolsFish/Shrimp:Fish",
+    "count": 1,
+    "example_products": [
+      "61f15ff6-dcda-49c1-91b3-f24f1563cd52"
+    ],
+    "example_positions": [
+      74
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g610022_extra_gravy_chunky_with_turkey_in_savory_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G610022. Extra Gravy Chunky With Turkey In Savory Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "23b87cfb-45ae-4cf4-8152-6162fe73d986"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c626822_prime_filets_turkey_dinner_in_gravy_cat_food_water",
+    "display_name": "Vitamin D-3 Supplement]. C626822. Prime Filets Turkey Dinner In Gravy Cat Food: Water",
+    "count": 1,
+    "example_products": [
+      "23b87cfb-45ae-4cf4-8152-6162fe73d986"
+    ],
+    "example_positions": [
+      61
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i611123_extra_gravy_chunky_with_chicken_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. I611123. Extra Gravy Chunky With Chicken In Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "23b87cfb-45ae-4cf4-8152-6162fe73d986"
+    ],
+    "example_positions": [
+      92
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c626622",
+    "display_name": "Vitamin D-3 Supplement]. C626622",
+    "count": 1,
+    "example_products": [
+      "23b87cfb-45ae-4cf4-8152-6162fe73d986"
+    ],
+    "example_positions": [
+      122
+    ]
+  },
+  {
+    "canonical_name": "hearty_cuts_with_real_turkey_in_gravy",
+    "display_name": "Hearty Cuts with Real Turkey In Gravy",
+    "count": 1,
+    "example_products": [
+      "a67c79c7-a1bb-47ae-ac5e-6769f11a37cc"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_hearty_cuts_with_real_beef__chicken_in_gravy",
+    "display_name": "Sodium Selenite). Hearty Cuts with Real Beef & Chicken In Gravy",
+    "count": 1,
+    "example_products": [
+      "a67c79c7-a1bb-47ae-ac5e-6769f11a37cc"
+    ],
+    "example_positions": [
+      37
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h610122_chicken_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. H610122 Chicken Dinner In Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "fe3029d4-a4e8-440c-9d36-c1597497ce58"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g610022_beef_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G610022 Beef In Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "fe3029d4-a4e8-440c-9d36-c1597497ce58"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "flaked_crab_surimi",
+    "display_name": "Flaked Crab surimi",
+    "count": 1,
+    "example_products": [
+      "c1fc4aee-9aa6-42a0-b0bc-55dfa96ed8e8"
+    ],
+    "example_positions": [
+      23
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_sea_captains_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. Sea Captain's: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "d5f8a91e-18e4-48ae-9613-08c05f46a0ce"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h605922_salmon_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. H605922 Salmon: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "d5f8a91e-18e4-48ae-9613-08c05f46a0ce"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "chicken_entre_water",
+    "display_name": "Roasted Chicken Entr\u00e9e: Water",
+    "count": 1,
+    "example_products": [
+      "aa53e0ff-1245-4f79-abbe-df4cc4fc9101"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "sodium_delenite_boneless_chicken__beef_entree_boneless_chicken",
+    "display_name": "Sodium Delenite) Boneless Chicken & Beef Entree: Boneless Chicken",
+    "count": 1,
+    "example_products": [
+      "a0ba785a-8122-4cf9-b601-ef7146648bad"
+    ],
+    "example_positions": [
+      56
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d702122",
+    "display_name": "Vitamin D-3 Supplement]. D702122",
+    "count": 1,
+    "example_products": [
+      "aa4275e7-b4fc-4b1f-8662-19c4afdfcb8c"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h612122_meaty_bits_chicken_dinner_in_gravy_meaty_bits_chicken_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. H612122 Meaty Bits Chicken Dinner In Gravy: Meaty Bits Chicken Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "b704a12c-94e1-4f46-acae-1ad61aaf4ebe"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g610022_prime_filets_with_chicken_in_gravy_prime_filets_with_chicken_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G610022 Prime Filets With Chicken In Gravy: Prime Filets With Chicken in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "b704a12c-94e1-4f46-acae-1ad61aaf4ebe"
+    ],
+    "example_positions": [
+      66
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i611323_prime_filets_turkey_dinner_in_gravy_prime_filets_turkey_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. I611323 Prime Filets Turkey Dinner In Gravy: Prime Filets Turkey Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "b704a12c-94e1-4f46-acae-1ad61aaf4ebe"
+    ],
+    "example_positions": [
+      95
+    ]
+  },
+  {
+    "canonical_name": "and_artifiical_flavor",
+    "display_name": "Natural and Artifiical Flavor",
+    "count": 1,
+    "example_products": [
+      "da105413-1e81-4a08-ab86-b714f6ceb605"
+    ],
+    "example_positions": [
+      4
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h611423_salmon_in_savory_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. H611423 Salmon In Savory Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "f0a446d3-aa00-40c2-854d-7d41a03fd937"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c626722_filets_with_salmon__beef_water",
+    "display_name": "Vitamin D-3 Supplement]. C626722 Filets With Salmon & Beef: Water",
+    "count": 1,
+    "example_products": [
+      "f0a446d3-aa00-40c2-854d-7d41a03fd937"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d672021_fancy_feast_medleys_shredded_turkey_fare_poultry_broth",
+    "display_name": "Vitamin D-3 Supplement). D672021. Fancy Feast Medleys Shredded Turkey Fare: Poultry Broth",
+    "count": 1,
+    "example_products": [
+      "bd535c3c-616b-422a-96b7-c32823b45464"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d672321_fancy_feast_medleys_shredded_tuna_fare_fish_broth",
+    "display_name": "Vitamin D-3 Supplement). D672321 Fancy Feast Medleys Shredded Tuna Fare: Fish Broth",
+    "count": 1,
+    "example_products": [
+      "bd535c3c-616b-422a-96b7-c32823b45464"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_salmon_salmon_broth",
+    "display_name": "Vitamin D-3 Supplement]. Salmon: Salmon Broth",
+    "count": 1,
+    "example_products": [
+      "f36b6a88-721d-4c7a-b339-fd8730727412"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_chicken_chicken_broth",
+    "display_name": "Vitamin D-3 Supplement Chicken: Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "f36b6a88-721d-4c7a-b339-fd8730727412"
+    ],
+    "example_positions": [
+      68
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i611323_with_beef_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. I611323 With Beef in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "3441a031-9cf8-40ba-8666-51d254a72ce6"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i611223_with_turkey_dinner_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. I611223 With Turkey Dinner in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "3441a031-9cf8-40ba-8666-51d254a72ce6"
+    ],
+    "example_positions": [
+      60
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_chicken__liver_feast_chicken",
+    "display_name": "Vitamin D-3 Supplement Chicken & Liver Feast: Chicken",
+    "count": 1,
+    "example_products": [
+      "b881e2ff-0709-4cf5-802d-d2736fb59207"
+    ],
+    "example_positions": [
+      58
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b2906233",
+    "display_name": "Vitamin D-3 Supplement]. B290623-3",
+    "count": 1,
+    "example_products": [
+      "c9ea29e4-7ebd-4514-95a8-0ba301ad2934"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h611023_with_salmon__beef_water",
+    "display_name": "Vitamin D-3 Supplement]. H611023 With Salmon & Beef: Water",
+    "count": 1,
+    "example_products": [
+      "6b53fb8f-93fb-4cad-ba54-f42c12a8f45d"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "biotin_carrageenan",
+    "display_name": "Biotin) Carrageenan",
+    "count": 1,
+    "example_products": [
+      "c2ecd13e-43e4-44a1-ac28-fd8d188430c6"
+    ],
+    "example_positions": [
+      103
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h606123_pat_mixed_gril_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. H606123. Pat\u00e9 Mixed Gril: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "c0eadc09-6d42-4463-ace9-764ce32b3e05"
+    ],
+    "example_positions": [
+      65
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h605523",
+    "display_name": "Vitamin D-3 Supplement]. H605523",
+    "count": 1,
+    "example_products": [
+      "c0eadc09-6d42-4463-ace9-764ce32b3e05"
+    ],
+    "example_positions": [
+      96
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_chicken_recipe_chicken_and_beef_broth",
+    "display_name": "Vitamin D-3 Supplement]. Chicken Recipe: Chicken And Beef Broth",
+    "count": 1,
+    "example_products": [
+      "968ab34f-8259-4208-bbd5-533dfd890fb4"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b661120",
+    "display_name": "Vitamin D-3 Supplement]. B661120",
+    "count": 1,
+    "example_products": [
+      "94140be3-c657-4c67-b95e-8a19c3db60a8"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d700222_turkey_feast_turkey",
+    "display_name": "Vitamin D-3 Supplement]. D700222 Turkey Feast: Turkey",
+    "count": 1,
+    "example_products": [
+      "2cfad8c9-ce69-4022-a8f0-102629b6ea3b"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d700622_chicken_hearts__liver_poultry_broth",
+    "display_name": "Vitamin D-3 Supplement]. D700622 Chicken Hearts & Liver: Poultry Broth",
+    "count": 1,
+    "example_products": [
+      "2cfad8c9-ce69-4022-a8f0-102629b6ea3b"
+    ],
+    "example_positions": [
+      61
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g466422",
+    "display_name": "Vitamin D-3 Supplement]. G466422",
+    "count": 1,
+    "example_products": [
+      "840cff6d-c8cc-425b-b2d8-bfe3ab0c17cb"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "whey_solubles",
+    "display_name": "Dried Whey Solubles",
+    "count": 1,
+    "example_products": [
+      "2a3554a1-3f1f-47e9-aa26-ddefa763537c"
+    ],
+    "example_positions": [
+      13
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_h612122_shreds_with_beef_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. H612122 Shreds with Beef in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "aaf93f1e-f5e6-4477-840a-44363c03c63d"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g612222_shreds_with_chicken_in_gravy_water",
+    "display_name": "Vitamin D-3 Supplement]. G612222 Shreds with Chicken in Gravy: Water",
+    "count": 1,
+    "example_products": [
+      "aaf93f1e-f5e6-4477-840a-44363c03c63d"
+    ],
+    "example_positions": [
+      67
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a600825",
+    "display_name": "Vitamin D-3 Supplement]. A600825",
+    "count": 1,
+    "example_products": [
+      "acda859f-d78f-4bd6-b5e8-f6954e97327d"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a661419",
+    "display_name": "Vitamin D-3 Supplement]. A661419",
+    "count": 1,
+    "example_products": [
+      "ec88f255-5aef-4c37-969f-1f80a454e9f8"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d667920__classic_pate_chicken_feast_chicken",
+    "display_name": "Vitamin D-3 Supplement]. D667920 . Classic Pate Chicken Feast: Chicken",
+    "count": 1,
+    "example_products": [
+      "8b8a4bea-1922-48d7-9964-15e1ba600bcc"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e668018",
+    "display_name": "Vitamin D-3 Supplement]. E668018",
+    "count": 1,
+    "example_products": [
+      "31e8094f-ea3b-4fff-be08-5cfcf7e674cb"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b661320",
+    "display_name": "Vitamin D-3 Supplement]. B661320",
+    "count": 1,
+    "example_products": [
+      "756a8a5d-2ca8-46de-b614-02c6be0c0e37"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a512323",
+    "display_name": "Vitamin D-3 Supplement]. A512323",
+    "count": 1,
+    "example_products": [
+      "87e0651a-4112-46b1-b626-5ea9aa9e6550"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d668122",
+    "display_name": "Vitamin D-3 Supplement]. D668122",
+    "count": 1,
+    "example_products": [
+      "9587c395-663d-4456-8ec3-d01b6f6bd1f2"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i606123_mariners_catch_pat_meat_byproducts",
+    "display_name": "Vitamin D-3 Supplement]. I606123. Mariner's Catch Pat\u00e9: Meat By-Products",
+    "count": 1,
+    "example_products": [
+      "3cfe179d-c559-4579-8a39-9e24ce95da9e"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i605423s_pat_liver__chicken_dinner_water",
+    "display_name": "Vitamin D-3 Supplement]. I605423-S. Pat\u00e9 Liver & Chicken Dinner: Water",
+    "count": 1,
+    "example_products": [
+      "3cfe179d-c559-4579-8a39-9e24ce95da9e"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f605323_pat_salmon_dinner_water",
+    "display_name": "Vitamin D-3 Supplement]. F605323. Pat\u00e9 Salmon Dinner: Water",
+    "count": 1,
+    "example_products": [
+      "3cfe179d-c559-4579-8a39-9e24ce95da9e"
+    ],
+    "example_positions": [
+      96
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a649823",
+    "display_name": "Vitamin D-3 Supplement]. A649823",
+    "count": 1,
+    "example_products": [
+      "7e5a002e-eea8-4685-9592-34537b00557a"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c6740",
+    "display_name": "Vitamin D-3 Supplement]. C-6740",
+    "count": 1,
+    "example_products": [
+      "7938beb2-553c-4868-95d1-d4d01622ca20"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "hearty_cuts_with_real_beef__chicken_in_gravy",
+    "display_name": "Hearty Cuts with Real Beef & Chicken In Gravy",
+    "count": 1,
+    "example_products": [
+      "4594f66f-531a-47b0-9a43-f224be07f7af"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_hearty_cuts_with_real_veal_in_gravy",
+    "display_name": "Sodium Selenite). Hearty Cuts with Real Veal In Gravy",
+    "count": 1,
+    "example_products": [
+      "4594f66f-531a-47b0-9a43-f224be07f7af"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_i605423s",
+    "display_name": "Vitamin D-3 Supplement]. I605423-S",
+    "count": 1,
+    "example_products": [
+      "ec440cc9-b7c4-4138-93f2-5238d63e5c4a"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_with_ocean_whitefish__tuna_in_sauce_water_sufficient_for_processing",
+    "display_name": "Potassium Iodide). with Ocean Whitefish & Tuna in Sauce: Water Sufficient For Processing",
+    "count": 1,
+    "example_products": [
+      "1fcb9b6e-fc58-4187-b4d3-c9048e60bf8f"
+    ],
+    "example_positions": [
+      68
+    ]
+  },
+  {
+    "canonical_name": "can_five",
+    "display_name": "Can Five",
+    "count": 1,
+    "example_products": [
+      "08e585fa-68eb-4c6b-81fb-5932f569571a"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "can_four",
+    "display_name": "Can Four",
+    "count": 1,
+    "example_products": [
+      "08e585fa-68eb-4c6b-81fb-5932f569571a"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "can_six",
+    "display_name": "Can Six",
+    "count": 1,
+    "example_products": [
+      "08e585fa-68eb-4c6b-81fb-5932f569571a"
+    ],
+    "example_positions": [
+      92
+    ]
+  },
+  {
+    "canonical_name": "can_three",
+    "display_name": "Can Three",
+    "count": 1,
+    "example_products": [
+      "08e585fa-68eb-4c6b-81fb-5932f569571a"
+    ],
+    "example_positions": [
+      122
+    ]
+  },
+  {
+    "canonical_name": "can_two",
+    "display_name": "Can Two",
+    "count": 1,
+    "example_products": [
+      "08e585fa-68eb-4c6b-81fb-5932f569571a"
+    ],
+    "example_positions": [
+      153
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a650818_pate_beef_recipe_beef",
+    "display_name": "Vitamin D-3 Supplement]. A650818. Pate Beef Recipe: Beef",
+    "count": 1,
+    "example_products": [
+      "63f9e2e8-015c-44bb-8e9e-698b4cb9afc5"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a651118_beef_recipe_in_gravy_meat_broth",
+    "display_name": "Vitamin D-3 Supplement]. A651118 Beef Recipe In Gravy: Meat Broth",
+    "count": 1,
+    "example_products": [
+      "63f9e2e8-015c-44bb-8e9e-698b4cb9afc5"
+    ],
+    "example_positions": [
+      73
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_can_two",
+    "display_name": "Vitamin B12 Supplement. Can Two",
+    "count": 1,
+    "example_products": [
+      "616df3b2-6b30-44d5-8897-a30e9a2dbf04"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_can_three",
+    "display_name": "Vitamin B12 Supplement. Can Three",
+    "count": 1,
+    "example_products": [
+      "616df3b2-6b30-44d5-8897-a30e9a2dbf04"
+    ],
+    "example_positions": [
+      58
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_can_four",
+    "display_name": "Vitamin B12 Supplement. Can Four",
+    "count": 1,
+    "example_products": [
+      "616df3b2-6b30-44d5-8897-a30e9a2dbf04"
+    ],
+    "example_positions": [
+      89
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_mackerel_recipe_mackerel",
+    "display_name": "Folic Acid). **Mackerel Recipe:** Mackerel",
+    "count": 1,
+    "example_products": [
+      "3943d7c7-30dd-4a54-b7ab-be9ca2aa4bbf"
+    ],
+    "example_positions": [
+      108
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_venison_recipe_venison",
+    "display_name": "Folic Acid). **Venison Recipe:** Venison",
+    "count": 1,
+    "example_products": [
+      "3943d7c7-30dd-4a54-b7ab-be9ca2aa4bbf"
+    ],
+    "example_positions": [
+      127
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f610218",
+    "display_name": "Vitamin D-3 Supplement]. F610218",
+    "count": 1,
+    "example_products": [
+      "007de386-253a-46cf-8410-1dd9d8542c6b"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_productsalmon",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product.Salmon",
+    "count": 1,
+    "example_products": [
+      "f9b4bbc0-f1d1-480b-891e-d948a6aa52e9"
+    ],
+    "example_positions": [
+      44
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g467422_salmon__rice_entre_water",
+    "display_name": "Vitamin D-3 Supplement]. G467422; Salmon & Rice Entr\u00e9e: Water",
+    "count": 1,
+    "example_products": [
+      "f282f7b7-c3ec-4415-b151-48681f92428a"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_j465822_seafood_stew_entre_water",
+    "display_name": "Vitamin D-3 Supplement]. J465822; Seafood Stew Entr\u00e9e: Water",
+    "count": 1,
+    "example_products": [
+      "f282f7b7-c3ec-4415-b151-48681f92428a"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d474022_chicken_entree_water",
+    "display_name": "Vitamin D-3 Supplement]. D474022; Chicken Entree: Water",
+    "count": 1,
+    "example_products": [
+      "f6d7fdac-573f-40a1-a86d-7849653f3ad8"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f468120",
+    "display_name": "Vitamin D-3 Supplement]. F468120",
+    "count": 1,
+    "example_products": [
+      "af1fb2ef-8ddf-40aa-acba-3dba2c4539ba"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f469022",
+    "display_name": "Vitamin D-3 Supplement]. F469022",
+    "count": 1,
+    "example_products": [
+      "8c8cb85d-3d43-4dfb-88d9-4b98b4ec58db"
+    ],
+    "example_positions": [
+      36
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e469120",
+    "display_name": "Vitamin D-3 Supplement]. E469120",
+    "count": 1,
+    "example_products": [
+      "f8a097f0-bd79-45fc-893e-548c7aa0fd4a"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_can_four",
+    "display_name": "Potassium Iodide. Can Four",
+    "count": 1,
+    "example_products": [
+      "020bf9da-685f-40e7-9dad-1a8be930868e"
+    ],
+    "example_positions": [
+      79
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_salmon_chicken_broth",
+    "display_name": "Calcium Iodate). Salmon: Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "d7ca0501-1702-43b9-a449-576e7d73a6e4"
+    ],
+    "example_positions": [
+      43
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_turkey_chicken_broth",
+    "display_name": "Calcium Iodate). Turkey: Chicken Broth",
+    "count": 1,
+    "example_products": [
+      "d7ca0501-1702-43b9-a449-576e7d73a6e4"
+    ],
+    "example_positions": [
+      87
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e280122_purrfect_bistro_grain_free_chicken_recipe_pat_deboned_chicken",
+    "display_name": "Vitamin D-3 Supplement). E280122 Purrfect Bistro Grain Free Chicken Recipe Pat\u00e9: Deboned Chicken",
+    "count": 1,
+    "example_products": [
+      "7a5e2f41-78e9-42a7-8cfc-35be8023c6c2"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b290622_purrfect_bistro_grain_free_turkey_recipe_pat_deboned_turkey",
+    "display_name": "Vitamin D-3 Supplement). B290622. Purrfect Bistro Grain Free Turkey Recipe Pat\u00e9: Deboned Turkey",
+    "count": 1,
+    "example_products": [
+      "7a5e2f41-78e9-42a7-8cfc-35be8023c6c2"
+    ],
+    "example_positions": [
+      61
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_tiny_tasters_minced_chicken__beef_recipe_boneless_chicken",
+    "display_name": "Potassium Iodide). Tiny Tasters Minced Chicken & Beef Recipe Boneless Chicken",
+    "count": 1,
+    "example_products": [
+      "3a99af3c-e2ce-4469-83c4-9f7253713561"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_tiny_tasters_flaked_tuna__shrimp_recipe_tuna",
+    "display_name": "Potassium Iodide). Tiny Tasters Flaked Tuna & Shrimp Recipe Tuna",
+    "count": 1,
+    "example_products": [
+      "3a99af3c-e2ce-4469-83c4-9f7253713561"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_tiny_tasters_minced_chicken_recipe_boneless_chicken",
+    "display_name": "Potassium Iodide). Tiny Tasters Minced Chicken Recipe Boneless Chicken",
+    "count": 1,
+    "example_products": [
+      "3a99af3c-e2ce-4469-83c4-9f7253713561"
+    ],
+    "example_positions": [
+      94
+    ]
+  },
+  {
+    "canonical_name": "menadione_sodium_bisulfite_complex_skipjack_tuna__salmon_entree_tuna",
+    "display_name": "Menadione Sodium Bisulfite Complex). Skipjack Tuna & Salmon Entree: Tuna",
+    "count": 1,
+    "example_products": [
+      "b4178aea-8a9e-4f5a-ad8a-157203eb4fdf"
+    ],
+    "example_positions": [
+      27
+    ]
+  },
+  {
+    "canonical_name": "amino_acid_chelate",
+    "display_name": "Amino Acid Chelate",
+    "count": 1,
+    "example_products": [
+      "b4178aea-8a9e-4f5a-ad8a-157203eb4fdf"
+    ],
+    "example_positions": [
+      82
+    ]
+  },
+  {
+    "canonical_name": "iron_amino_chelate",
+    "display_name": "Iron Amino Chelate",
+    "count": 1,
+    "example_products": [
+      "b4178aea-8a9e-4f5a-ad8a-157203eb4fdf"
+    ],
+    "example_positions": [
+      83
+    ]
+  },
+  {
+    "canonical_name": "locust_bean_gum_tuna_oil",
+    "display_name": "Locust Bean Gum Tuna Oil",
+    "count": 1,
+    "example_products": [
+      "3782b057-4156-40d4-a715-7521a334881f"
+    ],
+    "example_positions": [
+      7
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_vitamins",
+    "display_name": "Potassium Iodide] Vitamins",
+    "count": 1,
+    "example_products": [
+      "98dc0cb5-7d17-419a-b7ac-6eef6237cf71"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_k465824_tuna_entree_in_sauce_cat_food__water",
+    "display_name": "Vitamin D-3 Supplement]. K465824. Tuna Entree In Sauce Cat Food : Water",
+    "count": 1,
+    "example_products": [
+      "af60b159-87f7-48c6-9599-a214eb58df9b"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplementh467424_seafood_stew_entree_in_sauce_cat_food__water",
+    "display_name": "Vitamin D-3 Supplement].H467424. Seafood Stew Entree In Sauce Cat Food : Water",
+    "count": 1,
+    "example_products": [
+      "af60b159-87f7-48c6-9599-a214eb58df9b"
+    ],
+    "example_positions": [
+      64
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_g469024",
+    "display_name": "Vitamin D-3 Supplement]. G469024",
+    "count": 1,
+    "example_products": [
+      "af60b159-87f7-48c6-9599-a214eb58df9b"
+    ],
+    "example_positions": [
+      99
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_d470820_turkey__vegetables_entre_turkey",
+    "display_name": "Vitamin D-3 Supplement]. D470820; Turkey & Vegetables Entr\u00e9e: Turkey",
+    "count": 1,
+    "example_products": [
+      "a6f66a64-8412-4d64-b953-0c3e55c4a14c"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_beef__carrots_entre_beef",
+    "display_name": "Vitamin D-3 Supplement]. Beef & Carrots Entr\u00e9e: Beef",
+    "count": 1,
+    "example_products": [
+      "a6f66a64-8412-4d64-b953-0c3e55c4a14c"
+    ],
+    "example_positions": [
+      58
+    ]
+  },
+  {
+    "canonical_name": "di_calcium_phosphate",
+    "display_name": "DiCalcium Phosphate",
+    "count": 1,
+    "example_products": [
+      "535bfc7f-9147-4314-a20c-6e6cbb604d1c"
+    ],
+    "example_positions": [
+      15
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_producta459724",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product.A459724",
+    "count": 1,
+    "example_products": [
+      "35c902e6-82c9-4020-a6b2-76e702c0491e"
+    ],
+    "example_positions": [
+      41
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a648523",
+    "display_name": "Vitamin D-3 Supplement]. A648523",
+    "count": 1,
+    "example_products": [
+      "96565af3-6aae-466f-b365-d286a94ebf9d"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_a415720_original_chicken",
+    "display_name": "Potassium Iodide]. A415720. Original: Chicken",
+    "count": 1,
+    "example_products": [
+      "f750ce68-b82a-4f14-af00-72705ccd53f7"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_minced_chicken_chicken",
+    "display_name": "Folic Acid). Minced Chicken: Chicken",
+    "count": 1,
+    "example_products": [
+      "587609fa-6995-4cb9-ac72-39cad3cd480d"
+    ],
+    "example_positions": [
+      39
+    ]
+  },
+  {
+    "canonical_name": "blue_whiting",
+    "display_name": "Hydrolyzed Blue Whiting",
+    "count": 1,
+    "example_products": [
+      "ae8dbb08-0271-43a3-8b10-740362c83602"
+    ],
+    "example_positions": [
+      23
+    ]
+  },
+  {
+    "canonical_name": "calcium_iodate_chicken_water",
+    "display_name": "Calcium Iodate). Chicken: Water",
+    "count": 1,
+    "example_products": [
+      "3f350206-5943-44da-baec-66eb9028334c"
+    ],
+    "example_positions": [
+      42
+    ]
+  },
+  {
+    "canonical_name": "biotin_vitamin_b12",
+    "display_name": "Biotin. Vitamin B12 Supplement",
+    "count": 1,
+    "example_products": [
+      "9f3431cc-e9b7-4c05-9c4c-0c7a303aa2c2"
+    ],
+    "example_positions": [
+      52
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_salmon_gravies_recipe_salmon_broth",
+    "display_name": "Potassium Iodide). **Salmon Gravies Recipe:** Salmon Broth",
+    "count": 1,
+    "example_products": [
+      "f4c4b2db-cec6-45b8-8323-e06ce94ca7fa"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_turkey_minced_recipe_turkey",
+    "display_name": "Folic Acid). **Turkey Minced Recipe:** Turkey",
+    "count": 1,
+    "example_products": [
+      "f4c4b2db-cec6-45b8-8323-e06ce94ca7fa"
+    ],
+    "example_positions": [
+      67
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c6743",
+    "display_name": "Vitamin D-3 Supplement]. C-6743",
+    "count": 1,
+    "example_products": [
+      "090967c2-6666-4e03-a2a6-41284c495c16"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "case_of_6_sardine__beef_see_available_options_variety_pack_unavailable_with_28oz_pouch",
+    "display_name": "case of 6 Sardine & BeefSee available optionsVariety PackUnavailable with 2.8-oz pouch",
+    "count": 1,
+    "example_products": [
+      "9e269dc1-7f07-4253-8d87-94ddb0ccb18e"
+    ],
+    "example_positions": [
+      7
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c469520",
+    "display_name": "Vitamin D-3 Supplement]. C469520",
+    "count": 1,
+    "example_products": [
+      "1d48839d-2775-45e7-ab3b-860b4ac947c0"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "lactobacillus_reuteri_fermentation",
+    "display_name": "Dried Lactobacillus Reuteri Fermentation",
+    "count": 1,
+    "example_products": [
+      "c3aedccd-b5c1-401e-a591-8e0701eb9e69"
+    ],
+    "example_positions": [
+      62
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f467620",
+    "display_name": "Vitamin D-3 Supplement]. F467620",
+    "count": 1,
+    "example_products": [
+      "73befd07-4587-4918-a291-6cf871f9431f"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "dried_chickpeas",
+    "display_name": "Ground Dried Chickpeas",
+    "count": 1,
+    "example_products": [
+      "f895a647-d2cf-442b-9e48-c194737f55f4"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "pouch_one",
+    "display_name": "Pouch One",
+    "count": 1,
+    "example_products": [
+      "157daea0-ada7-412b-95f4-69fd4bd2deb5"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e2801233",
+    "display_name": "Vitamin D-3 Supplement]. E280123-3",
+    "count": 1,
+    "example_products": [
+      "6bbd08fe-2b40-475b-90d7-fe07a10b475d"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b466120_duck_entre_duck",
+    "display_name": "Vitamin D-3 Supplement]. B466120 Duck Entr\u00e9e: Duck",
+    "count": 1,
+    "example_products": [
+      "66007b73-df08-42af-afd4-7ac38d4f275a"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "kale_salmon_salmon",
+    "display_name": "Dried Kale. Salmon: Salmon",
+    "count": 1,
+    "example_products": [
+      "7cf68446-c010-4544-9454-780243730450"
+    ],
+    "example_positions": [
+      39
+    ]
+  },
+  {
+    "canonical_name": "kale_beef_beef",
+    "display_name": "Dried Kale. Beef: Beef",
+    "count": 1,
+    "example_products": [
+      "7cf68446-c010-4544-9454-780243730450"
+    ],
+    "example_positions": [
+      77
+    ]
+  },
+  {
+    "canonical_name": "bifidobacterium_longum",
+    "display_name": "Dried Bifidobacterium Longum",
+    "count": 1,
+    "example_products": [
+      "4cf2437b-9c27-447a-85c6-322f2abe997f"
+    ],
+    "example_positions": [
+      38
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_sodium_carbonate",
+    "display_name": "Potassium Iodide) Sodium Carbonate",
+    "count": 1,
+    "example_products": [
+      "a0cc28c9-02ce-45c4-b78c-aca1956c917f"
+    ],
+    "example_positions": [
+      20
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_inulin",
+    "display_name": "Folic Acid) Inulin",
+    "count": 1,
+    "example_products": [
+      "a0cc28c9-02ce-45c4-b78c-aca1956c917f"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_productduck",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product.Duck",
+    "count": 1,
+    "example_products": [
+      "f3a09187-72b4-4129-807d-f8739b464ec1"
+    ],
+    "example_positions": [
+      41
+    ]
+  },
+  {
+    "canonical_name": "vitamin_e_supplement_niacin_thiamine_mononitrate_dpantothenic_acid_vitamin_a_supplement_riboflavin_pyridoxine_hydrochloride_biotin_vitamin_b12_supplement_vitamin_d3_supplement_folic_acid",
+    "display_name": "Vitamin E Supplement Niacin Thiamine mononitrate D-pantothenic Acid Vitamin A Supplement Riboflavin Pyridoxine Hydrochloride Biotin Vitamin B12 Supplement Vitamin D3 Supplement Folic Acid",
+    "count": 1,
+    "example_products": [
+      "c95b115b-4a05-4ed8-81b5-0569b6e1d4f9"
+    ],
+    "example_positions": [
+      16
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_b470120",
+    "display_name": "Vitamin D-3 Supplement]. B470120",
+    "count": 1,
+    "example_products": [
+      "58fc706a-1d33-4f38-aaa2-c6b89d9ca997"
+    ],
+    "example_positions": [
+      28
+    ]
+  },
+  {
+    "canonical_name": "vitamin_k1",
+    "display_name": "Vitamin K1 Supplement",
+    "count": 1,
+    "example_products": [
+      "c43f5423-723b-4afe-a4cf-1d61ba91c71a"
+    ],
+    "example_positions": [
+      41
+    ]
+  },
+  {
+    "canonical_name": "lascorbyl2polyphophate",
+    "display_name": "L-Ascorbyl-2-Polyphophate",
+    "count": 1,
+    "example_products": [
+      "1b65b0d4-28ab-45f5-a73f-d468078ad04f"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_grain_free_chicken_recipe_pate_deboned_chicken",
+    "display_name": "Potassium Iodide).; Grain Free Chicken Recipe Pate: Deboned Chicken",
+    "count": 1,
+    "example_products": [
+      "8592f51f-412e-448e-9332-a6d1032b97e9"
+    ],
+    "example_positions": [
+      40
+    ]
+  },
+  {
+    "canonical_name": "potassium_iodide_grain_free_beef_recipe_pate_deboned_beef",
+    "display_name": "Potassium Iodide).; Grain Free Beef Recipe Pate: Deboned Beef",
+    "count": 1,
+    "example_products": [
+      "8592f51f-412e-448e-9332-a6d1032b97e9"
+    ],
+    "example_positions": [
+      78
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_c471122",
+    "display_name": "Vitamin D-3 Supplement]. C471122",
+    "count": 1,
+    "example_products": [
+      "1f7fb679-2966-41ff-9662-a537e57524f0"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "sodium_selenite_riboflavin",
+    "display_name": "Sodium Selenite Riboflavin Supplement",
+    "count": 1,
+    "example_products": [
+      "d6461beb-5827-4b49-b1b0-fb5eb531adf5"
+    ],
+    "example_positions": [
+      25
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_product_a477722",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product. A477722",
+    "count": 1,
+    "example_products": [
+      "df42a2ac-5dc3-46a9-b97f-ae6c4ef98dc8"
+    ],
+    "example_positions": [
+      40
+    ]
+  },
+  {
+    "canonical_name": "biotin_supplement_can_two",
+    "display_name": "Biotin Supplement. Can Two",
+    "count": 1,
+    "example_products": [
+      "1c82fb2e-7dbe-4540-831a-6186385e8035"
+    ],
+    "example_positions": [
+      28
+    ]
+  },
+  {
+    "canonical_name": "biotin_supplement_can_three",
+    "display_name": "Biotin Supplement. Can Three",
+    "count": 1,
+    "example_products": [
+      "1c82fb2e-7dbe-4540-831a-6186385e8035"
+    ],
+    "example_positions": [
+      56
+    ]
+  },
+  {
+    "canonical_name": "biotin_supplement_can_four",
+    "display_name": "Biotin Supplement. Can Four",
+    "count": 1,
+    "example_products": [
+      "1c82fb2e-7dbe-4540-831a-6186385e8035"
+    ],
+    "example_positions": [
+      83
+    ]
+  },
+  {
+    "canonical_name": "biotin_supplement_can_five",
+    "display_name": "Biotin Supplement. Can Five",
+    "count": 1,
+    "example_products": [
+      "1c82fb2e-7dbe-4540-831a-6186385e8035"
+    ],
+    "example_positions": [
+      113
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f468820",
+    "display_name": "Vitamin D-3 Supplement]. F468820",
+    "count": 1,
+    "example_products": [
+      "534334c4-e608-4f12-a9d6-fe466c7e768d"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_e468520",
+    "display_name": "Vitamin D-3 Supplement]. E468520",
+    "count": 1,
+    "example_products": [
+      "234c59eb-dfef-43d0-978d-77ca4d9af9d8"
+    ],
+    "example_positions": [
+      35
+    ]
+  },
+  {
+    "canonical_name": "jack_mackerel",
+    "display_name": "Whole Jack Mackerel",
+    "count": 1,
+    "example_products": [
+      "b380ee06-62ba-4dc1-a288-4274444c8918"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_a600825_ocean_fish_water",
+    "display_name": "Vitamin D-3 Supplement]. A600825. **Ocean Fish:** Water",
+    "count": 1,
+    "example_products": [
+      "06f95165-fcb2-4158-ad8c-506d4b8cfa55"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement_contains_a_source_of_live",
+    "display_name": "Vitamin B12 Supplement. Contains A Source Of Live",
+    "count": 1,
+    "example_products": [
+      "2b930359-d30c-4e47-9ce6-d4cb4609dc5d"
+    ],
+    "example_positions": [
+      31
+    ]
+  },
+  {
+    "canonical_name": "trichoderma_longibrachiatum_fermentation_extract_contains_a_source_of_live_naturally_occurring_microorganisms",
+    "display_name": "Dried Trichoderma Longibrachiatum Fermentation Extract. Contains A Source Of Live Naturally Occurring Microorganisms",
+    "count": 1,
+    "example_products": [
+      "06f29d0a-1ca7-412f-baa2-6be5a57187f4"
+    ],
+    "example_positions": [
+      39
+    ]
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement_f467520",
+    "display_name": "Vitamin D-3 Supplement]. F467520",
+    "count": 1,
+    "example_products": [
+      "e23ffeb0-bfef-4d5c-aae0-cb378edb0bec"
+    ],
+    "example_positions": [
+      32
+    ]
+  },
+  {
+    "canonical_name": "manganese",
+    "display_name": "Manganese Supplement",
+    "count": 1,
+    "example_products": [
+      "7ec775f7-aee2-4dc0-bd00-33eefb21d833"
+    ],
+    "example_positions": [
+      27
+    ]
+  },
+  {
+    "canonical_name": "cheese_creamy_dairy_chicken_byproduct_meal",
+    "display_name": "Dried Cheese. Creamy Dairy: Chicken By-Product Meal",
+    "count": 1,
+    "example_products": [
+      "01e862f5-e6a5-4027-9cc0-7895d6769aad"
+    ],
+    "example_positions": [
+      63
+    ]
+  },
+  {
+    "canonical_name": "bacillus_coagulans_fermentation_product_upcycled",
+    "display_name": "Dried Bacillus Coagulans Fermentation Product *Upcycled",
+    "count": 1,
+    "example_products": [
+      "38b5f52f-7e7b-431a-b707-6fc1089538cb"
+    ],
+    "example_positions": [
+      16
+    ]
+  },
+  {
+    "canonical_name": "valerian_rootclose_window__content_mfe_state__window__content_mfe_state__",
+    "display_name": "Valerian Root.Close window.__CONTENT_MFE_STATE__=window.__CONTENT_MFE_STATE__||",
+    "count": 1,
+    "example_products": [
+      "67751e09-161e-497b-a7a1-537bd4ac1b6d"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "cheese_savory_salmon_chicken_byproduct_meal",
+    "display_name": "Dried Cheese. Savory Salmon: Chicken By-Product Meal",
+    "count": 1,
+    "example_products": [
+      "e317a9ed-dc58-4ae8-8d98-973162ac4821"
+    ],
+    "example_positions": [
+      34
+    ]
+  },
+  {
+    "canonical_name": "kelp_flavored_broth",
+    "display_name": "Natural Kelp Flavored Broth",
+    "count": 1,
+    "example_products": [
+      "23ae9a09-638f-40bd-8d0e-f94674856274"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "cheese_tantalizing_turkey_chicken_byproduct_meal",
+    "display_name": "Dried Cheese. Tantalizing Turkey: Chicken By-Product Meal",
+    "count": 1,
+    "example_products": [
+      "a7bbafe4-bc7e-4074-92f1-86273b3cc5f8"
+    ],
+    "example_positions": [
+      95
+    ]
+  },
+  {
+    "canonical_name": "dlalpha",
+    "display_name": "DL-Alpha",
+    "count": 1,
+    "example_products": [
+      "dafc2a35-c30b-4e8a-bcf0-ebb3eefa694d"
+    ],
+    "example_positions": [
+      15
+    ]
+  },
+  {
+    "canonical_name": "acetate",
+    "display_name": "Acetate",
+    "count": 1,
+    "example_products": [
+      "dafc2a35-c30b-4e8a-bcf0-ebb3eefa694d"
+    ],
+    "example_positions": [
+      17
+    ]
+  },
+  {
+    "canonical_name": "active_ingredients_per_4_chews",
+    "display_name": "Active Ingredients Per 4 Chews",
+    "count": 1,
+    "example_products": [
+      "c1ff580c-5017-44da-a4b7-1822beb0bc18"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "shrimp_flavors",
+    "display_name": "Natural Shrimp Flavors",
+    "count": 1,
+    "example_products": [
+      "a3c71df5-ac8a-4b0c-b483-5c047678fedf"
+    ],
+    "example_positions": [
+      30
+    ]
+  },
+  {
+    "canonical_name": "hydrolized_casein",
+    "display_name": "Dried Hydrolized Casein",
+    "count": 1,
+    "example_products": [
+      "a45b628f-6e3d-4d57-9977-1e252e6dd0ce"
+    ],
+    "example_positions": [
+      8
+    ]
+  },
+  {
+    "canonical_name": "elk_bone",
+    "display_name": "ground elk bone",
+    "count": 1,
+    "example_products": [
+      "3889fb44-5bda-466f-b063-d3b742950167"
+    ],
+    "example_positions": [
+      3
+    ]
+  },
+  {
+    "canonical_name": "active_ingredients_proprietary_blend_of",
+    "display_name": "Active Ingredients: Proprietary Blend of",
+    "count": 1,
+    "example_products": [
+      "7bb1f06e-43bb-46b9-b73f-2f0cef003591"
+    ],
+    "example_positions": [
+      1
+    ]
+  },
+  {
+    "canonical_name": "egg_tuna_puree_fish_broth",
+    "display_name": "Dried Egg. **Tuna Puree:** Fish Broth",
+    "count": 1,
+    "example_products": [
+      "64fab16f-bf06-447e-8dae-183f39528a4d"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "egg_salmon_puree_fish_broth",
+    "display_name": "Dried Egg. **Salmon Puree:** Fish Broth",
+    "count": 1,
+    "example_products": [
+      "64fab16f-bf06-447e-8dae-183f39528a4d"
+    ],
+    "example_positions": [
+      12
+    ]
+  },
+  {
+    "canonical_name": "hydrochloride",
+    "display_name": "Hydrochloride",
+    "count": 1,
+    "example_products": [
+      "c9cc9a3b-c0b3-4565-b26a-9a78ad2c02cc"
+    ],
+    "example_positions": [
+      29
+    ]
+  },
+  {
+    "canonical_name": "folic_acid_and_biotin",
+    "display_name": "Folic Acid And Biotin",
+    "count": 1,
+    "example_products": [
+      "c9cc9a3b-c0b3-4565-b26a-9a78ad2c02cc"
+    ],
+    "example_positions": [
+      33
+    ]
+  },
+  {
+    "canonical_name": "cobalt_carbonate_and_ethylenediamine_dihydroiodide",
+    "display_name": "Cobalt Carbonate And Ethylenediamine Dihydroiodide",
+    "count": 1,
+    "example_products": [
+      "c9cc9a3b-c0b3-4565-b26a-9a78ad2c02cc"
+    ],
+    "example_positions": [
+      39
+    ]
+  },
+  {
+    "canonical_name": "rosemary__turmeric",
+    "display_name": "Fresh Rosemary & Turmeric",
+    "count": 1,
+    "example_products": [
+      "03ed56c2-cdf2-4921-9819-b11d9058e745"
+    ],
+    "example_positions": [
+      9
+    ]
+  },
+  {
+    "canonical_name": "key_benefits",
+    "display_name": "\"keyBenefits\":",
+    "count": 1,
+    "example_products": [
+      "fa13c550-40bc-4f6b-9157-cbb404712435"
+    ],
+    "example_positions": [
+      11
+    ]
+  },
+  {
+    "canonical_name": "strawberry_flavor",
+    "display_name": "Natural Strawberry Flavor",
+    "count": 1,
+    "example_products": [
+      "9e2cb243-4cae-4bd0-923e-46f9eff62d26"
+    ],
+    "example_positions": [
+      6
+    ]
+  },
+  {
+    "canonical_name": "vitamin_e_supplement_chicken_recipe_x6_pouches_scallop_broth",
+    "display_name": "Vitamin E Supplement. Chicken Recipe x6 Pouches - Scallop Broth",
+    "count": 1,
+    "example_products": [
+      "a394bab8-454a-4974-bc97-d7aea851156b"
+    ],
+    "example_positions": [
+      8
+    ]
+  }
+]
