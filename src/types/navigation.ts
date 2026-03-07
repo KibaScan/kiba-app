@@ -44,11 +44,24 @@ export type MeStackParamList = {
   HealthConditions: { petId: string; fromCreate?: boolean };
 };
 
+// ─── Paywall Trigger ─────────────────────────────────
+
+export type PaywallTrigger =
+  | 'scan_limit'
+  | 'pet_limit'
+  | 'safe_swap'
+  | 'search'
+  | 'compare'
+  | 'vet_report'
+  | 'elimination_diet';
+
 // ─── Root & Tab Navigators ─────────────────────────────
 
 export type RootStackParamList = {
+  Terms: undefined;
   Onboarding: undefined;
   Main: undefined;
+  Paywall: { trigger: PaywallTrigger; petName?: string };
 };
 
 export type TabParamList = {

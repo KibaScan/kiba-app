@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Navigation from './src/navigation';
 import { ensureAuth } from './src/services/auth';
 import { useActivePetStore } from './src/stores/useActivePetStore';
+import { configureRevenueCat } from './src/utils/permissions';
 import { Colors } from './src/utils/constants';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   useEffect(() => {
     async function init() {
       await ensureAuth();
+      await configureRevenueCat();
       await useActivePetStore.getState().loadPets();
     }
     init().finally(() => setAuthReady(true));

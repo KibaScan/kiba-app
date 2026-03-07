@@ -3,6 +3,28 @@
 // No render tests (no @testing-library/react-native installed).
 
 // Mock React Native and expo modules so the .tsx import resolves cleanly.
+jest.mock('react-native-purchases', () => ({
+  default: {
+    configure: jest.fn(),
+    getCustomerInfo: jest.fn().mockResolvedValue({
+      entitlements: { active: {} },
+    }),
+  },
+}));
+jest.mock('react-native-url-polyfill/auto', () => ({}));
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+}));
+jest.mock('../../src/services/supabase', () => ({
+  supabase: {
+    from: jest.fn(),
+    auth: { getUser: jest.fn().mockResolvedValue({ data: null }) },
+  },
+}));
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
   notificationAsync: jest.fn(),

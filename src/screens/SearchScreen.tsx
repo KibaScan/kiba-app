@@ -1,10 +1,23 @@
-// Kiba — Search (Premium Feature)
+// Kiba — Search (Premium Feature, D-055)
+// Free users see lock state; tapping search bar triggers PaywallScreen.
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { canSearch } from '../utils/permissions';
 
 export default function SearchScreen() {
+  const navigation = useNavigation();
+
+  const handleSearchPress = () => {
+    if (!canSearch()) {
+      (navigation as any).navigate('Paywall', { trigger: 'search' });
+      return;
+    }
+    // TODO: Premium search flow (M5+)
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -12,12 +25,10 @@ export default function SearchScreen() {
       </View>
 
       <View style={styles.content}>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search pet food products..."
-          placeholderTextColor={Colors.textTertiary}
-          editable={false}
-        />
+        <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress} activeOpacity={0.7}>
+          <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
+          <Text style={styles.searchPlaceholder}>Search pet food products...</Text>
+        </TouchableOpacity>
 
         <View style={styles.premiumBadge}>
           <Ionicons name="lock-closed" size={32} color={Colors.textTertiary} style={{ marginBottom: Spacing.md }} />
@@ -26,6 +37,9 @@ export default function SearchScreen() {
             Text search is available with Kiba Premium.{'\n'}
             Scan barcodes for free!
           </Text>
+          <TouchableOpacity style={styles.upgradeButton} onPress={handleSearchPress} activeOpacity={0.7}>
+            <Text style={styles.upgradeText}>Upgrade</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -57,11 +71,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     marginBottom: Spacing.xl,
+  },
+  searchPlaceholder: {
+    fontSize: FontSizes.md,
+    color: Colors.textTertiary,
   },
   premiumBadge: {
     flex: 1,
@@ -80,5 +99,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: Spacing.lg,
+  },
+  upgradeButton: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  upgradeText: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

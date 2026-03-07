@@ -14,12 +14,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { speciesToggle } from '../utils/haptics';
+import { canAddPet } from '../utils/permissions';
+import { useActivePetStore } from '../stores/useActivePetStore';
 import type { MeStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'SpeciesSelect'>;
 
 export default function SpeciesSelectScreen({ navigation }: Props) {
+  const petCount = useActivePetStore((s) => s.pets.length);
+
   function handleSelect(species: 'dog' | 'cat') {
+    // D-052: Pet limit gate
+    if (!canAddPet(petCount)) {
+      (navigation as any).navigate('Paywall', { trigger: 'pet_limit' });
+      return;
+    }
     speciesToggle();
     navigation.navigate('CreatePet', { species });
   }
