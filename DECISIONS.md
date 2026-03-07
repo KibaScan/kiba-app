@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 1, 2026 (§11 reference scores updated to actual engine output, D-113 Pure Balance ref corrected, D-116 through D-121 appended)
+> Updated: March 6, 2026 (D-125 through D-128 appended for M3)
 
 ---
 
@@ -1470,4 +1470,71 @@ Fix activity level in CreatePetScreen.tsx and EditPetScreen.tsx per D-123:
 @PET_PROFILE_SPEC.md §11 for the spec. Run full test suite after.
 
 ---
+### D-124: Treat Logging Entry Points
+**Status:** LOCKED
+**Date:** 2026-02-22
+**Decision:** Three entry points for treat consumption logging:
+1. **Me tab "Log a Treat" scan button** under Treat Battery — auto-deducts kcal from daily treat budget immediately
+2. **Scan Result "Track this food" CTA** — adds product to pantry, no kcal deduction (tracking, not consumption)
+3. **Pantry quick-add (M5)** — one-tap deduction from treat battery for pantry items already saved
+**Central scan button behavior:** Deferred to M5+. The raised center scan tab always opens the camera for barcode scanning — it does not context-switch to treat logging.
+**Milestone:** M5 (Pantry) for implementation. M2 for design spec.
+**Rationale:** Multiple entry points match different user contexts: standing in kitchen (Me tab), just scanned something (Result screen), reviewing what's in stock (Pantry). Each has a different intent — logging vs. tracking vs. quick-add — so the action differs per entry point. Central scan button stays pure to avoid confusing the core interaction.
+---
+
+## D-125: Recall Siren → Free Tier
+**Status:** LOCKED
+**Date:** 2026-03-03
+**Decision:** Recall Siren (recall alerts, FDA monitoring notifications) moves from premium
+to basic/free tier.
+**Rationale:** Greater user safety reach, community trust signal, freemium engagement driver.
+Removes "Recall alert signup" from D-052 paywall triggers.
+
+---
+## D-126: Paywall Screen Psychology Patterns
+**Status:** LOCKED
+**Date:** 2026-03-03
+**Decision:** Paywall screen implements four behavioral patterns:
+1. Curiosity Gap: Safe Swap alternatives shown as blurred images behind paywall, not padlocked.
+2. Identity Framing: "About $2/month to protect [Pet Name] for a full year" — subscription
+   framed as pet care, not software purchase.
+3. Endowment Effect: 2nd pet profile trigger leverages invested time in first profile.
+4. Decoy Pricing: Annual card shows "$24.99/year (Just $2.08/mo)" with anchoring line.
+**Rationale:** Behavioral psychology maximizes $24.99/yr conversion without dark patterns.
+
+---
+## D-127: API Keys Server-Side Only
+**Status:** LOCKED
+**Date:** 2026-03-03
+**Decision:** No external API keys (Anthropic, etc.) in the React Native app
+binary. All external API calls route through Supabase Edge Functions. For keyed APIs
+(Anthropic), Edge Functions hold the secret server-side. For keyless APIs (UPCitemdb
+free tier), Edge Functions still serve as an abstraction layer — swap to a paid UPC
+API later without pushing an app update.
+**Rationale:** App binaries can be reverse-engineered. Exposed keys = drained budgets.
+Supabase Edge Functions provide secure key storage with row-level access control.
+
+---
+## D-128: Haiku Product Classification on Database Miss
+**Status:** LOCKED
+**Date:** 2026-03-04
+**Decision:** When the parse-ingredients Edge Function processes OCR text from a database
+miss (D-091), Haiku also classifies the product's category (daily_food, treat, supplement,
+grooming) and target species (dog, cat, all). The Edge Function returns suggested values
+with a confidence score. ProductConfirmScreen shows Haiku's suggestions as pre-selected
+chips — user can tap to correct. Corrected values are stored alongside suggestions for
+accuracy tracking.
+**Rationale:** Users scanning an unknown product often don't know the scoring category.
+Getting it wrong produces misleading scores (treat scored as daily food gets hammered by
+missing-GA fallback). Haiku has strong signal from product name + ingredient text to
+classify correctly. User confirmation preserves human oversight. Storing both suggested
+and corrected values enables classification accuracy auditing.
+**Category handling:**
+- daily_food → score with D-017 partial fallback (78/22 if no GA)
+- treat → score with 100/0/0 ingredient-only weighting
+- supplement → store only, do NOT score (D-096), show "Supplement scoring coming soon"
+- grooming → store only, do NOT score (D-083), show "Grooming scoring coming soon"
+
+---
+
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
