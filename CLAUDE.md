@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 5, 2026 (M3 pre-session checklist applied)
+> Last updated: March 7, 2026 (M3 complete — Sessions 1-6)
 
 ---
 
@@ -21,7 +21,8 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Backend:** Supabase (Postgres + Auth + Storage + Row Level Security)
 - **Navigation:** React Navigation (bottom tabs + stack navigators)
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
-- **Payments:** RevenueCat — NOT installed until M3-M4
+- **Payments:** RevenueCat (installed M3 Session 5)
+- **Audio:** `expo-av` for scan confirmation tone
 - **Testing:** Jest for scoring engine, reference product regression tests (447 tests passing)
 
 ## Project Structure
@@ -29,7 +30,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (128 decisions)
+├── DECISIONS.md            ← canonical decision log (129 decisions, D-001 through D-129)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -38,9 +39,17 @@ kiba-app/
 ├── PORTION_CALCULATOR_SPEC.md          ← M2 canonical: RER/DER math, goal weight, cat safety guards
 ├── app.json
 ├── tsconfig.json
-├── scripts/                   ← Python pipeline scripts (M3 data ingestion)
+├── assets/
+│   └── sounds/
+│       └── scan-confirm.mp3       ← barcode detection confirmation tone
+├── scripts/
+│   ├── pipeline/                  ← M3 data ingestion (Apify import, staging)
+│   └── refinery/                  ← M3 GA extraction (Haiku + validator)
+│       ├── extract_ga.py          ← batch Haiku GA extraction
+│       └── validator.py           ← D-043 range validation before DB insert
 ├── supabase/
-│   ├── functions/             ← Edge Functions (M3 server-side logic)
+│   ├── functions/
+│   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
 │   └── migrations/
 │       ├── 001_initial_schema.sql
 │       ├── 002_m2_pet_profiles.sql   ← renames, new columns, constraint updates
@@ -50,8 +59,20 @@ kiba-app/
 │   │   └── index.ts
 │   ├── components/         ← shared UI components
 │   │   ├── ScoreGauge.tsx
-│   │   ├── BenchmarkBar.tsx
+│   │   ├── ScoreRing.tsx          ← animated score ring with D-113 color breakpoints + verdict
+│   │   ├── ScannerOverlay.tsx     ← animated viewfinder: corner brackets + scan line + lock animation
+│   │   ├── LoadingTerminal.tsx    ← 6-step terminal message sequence
+│   │   ├── ConcernTags.tsx        ← D-107 consumer-facing badges
+│   │   ├── SeverityBadgeStrip.tsx ← worst 4-5 ingredients as color-coded chips
+│   │   ├── ScoreWaterfall.tsx     ← tappable breakdown showing Layer 1/2/3 math
+│   │   ├── GATable.tsx            ← GA panel with dual display (as-fed + DMB for wet food)
 │   │   ├── IngredientList.tsx
+│   │   ├── IngredientDetailModal.tsx ← D-105 singleton modal with TL;DR, citations
+│   │   ├── BreedContraindicationCard.tsx ← D-112 red warning cards
+│   │   ├── PortionCard.tsx        ← DER-based daily portion display
+│   │   ├── TreatBatteryGauge.tsx  ← visual treat budget gauge
+│   │   ├── DevMenu.tsx            ← __DEV__ only: premium toggle, scan window management
+│   │   ├── BenchmarkBar.tsx
 │   │   ├── PetPhotoSelector.tsx ← 96px circle, paw silhouette, ImagePicker (square crop, quality 0.7)
 │   │   └── StatChips.tsx
 │   ├── screens/
@@ -66,10 +87,15 @@ kiba-app/
 │   │   ├── EditPetScreen.tsx       ← same 3-card layout, species immutable
 │   │   ├── HealthConditionsScreen.tsx ← D-097/D-119: condition multi-select + allergen picker
 │   │   ├── PantryScreen.tsx
-│   │   └── MeScreen.tsx            ← pet profiles, settings, subscription
+│   │   ├── TermsScreen.tsx        ← clickwrap TOS with active checkbox, version-aware
+│   │   ├── PaywallScreen.tsx      ← D-126 psychology patterns, annual-first, identity framing
+│   │   ├── ProductConfirmScreen.tsx ← D-091 step 2: external UPC match confirmation
+│   │   ├── IngredientCaptureScreen.tsx ← D-091 OCR + D-128 Haiku classification
+│   │   └── CommunityContributionScreen.tsx ← community product submission
 │   ├── services/
 │   │   ├── auth.ts              ← ensureAuth(): anonymous sign-in on app mount
 │   │   ├── petService.ts        ← CRUD: createPet, updatePet, deletePet, getPetsForUser, photo upload
+│   │   ├── scanner.ts           ← UPC lookup + external UPC + community product save
 │   │   ├── scoring/
 │   │   │   ├── engine.ts           ← main scoring orchestrator
 │   │   │   ├── ingredientQuality.ts ← Layer 1: 55% bucket
@@ -94,10 +120,9 @@ kiba-app/
 │   │       ├── dogs.ts              ← 23 breed entries from BREED_MODIFIERS_DOGS.md
 │   │       └── cats.ts              ← 21 breed entries from BREED_MODIFIERS_CATS.md
 │   ├── stores/
-│   │   ├── useAppStore.ts
-│   │   ├── useActivePetStore.ts  ← D-120: global active pet context, consumed by all pet-aware screens
-│   │   ├── usePetStore.ts
-│   │   └── useScanStore.ts
+│   │   ├── useAppStore.ts        ← hasAcceptedTos, hasCompletedOnboarding, tosVersion
+│   │   ├── useActivePetStore.ts  ← D-120: canonical pet store, global active pet context
+│   │   └── useScanStore.ts       ← scan cache, weekly count
 │   ├── utils/
 │   │   ├── permissions.ts   ← ONLY location for paywall checks
 │   │   ├── haptics.ts       ← D-121: named haptic functions wrapping expo-haptics
@@ -300,6 +325,9 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ Breed-specific avatar silhouettes (rejected M2 — asset pipeline doesn't exist, use generic species silhouette)
 - ❌ Modify scoring engine (M1 complete, M3 only populates data)
 - ❌ Score supplements (M16+, D-096 — store only)
+- ❌ Score grooming products (M16+, D-083 — store only)
+- ❌ API keys in app binary (D-127 — all external calls via Edge Functions)
+- ❌ Paywall on recall alerts (D-125 — free tier, safety-critical)
 
 ## M2 Profile Design (D-116 through D-121)
 
@@ -396,3 +424,7 @@ M2: pet profile CRUD with Supabase auth integration
 □ LLM-extracted GA validated before DB insertion? (D-043)
 □ API keys server-side only, never in app binary? (D-127)
 □ Hash normalization applied before ingredients_hash? (D-044)
+□ Recall alerts free — no paywall gate? (D-125)
+□ Supplement/grooming exit paths store-only, no scoring? (D-096, D-083)
+□ Haiku classification stored with user corrections? (D-128)
+□ Scan sound respects mute toggle? (AsyncStorage preference)

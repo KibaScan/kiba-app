@@ -606,7 +606,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
               setDeleteModalVisible(true);
             }}
           >
-            <Text style={styles.deleteButtonText}>Delete {pet.name}</Text>
+            <Text style={styles.deleteButtonText}>Delete {name.trim() || pet.name}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -629,15 +629,15 @@ export default function EditPetScreen({ navigation, route }: Props) {
       >
         <View style={styles.deleteOverlay}>
           <View style={styles.deleteModal}>
-            <Text style={styles.deleteTitle}>Delete {pet.name}?</Text>
+            <Text style={styles.deleteTitle}>Delete {name.trim() || pet.name}?</Text>
             <Text style={styles.deleteDescription}>
-              This will permanently delete {pet.name} and all associated scan
+              This will permanently delete {name.trim() || pet.name} and all associated scan
               history. This cannot be undone. Type{' '}
-              <Text style={styles.deleteBold}>{pet.name}</Text> to confirm.
+              <Text style={styles.deleteBold}>{name.trim() || pet.name}</Text> to confirm.
             </Text>
             <TextInput
               style={styles.deleteInput}
-              placeholder={pet.name}
+              placeholder={name.trim() || pet.name}
               placeholderTextColor={Colors.textTertiary}
               value={deleteInput}
               onChangeText={setDeleteInput}
