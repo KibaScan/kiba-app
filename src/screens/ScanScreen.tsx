@@ -23,9 +23,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { barcodeRecognized, speciesToggle, scanError } from '../utils/haptics';
+import { canScan } from '../utils/permissions';
 import { Species, Product } from '../types';
 import { ScanStackParamList } from '../types/navigation';
-import { lookupByUpc } from '../services/scanner';
+import { lookupByUpc, lookupExternalUpc } from '../services/scanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { createPet } from '../services/petService';
@@ -62,6 +63,15 @@ export default function ScanScreen() {
       setIsLoading(true);
 
       try {
+        // D-052: Check scan limit BEFORE lookup (trigger on next attempt after limit)
+        const allowed = await canScan();
+        if (!allowed) {
+          setIsLoading(false);
+          (navigation as any).navigate('Paywall', { trigger: 'scan_limit' });
+          setTimeout(() => setIsLocked(false), 500);
+          return;
+        }
+
         const lookup = await lookupByUpc(result.data);
 
         if (lookup.status === 'error') {
@@ -76,9 +86,34 @@ export default function ScanScreen() {
         }
 
         if (lookup.status === 'not_found') {
-          navigation.navigate('CommunityContribution', {
-            scannedUpc: result.data,
-          });
+          // M3 D-091: External UPC lookup → confirm → OCR → classify
+          try {
+            const external = await lookupExternalUpc(result.data);
+
+            if (external.found && external.product_name) {
+              // External match — show confirmation screen
+              navigation.navigate('ProductConfirm', {
+                scannedUpc: result.data,
+                externalName: external.product_name,
+                externalBrand: external.brand,
+                externalImageUrl: external.image_url,
+              });
+            } else {
+              // No external match — skip straight to ingredient capture
+              navigation.navigate('IngredientCapture', {
+                scannedUpc: result.data,
+                productName: null,
+                brand: null,
+              });
+            }
+          } catch {
+            // External lookup failed — fall through to OCR
+            navigation.navigate('IngredientCapture', {
+              scannedUpc: result.data,
+              productName: null,
+              brand: null,
+            });
+          }
           return;
         }
 

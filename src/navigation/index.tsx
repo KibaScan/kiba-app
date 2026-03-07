@@ -17,7 +17,9 @@ import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
 import CreatePetScreen from '../screens/CreatePetScreen';
 import EditPetScreen from '../screens/EditPetScreen';
 import HealthConditionsScreen from '../screens/HealthConditionsScreen';
+import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 import CommunityContributionScreen from '../screens/CommunityContributionScreen';
 import ProductConfirmScreen from '../screens/ProductConfirmScreen';
 import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
@@ -195,16 +197,24 @@ function TabNavigator() {
 // ─── Root Navigation ────────────────────────────────────
 
 export default function Navigation() {
+  const hasAcceptedTos = useAppStore((s) => s.hasAcceptedTos);
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
 
   return (
     <NavigationContainer theme={KibaDarkTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {!hasCompletedOnboarding ? (
+        {!hasAcceptedTos ? (
+          <RootStack.Screen name="Terms" component={TermsScreen} />
+        ) : !hasCompletedOnboarding ? (
           <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
           <RootStack.Screen name="Main" component={TabNavigator} />
         )}
+        <RootStack.Screen
+          name="Paywall"
+          component={PaywallScreen}
+          options={{ presentation: 'modal' }}
+        />
       </RootStack.Navigator>
     </NavigationContainer>
   );

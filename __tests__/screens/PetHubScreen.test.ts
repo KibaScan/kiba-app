@@ -29,6 +29,14 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: jest.fn(),
 }));
 jest.mock('@react-navigation/native-stack', () => ({}));
+jest.mock('react-native-purchases', () => ({
+  default: {
+    configure: jest.fn(),
+    getCustomerInfo: jest.fn().mockResolvedValue({
+      entitlements: { active: {} },
+    }),
+  },
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({
   default: {
     getItem: jest.fn(),

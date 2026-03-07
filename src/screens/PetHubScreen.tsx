@@ -23,6 +23,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { isPremium, canAddPet } from '../utils/permissions';
 import { deleteConfirm } from '../utils/haptics';
+import DevMenu from '../components/DevMenu';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
   getPetConditions,
@@ -130,6 +131,10 @@ export default function PetHubScreen({ navigation }: Props) {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // ─── Dev menu (tap version 5 times) ────────────────────
+  const [devMenuVisible, setDevMenuVisible] = useState(false);
+  const [devTapCount, setDevTapCount] = useState(0);
 
   // ─── Load conditions/allergens on focus or active pet change ──
   useFocusEffect(
@@ -584,8 +589,35 @@ export default function PetHubScreen({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
+        {/* Version footer — tap 5 times for dev menu */}
+        <TouchableOpacity
+          style={styles.versionFooter}
+          activeOpacity={0.6}
+          onPress={() => {
+            if (!__DEV__) return;
+            const next = devTapCount + 1;
+            if (next >= 5) {
+              setDevMenuVisible(true);
+              setDevTapCount(0);
+            } else {
+              setDevTapCount(next);
+              setTimeout(() => setDevTapCount(0), 2000);
+            }
+          }}
+        >
+          <Text style={styles.versionText}>Kiba v1.0.0</Text>
+        </TouchableOpacity>
+
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
+
+      {/* Dev menu (__DEV__ only) */}
+      {__DEV__ && (
+        <DevMenu
+          visible={devMenuVisible}
+          onClose={() => setDevMenuVisible(false)}
+        />
+      )}
 
       {/* Delete confirmation modal */}
       <Modal
@@ -1015,6 +1047,16 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
+  },
+
+  // ─── Version Footer ──────────────────────────────────────
+  versionFooter: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  versionText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
   },
 
   // ─── Delete ────────────────────────────────────────────

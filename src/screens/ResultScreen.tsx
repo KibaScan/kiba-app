@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { canUseSafeSwaps, canCompare } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
 import type { ScoredResult, ProductIngredient } from '../types/scoring';
@@ -406,6 +407,41 @@ export default function ResultScreen() {
           />
         )}
 
+        {/* Safe Swap CTA (D-126: blur + lock for free users) */}
+        <TouchableOpacity
+          style={styles.safeSwapCard}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (!canUseSafeSwaps()) {
+              (navigation as any).navigate('Paywall', {
+                trigger: 'safe_swap',
+                petName: displayName,
+              });
+            }
+            // TODO: Safe Swap flow (M6+)
+          }}
+        >
+          <View style={styles.safeSwapBlur}>
+            <View style={styles.safeSwapLockOverlay}>
+              <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
+              <Text style={styles.safeSwapLockText}>
+                Discover healthier alternatives
+              </Text>
+            </View>
+            {/* Fake blurred rows */}
+            <View style={styles.safeSwapRow}>
+              <View style={[styles.safeSwapDot, { backgroundColor: Colors.severityGreen }]} />
+              <View style={styles.safeSwapPlaceholderBar} />
+              <View style={styles.safeSwapScoreBadge} />
+            </View>
+            <View style={styles.safeSwapRow}>
+              <View style={[styles.safeSwapDot, { backgroundColor: Colors.severityGreen }]} />
+              <View style={styles.safeSwapPlaceholderBar} />
+              <View style={styles.safeSwapScoreBadge} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
         {/* ─── Below Fold ─────────────────────────────────── */}
 
         {/* Score Waterfall (D-094) */}
@@ -480,6 +516,25 @@ export default function ResultScreen() {
             onIngredientPress={setSelectedIngredient}
           />
         )}
+
+        {/* Compare button (D-052: premium gate) */}
+        <TouchableOpacity
+          style={styles.compareButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (!canCompare()) {
+              (navigation as any).navigate('Paywall', {
+                trigger: 'compare',
+                petName: displayName,
+              });
+              return;
+            }
+            // TODO: Compare flow (M6+)
+          }}
+        >
+          <Ionicons name="git-compare-outline" size={18} color={Colors.accent} />
+          <Text style={styles.compareButtonText}>Compare with another product</Text>
+        </TouchableOpacity>
 
         {/* Track this food (M5 placeholder) */}
         <TouchableOpacity style={styles.trackButton} disabled>
@@ -660,6 +715,73 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: '600',
     color: Colors.severityAmber,
+  },
+
+  // ─── Safe Swap (D-126 blur pattern)
+  safeSwapCard: {
+    marginBottom: Spacing.lg,
+  },
+  safeSwapBlur: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: Spacing.md,
+    overflow: 'hidden',
+    opacity: 0.7,
+  },
+  safeSwapLockOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  safeSwapLockText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  safeSwapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  safeSwapDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  safeSwapPlaceholderBar: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.cardBorder,
+  },
+  safeSwapScoreBadge: {
+    width: 36,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.cardBorder,
+  },
+
+  // ─── Compare Button
+  compareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: Spacing.sm,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  compareButtonText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 
   // ─── No Ingredient Data
