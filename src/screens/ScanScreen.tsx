@@ -2,7 +2,7 @@
 // D-092: Camera opens immediately. Scan-first flow.
 // D-084: No emoji. Ionicons only.
 // Zero scoring logic — this screen only scans and routes.
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,15 @@ import {
   Modal,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import { barcodeRecognized, speciesToggle, scanError } from '../utils/haptics';
+import { barcodeRecognized, speciesToggle, scanError, scanWarning } from '../utils/haptics';
 import { canScan } from '../utils/permissions';
 import { Species, Product } from '../types';
 import { ScanStackParamList } from '../types/navigation';
@@ -30,8 +32,13 @@ import { lookupByUpc, lookupExternalUpc } from '../services/scanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { createPet } from '../services/petService';
+import ScannerOverlay from '../components/ScannerOverlay';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
+
+const SOUND_PREF_KEY = '@kiba_scan_sound_enabled';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const scanConfirmSound = require('../../assets/sounds/scan-confirm.mp3');
 
 export default function ScanScreen() {
   const navigation = useNavigation<ScreenNav>();
@@ -42,6 +49,37 @@ export default function ScanScreen() {
   // Scan state
   const [isLocked, setIsLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [overlayLocked, setOverlayLocked] = useState(false);
+
+  // Sound
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(SOUND_PREF_KEY).then((val) => {
+      if (val === 'false') setSoundEnabled(false);
+    });
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
+
+  const toggleSound = useCallback(async () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    await AsyncStorage.setItem(SOUND_PREF_KEY, String(next));
+  }, [soundEnabled]);
+
+  const playScanSound = useCallback(async () => {
+    if (!soundEnabled) return;
+    try {
+      const { sound } = await Audio.Sound.createAsync(scanConfirmSound);
+      soundRef.current = sound;
+      await sound.playAsync();
+    } catch {
+      // Sound playback is best-effort
+    }
+  }, [soundEnabled]);
 
   // Pet profile modal state
   const [showPetModal, setShowPetModal] = useState(false);
@@ -87,11 +125,11 @@ export default function ScanScreen() {
 
         if (lookup.status === 'not_found') {
           // M3 D-091: External UPC lookup → confirm → OCR → classify
+          scanWarning();
           try {
             const external = await lookupExternalUpc(result.data);
 
             if (external.found && external.product_name) {
-              // External match — show confirmation screen
               navigation.navigate('ProductConfirm', {
                 scannedUpc: result.data,
                 externalName: external.product_name,
@@ -99,7 +137,6 @@ export default function ScanScreen() {
                 externalImageUrl: external.image_url,
               });
             } else {
-              // No external match — skip straight to ingredient capture
               navigation.navigate('IngredientCapture', {
                 scannedUpc: result.data,
                 productName: null,
@@ -107,7 +144,6 @@ export default function ScanScreen() {
               });
             }
           } catch {
-            // External lookup failed — fall through to OCR
             navigation.navigate('IngredientCapture', {
               scannedUpc: result.data,
               productName: null,
@@ -117,10 +153,16 @@ export default function ScanScreen() {
           return;
         }
 
-        // Product found — cache before routing
+        // Product found — sensory feedback then navigate
         barcodeRecognized();
+        playScanSound();
+        setOverlayLocked(true);
         useScanStore.getState().addToScanCache(lookup.product);
         const hasPet = pets.length > 0 && activePetId !== null;
+
+        // Brief delay so user sees "locked" animation
+        await new Promise((r) => setTimeout(r, 200));
+        setOverlayLocked(false);
 
         if (!hasPet) {
           setPendingProduct(lookup.product);
@@ -240,20 +282,26 @@ export default function ScanScreen() {
 
       {/* Scan reticle overlay */}
       <View style={[styles.overlay, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Top hint */}
-        <View style={styles.topHint}>
+        {/* Top bar: title + sound toggle */}
+        <View style={styles.topBar}>
+          <View style={styles.topBarSpacer} />
           <Text style={styles.topHintText}>Scan</Text>
+          <TouchableOpacity
+            onPress={toggleSound}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.soundToggle}
+          >
+            <Ionicons
+              name={soundEnabled ? 'volume-high-outline' : 'volume-mute-outline'}
+              size={22}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
         </View>
 
-        {/* Center reticle */}
+        {/* Center reticle — animated ScannerOverlay */}
         <View style={styles.reticleContainer} pointerEvents="none">
-          <View style={styles.reticle}>
-            {/* Four corners */}
-            <View style={[styles.corner, styles.cornerTL]} />
-            <View style={[styles.corner, styles.cornerTR]} />
-            <View style={[styles.corner, styles.cornerBL]} />
-            <View style={[styles.corner, styles.cornerBR]} />
-          </View>
+          <ScannerOverlay locked={overlayLocked} />
         </View>
 
         {/* Bottom hint */}
@@ -390,10 +438,6 @@ export default function ScanScreen() {
 
 // ─── Styles ──────────────────────────────────────────────
 
-const RETICLE_SIZE = 260;
-const CORNER_SIZE = 32;
-const CORNER_THICKNESS = 3;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -443,9 +487,19 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
-  topHint: {
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  topBarSpacer: {
+    width: 32,
+  },
+  soundToggle: {
+    width: 32,
+    alignItems: 'center',
   },
   topHintText: {
     fontSize: FontSizes.xxl,
@@ -455,47 +509,6 @@ const styles = StyleSheet.create({
   reticleContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  reticle: {
-    width: RETICLE_SIZE,
-    height: RETICLE_SIZE,
-  },
-  corner: {
-    position: 'absolute',
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderColor: '#FFFFFF',
-    borderTopLeftRadius: 4,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderColor: '#FFFFFF',
-    borderTopRightRadius: 4,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderLeftWidth: CORNER_THICKNESS,
-    borderColor: '#FFFFFF',
-    borderBottomLeftRadius: 4,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: CORNER_THICKNESS,
-    borderRightWidth: CORNER_THICKNESS,
-    borderColor: '#FFFFFF',
-    borderBottomRightRadius: 4,
   },
   bottomHint: {
     alignItems: 'center',

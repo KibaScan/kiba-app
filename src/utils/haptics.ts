@@ -51,3 +51,8 @@ export function scanError(): void {
 export function deleteConfirm(): void {
   if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 }
+
+/** Database miss — softer warning pulse */
+export function scanWarning(): void {
+  if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+}

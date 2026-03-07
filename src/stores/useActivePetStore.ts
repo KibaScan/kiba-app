@@ -3,7 +3,7 @@
 // Only `activePetId` is persisted to AsyncStorage (survives app restart).
 // Full pets array is fetched from Supabase on load — not persisted locally.
 //
-// Does NOT replace usePetStore.ts yet. Both stores coexist until Session 2 UI migration.
+// Canonical pet store. Old usePetStore.ts removed (M3 Session 6).
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';

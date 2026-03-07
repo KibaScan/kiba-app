@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 6, 2026 (D-125 through D-128 appended for M3)
+> Updated: March 7, 2026 (129 decisions: D-001 through D-129. D-052 revised for M3.)
 
 ---
 
@@ -263,19 +263,27 @@ All three layers must be independently testable. Species rules never share betwe
 4. Never show a paywall before the user has experienced a score result
 5. Paywall logic lives ONLY in `src/utils/permissions.ts` — never scattered
 
-### D-052: Five Paywall Trigger Moments
-**Status:** LOCKED
-**Date:** Feb 19, 2026
+### D-052: Paywall Trigger Moments
+**Status:** LOCKED (updated M3 Session 5 — D-125 removed recall, added compare)
+**Date:** Feb 19, 2026 (revised March 5, 2026)
+
+**5 active triggers:**
 
 | Trigger | Copy |
 |---------|------|
-| 6th scan in a week | "You've used your 5 free scans this week. Go unlimited for $24.99/year." |
+| 6th scan in rolling 7-day window | "You've used your 5 free scans this week. Go unlimited for $24.99/year." |
 | Second pet profile | "Multi-pet households need Premium. Add all your pets!" |
 | First safe swap tap | "Find healthier alternatives for your pet." |
-| Recall alert signup | "Get instant alerts if any product you've scanned is recalled." |
 | Search by name | "Search any product without scanning. Find scores for products you're considering online." |
+| Compare (side-by-side) | "Compare products side-by-side to find the best match for [Pet Name]." |
 
-**Note:** Search by product name (text lookup, not barcode) is a premium feature. Free users must scan barcodes. This gates a power-user behavior that signals high intent — these users convert well. Compare feature (side-by-side) is also premium but triggered organically from results, not a standalone paywall moment.
+**2 pre-wired (hidden until feature ships):**
+- Vet report generation (M4)
+- Elimination diet trial start (M16+)
+
+**Removed:** Recall alert signup — moved to free tier per D-125.
+
+**Note:** Search by product name (text lookup, not barcode) is a premium feature. Free users must scan barcodes. This gates a power-user behavior that signals high intent — these users convert well. Scan limit uses rolling 7-day window based on DB timestamps (not calendar week reset).
 
 ### D-053: Affiliate Architecture — Amazon Compliance
 **Status:** LOCKED
@@ -1535,6 +1543,26 @@ and corrected values enables classification accuracy auditing.
 - supplement → store only, do NOT score (D-096), show "Supplement scoring coming soon"
 - grooming → store only, do NOT score (D-083), show "Grooming scoring coming soon"
 
+---
+## D-129: Allergen Severity Override in Layer 3
+**Status:** LOCKED
+**Date:** 2026-03-07
+**Milestone:** M4
+**Decision:** When a pet has a declared allergen, all ingredients matching that allergen (via allergen_group or allergen_group_possible) have their effective severity overridden to 'caution' for that pet's score calculation. This feeds into the existing position-weighted Layer 1a scoring — no flat penalty needed.
+
+**Mechanism:**
+- Direct match (allergen_group = pet's allergen): severity → 'caution', ingredient list shows orange with "[Pet Name] has a [allergen] sensitivity"
+- Possible match (allergen_group_possible contains pet's allergen): severity → 'caution', ingredient list shows orange with "May contain [allergen] — unnamed source"
+- Base severity in ingredients_dict is unchanged — override is per-pet, per-score only
+- Position weighting still applies: allergen at position 1 hurts more than position 15
+- Stacks with existing Layer 3 allergen warnings (which become redundant once this ships — the warnings will reflect actual score impact instead of being informational-only)
+
+**Why not a flat penalty:**
+A flat -15 on a 95-score product still shows green/excellent. The severity override lets the existing position-weighted math scale the penalty naturally — a chicken-first food drops much harder than a food with chicken broth at position 12.
+
+**UI:** Affected ingredients render in caution color (orange) on the ingredient list with a personalized note explaining why. Score waterfall shows the deduction under "[Pet Name]'s Breed & Age Adjustments" layer.
+
+**Depends on:** D-097 (allergen picker), D-098 (cross-reactivity), allergen_group mappings complete in ingredients_dict
 ---
 
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

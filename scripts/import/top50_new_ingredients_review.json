@@ -1,0 +1,579 @@
+[
+  {
+    "canonical_name": "vitamin_e",
+    "display_name": "Vitamin E",
+    "product_count": 872,
+    "example_product": "DreamBone Grill Masters T-Bones BBQ Flavor Rawhide Free Dog Chews, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "selenium",
+    "display_name": "Selenium",
+    "product_count": 819,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "pantothenic_acid",
+    "display_name": "Pantothenic Acid",
+    "product_count": 696,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "**chicken",
+    "display_name": "**Chicken",
+    "product_count": 635,
+    "example_product": "Good 'n' Fun Triple Flavor Double Pops Pork, Chicken & Beef Dog Treat Chews, 5.5-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "ARTIFACT - malformed canonical_name, needs cleanup",
+      "SPLITTING - suggest cluster_id: protein_chicken"
+    ],
+    "suggested_cluster_id": "protein_chicken"
+  },
+  {
+    "canonical_name": "folate",
+    "display_name": "Folic Acid",
+    "product_count": 632,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "dicalcium_phosphate",
+    "display_name": "Dicalcium Phosphate",
+    "product_count": 578,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "methionine",
+    "display_name": "Methionine",
+    "product_count": 531,
+    "example_product": "Hill's Prescription Diet t/d Dental Care Chicken Flavor Dry Dog Food, 5-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "calcium_carbonate",
+    "display_name": "Calcium Carbonate",
+    "product_count": 494,
+    "example_product": "DreamBone Grill Masters T-Bones BBQ Flavor Rawhide Free Dog Chews, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "choline_chloride",
+    "display_name": "choline chloride",
+    "product_count": 494,
+    "example_product": "Blue Buffalo Homestyle Recipe Large Breed Chicken Dinner with Garden Vegetables Canned Dog Food, 12.5-oz, case of 12",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "copper_chelated",
+    "display_name": "Copper Amino Acid Chelate",
+    "product_count": 434,
+    "example_product": "Blue Buffalo Homestyle Recipe Large Breed Chicken Dinner with Garden Vegetables Canned Dog Food, 12.5-oz, case of 12",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "sweet_potato*",
+    "display_name": "Sweet Potato*",
+    "product_count": 398,
+    "example_product": "Hill's Grain-Free Soft-Baked Naturals with Beef & Sweet Potatoes Dog Treats, 8-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "ARTIFACT - malformed canonical_name, needs cleanup",
+      "SPLITTING - suggest cluster_id: tuber_potato"
+    ],
+    "suggested_cluster_id": "tuber_potato"
+  },
+  {
+    "canonical_name": "zinc._sulfate",
+    "display_name": "Zinc. Sulfate",
+    "product_count": 388,
+    "example_product": "Merrick Classic Healthy Grains Dry Dog Food Puppy Recipe, 12-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "potato",
+    "display_name": "Dried Potatoes",
+    "product_count": 368,
+    "example_product": "Nutrish Savory Roasters Chicken Recipe Premium Dog Treats, 12-oz bag (Rachael Ray)",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: tuber_potato"
+    ],
+    "suggested_cluster_id": "tuber_potato"
+  },
+  {
+    "canonical_name": "iodide",
+    "display_name": "Iodide",
+    "product_count": 325,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "glycerin",
+    "display_name": "Glycerin",
+    "product_count": 322,
+    "example_product": "Healthfuls Chicken & Peanut Butter Biscuit Wraps Dog Treats, 16-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b1",
+    "display_name": "Vitamin B1",
+    "product_count": 315,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "**beef",
+    "display_name": "**Beef",
+    "product_count": 305,
+    "example_product": "Hill's Grain-Free Soft-Baked Naturals with Beef & Sweet Potatoes Dog Treats, 8-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "ARTIFACT - malformed canonical_name, needs cleanup",
+      "SPLITTING - suggest cluster_id: protein_beef"
+    ],
+    "suggested_cluster_id": "protein_beef"
+  },
+  {
+    "canonical_name": "dried_egg",
+    "display_name": "Dried Egg Product",
+    "product_count": 303,
+    "example_product": "Merrick Classic Healthy Grains Dry Dog Food Puppy Recipe, 12-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "manganese_sulfate",
+    "display_name": "manganese sulfate",
+    "product_count": 296,
+    "example_product": "Halo Elevate Homestyle Bone-In Chicken Stew with Sweet Potatoes & Kale Grain-Free Wet Dog Food, 12.7-oz can, case of 6",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_a",
+    "display_name": "Vitamin A",
+    "product_count": 290,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "zinc_chelated",
+    "display_name": "Zinc Proteinate",
+    "product_count": 290,
+    "example_product": "Zuke's Mini Naturals Peanut Butter & Oats Recipe Adult Soft & Tender Training Dog Treats, 6-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b12",
+    "display_name": "Vitamin B12",
+    "product_count": 289,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "rice1",
+    "display_name": "Rice1",
+    "product_count": 265,
+    "example_product": "Beggin' Strips Original Bacon Dog Treats, 6-oz",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: grain_rice"
+    ],
+    "suggested_cluster_id": "grain_rice"
+  },
+  {
+    "canonical_name": "water",
+    "display_name": "Water",
+    "product_count": 265,
+    "example_product": "Ultra Chewy Double Treat Bone Bacon & Cheese Flavor Dog Treats, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "iron_sulfate",
+    "display_name": "Iron Sulfate",
+    "product_count": 232,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "manganese_chelated",
+    "display_name": "Manganese Amino Acid Chelate",
+    "product_count": 230,
+    "example_product": "Blue Buffalo Homestyle Recipe Large Breed Chicken Dinner with Garden Vegetables Canned Dog Food, 12.5-oz, case of 12",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "dried_yeast",
+    "display_name": "Dried Yeast",
+    "product_count": 220,
+    "example_product": "Merrick Classic Healthy Grains Dry Dog Food Puppy Recipe, 12-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "tricalcium_phosphate",
+    "display_name": "Tricalcium Phosphate",
+    "product_count": 217,
+    "example_product": "Halo Elevate Homestyle Bone-In Chicken Stew with Sweet Potatoes & Kale Grain-Free Wet Dog Food, 12.7-oz can, case of 6",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "chicken_fat)",
+    "display_name": "Chicken Fat (Preserved with Mixed Tocopherols (Vitamin E))",
+    "product_count": 204,
+    "example_product": "Ultra Chewy Double Treat Bone Bacon & Cheese Flavor Dog Treats, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: protein_chicken"
+    ],
+    "suggested_cluster_id": "protein_chicken"
+  },
+  {
+    "canonical_name": "sodium_tripolyphosphate",
+    "display_name": "Sodium Tripolyphosphate",
+    "product_count": 201,
+    "example_product": "Ultra Chewy Double Treat Bone Bacon & Cheese Flavor Dog Treats, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "egg",
+    "display_name": "Dried Eggs",
+    "product_count": 200,
+    "example_product": "Portland Pet Food Company Winnie's Lamb N' Rice Homestyle Wet Dog Food Topper, 9-oz pouch, case of 4",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b2",
+    "display_name": "Vitamin B2",
+    "product_count": 187,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b6",
+    "display_name": "Vitamin B6",
+    "product_count": 186,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_d3",
+    "display_name": "Vitamin D3 (Cholecalciferol)",
+    "product_count": 186,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b7",
+    "display_name": "Vitamin B7 (Biotin)",
+    "product_count": 171,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "gelatin",
+    "display_name": "Gelatin",
+    "product_count": 166,
+    "example_product": "Ultra Chewy Double Treat Bone Bacon & Cheese Flavor Dog Treats, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "vitamin_b3",
+    "display_name": "Vitamin B3 (Niacin)",
+    "product_count": 166,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "added_color",
+    "display_name": "Added Color",
+    "product_count": 164,
+    "example_product": "Beggin' Strips Original Bacon Dog Treats, 6-oz",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "CAUTION - likely needs caution severity"
+    ],
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "wheat_gluten",
+    "display_name": "Wheat Gluten",
+    "product_count": 160,
+    "example_product": "Beggin' Strips Original Bacon Dog Treats, 6-oz",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: grain_wheat"
+    ],
+    "suggested_cluster_id": "grain_wheat"
+  },
+  {
+    "canonical_name": "meat_by_product",
+    "display_name": "Meat By-Product",
+    "product_count": 151,
+    "example_product": "Purina Beneful Medleys Romana Style with Real Chicken in Gravy Wet Dog Food, 3-oz, pack of 3",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "oat_meal",
+    "display_name": "Oat Meal",
+    "product_count": 149,
+    "example_product": "Beggin' Strips Original Bacon Dog Treats, 6-oz",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: grain_oat"
+    ],
+    "suggested_cluster_id": "grain_oat"
+  },
+  {
+    "canonical_name": "mixed_tocopherols_for_freshness",
+    "display_name": "Mixed Tocopherols for freshness",
+    "product_count": 147,
+    "example_product": "Hill's Grain-Free Soft-Baked Naturals with Beef & Sweet Potatoes Dog Treats, 8-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "glucosamine",
+    "display_name": "Glucosamine",
+    "product_count": 143,
+    "example_product": "Blue Buffalo Life Protection Formula Senior Chicken-Free Salmon & Brown Rice Recipe Dry Dog Food, 15-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "cellulose",
+    "display_name": "Powdered Cellulose",
+    "product_count": 138,
+    "example_product": "Ultra Chewy Double Treat Bone Bacon & Cheese Flavor Dog Treats, 8 count",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "brewer\u2019s_rice",
+    "display_name": "Brewer\u2019S Rice",
+    "product_count": 136,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: grain_rice"
+    ],
+    "suggested_cluster_id": "grain_rice"
+  },
+  {
+    "canonical_name": "soy_oil",
+    "display_name": "Soy Oil",
+    "product_count": 136,
+    "example_product": "Healthfuls Chicken & Peanut Butter Biscuit Wraps Dog Treats, 16-oz bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: legume_soy"
+    ],
+    "suggested_cluster_id": "legume_soy"
+  },
+  {
+    "canonical_name": "monocalcium_phosphate",
+    "display_name": "Monocalcium Phosphate",
+    "product_count": 135,
+    "example_product": "Pedigree Complete Nutrition Grilled Steak & Vegetable Flavor Dog Kibble Adult Dry Dog Food, 44-lb bag",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "zinc_oxide",
+    "display_name": "Zinc Oxide",
+    "product_count": 130,
+    "example_product": "Milk-Bone Soft & Chewy Chicken Recipe Dog Treats, 56-oz bundle",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  },
+  {
+    "canonical_name": "soybean_meal",
+    "display_name": "Soybean Meal",
+    "product_count": 129,
+    "example_product": "Beggin' Strips Original Bacon Dog Treats, 6-oz",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": [
+      "SPLITTING - suggest cluster_id: legume_soy"
+    ],
+    "suggested_cluster_id": "legume_soy"
+  },
+  {
+    "canonical_name": "citric_acid",
+    "display_name": "Citric Acid (preservative)",
+    "product_count": 128,
+    "example_product": "Nutrish Savory Roasters Chicken Recipe Premium Dog Treats, 12-oz bag (Rachael Ray)",
+    "dog_base_severity": "neutral",
+    "cat_base_severity": "neutral",
+    "cluster_id": null,
+    "flags": null,
+    "suggested_cluster_id": null
+  }
+]

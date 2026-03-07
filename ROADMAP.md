@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 3, 2026
+> Updated: March 7, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M2 Pet Profiles + Vet Audit (M0 + M1 Complete, M2 CRUD Functional)
+## Current Status: M3 Data Pipeline + Paywall Complete (M0 + M1 + M2 + M3 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (124 decisions, D-001 through D-124)
+- Decision log established (128 decisions, D-001 through D-128)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -29,7 +29,8 @@
 - M2 UI design concept reviewed, 9 new decisions locked (D-116 through D-124): approximate age mode, stale weight guard, sex field, "Perfectly Healthy" chip, multi-pet carousel, haptic feedback map, species selection pre-screen, species-specific activity labels, treat logging entry points
 - Pet Profile Spec complete (`PET_PROFILE_SPEC.md`) — profile fields, conditions, allergens, breed modifiers, editing UI
 - Portion Calculator Spec complete (`PORTION_CALCULATOR_SPEC.md`) — RER/DER math, goal weight, cat safety guards
-- M2 pet profile CRUD functional: create/edit/delete via petService + Supabase, anonymous auth, photo upload to Storage, species selection pre-screen (D-122), species-specific activity labels (D-123), health conditions + allergen picker, "Perfectly Healthy" chip (D-119), approximate age mode (D-116), stale weight indicator (D-117), multi-pet carousel (D-120), score accuracy bar, DER/treat battery display. 447 tests passing.
+- M2 pet profile CRUD functional: create/edit/delete via petService + Supabase, anonymous auth, photo upload to Storage, species selection pre-screen (D-122), species-specific activity labels (D-123), health conditions + allergen picker, "Perfectly Healthy" chip (D-119), approximate age mode (D-116), stale weight indicator (D-117), multi-pet carousel (D-120), score accuracy bar, DER/treat battery display
+- M3 data pipeline + paywall complete: Apify import pipeline (1,589 products), GA refinery (Haiku extraction + validator), formula detection (ingredients_hash), database miss flow (D-091 external UPC + D-128 Haiku classification), parse-ingredients Edge Function, RevenueCat paywall (D-126 psychology patterns), rolling 7-day scan window, legal clickwrap TOS, scan experience polish (haptic/animation/sound). 447 tests passing.
 
 ---
 
@@ -353,70 +354,68 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 > Goal: Populated product database. Premium tier functional.
 
-### ScraperAPI Scraping Pipeline
-- [ ] Scrape targets: Chewy (primary), Petco, Amazon pet food
-- [ ] Capture: product name, UPC/GTIN, ingredients text, GA text, brand, category, images
-- [ ] GTIN extraction from JSON-LD `<script>` tags (not DOM — Chewy stores GTINs there)
-- [ ] Handle missing GTINs: insert as name-only with `manual_review` flag
-- [ ] ScraperAPI ultra_premium proxies for Chewy Akamai bot protection bypass
-- [ ] Store raw scraped data in staging table before processing
+### Data Import Pipeline (Apify)
+- [x] Apify scraping: Chewy product data (1,589 products imported)
+- [x] Capture: product name, UPC/GTIN, ingredients text, GA text, brand, category, images
+- [x] Handle missing GTINs: insert as name-only with `manual_review` flag
+- [x] Store raw scraped data, process through pipeline scripts
 
 ### LLM Nutritional Refinery
-- [ ] Batch processor: identify rows where `ingredients_raw` populated but GA columns null
-- [ ] Claude Haiku extraction with strict JSON schema prompt
-- [ ] Python validation: range plausibility checks before DB insertion
-- [ ] Flag out-of-range values for manual review (never silently corrupt)
-- [ ] Set `nutritional_data_source = 'llm_extracted'` on processed records
-- [ ] UI disclaimer for LLM-extracted data
+- [x] Batch processor: identify rows where `ingredients_raw` populated but GA columns null
+- [x] Claude Haiku extraction with strict JSON schema prompt
+- [x] Python validation: range plausibility checks before DB insertion (D-043)
+- [x] Flag out-of-range values for manual review (never silently corrupt)
+- [x] Set `nutritional_data_source = 'llm_extracted'` on processed records
+- [x] UI disclaimer for LLM-extracted data
 
 ### Formula Change Detection
-- [ ] Hash ingredients on ingestion → `ingredients_hash`
-- [ ] Monthly re-scrape: diff new hash against stored hash
+- [x] Hash ingredients on ingestion → `ingredients_hash`
+- [ ] Monthly re-scrape: diff new hash against stored hash (deferred — needs automation infrastructure)
 - [ ] Mismatch → score marked "under review" → auto re-score → pantry notification if Δ >15 points
-- [ ] `last_verified_at` timestamp updated on each successful verification
+- [x] `last_verified_at` timestamp updated on each successful verification
 
 ### Database Miss Handling (Level 4 Hybrid)
-- [ ] Integrate external UPC API (UPCitemdb free tier: 100 lookups/day)
-- [ ] UPC miss → external lookup → return product name + brand + category
-- [ ] User confirmation step: "Is this [Product Name]?"
-- [ ] Haiku product classification (D-128): Edge Function returns suggested category (daily_food/treat/supplement/grooming) + species (dog/cat/all) alongside parsed ingredients. User confirms via tappable chips on ProductConfirmScreen.
-- [ ] Supplement/grooming exit paths: store product but do NOT score (D-096, D-083). Show "coming soon" message, return to ScanScreen.
-- [ ] OCR prompt: photograph ingredient list
-- [ ] On-device text extraction + Claude Haiku ingredient parsing
-- [ ] Layer 1 instant partial score with 78/22 missing-GA reweight (daily_food) or 100/0/0 (treat)
-- [ ] "Partial — nutritional data unavailable" badge on result
-- [ ] Auto-save parsed product to Kiba DB (`source = 'community'`, `needs_review = true`, `contributed_by = auth.uid()`)
-- [ ] Store Haiku classification suggestions + user corrections for accuracy auditing
-- [ ] If external UPC also misses → skip confirmation, go straight to OCR prompt
-- [ ] Add `needs_review BOOLEAN DEFAULT false` to products table
+- [x] Integrate external UPC API (UPCitemdb free tier: 100 lookups/day) via Edge Function (D-127)
+- [x] UPC miss → external lookup → return product name + brand + category
+- [x] User confirmation step: "Is this [Product Name]?" (ProductConfirmScreen)
+- [x] Haiku product classification (D-128): Edge Function returns suggested category (daily_food/treat/supplement/grooming) + species (dog/cat/all) alongside parsed ingredients. User confirms via tappable chips on IngredientCaptureScreen.
+- [x] Supplement/grooming exit paths: store product but do NOT score (D-096, D-083). Show "coming soon" message, return to ScanScreen.
+- [x] OCR prompt: photograph ingredient list (IngredientCaptureScreen)
+- [x] On-device text extraction + Claude Haiku ingredient parsing (parse-ingredients Edge Function)
+- [x] Layer 1 instant partial score with 78/22 missing-GA reweight (daily_food) or 100/0/0 (treat)
+- [x] "Partial — nutritional data unavailable" badge on result
+- [x] Auto-save parsed product to Kiba DB (`source = 'community'`, `needs_review = true`, `contributed_by = auth.uid()`)
+- [x] Store Haiku classification suggestions + user corrections for accuracy auditing
+- [x] If external UPC also misses → skip confirmation, go straight to OCR prompt
+- [x] Add `needs_review BOOLEAN DEFAULT false` to products table
 
 ### Scan Experience Polish (Session 6)
-- [ ] Haptic feedback on barcode detection (`expo-haptics` Success type, Warning for miss)
-- [ ] Scanner frame: corner brackets + animated green scan line + "locked on" snap animation
-- [ ] Confirmation tone: bundled short chime via `expo-av`, with mute toggle (persisted in AsyncStorage)
-- [ ] Mute toggle icon on ScanScreen (Ionicon speaker, D-084 compliant)
+- [x] Haptic feedback on barcode detection (`expo-haptics` Success type, Warning for miss)
+- [x] Scanner frame: corner brackets + animated green scan line + "locked on" snap animation (ScannerOverlay component)
+- [x] Confirmation tone: bundled short chime via `expo-av`, with mute toggle (persisted in AsyncStorage)
+- [x] Mute toggle icon on ScanScreen (Ionicon speaker, D-084 compliant)
 
 ### Paywall Implementation
-- [ ] Install RevenueCat SDK (NOW, not at M0)
-- [ ] Configure annual ($24.99/yr) and monthly ($5.99/mo) products in App Store Connect
-- [ ] Build paywall screen: lead with annual, monthly as "pay more" option
-- [ ] Personalized copy: "About $2/month to protect [pet name] for a full year"
-- [ ] Implement 5 active trigger moments (see D-052, updated by D-125):
+- [x] Install RevenueCat SDK
+- [x] Configure annual ($24.99/yr) and monthly ($5.99/mo) products in App Store Connect
+- [x] Build paywall screen: lead with annual, monthly as "pay more" option (D-126 psychology)
+- [x] Personalized copy: "About $2/month to protect [pet name] for a full year"
+- [x] Implement 5 active trigger moments (D-052, updated by D-125):
   1. 6th scan in a week (rolling 7-day window, NOT calendar week)
   2. Second pet profile
   3. First safe swap tap
   4. Search by product name (text lookup without barcode)
   5. Compare (side-by-side product comparison)
   + 2 pre-wired (hidden until feature ships): vet report, elimination diet
-- [ ] `src/utils/permissions.ts` — centralized paywall boundary (ONLY location for paywall checks)
-- [ ] Free tier: 5 scans/week (rolling), 1 pet profile, barcode scan only, basic score, recall alerts
-- [ ] Premium: unlimited scans, multi-pet, search by name, goal weight, treat battery, compare, safe swaps
+- [x] `src/utils/permissions.ts` — centralized paywall boundary (ONLY location for paywall checks)
+- [x] Free tier: 5 scans/week (rolling), 1 pet profile, barcode scan only, basic score, recall alerts
+- [x] Premium: unlimited scans, multi-pet, search by name, goal weight, treat battery, compare, safe swaps
 
 ### Legal — Onboarding Clickwrap (D-094)
-- [ ] TOS checkbox during account creation / first use (Tier 1 disclaimer)
-- [ ] Draft: "Kiba provides algorithmically generated suitability estimates based on public veterinary research and your pet's specific profile. Kiba scores do not constitute absolute product quality or safety ratings, nor are they an assessment of regulatory compliance."
-- [ ] Must be active checkbox, not passive scroll-through
-- [ ] Blocks app usage until accepted
+- [x] TOS checkbox during account creation / first use (Tier 1 disclaimer) — TermsScreen
+- [x] Draft: "Kiba provides algorithmically generated suitability estimates based on public veterinary research and your pet's specific profile. Kiba scores do not constitute absolute product quality or safety ratings, nor are they an assessment of regulatory compliance."
+- [x] Must be active checkbox, not passive scroll-through
+- [x] Blocks app usage until accepted (3-way navigation gate: TOS → Onboarding → Main)
 
 ---
 
