@@ -486,6 +486,13 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Recall detail screen with FDA link and recommended actions
 - [ ] Historical recall log per product
 
+### Weekly Digest Push Notification (D-130)
+- [ ] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
+- [ ] Expo push notification integration
+- [ ] Adaptive content: activity summary if active, re-engagement nudge if inactive
+- [ ] User preference: weekly (default) or daily frequency
+- [ ] Free for all users (retention → conversion funnel)
+
 ---
 
 ## M6: Alternatives Engine (Weeks 24–27)
@@ -597,6 +604,12 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Weekly pantry digest push notifications
 - [ ] "New score available" when re-scraped formula changes
 
+### iOS Home Screen Widget (D-131)
+- [ ] Small widget: next feeding time + pet photo
+- [ ] Medium widget: pantry low-stock + feeding + treat battery
+- [ ] Large widget: weekly summary + feeding schedule + recall badge
+- [ ] expo-widgets or native WidgetKit bridge
+
 ### Android Launch (M14)
 - [ ] Port to Android via Expo EAS
 - [ ] Play Store ASO (different keyword dynamics)
@@ -627,6 +640,13 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Vet Report Type B: trial completion report upgrading D-099 PDF with symptom timeline, contamination log, pattern insights, reintroduction log
 - [ ] All trial copy D-095 compliant — "possible correlation" not "confirmed," "dietary sensitivity" not "food allergy"
 - [ ] Premium hard gate on trial start
+
+### Apple Watch Companion App (D-131)
+- [ ] Watch complications: trial day, next feeding, quick symptom log
+- [ ] 2-tap symptom logging from Watch face
+- [ ] Elimination diet daily check-in
+- [ ] Feeding schedule reminders on wrist
+- [ ] WatchOS companion via native SwiftUI bridge
 
 ### Cosmetics & Grooming (Deferred from Phase 1)
 - [ ] Shampoos, flea treatments, paw balms, dental products

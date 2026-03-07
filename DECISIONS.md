@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 7, 2026 (129 decisions: D-001 through D-129. D-052 revised for M3.)
+> Updated: March 7, 2026 (131 decisions: D-001 through D-131. D-052 revised for M3.)
 
 ---
 
@@ -1563,6 +1563,42 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 **UI:** Affected ingredients render in caution color (orange) on the ingredient list with a personalized note explaining why. Score waterfall shows the deduction under "[Pet Name]'s Breed & Age Adjustments" layer.
 
 **Depends on:** D-097 (allergen picker), D-098 (cross-reactivity), allergen_group mappings complete in ingredients_dict
+---
+## D-130: Weekly Digest Push Notification
+**Status:** LOCKED
+**Date:** 2026-03-07
+**Milestone:** M5
+**Decision:** Weekly push notification summarizing the user's scan activity, pantry state, and recall alerts. Solves the Day 2 / Day 7 retention gap between first scan and Pantry engagement.
+**Content:** "This week: [X] scans, avg score [Y]. Your highest match was [product] at [Z]%. [N] recalls issued in your region." Adapts based on activity — if no scans, nudge: "Haven't scanned this week — check what's in your pantry."
+**Implementation:** Supabase scheduled function (pg_cron or Edge Function on timer). Queries scans, pantry_items, and recall status per user. Sends via Expo push notifications.
+**Frequency:** Weekly (configurable to daily in settings, default weekly).
+**Free tier:** Yes — digest is free for all users. Encourages re-engagement that drives scan limit hits (conversion funnel).
+
+---
+## D-131: Widget + Watch App Platform Expansion
+**Status:** LOCKED
+**Date:** 2026-03-07
+**Milestone:** Widget = M13+ (post-launch). Watch = M16+.
+**Decision:** Two companion platform expansions:
+
+**iOS Home Screen Widget (M13+):**
+- Small widget: Next feeding time + pet photo
+- Medium widget: Pantry low-stock alerts + next feeding + treat battery remaining
+- Large widget: Weekly scan summary + feeding schedule + recall alert badge
+- Implementation: expo-widgets or native Swift WidgetKit bridge
+- Retention play: home screen presence keeps Kiba top-of-mind between shopping trips
+
+**Apple Watch App (M16+):**
+- Complications: Trial day count (elimination diet), next feeding time, quick symptom log button
+- Symptom logging: 2-tap logging from Watch face — "How's [Pet Name] today?" → severity picker
+- Elimination diet: Daily check-in reminder, contamination alert display
+- Critical for: Symptom Detective (M9) daily logging compliance, Elimination Diet (M16+) adherence
+- Implementation: WatchOS companion app via Expo or native SwiftUI bridge
+
+**Why separate milestones:** Widget is simpler (read-only data display) and higher retention ROI. Watch requires bidirectional data sync and is only valuable once Symptom Detective and Elimination Diet exist. Ship widget first.
+
+**Rationale:** Daily logging features (symptoms, feeding, elimination diet) have dramatically higher compliance when accessible from Watch/Widget vs requiring full app open. The 2-tap Watch logging path vs 6-tap phone path is the difference between 80% and 30% daily adherence.
+
 ---
 
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
