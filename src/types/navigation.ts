@@ -7,6 +7,17 @@ export type ScanStackParamList = {
   ScanMain: undefined;
   Result: { productId: string; petId: string | null };
   CommunityContribution: { scannedUpc: string };
+  ProductConfirm: {
+    scannedUpc: string;
+    externalName: string | null;
+    externalBrand: string | null;
+    externalImageUrl: string | null;
+  };
+  IngredientCapture: {
+    scannedUpc: string;
+    productName: string | null;
+    brand: string | null;
+  };
 };
 
 export type HomeStackParamList = {
