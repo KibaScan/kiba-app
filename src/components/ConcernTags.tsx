@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ProductIngredient } from '../types/scoring';
 import type { Product } from '../types';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { detectFlavorDeception } from '../utils/flavorDeception';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -104,7 +105,7 @@ export function ConcernTags({ ingredients, product, species }: ConcernTagsProps)
 
   const ingredientNames = new Set(ingredients.map((i) => i.canonical_name));
 
-  const firedTags = CONCERN_TAG_DEFS.filter((tag) => {
+  const firedTags: ConcernTagDef[] = CONCERN_TAG_DEFS.filter((tag) => {
     if (tag.id === 'heart_risk') {
       // Dogs only (D-013)
       if (species !== 'dog') return false;
@@ -120,6 +121,18 @@ export function ConcernTags({ ingredients, product, species }: ConcernTagsProps)
     // Other tags: any member present in ingredient list
     return tag.members.some((member) => ingredientNames.has(member));
   });
+
+  // D-133: Label Mismatch tag — flavor deception detection
+  const deception = detectFlavorDeception(product.name, ingredients);
+  if (deception.detected && deception.namedProtein && deception.actualPrimaryProtein) {
+    firedTags.push({
+      id: 'label_mismatch',
+      label: 'Label Mismatch',
+      icon: 'swap-horizontal-outline',
+      members: [],
+      tooltip: `Product name highlights ${deception.namedProtein}, but ${deception.actualPrimaryProtein} is the primary ingredient.`,
+    });
+  }
 
   if (firedTags.length === 0) return null;
 

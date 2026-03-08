@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import type { LifeStage } from '../types';
+import type { LifeStage } from '../types/pet';
 
 // ─── Props ──────────────────────────────────────────────
 
