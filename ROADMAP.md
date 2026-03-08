@@ -6,13 +6,13 @@
 
 ---
 
-## Current Status: M3 Data Pipeline + Paywall Complete (M0 + M1 + M2 + M3 Done)
+## Current Status: M4 Product Detail + Education In Progress (M0 + M1 + M2 + M3 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (128 decisions, D-001 through D-128)
+- Decision log established (131 decisions, D-001 through D-131)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -446,9 +446,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Loading terminal with step-by-step messages
 
 ### Actions
-- [ ] Compare button (side-by-side product comparison)
-- [ ] Vet Report (shareable PDF summary for vet visits)
 - [ ] Pantry button (add to user's pantry)
+- ~~Compare button~~ → moved to M6
+- ~~Vet Report~~ → moved to M5-M6 (based on soft launch feedback)
 
 ---
 
@@ -498,6 +498,10 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ## M6: Alternatives Engine (Weeks 24–27)
 
 > Goal: "This scored 44. Here are three options scoring 80+."
+
+### Compare & Vet Report (moved from M4)
+- [ ] Compare button (side-by-side product comparison) — paywall gate already wired
+- [ ] Vet Report (shareable PDF summary for vet visits)
 
 ### Safe Swap Recommendations
 - [ ] Query products in same category + species with score >threshold
