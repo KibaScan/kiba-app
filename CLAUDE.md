@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 7, 2026 (M3 complete — Sessions 1-6)
+> Last updated: March 7, 2026 (M4 Session 1 — batch scoring, category averages, BenchmarkBar)
 
 ---
 
@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M3 Data Pipeline + Paywall (M0 + M1 + M2 Complete)
+**Current phase:** M4 Product Detail + Education (M0–M3 Complete)
 
 ## Tech Stack
 
@@ -44,9 +44,10 @@ kiba-app/
 │       └── scan-confirm.mp3       ← barcode detection confirmation tone
 ├── scripts/
 │   ├── pipeline/                  ← M3 data ingestion (Apify import, staging)
-│   └── refinery/                  ← M3 GA extraction (Haiku + validator)
-│       ├── extract_ga.py          ← batch Haiku GA extraction
-│       └── validator.py           ← D-043 range validation before DB insert
+│   ├── refinery/                  ← M3 GA extraction (Haiku + validator)
+│   │   ├── extract_ga.py          ← batch Haiku GA extraction
+│   │   └── validator.py           ← D-043 range validation before DB insert
+│   └── scoring/                   ← M4 batch scoring (batch_score.ts)
 ├── supabase/
 │   ├── functions/
 │   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
@@ -328,6 +329,8 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ Score grooming products (M16+, D-083 — store only)
 - ❌ API keys in app binary (D-127 — all external calls via Edge Functions)
 - ❌ Paywall on recall alerts (D-125 — free tier, safety-critical)
+- ❌ Compare flow (deferred M6 — button + paywall gate already exist)
+- ❌ Vet Report PDF (deferred M5-M6 — based on soft launch feedback)
 
 ## M2 Profile Design (D-116 through D-121)
 
@@ -428,3 +431,9 @@ M2: pet profile CRUD with Supabase auth integration
 □ Supplement/grooming exit paths store-only, no scoring? (D-096, D-083)
 □ Haiku classification stored with user corrections? (D-128)
 □ Scan sound respects mute toggle? (AsyncStorage preference)
+□ Pure Balance regression = 69 after any scoring change?
+□ D-129 allergen override is per-pet-per-score only — base severity unchanged?
+□ Benchmark bar excludes partial-score products from averages?
+□ All Haiku-generated ingredient content has review_status = 'llm_generated'?
+□ Flavor deception card uses D-095 factual language — no "misleading" or "deceptive"?
+□ Share card includes Kiba branding + kibascan.com CTA?

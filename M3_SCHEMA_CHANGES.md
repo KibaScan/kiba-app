@@ -70,3 +70,40 @@ These columns exist from the M0 schema but are empty until M3 fills them:
 | All rows in `product_ingredients` | junction | Session 1 (import pipeline) |
 | New rows in `ingredients_dict` | dictionary | Session 1 (Haiku batch classification, `review_status = 'llm_generated'`) |
 | New rows in `product_upcs` | junction | Session 1 (import) + Session 4 (community) |
+
+---
+
+## M4 Pre-Session 2: Ingredient Severity Alignment Fix (2026-03-07)
+
+**Problem:** M3 ingredient parser created variant rows in `ingredients_dict` with default `neutral` severity when they should have inherited the parent's severity from the master list. Examples:
+- `fd&c_red_40` (neutral) should match `red_40` (caution)
+- `red_40_lake` (neutral) should match `red_40` (caution)
+- `soy_flour` (neutral) should match `soy` (caution)
+- `menadione_sodium_bisulfite` (neutral) should match `menadione` (caution)
+
+**Root cause:** Parser stored ingredient names with batch codes, FD&C prefixes, lake/color suffixes, and recipe name leakage — creating separate DB rows that never matched the master list severity assignments.
+
+**Fix:** Updated `dog_base_severity` and `cat_base_severity` on 862 variant rows to match their parent ingredient's severity. No scoring engine changes.
+
+**Categories fixed:**
+- 737 HIGH confidence: parser artifacts (batch codes, recipe leakage), FD&C prefixes, lake/color suffixes
+- 122 MEDIUM confidence: sub-ingredient forms (soy_flour, wheat_gluten, etc.)
+- 3 COMPOUND fixes: entries containing concern ingredients (mixed_tocopherols_and_bha, etc.)
+
+**Excluded (4 edge cases):** brown_rice_syrup, corn_sugar, salmon_by_product(s)
+
+**Impact on category averages:**
+| Segment | Before | After | Delta |
+|---------|--------|-------|-------|
+| daily_food x cat x grain-inclusive | 69.2 | 63.4 | -5.8 |
+| daily_food x cat x grain-free | 75.1 | 73.9 | -1.2 |
+| daily_food x dog x grain-inclusive | 74.0 | 72.7 | -1.3 |
+| daily_food x dog x grain-free | 75.1 | 74.9 | -0.2 |
+| treat x cat x grain-inclusive | 73.2 | 69.2 | -4.0 |
+| treat x cat x grain-free | 73.2 | 71.6 | -1.6 |
+| treat x dog x grain-inclusive | 81.7 | 79.4 | -2.3 |
+| treat x dog x grain-free | 87.0 | 86.4 | -0.6 |
+
+**Verification:** Pure Balance reference score = 69 (unchanged). 447 tests passing.
+
+**SQL script:** `scripts/scoring/fix_severity_alignment.sql`
