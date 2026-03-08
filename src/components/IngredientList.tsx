@@ -29,10 +29,16 @@ const SECTION_LABELS: Record<IngredientSeverity, string> = {
 
 // ─── Props ──────────────────────────────────────────────
 
+interface FlavorAnnotation {
+  primaryProteinName: string;
+  namedProtein: string;
+}
+
 interface IngredientListProps {
   ingredients: ProductIngredient[];
   species: 'dog' | 'cat';
   onIngredientPress: (ingredient: ProductIngredient) => void;
+  flavorAnnotation?: FlavorAnnotation | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -81,6 +87,7 @@ export function IngredientList({
   ingredients,
   species,
   onIngredientPress,
+  flavorAnnotation,
 }: IngredientListProps) {
   // D-031: sort by severity worst→best, then by position within same severity
   const sorted = [...ingredients].sort((a, b) => {
@@ -139,6 +146,13 @@ export function IngredientList({
         {ingredient.definition && (
           <Text style={styles.definition} numberOfLines={1}>
             {ingredient.definition}
+          </Text>
+        )}
+        {flavorAnnotation &&
+          formatName(ingredient).toLowerCase() ===
+            flavorAnnotation.primaryProteinName.toLowerCase() && (
+          <Text style={styles.flavorAnnotation}>
+            Primary protein (product named as {flavorAnnotation.namedProtein})
           </Text>
         )}
       </TouchableOpacity>,
@@ -229,5 +243,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 4,
     marginLeft: 22, // align with name after icon (14px + 8px gap)
+  },
+  flavorAnnotation: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    marginTop: 3,
+    marginLeft: 22,
+    fontStyle: 'italic',
   },
 });

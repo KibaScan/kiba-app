@@ -12,7 +12,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -41,7 +40,11 @@ import { BreedContraindicationCard } from '../components/BreedContraindicationCa
 import { BenchmarkBar } from '../components/BenchmarkBar';
 import { AafcoProgressBars } from '../components/AafcoProgressBars';
 import { BonusNutrientGrid } from '../components/BonusNutrientGrid';
+import { PositionMap } from '../components/PositionMap';
+import { SplittingDetectionCard, buildSplittingClusters } from '../components/SplittingDetectionCard';
 import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
+import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
+import { detectFlavorDeception } from '../utils/flavorDeception';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -563,31 +566,56 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Ingredient Splitting Callout — relocated from above-fold flags */}
-        {displayFlags.includes('ingredient_splitting_detected') && (
-          <TouchableOpacity
-            style={styles.splittingChip}
-            onPress={() =>
-              Alert.alert(
-                'Ingredient splitting detected',
-                'Two or more derivatives of the same source ingredient were detected, which may indicate the ingredient\'s true proportion is higher than individual positions suggest.',
-              )
-            }
-            activeOpacity={0.7}
-          >
-            <Ionicons name="copy-outline" size={14} color={Colors.severityAmber} />
-            <Text style={styles.splittingChipText}>Ingredient Splitting Detected</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Full Ingredient List (D-031, D-108) */}
+        {/* Position Map — ingredient composition strip */}
         {hydratedIngredients.length > 0 && (
-          <IngredientList
-            ingredients={hydratedIngredients}
-            species={species}
-            onIngredientPress={setSelectedIngredient}
+          <PositionMap
+            ingredients={hydratedIngredients.map((ing) => ({
+              canonical_name: ing.canonical_name,
+              position: ing.position,
+              severity: species === 'dog' ? ing.dog_base_severity : ing.cat_base_severity,
+              allergenOverride: scoredResult?.layer3.allergenWarnings.some(
+                (w) => w.label.includes(ing.canonical_name),
+              ),
+            }))}
           />
         )}
+
+        {/* Splitting Detection Card — replaces old splitting chip */}
+        {hydratedIngredients.length > 0 && (
+          <SplittingDetectionCard
+            clusters={buildSplittingClusters(hydratedIngredients)}
+          />
+        )}
+
+        {/* Flavor Deception Card (D-133) */}
+        {product && hydratedIngredients.length > 0 && (() => {
+          const fd = detectFlavorDeception(product.name, hydratedIngredients);
+          return fd.detected && fd.namedProtein && fd.actualPrimaryProtein ? (
+            <FlavorDeceptionCard
+              namedProtein={fd.namedProtein}
+              actualPrimaryProtein={fd.actualPrimaryProtein}
+              actualPrimaryPosition={fd.actualPrimaryPosition}
+              namedProteinPosition={fd.namedProteinPosition}
+              variant={fd.variant}
+            />
+          ) : null;
+        })()}
+
+        {/* Full Ingredient List (D-031, D-108) */}
+        {hydratedIngredients.length > 0 && (() => {
+          const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
+          const annotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
+            ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
+            : null;
+          return (
+            <IngredientList
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+              flavorAnnotation={annotation}
+            />
+          );
+        })()}
 
         {/* Compare button (D-052: premium gate) */}
         <TouchableOpacity
@@ -768,25 +796,6 @@ const styles = StyleSheet.create({
     color: Colors.severityAmber,
     textAlign: 'center',
     marginTop: Spacing.sm,
-  },
-
-  // ─── Splitting Chip (relocated above ingredient list)
-  splittingChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.4)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  splittingChipText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.severityAmber,
   },
 
   // ─── Safe Swap (D-126 blur pattern)
