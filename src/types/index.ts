@@ -112,6 +112,10 @@ export interface Product {
   score_confidence: string;
   needs_review: boolean;
 
+  // Batch scoring
+  base_score: number | null;
+  base_score_computed_at: string | null;
+
   // Tracking
   last_verified_at: string | null;
   formula_change_log: Record<string, unknown> | null;
