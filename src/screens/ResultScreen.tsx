@@ -37,6 +37,7 @@ import { GATable } from '../components/GATable';
 import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
 import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
+import { BenchmarkBar } from '../components/BenchmarkBar';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -345,6 +346,16 @@ export default function ResultScreen() {
         <Text style={[styles.verdictText, { color: getScoreColor(score) }]}>
           {getVerdictLabel(score, petName)}
         </Text>
+
+        {/* Benchmark Bar (D-132) */}
+        {product && (
+          <BenchmarkBar
+            score={score}
+            category={scoredResult?.category ?? 'daily_food'}
+            targetSpecies={species}
+            isGrainFree={product.is_grain_free}
+          />
+        )}
 
         {/* Flag chips (non-splitting flags only — splitting chip relocated below fold) */}
         {displayFlags.filter((f) => f !== 'ingredient_splitting_detected').length > 0 && (
