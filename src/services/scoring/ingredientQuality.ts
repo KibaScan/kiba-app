@@ -4,6 +4,13 @@
 
 import type { ProductIngredient, IngredientScoreResult, Penalty, IngredientSeverity } from '../../types/scoring';
 
+const SEVERITY_ORDER: Record<IngredientSeverity, number> = {
+  good: 0,
+  neutral: 1,
+  caution: 2,
+  danger: 3,
+};
+
 const SEVERITY_PENALTY: Record<IngredientSeverity, number> = {
   danger: 15,
   caution: 8,
@@ -34,6 +41,7 @@ function getSeverityCitation(severity: 'danger' | 'caution'): string {
 export function scoreIngredients(
   ingredients: ProductIngredient[],
   species: 'dog' | 'cat',
+  allergenOverrides?: Map<string, IngredientSeverity>,
 ): IngredientScoreResult {
   let score = 100;
   const penalties: Penalty[] = [];
@@ -42,9 +50,16 @@ export function scoreIngredients(
 
   // ─── Severity + position penalties ──────────────────────
   for (const ingredient of ingredients) {
-    const severity = species === 'dog'
+    const baseSeverity = species === 'dog'
       ? ingredient.dog_base_severity
       : ingredient.cat_base_severity;
+
+    // D-129: allergen override — use max(baseSeverity, override) so allergens
+    // only increase concern, never reduce it (danger stays danger)
+    const override = allergenOverrides?.get(ingredient.canonical_name);
+    const severity = override && SEVERITY_ORDER[override] > SEVERITY_ORDER[baseSeverity]
+      ? override
+      : baseSeverity;
 
     const rawPenalty = SEVERITY_PENALTY[severity] ?? 0;
 

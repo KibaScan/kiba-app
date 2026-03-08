@@ -161,6 +161,9 @@ export interface ScoredResult {
   isRecalled: boolean;
   llmExtracted: boolean;
 
+  // D-129: allergen severity override delta (weighted, for waterfall display)
+  allergenDelta: number;
+
   // Carb estimation (D-104 — display only)
   carbEstimate: CarbEstimate | null;
 

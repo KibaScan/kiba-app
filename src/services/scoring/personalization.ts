@@ -5,7 +5,48 @@
 
 import type { Product } from '../../types';
 import type { PetProfile } from '../../types';
-import type { ProductIngredient, PersonalizationDetail, PersonalizationResult } from '../../types/scoring';
+import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../../types/scoring';
+
+// ─── D-129: Allergen Override Map ─────────────────────────
+
+/**
+ * Builds a runtime severity override map for allergen-matching ingredients.
+ * Pure function — no side effects, no mutations to ingredients.
+ *
+ * For each ingredient: if allergen_group or allergen_group_possible matches
+ * a pet allergen, the ingredient gets overridden to 'caution'.
+ * The override is a floor — ingredientQuality.ts uses max(base, override)
+ * so 'danger' ingredients stay 'danger'.
+ */
+export function buildAllergenOverrideMap(
+  petAllergens: string[],
+  ingredients: ProductIngredient[],
+): Map<string, IngredientSeverity> {
+  const overrides = new Map<string, IngredientSeverity>();
+  if (petAllergens.length === 0) return overrides;
+
+  const allergenSet = new Set(petAllergens);
+
+  for (const ingredient of ingredients) {
+    // Direct match: allergen_group = pet's allergen
+    if (ingredient.allergen_group && allergenSet.has(ingredient.allergen_group)) {
+      overrides.set(ingredient.canonical_name, 'danger');
+      continue;
+    }
+
+    // Possible match: allergen_group_possible overlaps pet's allergens
+    if (ingredient.allergen_group_possible.length > 0) {
+      for (const possible of ingredient.allergen_group_possible) {
+        if (allergenSet.has(possible)) {
+          overrides.set(ingredient.canonical_name, 'caution');
+          break;
+        }
+      }
+    }
+  }
+
+  return overrides;
+}
 
 // ─── Life Stage Matching ───────────────────────────────
 
