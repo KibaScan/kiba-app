@@ -3,7 +3,7 @@
 // Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
 // Wires LoadingTerminal + scoreProduct pipeline.
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, createRef } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,9 @@ import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
 import { detectFlavorDeception } from '../utils/flavorDeception';
 import { DcmAdvisoryCard } from '../components/DcmAdvisoryCard';
 import { FormulaChangeTimeline } from '../components/FormulaChangeTimeline';
+import { WhatGoodLooksLike } from '../components/WhatGoodLooksLike';
+import { PetShareCard } from '../components/PetShareCard';
+import { captureAndShare } from '../utils/shareCard';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -110,6 +113,7 @@ export default function ResultScreen() {
   const [scoringDone, setScoringDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<ProductIngredient | null>(null);
+  const shareCardRef = useRef<View>(null);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -365,6 +369,16 @@ export default function ResultScreen() {
         <Text style={[styles.verdictText, { color: getScoreColor(score) }]}>
           {getVerdictLabel(score, petName)}
         </Text>
+
+        {/* Share button */}
+        <TouchableOpacity
+          style={styles.shareButton}
+          activeOpacity={0.7}
+          onPress={() => captureAndShare(shareCardRef, displayName, score)}
+        >
+          <Ionicons name="share-outline" size={18} color={Colors.accent} />
+          <Text style={styles.shareButtonText}>Share Result</Text>
+        </TouchableOpacity>
 
         {/* Benchmark Bar (D-132) */}
         {product && (
@@ -682,6 +696,14 @@ export default function ResultScreen() {
           <Text style={styles.comingSoonBadge}>Coming soon</Text>
         </TouchableOpacity>
 
+        {/* "What Good Looks Like" reference card */}
+        {scoredResult && (
+          <WhatGoodLooksLike
+            category={scoredResult.category === 'treat' ? 'treat' : 'daily_food'}
+            species={species}
+          />
+        )}
+
         {/* AAFCO statement */}
         {product!.aafco_statement && (
           <Text style={styles.aafcoText}>{product!.aafco_statement}</Text>
@@ -696,6 +718,19 @@ export default function ResultScreen() {
         species={species}
         onClose={() => setSelectedIngredient(null)}
       />
+
+      {/* Off-screen share card for capture */}
+      <View style={styles.offScreen} pointerEvents="none">
+        <PetShareCard
+          ref={shareCardRef}
+          petName={displayName}
+          petPhoto={pet?.photo_url ?? null}
+          species={species}
+          productName={product ? `${product.brand} ${product.name}` : ''}
+          score={score}
+          scoreColor={getScoreColor(score)}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -976,6 +1011,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: Spacing.lg,
     lineHeight: 16,
+  },
+
+  // ─── Share Button
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: Spacing.md,
+  },
+  shareButtonText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+
+  // ─── Off-screen Share Card
+  offScreen: {
+    position: 'absolute',
+    left: -9999,
+    top: 0,
   },
 
   // ─── Bottom Spacer
