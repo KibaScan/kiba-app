@@ -1,15 +1,442 @@
-{
-  "timestamp": "2026-03-06T23:56:55.184574+00:00",
-  "validation_errors": [],
-  "insert_errors": [],
-  "upc_errors": [],
-  "summary": {
-    "total_records": 8868,
-    "valid": 8868,
-    "products_inserted": 8868,
-    "upcs_inserted": 8952,
-    "validation_failures": 0,
-    "insert_failures": 0,
-    "upc_failures": 0
+[
+  {
+    "canonical_name": "vitamin_a_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "vitamin_a_palmitate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "retinol",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "vitamin_d3_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "beta_carotene",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_arginine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "selenium_yeast",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "iron_oxide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "ferric_oxide",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "vitamin_e_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "vitamin_k1_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "thiamine_mononitrate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "thiamine_hydrochloride",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "riboflavin_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "niacin_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "d_calcium_pantothenate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "pyridoxine_hydrochloride",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "pyridoxal_5_phosphate",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "biotin",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "folic_acid",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "vitamin_b12_supplement",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "choline_chloride",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "ascorbic_acid",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_ascorbyl_2_polyphosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_ascorbate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "inositol",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "dl_alpha_tocopherol",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "alpha_tocopherol_acetate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_carbonate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "dicalcium_phosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "monocalcium_phosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "tricalcium_phosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "potassium_chloride",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "magnesium_oxide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "magnesium_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "potassium_citrate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "sodium_phosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_iodate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_oxide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "ferrous_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "manganese_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "manganous_oxide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "potassium_iodide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "cobalt_sulfate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "cobalt_carbonate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "ferrous_fumarate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "ethylenediamine_dihydriodide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "manganese_dioxide",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_amino_acid_chelate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_methionine_complex",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "zinc_polysaccharide_complex",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "iron_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "iron_amino_acid_chelate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "manganese_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "manganese_amino_acid_chelate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "copper_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "copper_amino_acid_chelate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "cobalt_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "chromium_proteinate",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "magnesium_proteinate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_lysine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_threonine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_tryptophan",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_cysteine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "l_tyrosine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "glycine",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "glycerin",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "sorbitol",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "molasses",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "dextrose",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "soy_lecithin",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "cellulose_gum",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "agar_agar",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "sodium_alginate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "citric_acid",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_propionate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "potassium_sorbate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "silicon_dioxide",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_silicate",
+    "action": "insert",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "maltodextrin",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "modified_food_starch",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "sodium_tripolyphosphate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "smoke_flavor",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "dried_whey",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
+  },
+  {
+    "canonical_name": "calcium_stearate",
+    "action": "update",
+    "error": "{'message': \"Could not find the 'base_description' column of 'ingredients_dict' in the schema cache\", 'code': 'PGRST204', 'hint': None, 'details': None}"
   }
-}
+]

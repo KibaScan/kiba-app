@@ -39,6 +39,9 @@ import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
 import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
 import { BenchmarkBar } from '../components/BenchmarkBar';
+import { AafcoProgressBars } from '../components/AafcoProgressBars';
+import { BonusNutrientGrid } from '../components/BonusNutrientGrid';
+import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -510,6 +513,53 @@ export default function ResultScreen() {
             product={product}
             scoredResult={scoredResult}
             species={species}
+          />
+        )}
+
+        {/* AAFCO Progress Bars — nutritional bucket transparency */}
+        {scoredResult && product && (
+          <AafcoProgressBars
+            gaValues={{
+              protein_pct: product.ga_protein_pct,
+              fat_pct: product.ga_fat_pct,
+              fiber_pct: product.ga_fiber_pct,
+              moisture_pct: product.ga_moisture_pct,
+            }}
+            dmbValues={
+              product.ga_moisture_pct != null && product.ga_moisture_pct > 12
+                ? {
+                    protein_pct: product.ga_protein_pct != null
+                      ? (product.ga_protein_pct / (100 - product.ga_moisture_pct)) * 100
+                      : 0,
+                    fat_pct: product.ga_fat_pct != null
+                      ? (product.ga_fat_pct / (100 - product.ga_moisture_pct)) * 100
+                      : 0,
+                    fiber_pct: product.ga_fiber_pct != null
+                      ? (product.ga_fiber_pct / (100 - product.ga_moisture_pct)) * 100
+                      : 0,
+                  }
+                : undefined
+            }
+            species={species}
+            lifeStage={pet?.life_stage ?? null}
+            category={scoredResult.category}
+            petName={displayName}
+            nutritionalDataSource={product.nutritional_data_source}
+          />
+        )}
+
+        {/* Bonus Nutrient Grid — supplemental nutrient indicators */}
+        {product && hydratedIngredients.length > 0 && (
+          <BonusNutrientGrid
+            nutrients={{
+              dha_pct: product.ga_dha_pct,
+              omega3_pct: product.ga_omega3_pct,
+              omega6_pct: product.ga_omega6_pct,
+              taurine_pct: product.ga_taurine_pct,
+              ...deriveBonusNutrientFlags(hydratedIngredients),
+            }}
+            species={species}
+            petName={displayName}
           />
         )}
 

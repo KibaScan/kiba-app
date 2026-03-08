@@ -16,7 +16,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.kibascan.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Kiba needs camera access to scan pet food barcodes"
+        "NSCameraUsageDescription": "Kiba needs camera access to scan pet food barcodes",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -35,6 +36,9 @@
       "eas": {
         "projectId": "5d7492c8-8f34-4466-b6e1-7bedc6c1c86e"
       }
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
