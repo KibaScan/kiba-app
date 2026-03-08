@@ -44,6 +44,16 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     removeItem: jest.fn(),
   },
 }));
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn(),
+}));
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(false),
+  shareAsync: jest.fn(),
+}));
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: 'LinearGradient',
+}));
 jest.mock('../../src/services/supabase', () => ({
   supabase: { from: jest.fn() },
 }));

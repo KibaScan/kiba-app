@@ -1,0 +1,145 @@
+canonical_name,old_dog_severity,new_dog_severity,old_cat_severity,new_cat_severity,rule_applied,occurrence_count
+added_sugar,neutral,caution,neutral,caution,R10-inherit(sugar),2
+and_fd&c_red_#40,neutral,caution,neutral,caution,R1-colorant,1
+and_flavors;_contains_no_corn,neutral,neutral,neutral,caution,R10-inherit(corn),2
+and_salt,neutral,caution,neutral,caution,R10-inherit(salt),0
+and_sea_salt,neutral,caution,neutral,caution,R10-inherit(salt),1
+and_they’re_made_without_artificial_colors,neutral,caution,neutral,caution,R1-colorant,1
+animal_liver,neutral,caution,neutral,caution,R2-unnamed-meat,51
+artificial_color,neutral,caution,neutral,caution,R1-colorant,6
+artificial_coloring,neutral,caution,neutral,caution,R1-colorant,1
+artificial_colors,neutral,caution,neutral,caution,R1-colorant,1
+barley_&_spinach_limited_ingredient_wet_dog_food_topper,neutral,neutral,neutral,caution,R10-inherit(spinach),4
+barley_&_spinach_variety_pack_adult_wet_dog_food_meal_topper,neutral,neutral,neutral,caution,R10-inherit(spinach),4
+biotin_carrageenan,neutral,caution,neutral,caution,R10-inherit(carrageenan),1
+black_iron_oxide_color,neutral,caution,neutral,caution,"R1-colorant, R10-inherit(iron_oxide)",3
+blue_#1,neutral,caution,neutral,caution,R1-colorant,47
+blue_#2,neutral,caution,neutral,caution,R1-colorant,87
+blue_1,neutral,caution,neutral,caution,R1-colorant,0
+blue_1_lake,neutral,caution,neutral,caution,R1-colorant,6
+brown_caramel_color,neutral,caution,neutral,caution,R1-colorant,3
+brown_sugar,neutral,caution,neutral,caution,R10-inherit(sugar),18
+by_product_meal_or_artificial_colors_or_preservatives,neutral,caution,neutral,caution,R1-colorant,1
+cane_molasses,neutral,caution,neutral,caution,"R10-inherit(sugar), R8-sugar",197
+cane_molasses_andca,neutral,caution,neutral,caution,R10-inherit(sugar),1
+cane_sugar,neutral,caution,neutral,caution,"R10-inherit(sugar), R8-sugar",72
+caramelized_sugar,neutral,caution,neutral,caution,R10-inherit(sugar),2
+cheese_flavor_whole_wheat_flour,neutral,neutral,neutral,caution,R10-inherit(wheat),1
+cheese_powder_iron_oxide,neutral,caution,neutral,caution,"R1-colorant, R10-inherit(iron_oxide)",1
+cod,neutral,good,neutral,good,R3-named-protein,50
+corn_sugar,neutral,caution,neutral,caution,"R10-inherit(corn), R10-inherit(sugar)",1
+cranberries_salt,good,good,neutral,caution,R10-inherit(salt),1
+cultured_dextrose,neutral,caution,neutral,caution,R10-inherit(sugar),1
+curing_salt,neutral,caution,neutral,caution,R10-inherit(salt),4
+d_activated_animal_sterol,neutral,caution,neutral,caution,R2-unnamed-meat,1
+defatted_wheat_germ,neutral,neutral,neutral,caution,R10-inherit(wheat),1
+dehulled_soybean_meal,neutral,caution,neutral,caution,R10-inherit(soy),4
+dried_cranberries_salt,neutral,caution,neutral,caution,R10-inherit(salt),0
+dried_garlic,neutral,caution,neutral,danger,R10-inherit(garlic),0
+dried_spinach_flakes,neutral,neutral,neutral,caution,R10-inherit(spinach),0
+egg_product,neutral,good,neutral,good,R3-named-protein,140
+egg_white,neutral,good,neutral,good,R3-named-protein,163
+fd&c_blue#1,neutral,caution,neutral,caution,R1-colorant,1
+fd&c_blue_#1,neutral,caution,neutral,caution,R1-colorant,4
+fd&c_blue_1,neutral,caution,neutral,caution,R1-colorant,0
+fd&c_blue_no._1,neutral,caution,neutral,caution,R1-colorant,17
+fd&c_blue_no._2,neutral,caution,neutral,caution,R1-colorant,10
+fd&c_red_#40,neutral,caution,neutral,caution,R1-colorant,0
+fd&c_red_#_40,neutral,caution,neutral,caution,R1-colorant,1
+fd&c_red_no._3,neutral,caution,neutral,caution,R1-colorant,6
+fd&c_red_no._40,neutral,caution,neutral,caution,R1-colorant,0
+fd&c_red_no_40,neutral,caution,neutral,caution,R1-colorant,33
+fd&c_yellos_#6,neutral,caution,neutral,caution,R1-colorant,1
+fd&c_yellow_#5,neutral,caution,neutral,caution,R1-colorant,4
+fd&c_yellow_#6,neutral,caution,neutral,caution,R1-colorant,0
+fd&c_yellow_#_5,neutral,caution,neutral,caution,R1-colorant,1
+fd&c_yellow_#_6,neutral,caution,neutral,caution,R1-colorant,1
+fd&c_yellow_no._5,neutral,caution,neutral,caution,R1-colorant,12
+fd&c_yellow_no._6,neutral,caution,neutral,caution,R1-colorant,16
+fd*c_red_#40,neutral,caution,neutral,caution,R1-colorant,18
+fish_broth,neutral,caution,neutral,caution,R11a-unnamed-organ,247
+folic_acid_menadione_sodium_bisulfite_complex,neutral,caution,neutral,caution,R10-inherit(menadione),1
+fructose,neutral,caution,neutral,caution,R10-inherit(sugar),75
+garlic_oil,neutral,caution,neutral,danger,R10-inherit(garlic),45
+garlic_powder,neutral,caution,neutral,danger,R10-inherit(garlic),20
+gelatinized_corn_flour,neutral,neutral,neutral,caution,R10-inherit(corn),1
+grian_corn,neutral,neutral,neutral,caution,R10-inherit(corn),1
+ground_soybean_hulls,neutral,caution,neutral,caution,R10-inherit(soy),0
+ground_whole_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+ground_whole_grian_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+ground_whole_wheat,neutral,neutral,neutral,caution,R10-inherit(wheat),0
+ground_yellow_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+high_fructose_corn_syrup,neutral,caution,neutral,caution,"R10-inherit(corn), R10-inherit(sugar)",5
+hydrogenated_corn_syrup,neutral,neutral,neutral,caution,R10-inherit(corn),6
+hydrolyzed_corn_gluten,neutral,neutral,neutral,caution,R10-inherit(corn),0
+hydrolyzed_corn_protein,neutral,neutral,neutral,caution,R10-inherit(corn),0
+hydrolyzed_soy_protein,neutral,caution,neutral,caution,R10-inherit(soy),0
+hydrolyzed_soy_protein_isolate,neutral,caution,neutral,caution,R10-inherit(soy),0
+hydrolyzed_soybean_protein,neutral,caution,neutral,caution,R10-inherit(soy),0
+iodized_salt,neutral,caution,neutral,caution,R10-inherit(salt),147
+lactic_acid_yellow_5,neutral,caution,neutral,caution,R1-colorant,0
+leaf_spinach_8%,neutral,neutral,neutral,caution,R10-inherit(spinach),1
+liver,neutral,caution,neutral,caution,R11a-unnamed-organ,488
+liver_flavor,neutral,caution,neutral,caution,R11c-generic-flavor,37
+mackerel,neutral,good,neutral,good,R3-named-protein,104
+meat_broth,neutral,caution,neutral,caution,"R11a-unnamed-organ, R2-unnamed-meat",8
+modified_corn_starch,neutral,neutral,neutral,caution,R10-inherit(corn),34
+natural_brown_caramel_color,neutral,caution,neutral,caution,R1-colorant,0
+natural_flavoring,neutral,caution,neutral,caution,R10-inherit(natural_flavor),0
+no_meat_or_dairy_and_free_from_corn,neutral,neutral,neutral,caution,R10-inherit(corn),1
+ocean_fish_meal,neutral,caution,neutral,caution,R2-unnamed-meat,29
+oceanfish_meal,neutral,caution,neutral,caution,R2-unnamed-meat,1
+oil_of_garlic,neutral,caution,neutral,danger,R10-inherit(garlic),2
+or_artificial_colors_or_preservatives,neutral,caution,neutral,caution,R1-colorant,2
+or_wheat,neutral,neutral,neutral,caution,R10-inherit(wheat),1
+organic_cane_sugar,neutral,caution,neutral,caution,R10-inherit(sugar),0
+organic_cultured_dextrose,neutral,caution,neutral,caution,R10-inherit(sugar),0
+poultry_and_pork_digest,neutral,caution,neutral,caution,"R11c-generic-flavor, R2-unnamed-meat",2
+poultry_broth,neutral,caution,neutral,caution,R2-unnamed-meat,44
+poultry_by_products,neutral,caution,neutral,caution,R2-unnamed-meat,150
+poultry_digest,neutral,caution,neutral,caution,"R11c-generic-flavor, R2-unnamed-meat",2
+poultry_fat,neutral,caution,neutral,caution,"R11b-unnamed-fat, R2-unnamed-meat",43
+poultry_heart,neutral,caution,neutral,caution,R11a-unnamed-organ,7
+poultry_liver,neutral,caution,neutral,caution,R11a-unnamed-organ,19
+poultry_meal,neutral,caution,neutral,caution,R2-unnamed-meat,5
+red_#3,neutral,caution,neutral,caution,R1-colorant,27
+red_#40,neutral,caution,neutral,caution,R1-colorant,167
+red_iron_oxide_color,neutral,caution,neutral,caution,"R1-colorant, R10-inherit(iron_oxide)",3
+sardine,neutral,good,neutral,good,R3-named-protein,55
+sea_salt,neutral,caution,neutral,caution,R10-inherit(salt),65
+sodium_chloride,neutral,caution,neutral,caution,R10-inherit(salt),0
+sodium_chloride_0.1%,neutral,caution,neutral,caution,R10-inherit(salt),5
+sorbic_acid_brown_sugar_flavor,neutral,caution,neutral,caution,R10-inherit(sugar),0
+sorbitol_fructose,neutral,caution,neutral,caution,R10-inherit(sugar),1
+soy_free,neutral,caution,neutral,caution,R10-inherit(soy),2
+soybean,neutral,caution,neutral,caution,R10-inherit(soy),3
+soybean_flour,neutral,caution,neutral,caution,R10-inherit(soy),2
+soybean_germ_meal,neutral,caution,neutral,caution,R10-inherit(soy),2
+soybean_hulls,neutral,caution,neutral,caution,R10-inherit(soy),26
+soybean_meal,neutral,caution,neutral,caution,R10-inherit(soy),244
+soybean_mill_run,neutral,caution,neutral,caution,R10-inherit(soy),6
+soybean_oil,neutral,caution,neutral,caution,R10-inherit(soy),0
+soybean_powder,neutral,caution,neutral,caution,R10-inherit(soy),2
+soybean_protein,neutral,caution,neutral,caution,R10-inherit(soy),2
+soybeanmeal,neutral,caution,neutral,caution,R10-inherit(soy),0
+soybeanoil,neutral,caution,neutral,caution,R10-inherit(soy),1
+spray_dried_animal_blood_cells,neutral,caution,neutral,caution,R2-unnamed-meat,18
+sucrose,neutral,caution,neutral,caution,R10-inherit(sugar),8
+synthetic_iron_oxide,neutral,caution,neutral,caution,"R1-colorant, R10-inherit(iron_oxide)",2
+textured_soy_protein,neutral,caution,neutral,caution,R10-inherit(soy),2
+textured_soy_protein_product,neutral,caution,neutral,caution,R10-inherit(soy),1
+tuna,neutral,good,neutral,good,R3-named-protein,715
+vegetable_broth,neutral,caution,neutral,caution,R11b-unnamed-fat,29
+vegetable_oil,neutral,caution,neutral,caution,"R11b-unnamed-fat, R9-unnamed-oil",234
+vital_wheat_gluten,neutral,neutral,neutral,caution,R10-inherit(wheat),19
+"vitamins,_folic_acid,_biotin)_carrageenan",neutral,caution,neutral,caution,R10-inherit(carrageenan),0
+"vitamins,_menadione_sodium_bisulfite_complex",neutral,caution,neutral,caution,R10-inherit(menadione),0
+whole_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+whole_grain_ground_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+whole_ground_corn,neutral,neutral,neutral,caution,R10-inherit(corn),0
+whole_ground_wheat,neutral,neutral,neutral,caution,R10-inherit(wheat),0
+whole_wheat,neutral,neutral,neutral,caution,R10-inherit(wheat),0
+whole_wheat_flour,neutral,neutral,neutral,caution,R10-inherit(wheat),6
+yellow_#5,neutral,caution,neutral,caution,R1-colorant,0
+yellow_#5._prime_rib,neutral,caution,neutral,caution,R1-colorant,1
+yellow_#6,neutral,caution,neutral,caution,R1-colorant,129
