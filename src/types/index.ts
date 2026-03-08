@@ -118,7 +118,11 @@ export interface Product {
 
   // Tracking
   last_verified_at: string | null;
-  formula_change_log: Record<string, unknown> | null;
+  formula_change_log: Array<{
+    detected_at: string;
+    old_ingredients_preview: string;
+    new_ingredients_preview: string;
+  }> | null;
   affiliate_links: Record<string, string> | null;
 
   created_at: string;

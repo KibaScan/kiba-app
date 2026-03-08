@@ -45,6 +45,8 @@ import { SplittingDetectionCard, buildSplittingClusters } from '../components/Sp
 import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
 import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
 import { detectFlavorDeception } from '../utils/flavorDeception';
+import { DcmAdvisoryCard } from '../components/DcmAdvisoryCard';
+import { FormulaChangeTimeline } from '../components/FormulaChangeTimeline';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -600,6 +602,43 @@ export default function ResultScreen() {
             />
           ) : null;
         })()}
+
+        {/* DCM Advisory Card (D-013 — dog-only, grain-free + legumes) */}
+        {scoredResult && product && species === 'dog' && product.is_grain_free && (() => {
+          const dcmRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
+          const mitigationRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
+          if (!dcmRule?.fired) return null;
+          const legumesFound = hydratedIngredients
+            .filter(i => i.position <= 7 && i.is_legume)
+            .map(i => ({
+              name: i.display_name || i.canonical_name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+              position: i.position,
+            }));
+          const hasTaurine = hydratedIngredients.some(i => i.canonical_name.toLowerCase().includes('taurine'));
+          const hasLCarnitine = hydratedIngredients.some(i =>
+            i.canonical_name.toLowerCase().includes('l-carnitine') ||
+            i.canonical_name.toLowerCase().includes('l_carnitine'),
+          );
+          const dcmPenalty = Math.abs(dcmRule.adjustment) - (mitigationRule?.adjustment ?? 0);
+          return (
+            <DcmAdvisoryCard
+              legumesFound={legumesFound}
+              isGrainFree={product.is_grain_free}
+              hasTaurine={hasTaurine}
+              hasLCarnitine={hasLCarnitine}
+              dcmPenalty={dcmPenalty}
+              petName={displayName}
+            />
+          );
+        })()}
+
+        {/* Formula Change Timeline (D-044) */}
+        {product?.formula_change_log && product.formula_change_log.length > 0 && (
+          <FormulaChangeTimeline
+            changes={product.formula_change_log}
+            currentScore={score}
+          />
+        )}
 
         {/* Full Ingredient List (D-031, D-108) */}
         {hydratedIngredients.length > 0 && (() => {
