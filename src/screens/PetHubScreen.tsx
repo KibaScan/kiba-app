@@ -3,7 +3,7 @@
 // D-120: Multi-pet carousel. D-117: Stale weight indicator. D-094: Pet name in context.
 // D-084: Zero emoji — Ionicons only. D-086: Dark theme.
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,8 @@ import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
 import type { MeStackParamList } from '../types/navigation';
+import { PetHubShareCard } from '../components/PetShareCard';
+import { captureAndShare } from '../utils/shareCard';
 
 // ─── Exported Pure Helpers (testable) ─────────────────────
 
@@ -121,6 +123,7 @@ export default function PetHubScreen({ navigation }: Props) {
   const setActivePet = useActivePetStore((s) => s.setActivePet);
   const removePet = useActivePetStore((s) => s.removePet);
   const activePet = pets.find((p) => p.id === activePetId) ?? pets[0] ?? null;
+  const hubShareRef = useRef<View>(null);
 
   // ─── Health data (screen-scoped, reloaded on focus) ─────
   const [conditions, setConditions] = useState<PetCondition[]>([]);
@@ -417,6 +420,18 @@ export default function PetHubScreen({ navigation }: Props) {
           </View>
         </TouchableOpacity>
 
+        {/* Share pet card button */}
+        <TouchableOpacity
+          style={styles.shareButton}
+          activeOpacity={0.7}
+          onPress={() => captureAndShare(hubShareRef, activePet.name, 0)}
+        >
+          <Ionicons name="share-outline" size={18} color={Colors.accent} />
+          <Text style={styles.shareButtonText}>
+            Share {activePet.name}'s Card
+          </Text>
+        </TouchableOpacity>
+
         {/* (d) Stale weight indicator (D-117) */}
         {showStaleWeight && (
           <TouchableOpacity
@@ -618,6 +633,16 @@ export default function PetHubScreen({ navigation }: Props) {
           onClose={() => setDevMenuVisible(false)}
         />
       )}
+
+      {/* Off-screen hub share card for capture */}
+      <View style={styles.offScreen} pointerEvents="none">
+        <PetHubShareCard
+          ref={hubShareRef}
+          petName={activePet.name}
+          petPhoto={activePet.photo_url ?? null}
+          species={activePet.species}
+        />
+      </View>
 
       {/* Delete confirmation modal */}
       <Modal
@@ -1047,6 +1072,25 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
+  },
+
+  // ─── Share Button ──────────────────────────────────────
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: Spacing.md,
+  },
+  shareButtonText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  offScreen: {
+    position: 'absolute',
+    left: -9999,
+    top: 0,
   },
 
   // ─── Version Footer ──────────────────────────────────────
