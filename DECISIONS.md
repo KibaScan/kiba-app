@@ -1551,8 +1551,10 @@ and corrected values enables classification accuracy auditing.
 **Decision:** When a pet has a declared allergen, all ingredients matching that allergen (via allergen_group or allergen_group_possible) have their effective severity overridden to 'caution' for that pet's score calculation. This feeds into the existing position-weighted Layer 1a scoring — no flat penalty needed.
 
 **Mechanism:**
-- Direct match (allergen_group = pet's allergen): severity → 'caution', ingredient list shows orange with "[Pet Name] has a [allergen] sensitivity"
+- Direct match (allergen_group = pet's allergen): severity → 'danger', ingredient list shows red with "[Pet Name] has a [allergen] sensitivity"
 - Possible match (allergen_group_possible contains pet's allergen): severity → 'caution', ingredient list shows orange with "May contain [allergen] — unnamed source"
+
+**Amendment (2026-03-08):** Direct matches escalated from 'caution' (8pts) to 'danger' (15pts). Rationale: a confirmed allergen for a specific pet is not "questionable" — it will cause an adverse reaction. 'danger' per ingredient, position-weighted, correctly pushes allergen-heavy products into amber/red territory. Possible matches remain 'caution' (uncertain).
 - Base severity in ingredients_dict is unchanged — override is per-pet, per-score only
 - Position weighting still applies: allergen at position 1 hurts more than position 15
 - Stacks with existing Layer 3 allergen warnings (which become redundant once this ships — the warnings will reflect actual score impact instead of being informational-only)
@@ -1560,7 +1562,7 @@ and corrected values enables classification accuracy auditing.
 **Why not a flat penalty:**
 A flat -15 on a 95-score product still shows green/excellent. The severity override lets the existing position-weighted math scale the penalty naturally — a chicken-first food drops much harder than a food with chicken broth at position 12.
 
-**UI:** Affected ingredients render in caution color (orange) on the ingredient list with a personalized note explaining why. Score waterfall shows the deduction under "[Pet Name]'s Breed & Age Adjustments" layer.
+**UI:** Direct-match ingredients render in danger color (red); possible-match in caution color (orange), both with a personalized note explaining why. Score waterfall shows the deduction under "[Pet Name]'s Allergen Sensitivity" row.
 
 **Depends on:** D-097 (allergen picker), D-098 (cross-reactivity), allergen_group mappings complete in ingredients_dict
 ---

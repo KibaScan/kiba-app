@@ -97,6 +97,15 @@ function buildRows(
   );
   rows.push({ key: 'personalization', label: `${petName}'s Breed & Age Adjustments`, points: l3Total });
 
+  // D-129: Allergen sensitivity row (only when allergen overrides fired)
+  if (scoredResult.allergenDelta > 0) {
+    rows.push({
+      key: 'allergen',
+      label: `${petName}'s Allergen Sensitivity`,
+      points: -Math.round(scoredResult.allergenDelta),
+    });
+  }
+
   return rows;
 }
 
@@ -243,6 +252,25 @@ function renderPersonalizationExpanded(
   ));
 }
 
+function renderAllergenExpanded(
+  allergenWarnings: PersonalizationDetail[],
+  petName: string,
+): React.ReactNode {
+  if (allergenWarnings.length === 0) {
+    return (
+      <Text style={styles.expandedEmpty}>
+        No allergen matches for {petName}
+      </Text>
+    );
+  }
+
+  return allergenWarnings.map((w, i) => (
+    <View key={`allergen-${i}`} style={styles.expandedItem}>
+      <Text style={styles.expandedSummary}>{w.label}</Text>
+    </View>
+  ));
+}
+
 // ─── Component ──────────────────────────────────────────
 
 export function ScoreWaterfall({
@@ -278,6 +306,8 @@ export function ScoreWaterfall({
           scoredResult.layer3.personalizations,
           petName,
         );
+      case 'allergen':
+        return renderAllergenExpanded(scoredResult.layer3.allergenWarnings, petName);
       default:
         return null;
     }

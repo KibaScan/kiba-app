@@ -16,7 +16,7 @@ import { scoreNutritionalProfile } from './nutritionalProfile';
 import type { NutritionalProfileInput } from './nutritionalProfile';
 import { scoreFormulation } from './formulationScore';
 import { applySpeciesRules } from './speciesRules';
-import { applyPersonalization } from './personalization';
+import { applyPersonalization, buildAllergenOverrideMap } from './personalization';
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -139,7 +139,17 @@ export function computeScore(
   const category = isTreat ? 'treat' as const : 'daily_food' as const;
 
   // ─── Step 2: Layer 1a — Ingredient Quality (always runs)
-  const iqResult = scoreIngredients(ingredients, species);
+  // D-129: If pet has allergens, build override map and score twice:
+  // baseIQ (for waterfall display) and overrideIQ (for actual composite)
+  const hasAllergens = petAllergens != null && petAllergens.length > 0;
+  const allergenOverrideMap = hasAllergens
+    ? buildAllergenOverrideMap(petAllergens, ingredients)
+    : undefined;
+
+  const baseIqResult = scoreIngredients(ingredients, species);
+  const iqResult = allergenOverrideMap && allergenOverrideMap.size > 0
+    ? scoreIngredients(ingredients, species, allergenOverrideMap)
+    : baseIqResult;
 
   // ─── Step 3-4: Layer 1b — Nutritional Profile
   let npScore = 0;
@@ -188,17 +198,26 @@ export function computeScore(
 
   // ─── Step 6: Category-adaptive weights (D-010)
   let weightedComposite: number;
+  let iqWeight: number;
 
   if (isTreat) {
     // Treat: 100% IQ
+    iqWeight = 1.0;
     weightedComposite = iqResult.ingredientScore;
   } else if (isPartialScore) {
     // D-017: missing GA → normalized 78/22
+    iqWeight = 0.7857;
     weightedComposite = iqResult.ingredientScore * 0.7857 + fcScore * 0.2143;
   } else {
     // Daily food, full GA
+    iqWeight = 0.55;
     weightedComposite = iqResult.ingredientScore * 0.55 + npScore * 0.30 + fcScore * 0.15;
   }
+
+  // D-129: allergen delta — weighted difference between base and override IQ
+  const allergenDelta = iqResult !== baseIqResult
+    ? Math.round((baseIqResult.ingredientScore - iqResult.ingredientScore) * iqWeight * 10) / 10
+    : 0;
 
   weightedComposite = Math.round(weightedComposite * 10) / 10;
 
@@ -243,7 +262,7 @@ export function computeScore(
     petName: petProfile?.name ?? null,
 
     layer1: {
-      ingredientQuality: iqResult.ingredientScore,
+      ingredientQuality: baseIqResult.ingredientScore, // D-129: base IQ for waterfall display
       nutritionalProfile: npScore,
       formulation: fcScore,
       weightedComposite: Math.round(weightedComposite * 10) / 10,
@@ -260,6 +279,8 @@ export function computeScore(
     ingredientPenalties: iqResult.penalties,
 
     flags: [...allFlags],
+
+    allergenDelta,
 
     isPartialScore,
     isRecalled: product.is_recalled,

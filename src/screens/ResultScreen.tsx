@@ -27,6 +27,7 @@ import type { ScoredResult, ProductIngredient } from '../types/scoring';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
+import { getPetAllergens, getPetConditions } from '../services/petService';
 import { scoreProduct } from '../services/scoring/pipeline';
 import { LoadingTerminal } from '../components/LoadingTerminal';
 import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/ScoreRing';
@@ -139,8 +140,18 @@ export default function ResultScreen() {
 
     (async () => {
       try {
-        // M1: petAllergens and petConditions are empty
-        const { scoredResult: result, ingredients } = await scoreProduct(product, pet, [], []);
+        // D-129: fetch pet's allergens and conditions for scoring
+        let petAllergens: string[] = [];
+        let petConditions: string[] = [];
+        if (pet?.id) {
+          const [allergenRows, conditionRows] = await Promise.all([
+            getPetAllergens(pet.id),
+            getPetConditions(pet.id),
+          ]);
+          petAllergens = allergenRows.map((a) => a.allergen);
+          petConditions = conditionRows.map((c) => c.condition_tag);
+        }
+        const { scoredResult: result, ingredients } = await scoreProduct(product, pet, petAllergens, petConditions);
         setScoredResult(result);
         setHydratedIngredients(ingredients);
       } catch (err) {

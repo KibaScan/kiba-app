@@ -83,6 +83,7 @@ function makeEmptyResult(
       },
       ingredientPenalties: [],
       flags,
+      allergenDelta: 0,
       isPartialScore: true,
       isRecalled: product.is_recalled,
       llmExtracted: false,
