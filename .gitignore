@@ -39,4 +39,23 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# environment variables & security (critical for fintech)
 .env
+.env.*
+.env*.local
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+*.jks
+*.p12
+*.p8
+secrets.json
+
+# testing
+/coverage
+
+# production
+/build
