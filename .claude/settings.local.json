@@ -49,7 +49,8 @@
       "Bash(__NEW_LINE_6d049f20b07dd0ad__ curl:*)",
       "Read(//tmp/**)",
       "Bash(__NEW_LINE_1e63e26682ed77a7__ curl:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(kill 41758:*)"
     ]
   }
 }

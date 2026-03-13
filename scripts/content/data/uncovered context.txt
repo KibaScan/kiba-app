@@ -1,0 +1,19 @@
+
+  The biggest gaps are vitamins and minerals — the top 20 families by occurrence are almost entirely supplement-type      ingredients that appear in thousands of products but have no consumer-facing content yet:
+
+  ┌────────────────────────────────────────────────────────────────────────┬─────────────┬──────────────────────┐
+  │                             Priority tier                              │  Families   │ Combined occurrences │
+  ├────────────────────────────────────────────────────────────────────────┼─────────────┼──────────────────────┤
+  │ Vitamins (E, B1-B12, A, D3)                                            │ 11 families │ ~42,000              │
+  ├────────────────────────────────────────────────────────────────────────┼─────────────┼──────────────────────┤
+  │ Minerals (iron, zinc, copper, manganese, selenium, iodine, folic acid) │ 7 families  │ ~24,000              │
+  ├────────────────────────────────────────────────────────────────────────┼─────────────┼──────────────────────┤
+  │ Probiotics                                                             │ 63 members  │ 2,208                │
+  ├────────────────────────────────────────────────────────────────────────┼─────────────┼──────────────────────┤
+  │ Proteins (chicken, beef)                                               │ 11 members  │ 4,481                │
+  └────────────────────────────────────────────────────────────────────────┴─────────────┴──────────────────────┘
+
+  Severity breakdown: mostly neutral (2,140 cat / 2,188 dog), with 222 cat caution and 160 dog caution needing content
+  most urgently.
+
+  Output: scripts/content/data/uncovered_ingredients_grouped.csv
