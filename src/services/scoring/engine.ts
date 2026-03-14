@@ -136,6 +136,7 @@ export function computeScore(
   const species = resolveSpecies(product);
   const lifeStage = resolveLifeStage(petProfile);
   const isTreat = product.category === Category.Treat;
+  const isSupplemental = product.is_supplemental === true;
   const category = isTreat ? 'treat' as const : 'daily_food' as const;
 
   // ─── Step 2: Layer 1a — Ingredient Quality (always runs)
@@ -173,6 +174,7 @@ export function computeScore(
       lifeStageClaim: product.life_stage_claim,
       nutritionalDataSource: product.nutritional_data_source,
       category,
+      isSupplemental,
     };
     const npResult = scoreNutritionalProfile(npInput);
     npScore = npResult.bucketScore;
@@ -208,6 +210,10 @@ export function computeScore(
     // D-017: missing GA → normalized 78/22
     iqWeight = 0.7857;
     weightedComposite = iqResult.ingredientScore * 0.7857 + fcScore * 0.2143;
+  } else if (isSupplemental) {
+    // D-136: supplemental 65/35/0 — formulation skipped
+    iqWeight = 0.65;
+    weightedComposite = iqResult.ingredientScore * 0.65 + npScore * 0.35;
   } else {
     // Daily food, full GA
     iqWeight = 0.55;

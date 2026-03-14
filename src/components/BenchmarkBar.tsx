@@ -6,16 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useBenchmarkStore, type CategoryAverage } from '../utils/benchmarkData';
-
-// ─── Score Color Breakpoints (D-136 — supersedes D-113) ───
-
-function scoreColor(score: number, isSupplemental: boolean): string {
-  if (score >= 85) return isSupplemental ? '#14B8A6' : '#22C55E';
-  if (score >= 70) return isSupplemental ? '#22D3EE' : '#86EFAC';
-  if (score >= 65) return '#FACC15';
-  if (score >= 51) return '#F59E0B';
-  return '#EF4444';
-}
+import { getScoreColor } from '../utils/constants';
 
 // ─── Props ────────────────────────────────────────────────
 
@@ -68,7 +59,7 @@ export function BenchmarkBar({ score, category, targetSpecies, isGrainFree, isSu
 
   const markerPosition = Math.max(0, Math.min(100, score));
   const avgPosition = Math.max(0, Math.min(100, avg.avg_score));
-  const markerColor = scoreColor(score, isSupplemental);
+  const markerColor = getScoreColor(score, isSupplemental);
 
   const categoryLabel = category === 'treat' ? 'treats' : 'foods';
   const grainLabel = isGrainFree ? 'grain-free' : 'grain-inclusive';

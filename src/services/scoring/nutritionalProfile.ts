@@ -23,6 +23,7 @@ export interface NutritionalProfileInput {
   lifeStageClaim: string | null;
   nutritionalDataSource: string | null;
   category: 'daily_food' | 'treat' | 'supplement';
+  isSupplemental?: boolean;
 }
 
 // ─── AAFCO Thresholds (DMB) ────────────────────────────
@@ -325,8 +326,10 @@ export function scoreNutritionalProfile(
     carbScore * weights.carbs;
 
   // ─── §5: Bucket-level modifiers (AFTER weighted sum) ─
+  // D-136: Supplemental products skip all micronutrient + life stage modifiers
   const claim = input.lifeStageClaim?.toLowerCase() ?? '';
 
+  if (!input.isSupplemental) {
   // Puppy/kitten eating adult food
   if (isGrowth && (claim.includes('adult') || claim.includes('maintenance'))) {
     modifiers.push({
@@ -459,6 +462,7 @@ export function scoreNutritionalProfile(
       }
     }
   }
+  } // end !isSupplemental guard
 
   // ─── §8 step 12: Clamp bucket score [0, 100] ────────
   bucketScore = Math.max(0, Math.min(100, Math.round(bucketScore)));

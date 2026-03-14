@@ -1,5 +1,5 @@
-// ScoreRing — Animated circular score gauge (D-094 suitability framing).
-// View-based ring (no react-native-svg). Two half-circle rotation technique.
+// ScoreRing — SVG-based circular score gauge (D-094, D-136).
+// 360° full circle for daily food/treats. 270° open arc for supplementals.
 // D-084: zero emoji. D-094: score always shown with pet context.
 
 import React, { useEffect, useRef } from 'react';
@@ -13,6 +13,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Colors,
@@ -40,8 +41,14 @@ interface ScoreRingProps {
 
 const RING_SIZE = 180;
 const RING_BORDER = 8;
+const CENTER = RING_SIZE / 2;
+const RADIUS = (RING_SIZE - RING_BORDER) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const ARC_270 = CIRCUMFERENCE * 0.75;
 const TRACK_COLOR = '#333333';
 const ANIMATION_DURATION = 800;
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // ─── Component ───────────────────────────────────────────
 
@@ -73,72 +80,55 @@ export function ScoreRing({
     );
   };
 
-  // ─── Ring rotation calculations ────────────────────────
-  // 0-50% score fills right half, 50-100% fills left half
+  // ─── SVG arc calculations ────────────────────────────
+  const totalArc = isSupplemental ? ARC_270 : CIRCUMFERENCE;
+  // 360°: start at 12 o'clock (-90° from SVG default 3 o'clock)
+  // 270°: start at 7:30 position (135° from SVG default) — gap at bottom
+  const rotation = isSupplemental ? 135 : -90;
 
-  const rightRotation = animatedValue.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: ['0deg', '180deg', '180deg'],
+  const strokeDashoffset = animatedValue.interpolate({
+    inputRange: [0, 100],
+    outputRange: [totalArc, 0],
     extrapolate: 'clamp',
   });
 
-  const leftRotation = animatedValue.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: ['0deg', '0deg', '180deg'],
-    extrapolate: 'clamp',
-  });
-
-  // Hide right overlay once past 50%
-  const rightOverlayOpacity = animatedValue.interpolate({
-    inputRange: [0, 49.9, 50],
-    outputRange: [1, 1, 0],
-    extrapolate: 'clamp',
-  });
+  const trackDasharray = isSupplemental
+    ? [ARC_270, CIRCUMFERENCE]
+    : [CIRCUMFERENCE];
 
   return (
     <View style={styles.wrapper}>
       {/* Score Ring */}
       <View style={styles.ringContainer}>
-        {/* Background track */}
-        <View style={[styles.ring, { borderColor: TRACK_COLOR }]} />
-
-        {/* Right half (0-50%) */}
-        <View style={styles.halfClipRight}>
-          <Animated.View
-            style={[
-              styles.halfCircle,
-              {
-                borderColor: ringColor,
-                transform: [{ rotate: rightRotation }],
-              },
-            ]}
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          {/* Background track */}
+          <Circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke={TRACK_COLOR}
+            strokeWidth={RING_BORDER}
+            fill="none"
+            strokeDasharray={trackDasharray}
+            rotation={rotation}
+            origin={`${CENTER}, ${CENTER}`}
+            strokeLinecap="round"
           />
-        </View>
-
-        {/* Right half cover (hides unfilled portion when < 50%) */}
-        <Animated.View
-          style={[styles.halfClipRight, { opacity: rightOverlayOpacity }]}
-        >
-          <View style={[styles.halfCircle, { borderColor: TRACK_COLOR }]} />
-        </Animated.View>
-
-        {/* Left half (50-100%) */}
-        <View style={styles.halfClipLeft}>
-          <Animated.View
-            style={[
-              styles.halfCircle,
-              {
-                borderColor: ringColor,
-                transform: [{ rotate: leftRotation }],
-              },
-            ]}
+          {/* Animated fill */}
+          <AnimatedCircle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke={ringColor}
+            strokeWidth={RING_BORDER}
+            fill="none"
+            strokeDasharray={trackDasharray}
+            strokeDashoffset={strokeDashoffset}
+            rotation={rotation}
+            origin={`${CENTER}, ${CENTER}`}
+            strokeLinecap="round"
           />
-        </View>
-
-        {/* D-136: 270° open arc gap for supplemental products */}
-        {isSupplemental && (
-          <View style={styles.arcGap} />
-        )}
+        </Svg>
 
         {/* Center content */}
         <View style={styles.centerContent}>
@@ -189,8 +179,6 @@ export function ScoreRing({
 
 // ─── Styles ──────────────────────────────────────────────
 
-const HALF = RING_SIZE / 2;
-
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
@@ -201,44 +189,6 @@ const styles = StyleSheet.create({
     height: RING_SIZE,
     position: 'relative',
   },
-  ring: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: HALF,
-    borderWidth: RING_BORDER,
-    position: 'absolute',
-  },
-  halfClipRight: {
-    position: 'absolute',
-    width: HALF,
-    height: RING_SIZE,
-    right: 0,
-    overflow: 'hidden',
-  },
-  halfClipLeft: {
-    position: 'absolute',
-    width: HALF,
-    height: RING_SIZE,
-    left: 0,
-    overflow: 'hidden',
-  },
-  halfCircle: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: HALF,
-    borderWidth: RING_BORDER,
-    borderColor: 'transparent',
-    position: 'absolute',
-  },
-  arcGap: {
-    position: 'absolute',
-    bottom: -2,
-    left: HALF - 65,
-    width: 130,
-    height: 30,
-    backgroundColor: Colors.background,
-    zIndex: 1,
-  },
   centerContent: {
     position: 'absolute',
     top: 0,
@@ -247,7 +197,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
   },
   scoreRow: {
     flexDirection: 'row',
