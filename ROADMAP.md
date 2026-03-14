@@ -1,7 +1,7 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 13, 2026
+> Updated: March 14, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
@@ -31,6 +31,7 @@
 - Portion Calculator Spec complete (`PORTION_CALCULATOR_SPEC.md`) — RER/DER math, goal weight, cat safety guards
 - M2 pet profile CRUD functional: create/edit/delete via petService + Supabase, anonymous auth, photo upload to Storage, species selection pre-screen (D-122), species-specific activity labels (D-123), health conditions + allergen picker, "Perfectly Healthy" chip (D-119), approximate age mode (D-116), stale weight indicator (D-117), multi-pet carousel (D-120), score accuracy bar, DER/treat battery display
 - M3 data pipeline + paywall complete: Apify import pipeline (1,589 products), GA refinery (Haiku extraction + validator), formula detection (ingredients_hash), database miss flow (D-091 external UPC + D-128 Haiku classification), parse-ingredients Edge Function, RevenueCat paywall (D-126 psychology patterns), rolling 7-day scan window, legal clickwrap TOS, scan experience polish (haptic/animation/sound). 447 tests passing.
+- M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
 
 ---
 
@@ -452,14 +453,14 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - ~~Vet Report~~ → moved to M5-M6 (based on soft launch feedback)
 
 ### Supplemental Product Classification (D-136)
-- [ ] `is_supplemental` column on products table (migration 006)
-- [ ] Feeding guide keyword parser (`supplementalClassifier.ts`) — detects AAFCO intermittent/supplemental language at import time
-- [ ] Backfill script: classify existing 8,869 products
-- [ ] Scoring engine: 65/35/0 weight routing for supplemental products. NP bucket evaluates macros only (skip micronutrient AAFCO checks)
-- [ ] Five-tier dual color system (D-136 supersedes D-113): green family for daily food, teal/cyan family for supplementals, shared yellow/amber/red below 65
-- [ ] Open arc ring (270°) for supplemental products — visual metaphor: "not complete on its own"
-- [ ] "Supplemental" badge + "Best paired with a complete meal" contextual line
-- [ ] AafcoProgressBars: macro bars only for supplemental products (hide micronutrient bars)
+- [x] `is_supplemental` column on products table (migration 007)
+- [x] Feeding guide keyword parser (`supplementalClassifier.ts`) — detects AAFCO intermittent/supplemental language at import time
+- [x] Backfill script (`scripts/data/backfill_supplemental.ts`) — classify existing products via aafco_statement keyword match
+- [x] Scoring engine: 65/35/0 weight routing for supplemental products. NP bucket evaluates macros only (skip micronutrient AAFCO checks)
+- [x] Five-tier dual color system (D-136 supersedes D-113): green family for daily food, teal/cyan family for supplementals, shared yellow/amber/red below 65
+- [x] Open arc ring (270°) for supplemental products — SVG-based via react-native-svg, proper fill remapping
+- [x] "Supplemental" badge + "Best paired with a complete meal" contextual line
+- [x] AafcoProgressBars: macro bars only for supplemental products (hide micronutrient bars)
 
 ---
 
