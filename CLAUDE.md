@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 13, 2026 (M4 Session 6 — D-136 supplemental classification, dual color system)
+> Last updated: March 14, 2026 (M4 Session 6 — D-136 supplemental classification, SVG score ring, scoring engine wiring)
 
 ---
 
@@ -23,7 +23,8 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat (installed M3 Session 5)
 - **Audio:** `expo-av` for scan confirmation tone
-- **Testing:** Jest for scoring engine, reference product regression tests (473 tests passing)
+- **Testing:** Jest for scoring engine, reference product regression tests (497 tests passing)
+- **SVG:** `react-native-svg` for score ring (270° open arc for supplementals)
 
 ## Project Structure
 
@@ -48,7 +49,8 @@ kiba-app/
 │   │   ├── extract_ga.py          ← batch Haiku GA extraction
 │   │   └── validator.py           ← D-043 range validation before DB insert
 │   └── scoring/                   ← M4 batch scoring (batch_score.ts)
-│   └── data/                      ← M4 data scripts (backfill_supplemental.ts)
+│   └── data/
+│       └── backfill_supplemental.ts ← D-136: classify existing products via aafco_statement keyword match
 ├── supabase/
 │   ├── functions/
 │   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
@@ -65,7 +67,7 @@ kiba-app/
 │   │   └── index.ts
 │   ├── components/         ← shared UI components
 │   │   ├── ScoreGauge.tsx
-│   │   ├── ScoreRing.tsx          ← animated score ring with D-136 dual color system + open arc for supplementals
+│   │   ├── ScoreRing.tsx          ← SVG score ring: 360° daily food, 270° open arc supplementals (react-native-svg)
 │   │   ├── ScannerOverlay.tsx     ← animated viewfinder: corner brackets + scan line + lock animation
 │   │   ├── LoadingTerminal.tsx    ← 6-step terminal message sequence
 │   │   ├── ConcernTags.tsx        ← D-107 consumer-facing badges
@@ -147,7 +149,11 @@ kiba-app/
     │   ├── speciesRules.test.ts
     │   └── dmbConversion.test.ts
     ├── services/
-    │   └── petService.test.ts    ← 25 tests: CRUD, validation, auth, photo upload
+    │   ├── petService.test.ts    ← 25 tests: CRUD, validation, auth, photo upload
+    │   └── scoring/
+    │       └── supplementalScoring.test.ts ← 8 tests: D-136 weight routing, modifier suppression
+    ├── utils/
+    │   └── supplementalClassifier.test.ts ← 16 tests: AAFCO keyword matching, D-096/D-136 separation
     └── referenceProducts.test.ts  ← regression tests
 ```
 
