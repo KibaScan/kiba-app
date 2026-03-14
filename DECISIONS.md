@@ -1639,5 +1639,280 @@ manual review before display. Neutral/good severity ingredients display immediat
 with "AI-generated content" subtle indicator. Estimated cost: ~$0.50.
 
 ---
+### D-135: Prescription/Therapeutic Diet Bypass
+**Status:** LOCKED
+**Date:** Mar 8, 2026
+**Depends on:** D-094 (Suitability Framing), D-095 (UPVM Compliance), NUTRITIONAL_PROFILE_BUCKET_SPEC.md §11 Q5
+
+**Decision:** Products flagged `_is_vet_diet: true` are NOT scored. No composite score, no color zone, no benchmark comparison. The ingredient waterfall renders normally (severity dots, position, educational detail cards) so users can see what's in the product, but the scoring engine does not run.
+
+**Rationale:** Veterinary diets (renal, hepatic, hydrolyzed protein, GI, urinary, etc.) intentionally deviate from standard AAFCO nutritional baselines to manage disease. Scoring them through the normal engine would penalize the very nutritional profile a veterinarian prescribed — producing a low score that implicitly tells the user "your vet is wrong." That crosses the UPVM line (D-095) by positioning Kiba as a second opinion on veterinary medical decisions.
+
+**UI treatment:** Instead of a score ring, display a vet diet badge with copy:
+> "This is a veterinary diet formulated for specific health needs. Ingredient details are shown below — discuss suitability with your veterinarian."
+
+Ingredient waterfall, educational cards, and ingredient content (tldr, detail_body) still render. Kiba Index (Taste Test + Tummy Check) still collects data if available. No Safe Swap recommendations for vet diets.
+
+**Detection — Two-tier confidence system (scraper-side):**
+
+| Tier | Confidence | Trigger | Behavior |
+|------|-----------|---------|----------|
+| `veterinary` | High | Product name matches: "Royal Canin Veterinary Diet", "Hill's Prescription Diet", "Purina Pro Plan Veterinary", "Hydrolyzed Protein", "Hepatic", "Renal...Diet" | Sets `_is_vet_diet: true` automatically |
+| `veterinary-mention` | Low | "veterinary" appears anywhere in page text but no high-confidence pattern matched | Flagged for human review, NOT auto-bypassed |
+
+**Schema:** `_is_vet_diet BOOLEAN DEFAULT FALSE` on products table. High-confidence matches set TRUE at import. Low-confidence matches set FALSE with a `_vet_mention_flagged: true` for review queue.
+
+**What is suppressed:**
+- Composite score (all three buckets)
+- Color zone assignment (green/amber/red)
+- BenchmarkBar comparison
+- Safe Swap recommendations
+- Category average inclusion (vet diets excluded from category_averages calculations)
+
+**What still renders:**
+- Ingredient waterfall with severity dots
+- Educational detail cards (splitting, allergen flags, etc.)
+- Ingredient content (tldr, detail_body)
+- Kiba Index (Taste Test + Tummy Check)
+- Formula change detection
+- Allergen warnings (critical safety — always shown)
+
+**Tracking:** `_ing_strategy` field on every record tracks which extraction strategy found its ingredients, for QA auditing independent of vet diet status.
+
+---
+
+# D-136: Supplemental Product Classification, Score Color System & Pantry Diet Completeness
+
+**Status:** LOCKED
+**Date:** 2026-03-13
+**Milestone:** Classification gate + color system + ring + badge = M4 Session 6. Pantry diet completeness = M5.
+**Supersedes:** D-113 (Score Ring Breakpoints). D-113's four-tier system (80+/70-79/50-69/<50) is replaced by D-136's five-tier system with new thresholds (85/70/65/51) and dual color scales.
+
+---
+
+## Problem Statement
+
+Products labeled "intended for intermittent or supplemental feeding" (AAFCO-mandated language) are currently routed through the daily food scoring pipeline (55/30/15). This is structurally unfair — the 15% formulation completeness bucket penalizes supplemental products for not including vitamin/mineral premixes they never claimed to provide. A single-ingredient product like Against the Grain Nothing Else! Duck (ingredient list: "Duck.") would score in the 40s despite having a flawless ingredient profile.
+
+Worse: platforms like Chewy list supplemental products under "Wet Food > Adult" alongside complete meals. The feeding statement is buried. Owners feeding supplemental foods as sole diets risk serious health consequences — pancreatis from high-fat single-protein supplementals, immune deficiency in kittens from nutritionally incomplete diets, mineral deficiencies over time. Kiba must communicate this visually and immediately, without relying on the owner reading fine print.
+
+---
+
+## Part 1: Supplemental Classification Gate
+
+### Decision
+
+Add a third category to D-010's category-adaptive weighting:
+
+| Category | Ingredient Quality | Nutritional Profile | Formulation | Trigger |
+|----------|-------------------|--------------------:|------------:|---------|
+| Daily Food (kibble, wet, raw) | 55% | 30% | 15% | AAFCO "complete and balanced" or no feeding statement |
+| Treats | 100% | 0% | 0% | Product categorized as treat |
+| **Supplemental / Intermittent** | **65%** | **35%** | **0%** | AAFCO "intermittent or supplemental feeding" detected |
+
+### Classification Logic
+
+**At import time** (scraper pipeline), scan the scraped feeding guide text for AAFCO supplemental indicators:
+
+- "intermittent"
+- "supplemental feeding"
+- "not intended as a sole diet"
+- "for supplemental feeding only"
+- "intended for intermittent or supplemental feeding"
+- "mix with [brand] dry" / "serve alongside" (manufacturer variants)
+
+Simple keyword match is sufficient — AAFCO language is standardized and manufacturers must include it for legal compliance.
+
+**Schema change:** Add `is_supplemental BOOLEAN DEFAULT FALSE` to `products` table. Set at import, not at scoring time.
+
+**Default behavior:** If no feeding statement is detected, product defaults to daily food classification. This is conservative — it's better to over-evaluate than under-evaluate.
+
+### Weighting Rationale
+
+**Why 65/35/0 and not 100/0/0 (treat weighting):**
+Owners feed supplementals as meals — they care about macros, protein-to-fat ratio, and nutritional balance. A duck-only product at 21% fat DMB is relevant information for a pancreatitis-prone dog. Dropping nutritional profile entirely would hide that signal. The 65/35 split preserves ingredient quality as dominant (Kiba's moat) while keeping the nutritional bucket active for macro evaluation.
+
+**Why 0% formulation:**
+Supplemental products are not designed to provide complete nutrition. Penalizing for missing calcium, phosphorus, vitamin premixes, or mineral supplementation misrepresents the product's purpose. The formulation bucket is structurally inapplicable.
+
+**Proportional redistribution:** Original daily food ratio of IQ:NP is 55:30 ≈ 1.83:1. New supplemental ratio of 65:35 ≈ 1.86:1 — nearly identical proportion, just without the formulation slice.
+
+### Nutritional Profile Bucket Behavior for Supplementals
+
+The 35% nutritional bucket for supplementals runs the **same scoring function** as daily food — AAFCO threshold checks, trapezoidal curves, DMB conversion — but with an important caveat: the NUTRITIONAL_PROFILE_BUCKET_SPEC.md penalty curves are calibrated for complete-and-balanced foods. A single-ingredient duck product will miss most AAFCO micronutrient ranges (calcium, phosphorus, etc.) not because it's low quality, but because it's not designed to hit them.
+
+**Decision:** The NP bucket for supplementals evaluates **macro profile only** — protein, fat, fiber, and moisture against AAFCO ranges. Micronutrient AAFCO compliance checks (calcium, phosphorus, Ca:P ratio, omega ratios, etc.) are **skipped** for supplemental products, matching the same logic as dropping the formulation bucket: don't penalize for what the product doesn't claim to provide.
+
+**What this means in practice:**
+- Protein DMB vs AAFCO min/max → **evaluated** (an owner feeding this as a meal needs to know the protein level)
+- Fat DMB vs AAFCO min/max → **evaluated** (high-fat supplementals are a real pancreatitis concern)
+- Fiber DMB vs AAFCO max → **evaluated**
+- Moisture → **evaluated** (for DMB conversion accuracy)
+- Calcium, Phosphorus, Ca:P ratio → **skipped** for supplementals
+- Omega-3/6 ratio, DHA, EPA → **skipped** for supplementals (these appear in BonusNutrientGrid as present/absent indicators, not as score penalties)
+- Life stage AAFCO matching → **skipped** for supplementals (they don't carry life stage claims)
+
+**Why not skip NP entirely (like treats)?** Because macros are the one nutritional dimension supplemental owners genuinely care about and that can cause real harm if wrong. A 21% fat DMB product fed daily to a pancreatitis-prone dog is information worth surfacing in the score. Micronutrients are not — they're the formulation bucket's concern, and we already dropped that.
+
+**Implementation note:** This requires a `skipMicronutrients: boolean` flag passed to the nutritional profile scoring function, set to `true` when `is_supplemental = true`. The function already evaluates macros and micros in separate sub-sections per NUTRITIONAL_PROFILE_BUCKET_SPEC.md, so the separation is clean.
+
+### Classification vs Category — Important Distinction
+
+`is_supplemental` (D-136) is a **boolean modifier** on the products table, NOT a new value in the category enum. It is orthogonal to `haiku_suggested_category` from M3 (D-128):
+
+- `haiku_suggested_category = 'supplement'` → vitamin/mineral supplement product (D-096, deferred M16+). Separate scoring model entirely.
+- `is_supplemental = true` → daily food or wet food product with AAFCO intermittent/supplemental feeding statement. Scored via 65/35/0.
+
+A fish oil capsule is a `'supplement'` (category). Against the Grain Nothing Else Duck is `category = 'daily_food'` with `is_supplemental = true`. These are completely different classification axes and must never be confused in implementation.
+
+---
+
+## Part 2: Score Color System
+
+### Decision
+
+Formalize score-to-color mapping for the first time. Two parallel color scales — daily food uses the green family, supplemental uses the teal/cyan family. Both converge at yellow/amber/red for lower scores.
+
+**Daily Food color scale:**
+
+| Range | Color | Hex | Meaning |
+|-------|-------|-----|---------|
+| 85–100 | Dark Green | #22C55E | Excellent match |
+| 70–84 | Light Green | #86EFAC | Good match |
+| 65–69 | Yellow | #FACC15 | Fair match |
+| 51–64 | Amber | #F59E0B | Low match |
+| 0–50 | Red | #EF4444 | Poor match |
+
+**Supplemental color scale:**
+
+| Range | Color | Hex | Meaning |
+|-------|-------|-----|---------|
+| 85–100 | Teal | #14B8A6 | Excellent match |
+| 70–84 | Cyan | #22D3EE | Good match |
+| 65–69 | Yellow | #FACC15 | Fair match |
+| 51–64 | Amber | #F59E0B | Low match |
+| 0–50 | Red | #EF4444 | Poor match |
+
+### Rationale
+
+**Green vs Teal/Cyan family separation:** A user should never confuse a supplemental product's score with a complete meal's score. Teal/cyan signals "this is a different kind of product" at a glance — no reading required. Teal (#14B8A6) at the top tier aligns directly with Kiba's brand palette, so supplemental products feel native rather than warned. Cyan (#22D3EE) at 70–84 steps cooler while staying vibrant and positive.
+
+**Yellow band at 65–69:** Previously collapsed into amber (51–69). A 67 and a 53 tell very different stories — splitting the band gives users a "fair, not bad" signal that amber doesn't provide.
+
+**Convergence at yellow and below:** Once a product drops below 65, the daily-vs-supplemental distinction matters less than the match quality. Shared colors from yellow downward mean communication is identical regardless of product type.
+
+**All labels use D-094 suitability framing.** Excellent / Good / Fair / Low / Poor — everything stays in the "match" spectrum. No clinical vocabulary ("concerns," "issues," "risks"), no implied diagnosis.
+
+**Daily food: green never appears on supplementals.** Supplemental: teal/cyan never appears on daily food. This is the hard rule — color families don't cross.
+
+---
+
+## Part 3: Score Ring Treatment
+
+### Decision
+
+**Daily food:** Full 360° solid ring (existing behavior).
+
+**Supplemental:** Open arc ring — 270° arc with a visible gap. Visual metaphor: "this product is not complete on its own."
+
+Optional: small "+" icon below or inside the ring reinforcing the "add to something" concept.
+
+### Rationale
+
+The open ring is intuitive after a single exposure. Full circle = complete meal. Broken circle = supplement/mixer. No copy needed to convey this. Combined with the cyan/blue color family, the visual language is redundant (each signal works independently) without being noisy.
+
+This is also a differentiator — no competitor does this.
+
+---
+
+## Part 4: Supplemental Badge & Contextual Line
+
+### Decision
+
+**Badge:** Display "Supplemental" badge on product detail screen (same component pattern as "Partial" badge for missing GA).
+
+**Contextual line below score:** "Best paired with a complete meal" — single line, D-095 compliant (purely factual, restating what the manufacturer declared on the label).
+
+### D-095 Compliance Check
+
+- "Best paired with a complete meal" — ✅ No prescriptive language. No "should," "must," "we recommend." Objective restatement of the product's AAFCO-declared feeding purpose.
+- Prohibited terms check: no prescribe, treat, cure, prevent, diagnose.
+
+---
+
+## Part 5: Pantry Diet Completeness Warnings (M5)
+
+### Decision
+
+The pantry (M5) introduces **diet-level completeness checking** — evaluating the combination of products assigned to a pet, not modifying individual product scores.
+
+**Warning tiers based on pantry composition:**
+
+| Pantry State | UI Treatment |
+|-------------|-------------|
+| Supplemental product(s) alongside ≥1 complete food | No warning. Optional small "Topper" tag on the supplemental's pantry card. |
+| 2+ supplemental feeds, no complete food in pantry | Persistent amber warning banner: "⚠️ [Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food." |
+| ONLY supplemental products in pantry, zero complete food | Red diet health card at top of pantry: "🔴 No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own." |
+
+### What This Is NOT
+
+- **NOT a score modifier.** Product scores are never changed based on feeding frequency or pantry composition. Duck is still duck — its quality doesn't degrade because the owner feeds it more often. Modifying scores based on user behavior would violate the deterministic scoring principle and blend behavioral data into the citation-backed quality signal. Same boundary that keeps Kiba Index separate from scoring.
+- **NOT arbitrary penalties.** There are no "−25% for 2 feeds" or "−40% for 3+ feeds" penalties. There is no citation source for those numbers, and every penalty must be citation-backed.
+- **This IS a diet-level assessment** — the pantry layer evaluates the total diet, not individual product quality. This is the correct architectural layer for this concern.
+
+### Rationale
+
+The real-world harm is documented:
+- High-fat single-protein supplementals fed as sole diets → pancreatitis risk
+- Nutritionally incomplete supplementals fed long-term to kittens → immune deficiency, developmental gaps
+- Mineral/vitamin deficiency accumulation over weeks/months when no complete food is present
+
+Platforms like Chewy do not differentiate supplemental from complete meals in their navigation. Owners have no visual signal. Kiba's pantry becomes the safety net that catches this gap — telling the owner "your pet's overall diet has a problem" rather than "this product is bad."
+
+### Future: Diet-Level Scoring (M6+)
+
+This opens the door for cross-product nutritional analysis: "Does [Pet Name]'s total intake from all pantry products cover AAFCO minimums?" Not in scope for M5, but the `is_supplemental` flag and pantry assignment infrastructure make it possible.
+
+---
+
+## Implementation Scope
+
+| Component | Milestone | Effort |
+|-----------|-----------|--------|
+| `is_supplemental` column + migration | M4 Session 6 | Small — single column, default false |
+| Feeding guide text parser (import-time classification) | M4 Session 6 | Small — keyword match on existing scraped data |
+| Backfill: scan existing 8,869 products' feeding guides | M4 Session 6 | Script — one-time batch |
+| Scoring engine: 65/35/0 weight selection based on `is_supplemental` | M4 Session 6 | Small — conditional in engine.ts orchestrator |
+| Score color system (both scales) in constants.ts | M4 Session 6 | Small — color map + helper function |
+| Open arc ring variant for ScoreRing component | M4 Session 6 | Medium — SVG arc math |
+| "Supplemental" badge + contextual line | M4 Session 6 | Small — existing badge pattern |
+| Pantry diet completeness warnings | M5 | Medium — requires pantry assignment infrastructure |
+| Regression tests for supplemental scoring path | M4 Session 6 | Medium — new test suite for 65/35/0 path |
+
+---
+
+## Regression Impact
+
+- **Pure Balance (daily food):** Unaffected — `is_supplemental = false`, routes through existing 55/30/15 path.
+- **Existing treats:** Unaffected — treat classification is separate from supplemental.
+- **New regression target needed:** Against the Grain Nothing Else! Duck (or similar single-ingredient supplemental) — establish expected score under 65/35/0 weighting once engine change lands.
+
+---
+
+## Rejected Alternatives
+
+| Alternative | Why Rejected |
+|------------|-------------|
+| Score supplementals as treats (100/0/0) | Owners feed these as meals — they need nutritional profile data. Dropping NP hides relevant fat/protein signals. |
+| Penalize score based on feeding frequency in pantry | Violates deterministic scoring. No citation source for arbitrary % penalties. Blends user behavior into quality signal — same boundary violation as mixing Kiba Index into scores. |
+| Yellow in supplemental color scale for top tier | Overlaps with amber zone in daily food scale. Teal/cyan family provides clean separation while tying to Kiba brand. |
+| Single color scale for all product types | A supplemental scoring 90 in dark green is misleading — implies "complete meal, great quality" when it's "great ingredients, not a complete meal." |
+| Clinical label language ("concerns present," "significant concerns") | Violates D-094 suitability framing. "Concerns" is diagnostic-adjacent. All labels must stay in the "match" spectrum. |
+| Show supplemental warning as a dismissible tooltip | Too easy to miss. Color + ring shape + badge + contextual line = redundant communication. Owner catches it from any single signal. |
+
+---
+
+*This decision establishes the architectural foundation for supplemental product handling across classification, scoring, display, and pantry safety. The scoring engine remains deterministic, brand-blind, and citation-backed. Diet-level assessment lives in the pantry layer, not the product scoring layer.*
+---
 
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

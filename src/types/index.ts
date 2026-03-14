@@ -109,6 +109,7 @@ export interface Product {
   // Flags
   is_recalled: boolean;
   is_grain_free: boolean;
+  is_supplemental: boolean;
   score_confidence: string;
   needs_review: boolean;
 

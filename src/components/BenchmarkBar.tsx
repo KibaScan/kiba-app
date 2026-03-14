@@ -7,13 +7,14 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useBenchmarkStore, type CategoryAverage } from '../utils/benchmarkData';
 
-// ─── Score Color Breakpoints (D-113) ──────────────────────
+// ─── Score Color Breakpoints (D-136 — supersedes D-113) ───
 
-function scoreColor(score: number): string {
-  if (score >= 80) return '#34C759';
-  if (score >= 70) return '#00B4D8';
-  if (score >= 50) return '#FF9500';
-  return '#FF3B30';
+function scoreColor(score: number, isSupplemental: boolean): string {
+  if (score >= 85) return isSupplemental ? '#14B8A6' : '#22C55E';
+  if (score >= 70) return isSupplemental ? '#22D3EE' : '#86EFAC';
+  if (score >= 65) return '#FACC15';
+  if (score >= 51) return '#F59E0B';
+  return '#EF4444';
 }
 
 // ─── Props ────────────────────────────────────────────────
@@ -23,6 +24,7 @@ interface BenchmarkBarProps {
   category: 'daily_food' | 'treat';
   targetSpecies: 'dog' | 'cat';
   isGrainFree: boolean;
+  isSupplemental?: boolean;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────
@@ -41,7 +43,7 @@ function BenchmarkSkeleton() {
 
 // ─── Component ────────────────────────────────────────────
 
-export function BenchmarkBar({ score, category, targetSpecies, isGrainFree }: BenchmarkBarProps) {
+export function BenchmarkBar({ score, category, targetSpecies, isGrainFree, isSupplemental = false }: BenchmarkBarProps) {
   const [avg, setAvg] = useState<CategoryAverage | null>(null);
   const [loading, setLoading] = useState(true);
   const getCategoryAverage = useBenchmarkStore((s) => s.getCategoryAverage);
@@ -66,7 +68,7 @@ export function BenchmarkBar({ score, category, targetSpecies, isGrainFree }: Be
 
   const markerPosition = Math.max(0, Math.min(100, score));
   const avgPosition = Math.max(0, Math.min(100, avg.avg_score));
-  const markerColor = scoreColor(score);
+  const markerColor = scoreColor(score, isSupplemental);
 
   const categoryLabel = category === 'treat' ? 'treats' : 'foods';
   const grainLabel = isGrainFree ? 'grain-free' : 'grain-inclusive';
@@ -85,12 +87,13 @@ export function BenchmarkBar({ score, category, targetSpecies, isGrainFree }: Be
       </Text>
 
       <View style={styles.barContainer}>
-        {/* Background gradient segments */}
+        {/* Background gradient segments (D-136 five-tier) */}
         <View style={styles.barTrack}>
-          <View style={[styles.segment, styles.segmentRed, { flex: 50 }]} />
-          <View style={[styles.segment, styles.segmentAmber, { flex: 20 }]} />
-          <View style={[styles.segment, styles.segmentCyan, { flex: 10 }]} />
-          <View style={[styles.segment, styles.segmentGreen, { flex: 20 }]} />
+          <View style={[styles.segment, { flex: 51, backgroundColor: '#EF4444' }]} />
+          <View style={[styles.segment, { flex: 14, backgroundColor: '#F59E0B' }]} />
+          <View style={[styles.segment, { flex: 5, backgroundColor: '#FACC15' }]} />
+          <View style={[styles.segment, { flex: 15, backgroundColor: isSupplemental ? '#22D3EE' : '#86EFAC' }]} />
+          <View style={[styles.segment, { flex: 15, backgroundColor: isSupplemental ? '#14B8A6' : '#22C55E' }]} />
         </View>
 
         {/* Category average line */}
@@ -135,21 +138,6 @@ const styles = StyleSheet.create({
   },
   segment: {
     height: '100%',
-  },
-  segmentRed: {
-    backgroundColor: '#FF3B30',
-    opacity: 0.3,
-  },
-  segmentAmber: {
-    backgroundColor: '#FF9500',
-    opacity: 0.3,
-  },
-  segmentCyan: {
-    backgroundColor: '#00B4D8',
-    opacity: 0.3,
-  },
-  segmentGreen: {
-    backgroundColor: '#34C759',
     opacity: 0.3,
   },
   avgLine: {

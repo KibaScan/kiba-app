@@ -1,7 +1,7 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 7, 2026
+> Updated: March 13, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
@@ -10,9 +10,9 @@
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
-- Scoring architecture validated (55/30/15 daily food, 100% treats)
+- Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (131 decisions, D-001 through D-131)
+- Decision log established (136 decisions, D-001 through D-136)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -25,7 +25,7 @@
 - Suitability score reframing strategy complete (D-094) — attorney-approved legal strategy
 - UPVM compliance rules locked (D-095) — prohibited terms list for all UI copy
 - M0 foundation complete: Expo + TypeScript project, Supabase schema with RLS, Zustand stores, navigation shell, onboarding flow (D-092)
-- M1 scan → score pipeline complete: camera + barcode, 3-layer scoring engine (126 tests across 7 suites), result screen with progressive disclosure, score ring with D-113 breakpoints, concern tags, waterfall breakdown, full ingredient list
+- M1 scan → score pipeline complete: camera + barcode, 3-layer scoring engine (126 tests across 7 suites), result screen with progressive disclosure, score ring with D-136 dual color system (supersedes D-113), concern tags, waterfall breakdown, full ingredient list
 - M2 UI design concept reviewed, 9 new decisions locked (D-116 through D-124): approximate age mode, stale weight guard, sex field, "Perfectly Healthy" chip, multi-pet carousel, haptic feedback map, species selection pre-screen, species-specific activity labels, treat logging entry points
 - Pet Profile Spec complete (`PET_PROFILE_SPEC.md`) — profile fields, conditions, allergens, breed modifiers, editing UI
 - Portion Calculator Spec complete (`PORTION_CALCULATOR_SPEC.md`) — RER/DER math, goal weight, cat safety guards
@@ -81,6 +81,7 @@ products
 ├── ingredients_hash TEXT            ← for formula change detection
 ├── is_recalled BOOLEAN DEFAULT false
 ├── is_grain_free BOOLEAN DEFAULT false
+├── is_supplemental BOOLEAN DEFAULT false  ← D-136: AAFCO intermittent/supplemental feeding. Routes to 65/35/0 scoring.
 ├── score_confidence TEXT DEFAULT 'high'
 ├── last_verified_at TIMESTAMPTZ
 ├── formula_change_log JSONB
@@ -257,7 +258,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
   - [x] AAFCO statement compliance
   - [x] Preservative quality assessment
   - [x] Protein naming specificity
-- [x] Category-adaptive weighting: 55/30/15 for daily food, 100/0/0 for treats
+- [x] Category-adaptive weighting: 55/30/15 for daily food, 65/35/0 for supplemental (D-136), 100/0/0 for treats
 - [x] Layer 2: Species rules
   - [x] Dog: DCM advisory (−8% for grain-free + 3+ legumes in top 7)
   - [x] Dog: DCM mitigation (+3% for taurine + L-carnitine supplementation)
@@ -450,6 +451,16 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - ~~Compare button~~ → moved to M6
 - ~~Vet Report~~ → moved to M5-M6 (based on soft launch feedback)
 
+### Supplemental Product Classification (D-136)
+- [ ] `is_supplemental` column on products table (migration 006)
+- [ ] Feeding guide keyword parser (`supplementalClassifier.ts`) — detects AAFCO intermittent/supplemental language at import time
+- [ ] Backfill script: classify existing 8,869 products
+- [ ] Scoring engine: 65/35/0 weight routing for supplemental products. NP bucket evaluates macros only (skip micronutrient AAFCO checks)
+- [ ] Five-tier dual color system (D-136 supersedes D-113): green family for daily food, teal/cyan family for supplementals, shared yellow/amber/red below 65
+- [ ] Open arc ring (270°) for supplemental products — visual metaphor: "not complete on its own"
+- [ ] "Supplemental" badge + "Best paired with a complete meal" contextual line
+- [ ] AafcoProgressBars: macro bars only for supplemental products (hide micronutrient bars)
+
 ---
 
 ## M5: Pantry + Recall Siren (Weeks 20–23)
@@ -469,6 +480,15 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Feeding schedule per pantry item: daily (1-3x/day with clock times) or as-needed (D-101)
 - [ ] Push notifications on feeding schedule — grouped for multi-pet households
 - [ ] Auto-depletion tied to feeding schedule — no manual logging for daily items (D-101)
+
+### Pantry Diet Completeness (D-136 Part 5)
+- [ ] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
+- [ ] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
+- [ ] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "⚠️ [Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
+- [ ] Only supplemental products in pantry, zero complete food → red diet health card: "🔴 No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
+- [ ] Warnings are per-pet (each pet's pantry evaluated independently)
+- [ ] All warning copy D-095 compliant — factual, no clinical language
+- [ ] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
 
 ### Pet Appointments (D-103)
 - [ ] Schedule vet, grooming, medication, vaccination, and custom appointments

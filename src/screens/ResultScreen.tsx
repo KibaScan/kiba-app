@@ -356,19 +356,27 @@ export default function ResultScreen() {
 
         {/* ─── Above Fold ─────────────────────────────────── */}
 
-        {/* Score Ring (D-094) */}
+        {/* Score Ring (D-094, D-136) */}
         <ScoreRing
           score={score}
           petName={displayName}
           petPhotoUri={pet?.photo_url ?? null}
           species={species}
           isPartialScore={scoredResult?.isPartialScore ?? false}
+          isSupplemental={product?.is_supplemental ?? false}
         />
 
         {/* Verdict text — qualitative suitability label (D-094 compliant) */}
-        <Text style={[styles.verdictText, { color: getScoreColor(score) }]}>
+        <Text style={[styles.verdictText, { color: getScoreColor(score, product?.is_supplemental ?? false) }]}>
           {getVerdictLabel(score, petName)}
         </Text>
+
+        {/* Supplemental contextual line below score ring (D-136, D-095 compliant) */}
+        {product?.is_supplemental && (
+          <Text style={styles.supplementalRingLine}>
+            Best paired with a complete meal
+          </Text>
+        )}
 
         {/* Share button */}
         <TouchableOpacity
@@ -387,6 +395,7 @@ export default function ResultScreen() {
             category={scoredResult?.category ?? 'daily_food'}
             targetSpecies={species}
             isGrainFree={product.is_grain_free}
+            isSupplemental={product.is_supplemental ?? false}
           />
         )}
 
@@ -431,6 +440,18 @@ export default function ResultScreen() {
             product={product}
             species={species}
           />
+        )}
+
+        {/* Supplemental badge (D-136) */}
+        {product?.is_supplemental && (
+          <View style={styles.supplementalBadgeContainer}>
+            <View style={styles.supplementalBadge}>
+              <Text style={styles.supplementalBadgeText}>Supplemental</Text>
+            </View>
+            <Text style={styles.supplementalContextLine}>
+              Best paired with a complete meal
+            </Text>
+          </View>
         )}
 
         {/* Breed Contraindication Cards (D-112) */}
@@ -564,6 +585,7 @@ export default function ResultScreen() {
             category={scoredResult.category}
             petName={displayName}
             nutritionalDataSource={product.nutritional_data_source}
+            isSupplemental={product.is_supplemental ?? false}
           />
         )}
 
@@ -728,7 +750,7 @@ export default function ResultScreen() {
           species={species}
           productName={product ? `${product.brand} ${product.name}` : ''}
           score={score}
-          scoreColor={getScoreColor(score)}
+          scoreColor={getScoreColor(score, product?.is_supplemental ?? false)}
         />
       </View>
     </SafeAreaView>
@@ -851,6 +873,36 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   flagChipGenericText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
+
+  // ─── Supplemental Ring Line (D-136)
+  supplementalRingLine: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+
+  // ─── Supplemental Badge (D-136)
+  supplementalBadgeContainer: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    gap: 4,
+  },
+  supplementalBadge: {
+    backgroundColor: '#14B8A6',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  supplementalBadgeText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  supplementalContextLine: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
   },
