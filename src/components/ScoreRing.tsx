@@ -14,7 +14,16 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSizes } from '../utils/constants';
+import {
+  Colors,
+  FontSizes,
+  getScoreColor as _getScoreColor,
+  getVerdictLabel as _getVerdictLabel,
+} from '../utils/constants';
+
+// Re-export from canonical source (constants.ts)
+export const getScoreColor = _getScoreColor;
+export const getVerdictLabel = _getVerdictLabel;
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -24,6 +33,7 @@ interface ScoreRingProps {
   petPhotoUri: string | null;
   species: 'dog' | 'cat';
   isPartialScore: boolean;
+  isSupplemental?: boolean;
 }
 
 // ─── Constants ───────────────────────────────────────────
@@ -33,22 +43,6 @@ const RING_BORDER = 8;
 const TRACK_COLOR = '#333333';
 const ANIMATION_DURATION = 800;
 
-export function getScoreColor(score: number): string {
-  if (score < 50) return Colors.severityRed;
-  if (score < 70) return Colors.severityAmber;
-  if (score < 80) return Colors.accent;
-  return Colors.severityGreen;
-}
-
-export function getVerdictLabel(score: number, petName: string | null): string {
-  const tier =
-    score >= 80 ? 'Great' :
-    score >= 70 ? 'Good' :
-    score >= 50 ? 'Fair' :
-    'Poor';
-  return petName ? `${tier} match for ${petName}` : `${tier} match`;
-}
-
 // ─── Component ───────────────────────────────────────────
 
 export function ScoreRing({
@@ -57,10 +51,11 @@ export function ScoreRing({
   petPhotoUri,
   species,
   isPartialScore,
+  isSupplemental = false,
 }: ScoreRingProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const displayName = petName || (species === 'dog' ? 'your dog' : 'your cat');
-  const ringColor = getScoreColor(score);
+  const ringColor = getScoreColor(score, isSupplemental);
 
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -139,6 +134,11 @@ export function ScoreRing({
             ]}
           />
         </View>
+
+        {/* D-136: 270° open arc gap for supplemental products */}
+        {isSupplemental && (
+          <View style={styles.arcGap} />
+        )}
 
         {/* Center content */}
         <View style={styles.centerContent}>
@@ -230,6 +230,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     position: 'absolute',
   },
+  arcGap: {
+    position: 'absolute',
+    bottom: -2,
+    left: HALF - 65,
+    width: 130,
+    height: 30,
+    backgroundColor: Colors.background,
+    zIndex: 1,
+  },
   centerContent: {
     position: 'absolute',
     top: 0,
@@ -238,6 +247,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 2,
   },
   scoreRow: {
     flexDirection: 'row',

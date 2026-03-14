@@ -34,6 +34,7 @@ interface AafcoProgressBarsProps {
   category: 'daily_food' | 'treat';
   petName: string;
   nutritionalDataSource?: 'manual' | 'llm_extracted' | null;
+  isSupplemental?: boolean;
 }
 
 // ─── AAFCO Thresholds (from NUTRITIONAL_PROFILE_BUCKET_SPEC.md §2a/§2b) ───
@@ -224,6 +225,7 @@ export function AafcoProgressBars({
   category,
   petName,
   nutritionalDataSource,
+  isSupplemental = false,
 }: AafcoProgressBarsProps) {
   const [showDmb, setShowDmb] = useState(false);
 
@@ -334,6 +336,13 @@ export function AafcoProgressBars({
           barMax={BAR_MAX}
         />
       )}
+
+      {/* D-136: Supplemental products — macro profile only note */}
+      {isSupplemental && (
+        <Text style={styles.supplementalNote}>
+          Showing macro profile only — supplemental products are not designed to meet full AAFCO nutritional standards
+        </Text>
+      )}
     </View>
   );
 }
@@ -389,5 +398,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
+  },
+  supplementalNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    lineHeight: 16,
+    marginTop: Spacing.xs,
   },
 });

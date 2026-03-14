@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 7, 2026 (M4 Session 1 — batch scoring, category averages, BenchmarkBar)
+> Last updated: March 13, 2026 (M4 Session 6 — D-136 supplemental classification, dual color system)
 
 ---
 
@@ -23,14 +23,14 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat (installed M3 Session 5)
 - **Audio:** `expo-av` for scan confirmation tone
-- **Testing:** Jest for scoring engine, reference product regression tests (447 tests passing)
+- **Testing:** Jest for scoring engine, reference product regression tests (473 tests passing)
 
 ## Project Structure
 
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (131 decisions, D-001 through D-131)
+├── DECISIONS.md            ← canonical decision log (136 decisions, D-001 through D-136)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -48,19 +48,24 @@ kiba-app/
 │   │   ├── extract_ga.py          ← batch Haiku GA extraction
 │   │   └── validator.py           ← D-043 range validation before DB insert
 │   └── scoring/                   ← M4 batch scoring (batch_score.ts)
+│   └── data/                      ← M4 data scripts (backfill_supplemental.ts)
 ├── supabase/
 │   ├── functions/
 │   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
 │   └── migrations/
 │       ├── 001_initial_schema.sql
 │       ├── 002_m2_pet_profiles.sql   ← renames, new columns, constraint updates
-│       └── 003_m2_health_reviewed.sql ← health_reviewed_at column
+│       ├── 003_m2_health_reviewed.sql ← health_reviewed_at column
+│       ├── 004_m3_community_products.sql ← M3 community contribution columns
+│       ├── 005_m4_category_averages.sql  ← category_averages table, base_score, review_status
+│       ├── 006_ingredient_content_columns.sql ← ingredient content: primary_concern_basis, context columns
+│       └── 007_m4_supplemental.sql       ← D-136: is_supplemental column on products
 ├── src/
 │   ├── types/              ← all TypeScript interfaces
 │   │   └── index.ts
 │   ├── components/         ← shared UI components
 │   │   ├── ScoreGauge.tsx
-│   │   ├── ScoreRing.tsx          ← animated score ring with D-113 color breakpoints + verdict
+│   │   ├── ScoreRing.tsx          ← animated score ring with D-136 dual color system + open arc for supplementals
 │   │   ├── ScannerOverlay.tsx     ← animated viewfinder: corner brackets + scan line + lock animation
 │   │   ├── LoadingTerminal.tsx    ← 6-step terminal message sequence
 │   │   ├── ConcernTags.tsx        ← D-107 consumer-facing badges
@@ -126,6 +131,10 @@ kiba-app/
 │   │   └── useScanStore.ts       ← scan cache, weekly count
 │   ├── utils/
 │   │   ├── permissions.ts   ← ONLY location for paywall checks
+│   │   ├── supplementalClassifier.ts ← D-136: AAFCO feeding guide keyword parser
+│   │   ├── benchmarkData.ts ← Zustand-cached category average fetcher
+│   │   ├── bonusNutrients.ts ← boolean nutrient derivation from product_ingredients
+│   │   ├── flavorDeception.ts ← label vs ingredients detection logic
 │   │   ├── haptics.ts       ← D-121: named haptic functions wrapping expo-haptics
 │   │   ├── lifeStage.ts     ← deriveLifeStage, synthesizeDob, formatLocalDate, parseDateString
 │   │   └── constants.ts
@@ -159,14 +168,33 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 - Row 4: "[Species] Safety Checks" — "Canine Safety Checks" or "Feline Safety Checks" (Layer 2)
 - Row 5: "[Pet Name]'s Breed & Age Adjustments" (Layer 3)
 
-**Score ring color breakpoints + verdict (D-113):**
+**Score ring color breakpoints + verdict (D-136 — supersedes D-113):**
+
+Two parallel color scales. Daily food uses green family. Supplemental uses teal/cyan family. Both converge at yellow/amber/red. All labels use D-094 suitability framing.
+
+**Daily Food + Treats:**
 
 | Score | Ring Color | Verdict |
 |-------|-----------|---------|
-| 80–100 | Green #34C759 | "Great match for [Pet Name]" |
-| 70–79 | Cyan #00B4D8 | "Good match for [Pet Name]" |
-| 50–69 | Amber #FF9500 | "Fair match for [Pet Name]" |
-| 0–49 | Red #FF3B30 | "Poor match for [Pet Name]" |
+| 85–100 | Dark Green #22C55E | "Excellent match for [Pet Name]" |
+| 70–84 | Light Green #86EFAC | "Good match for [Pet Name]" |
+| 65–69 | Yellow #FACC15 | "Fair match for [Pet Name]" |
+| 51–64 | Amber #F59E0B | "Low match for [Pet Name]" |
+| 0–50 | Red #EF4444 | "Poor match for [Pet Name]" |
+
+**Supplemental (is_supplemental = true):**
+
+| Score | Ring Color | Ring Shape | Verdict |
+|-------|-----------|-----------|---------|
+| 85–100 | Teal #14B8A6 | 270° open arc | "Excellent match for [Pet Name]" |
+| 70–84 | Cyan #22D3EE | 270° open arc | "Good match for [Pet Name]" |
+| 65–69 | Yellow #FACC15 | 270° open arc | "Fair match for [Pet Name]" |
+| 51–64 | Amber #F59E0B | 270° open arc | "Low match for [Pet Name]" |
+| 0–50 | Red #EF4444 | 270° open arc | "Poor match for [Pet Name]" |
+
+**Hard rules:** Green NEVER appears on supplemental products. Teal/cyan NEVER appears on daily food/treats. Open arc (270°) = supplemental only. Full circle (360°) = daily food + treats.
+
+Supplemental products also display: "Supplemental" badge (teal background), contextual line "Best paired with a complete meal" below score ring.
 
 Ring color and verdict text always share the same tier. Verdict renders below the ring, 16pt semibold, color-matched.
 
@@ -181,7 +209,10 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 | Category | Ingredient Quality | Nutritional Profile | Formulation |
 |----------|-------------------|--------------------:|------------:|
 | Daily Food (kibble, wet, raw) | 55% | 30% | 15% |
+| Supplemental (is_supplemental = true) | 65% | 35% (macro-only) | 0% |
 | Treats | 100% | 0% | 0% |
+
+**Supplemental classification (D-136):** Products with AAFCO "intermittent or supplemental feeding" language in their feeding guide are classified via `is_supplemental BOOLEAN` on the products table. Detected at import time via keyword match in `supplementalClassifier.ts`. The 35% NP bucket for supplementals evaluates **macros only** (protein, fat, fiber, moisture) — micronutrient AAFCO checks (calcium, phosphorus, Ca:P, omega ratios, life stage matching) are skipped. This is orthogonal to `haiku_suggested_category = 'supplement'` (D-096 vitamin/mineral supplements) — different classification axes entirely.
 
 ### Three Layers (each independently testable)
 
@@ -324,8 +355,7 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ OPFF as data source (using Apify scraping + curated + community)
 - ❌ "Dislikes / Won't Eat" system (rejected M2 — scope creep, worse failure mode than allergen data pollution, revisit post-launch if measurable)
 - ❌ Breed-specific avatar silhouettes (rejected M2 — asset pipeline doesn't exist, use generic species silhouette)
-- ❌ Modify scoring engine (M1 complete, M3 only populates data)
-- ❌ Score supplements (M16+, D-096 — store only)
+- ❌ Score supplements (M16+, D-096 — store only). NOTE: `haiku_suggested_category = 'supplement'` (D-096) ≠ `is_supplemental = true` (D-136). Different classification axes.
 - ❌ Score grooming products (M16+, D-083 — store only)
 - ❌ API keys in app binary (D-127 — all external calls via Edge Functions)
 - ❌ Paywall on recall alerts (D-125 — free tier, safety-critical)
@@ -437,3 +467,9 @@ M2: pet profile CRUD with Supabase auth integration
 □ All Haiku-generated ingredient content has review_status = 'llm_generated'?
 □ Flavor deception card uses D-095 factual language — no "misleading" or "deceptive"?
 □ Share card includes Kiba branding + kibascan.com CTA?
+□ D-136: Supplemental products use 65/35/0 weights, NOT 55/30/15?
+□ D-136: NP bucket for supplementals evaluates macros only — no micronutrient penalties?
+□ D-136: Green NEVER on supplementals, teal/cyan NEVER on daily food?
+□ D-136: Open arc ring (270°) for supplementals, full circle for daily food?
+□ D-136: is_supplemental is orthogonal to haiku_suggested_category — not confused?
+□ D-136: Score color uses getScoreColor() with correct product type — no hardcoded D-113 values?
