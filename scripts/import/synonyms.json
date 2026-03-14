@@ -219,5 +219,15 @@
   "chicory root extract": "chicory_root",
   "virgin coconut oil": "coconut_oil",
   "organic virgin coconut oil": "coconut_oil",
-  "brewer_dried_yeast": "brewers_yeast"
+  "brewer_dried_yeast": "brewers_yeast",
+
+  "eggs": "egg",
+  "pea protein powder": "pea_protein",
+  "distilled water": "water",
+  "purified water": "water",
+  "cod skins": "cod_skin",
+  "pig ears": "pig_ear",
+  "catnip oil": "catnip",
+  "premium catnip": "catnip",
+  "ginger powder": "ginger"
 }

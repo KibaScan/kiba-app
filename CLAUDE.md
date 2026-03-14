@@ -253,9 +253,9 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Neutral if no conflicts detected
 
 ### Reference Scores (Regression Tests)
-- **Pure Balance Grain-Free Salmon & Pea (Dog):** 69/100
-  - IQ: 60, NP: 82, FC: 78 → Base: 69.3 → DCM −8% → Mitigation +3% → **69**
-  - Note: Score may change at M3 when full ingredient data is populated
+- **Pure Balance Wild & Free Salmon & Pea (Dog):** 65/100
+  - IQ: 58, NP: 79, FC: 63 → Base: 65 → DCM: not fired (only 2 legumes in top 7) → **65**
+  - Source: Walmart bag data (not on Chewy). Manually inserted + scored against v6 pipeline.
 - **Temptations Classic Tuna (Cat Treat):** 44/100
   - IQ: 52 → Cat carb penalty −8 → 44
 
@@ -467,7 +467,7 @@ M2: pet profile CRUD with Supabase auth integration
 □ Supplement/grooming exit paths store-only, no scoring? (D-096, D-083)
 □ Haiku classification stored with user corrections? (D-128)
 □ Scan sound respects mute toggle? (AsyncStorage preference)
-□ Pure Balance regression = 69 after any scoring change?
+□ Pure Balance regression = 65 after any scoring change?
 □ D-129 allergen override is per-pet-per-score only — base severity unchanged?
 □ Benchmark bar excludes partial-score products from averages?
 □ All Haiku-generated ingredient content has review_status = 'llm_generated'?
