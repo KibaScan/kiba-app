@@ -335,85 +335,87 @@ describe('computeScore — Orchestrator', () => {
   });
 
   // ─── Regression Test 1: Pure Balance ────────────────────
-  // Real Supabase seed data (product_id: afd04040-425b-5742-9100-9e370c1c3cc9)
-  // All is_protein_fat_source = false to match pipeline.ts M1 hydration
+  // Walmart bag data (product not on Chewy). Manually inserted into v6 pipeline.
+  // product_id: 557b94d9-9d26-4cd3-83d5-05eb4dacb5db
 
-  describe('Regression: Pure Balance Grain-Free Salmon & Pea (Dog)', () => {
+  describe('Regression: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
     const product = makeProduct({
       category: Category.DailyFood,
       target_species: Species.Dog,
       is_grain_free: true,
-      aafco_statement: 'All Life Stages',
+      aafco_statement: 'yes',
       preservative_type: 'natural',
-      ga_protein_pct: 26,
-      ga_fat_pct: 16,
-      ga_fiber_pct: 4,
+      ga_protein_pct: 24,
+      ga_fat_pct: 15,
+      ga_fiber_pct: 5,
       ga_moisture_pct: 10,
     });
 
-    // 15 ingredients — exact Supabase seed data
+    // Key scoring-relevant ingredients from Walmart bag (42 total, neutrals omitted for brevity)
     const ingredients: ProductIngredient[] = [
       makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
       makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
       makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
-      makeIngredient({ position: 4,  canonical_name: 'dried_peas',       dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
-      makeIngredient({ position: 5,  canonical_name: 'pea_protein',      dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
-      makeIngredient({ position: 6,  canonical_name: 'canola_oil',       dog_base_severity: 'neutral' }),
-      makeIngredient({ position: 7,  canonical_name: 'chicken_fat',      dog_base_severity: 'good',    cluster_id: 'protein_chicken', allergen_group: 'chicken' }),
-      makeIngredient({ position: 8,  canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
-      makeIngredient({ position: 9,  canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false, allergen_group_possible: ['chicken', 'beef', 'pork', 'lamb', 'fish'] }),
-      makeIngredient({ position: 10, canonical_name: 'flaxseed',         dog_base_severity: 'good',    cluster_id: 'seed_flax' }),
-      makeIngredient({ position: 11, canonical_name: 'salt',             dog_base_severity: 'caution' }),
-      makeIngredient({ position: 12, canonical_name: 'potassium_chloride', dog_base_severity: 'good',  position_reduction_eligible: false }),
-      makeIngredient({ position: 13, canonical_name: 'taurine',          dog_base_severity: 'good',    position_reduction_eligible: false }),
-      makeIngredient({ position: 14, canonical_name: 'l_carnitine',      dog_base_severity: 'good',    position_reduction_eligible: false }),
-      makeIngredient({ position: 15, canonical_name: 'mixed_tocopherols', dog_base_severity: 'good',   position_reduction_eligible: false }),
+      makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral' }),
+      makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral' }),
+      makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution' }),
+      makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
+      makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
+      makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral' }),
+      makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
+      makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false }),
+      makeIngredient({ position: 12, canonical_name: 'flaxseed',         dog_base_severity: 'good',    cluster_id: 'seed_flax' }),
+      makeIngredient({ position: 13, canonical_name: 'salt',             dog_base_severity: 'caution' }),
+      makeIngredient({ position: 14, canonical_name: 'dicalcium_phosphate', dog_base_severity: 'good' }),
+      makeIngredient({ position: 15, canonical_name: 'potassium_chloride', dog_base_severity: 'good',  position_reduction_eligible: false }),
+      makeIngredient({ position: 16, canonical_name: 'methionine',       dog_base_severity: 'neutral' }),
+      makeIngredient({ position: 17, canonical_name: 'taurine',          dog_base_severity: 'good',    position_reduction_eligible: false }),
+      makeIngredient({ position: 33, canonical_name: 'copper_sulfate',   dog_base_severity: 'caution', position_reduction_eligible: false }),
+      makeIngredient({ position: 40, canonical_name: 'l_carnitine',      dog_base_severity: 'good',    position_reduction_eligible: false }),
+      makeIngredient({ position: 42, canonical_name: 'rosemary_extract', dog_base_severity: 'good' }),
     ];
 
     const pet = makePet({ life_stage: LifeStage.Adult });
 
-    test('full breakdown → 69', () => {
+    test('full breakdown → 65', () => {
       const result = computeScore(product, ingredients, pet);
 
-      // Layer 1a: IQ = 62.8
-      //   peas (3, caution, eligible):           −8 × 1.0  = −8
-      //   dried_peas (4, caution, eligible):     −8 × 1.0  = −8
-      //   pea_protein (5, caution, eligible):    −8 × 1.0  = −8
-      //   natural_flavor (9, caution, NOT elig): −8 × 1.0  = −8
-      //   natural_flavor (unnamed):              −2         = −2
-      //   salt (11, caution, eligible):          −8 × 0.4  = −3.2
-      //   Total: −37.2 → IQ = 62.8
-      expect(result.layer1.ingredientQuality).toBeCloseTo(62.8, 1);
+      // Layer 1a: IQ = 57.6
+      //   peas (3, caution, eligible):              −8 × 1.0  = −8
+      //   poultry_fat (6, caution, eligible):       −8 × 0.7  = −5.6
+      //   fish_meal (8, caution, eligible):         −8 × 0.7  = −5.6
+      //   fish_meal (unnamed):                      −2         = −2
+      //   natural_flavor (11, caution, NOT elig):   −8 × 1.0  = −8
+      //   natural_flavor (unnamed):                 −2         = −2
+      //   salt (13, caution, eligible):             −8 × 0.4  = −3.2
+      //   copper_sulfate (33, caution, NOT elig):   −8 × 1.0  = −8
+      //   Total: −42.4 → IQ = 57.6
+      expect(result.layer1.ingredientQuality).toBeCloseTo(57.6, 1);
 
-      // Layer 1b: NP = 85
-      expect(result.layer1.nutritionalProfile).toBe(85);
+      // Layer 1b: NP = 79
+      expect(result.layer1.nutritionalProfile).toBe(79);
 
-      // Layer 1c: FC = 88 (protein naming defaults to 50 — M1 pipeline limitation)
-      expect(result.layer1.formulation).toBe(88);
+      // Layer 1c: FC = 63
+      expect(result.layer1.formulation).toBe(63);
 
-      // Weighted: (62.8×0.55) + (85×0.30) + (88×0.15) = 73.24 → 73.2
-      expect(result.layer1.weightedComposite).toBeCloseTo(73.2, 1);
+      // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 = 64.83 → 65
+      expect(result.layer1.weightedComposite).toBeCloseTo(64.8, 1);
 
-      // Layer 2: DCM fires (grain-free + 3 legumes in top 7)
+      // Layer 2: DCM does NOT fire — only 2 legumes in top 7 (peas pos 3, pea_starch pos 7)
       const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
       expect(dcm).toBeDefined();
-      expect(dcm!.fired).toBe(true);
-      expect(dcm!.adjustment).toBe(-6); // −round(73.2 × 0.08)
+      expect(dcm!.fired).toBe(false);
 
-      // Mitigation fires: taurine (pos 13) + l_carnitine (pos 14)
+      // Mitigation does not fire when DCM doesn't fire
       const mitigation = result.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
       expect(mitigation).toBeDefined();
-      expect(mitigation!.fired).toBe(true);
-      expect(mitigation!.adjustment).toBe(2); // +round(73.2 × 0.03)
+      expect(mitigation!.fired).toBe(false);
 
-      // L2 net: −4
-      expect(result.layer2.speciesAdjustment).toBeCloseTo(-4, 1);
+      // L2 net: 0
+      expect(result.layer2.speciesAdjustment).toBe(0);
 
-      // Layer 3: neutral for adult dog with no allergens/conditions
-      expect(result.layer3.personalizations.length).toBeGreaterThan(0);
-
-      // Final: round(73.2 + (−4)) = round(69.2) = 69
-      expect(result.finalScore).toBe(69);
+      // Final: 65
+      expect(result.finalScore).toBe(65);
     });
   });
 

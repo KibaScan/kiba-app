@@ -555,20 +555,20 @@ When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%,
 
 ## 11. Reference Scores
 
-### Pure Balance Grain-Free Salmon & Pea (Dog Food)
-**Score:** 66/100 — "Fair match · Heavy Legumes, DCM Concern"
-**Note:** Updated March 1, 2026 — original §11 estimate was 69/100 with IQ 62.8, NP 85, FC 88. Actual M1 engine output after Session 4 bug fixes: IQ 60, NP 82, FC 78. The sub-score differences compound through the weighting. Engine output is now the source of truth.
+### Pure Balance Wild & Free Salmon & Pea (Dog Food)
+**Score:** 65/100 — "Fair match · Legumes, Unnamed Sources"
+**Note:** Updated March 14, 2026 — rescored against v6 pipeline with full Walmart bag ingredient list (42 ingredients). Previous scores (69, 66) were against 15 manually entered ingredients. DCM advisory no longer fires (only 2 legumes in top 7: peas pos 3, pea_starch pos 7 — potatoes are tubers, not legumes per is_legume flag). Unnamed species penalties fire on natural_flavor and fish_meal (−2 each). Product not on Chewy; manually inserted from Walmart UPC.
 
 | Layer | Raw | Weight | Contribution |
 |-------|-----|--------|-------------|
-| Ingredient Quality (incl. −2 unnamed) | 60 | ×0.55 | 33.0 |
-| Nutritional Profile | 82 | ×0.30 | 24.6 |
-| Formulation Completeness | 78 | ×0.15 | 11.7 |
-| **Base** | | | **69.3** |
-| DCM Advisory (−round(69.3×0.08)) | | | −6 |
-| Taurine + L-Carnitine Mitigation (+round(69.3×0.03)) | | | +2 |
+| Ingredient Quality (incl. −4 unnamed) | 58 | ×0.55 | 31.7 |
+| Nutritional Profile | 79 | ×0.30 | 23.7 |
+| Formulation Completeness | 63 | ×0.15 | 9.5 |
+| **Base** | | | **65** |
+| DCM Advisory | | | 0 (not fired) |
+| Taurine + L-Carnitine Mitigation | | | 0 (not fired) |
 | Personalization (Buster) | | | Neutral |
-| **FINAL** | | | **66** |
+| **FINAL** | | | **65** |
 
 ### Temptations Classic Tuna (Cat Treat)
 **Score:** 44/100 — "Occasional treat only · not for daily use"
@@ -1296,32 +1296,27 @@ src/content/breedModifiers/
 ---
 
 ### D-113: Score Ring Color Breakpoints + Verdict Tiers
-**Status:** LOCKED
+**Status:** SUPERSEDED by D-136
 **Date:** Feb 28, 2026
 **Depends on:** D-094 (Suitability Framing), D-086 (Color Scheme)
+**Superseded:** D-136 replaced the 4-tier scheme below with a 5-tier dual color system. See D-136 for the current color breakpoints. The original 4-tier table is preserved for historical context only.
 
-**Decision:** Four-tier color + verdict system for the score ring and verdict text below it. Ring color and verdict text always use the same tier — never green ring with "Fair match."
+~~**Decision:** Four-tier color + verdict system for the score ring.~~
 
-| Score Range | Ring Color | Hex | Verdict Text | Emotional Read |
-|-------------|-----------|-----|-------------|----------------|
-| 80–100 | Green | #34C759 | "Great match for [Pet Name]" | Reassuring — this food is excellent for your pet |
-| 70–79 | Cyan | #00B4D8 | "Good match for [Pet Name]" | Positive — solid choice with minor notes |
-| 50–69 | Amber | #FF9500 | "Fair match for [Pet Name]" | Cautious — notable concerns, look closer |
-| 0–49 | Red | #FF3B30 | "Poor match for [Pet Name]" | Warning — serious issues for your pet |
+| Score Range | Ring Color | Hex | Verdict Text | Status |
+|-------------|-----------|-----|-------------|--------|
+| 80–100 | Green | #34C759 | "Great match" | Replaced by 85–100 Dark Green / 70–84 Light Green |
+| 70–79 | Cyan | #00B4D8 | "Good match" | Replaced — cyan reserved for supplementals only (D-136) |
+| 50–69 | Amber | #FF9500 | "Fair match" | Split into 65–69 Yellow / 51–64 Amber (D-136) |
+| 0–49 | Red | #FF3B30 | "Poor match" | Unchanged (now 0–50) |
 
-**Implementation:**
-- `getScoreColor(score: number): string` and `getVerdictLabel(score: number, petName: string | null): string` — both functions use identical breakpoint thresholds
-- Verdict text renders BELOW the ring, outside the ring component, 8–12px spacing
-- Font: 16pt, semibold, color matches ring tier
-- When petName is null: "Great match" / "Good match" / "Fair match" / "Poor match" (no pet name suffix)
-- Verdict words are suitability descriptors (D-094 compliant), not product quality ratings
+**Implementation (current — per D-136):**
+- `getScoreColor(score, productType)` — takes product type to select daily food (green family) vs supplemental (teal/cyan family) color scale
+- Ring color and verdict text always share the same tier
+- Verdict text renders BELOW the ring, 16pt semibold, color-matched
+- **Hard rule:** Green NEVER on supplementals. Teal/cyan NEVER on daily food/treats.
 
-**Rationale:** The narrow cyan band (10 pts) is intentional — "Good match" is genuinely hard to earn, giving the label credibility. The 69/70 boundary is the sharpest emotional cliff; monitor in user testing. Amber compresses 50–69 (20 pts of variation) but the score number inside the ring provides precision within the band. Pure Balance at 66% renders as amber "Fair match" — correct for a grain-free food with DCM concerns and ingredient splitting.
-
-**Rejected:**
-- ❌ 3-tier system (green ≥70 / amber 50–69 / red <50) — insufficient granularity in the 60–80 decision zone
-- ❌ Wider cyan band (65–79) — puts 66% Pure Balance in cyan, which feels too reassuring for a food with multiple flags
-- ❌ 5-tier system — diminishing returns, users can't distinguish 5 emotional states at a glance
+**Rationale (preserved):** Pure Balance at 65% renders as yellow "Fair match" — correct for a grain-free food with legume concerns and ingredient splitting. The 65–69 yellow band (added in D-136) provides a "fair, not bad" signal that the old amber-only range (50–69) didn't convey.
 
 ---
 
