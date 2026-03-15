@@ -1,12 +1,12 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 14, 2026
+> Updated: March 15, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M4 Product Detail + Education In Progress (M0 + M1 + M2 + M3 Done)
+## Current Status: M4 Product Detail + Education Complete (M0 + M1 + M2 + M3 + M4 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -32,6 +32,7 @@
 - M2 pet profile CRUD functional: create/edit/delete via petService + Supabase, anonymous auth, photo upload to Storage, species selection pre-screen (D-122), species-specific activity labels (D-123), health conditions + allergen picker, "Perfectly Healthy" chip (D-119), approximate age mode (D-116), stale weight indicator (D-117), multi-pet carousel (D-120), score accuracy bar, DER/treat battery display
 - M3 data pipeline + paywall complete: Apify import pipeline (1,589 products), GA refinery (Haiku extraction + validator), formula detection (ingredients_hash), database miss flow (D-091 external UPC + D-128 Haiku classification), parse-ingredients Edge Function, RevenueCat paywall (D-126 psychology patterns), rolling 7-day scan window, legal clickwrap TOS, scan experience polish (haptic/animation/sound). 447 tests passing.
 - M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
+- M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
 
 ---
 

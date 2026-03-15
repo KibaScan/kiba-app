@@ -50,22 +50,11 @@ export const Spacing = {
 
 // ─── Scoring Weights ────────────────────────────────────
 
-export const ScoringWeights = {
-  dailyFood: {
-    ingredientQuality: 0.55,
-    nutritionalProfile: 0.30,
-    formulation: 0.15,
-  },
-  supplemental: {
-    ingredientQuality: 0.65,
-    nutritionalProfile: 0.35,
-    formulation: 0.0,
-  },
-  treat: {
-    ingredientQuality: 1.0,
-    nutritionalProfile: 0.0,
-    formulation: 0.0,
-  },
+export const SCORING_WEIGHTS = {
+  daily_food: { iq: 0.55, np: 0.30, fc: 0.15 },
+  daily_food_partial: { iq: 0.78, np: 0, fc: 0.22 }, // D-017: missing GA → normalized 55/15
+  supplemental: { iq: 0.65, np: 0.35, fc: 0 },        // D-136: macro-only NP, no formulation
+  treat: { iq: 1.0, np: 0, fc: 0 },
 } as const;
 
 // ─── Score Ring Colors (D-136 — supersedes D-113) ──────

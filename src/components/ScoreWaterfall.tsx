@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ScoredResult, Penalty, AppliedRule, PersonalizationDetail } from '../types/scoring';
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, FontSizes, Spacing, SCORING_WEIGHTS } from '../utils/constants';
 
 // Enable LayoutAnimation on Android
 if (
@@ -31,16 +31,11 @@ interface ScoreWaterfallProps {
   scoredResult: ScoredResult;
   petName: string;
   species: 'dog' | 'cat';
-  category: 'daily_food' | 'treat';
+  category: 'daily_food' | 'treat' | 'supplemental';
 }
 
-// ─── Weights (must match scoring engine) ────────────────
-
-const WEIGHTS = {
-  daily_food: { iq: 0.55, np: 0.30, fc: 0.15 },
-  daily_food_partial: { iq: 0.78, np: 0, fc: 0.22 }, // D-017: missing GA reweight
-  treat: { iq: 1.0, np: 0, fc: 0 },
-} as const;
+// Weights imported from constants.ts — single source of truth (D-010, D-136)
+const WEIGHTS = SCORING_WEIGHTS;
 
 // ─── Row Model ──────────────────────────────────────────
 
@@ -54,14 +49,16 @@ function buildRows(
   scoredResult: ScoredResult,
   petName: string,
   species: 'dog' | 'cat',
-  category: 'daily_food' | 'treat',
+  category: 'daily_food' | 'treat' | 'supplemental',
 ): WaterfallRow[] {
   const isPartial = scoredResult.isPartialScore && category === 'daily_food';
   const weightKey = category === 'treat'
     ? 'treat'
-    : isPartial
-      ? 'daily_food_partial'
-      : 'daily_food';
+    : category === 'supplemental'
+      ? 'supplemental'
+      : isPartial
+        ? 'daily_food_partial'
+        : 'daily_food';
   const w = WEIGHTS[weightKey];
   const { layer1, layer2, layer3 } = scoredResult;
   const rows: WaterfallRow[] = [];
@@ -70,13 +67,13 @@ function buildRows(
   const iqDeduction = -Math.round((100 - layer1.ingredientQuality) * w.iq);
   rows.push({ key: 'iq', label: 'Ingredient Concerns', points: iqDeduction });
 
-  // Layer 1b — Nutritional Profile (daily food only, hidden when partial)
-  if (category === 'daily_food' && !isPartial) {
+  // Layer 1b — Nutritional Profile (daily food + supplemental, hidden when partial)
+  if ((category === 'daily_food' || category === 'supplemental') && !isPartial) {
     const npDeduction = -Math.round((100 - layer1.nutritionalProfile) * w.np);
     rows.push({ key: 'np', label: `${petName}'s Nutritional Fit`, points: npDeduction });
   }
 
-  // Layer 1c — Formulation (daily food only)
+  // Layer 1c — Formulation (daily food only — 0% for supplemental/treat)
   if (category === 'daily_food') {
     const fcDeduction = -Math.round((100 - layer1.formulation) * w.fc);
     rows.push({ key: 'fc', label: 'Formulation Quality', points: fcDeduction });

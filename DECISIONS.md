@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 7, 2026 (134 decisions: D-001 through D-134. D-052 revised for M3.)
+> Updated: March 15, 2026 (136 decisions: D-001 through D-136. D-052 revised for M3. D-113 superseded by D-136.)
 
 ---
 
