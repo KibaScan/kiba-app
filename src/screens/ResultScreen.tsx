@@ -378,16 +378,6 @@ export default function ResultScreen() {
           </Text>
         )}
 
-        {/* Share button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          activeOpacity={0.7}
-          onPress={() => captureAndShare(shareCardRef, displayName, score)}
-        >
-          <Ionicons name="share-outline" size={18} color={Colors.accent} />
-          <Text style={styles.shareButtonText}>Share Result</Text>
-        </TouchableOpacity>
-
         {/* Benchmark Bar (D-132) */}
         {product && (
           <BenchmarkBar
@@ -442,15 +432,12 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Supplemental badge (D-136) */}
+        {/* Supplemental badge (D-136) — context line already shown below score ring */}
         {product?.is_supplemental && (
           <View style={styles.supplementalBadgeContainer}>
             <View style={styles.supplementalBadge}>
               <Text style={styles.supplementalBadgeText}>Supplemental</Text>
             </View>
-            <Text style={styles.supplementalContextLine}>
-              Best paired with a complete meal
-            </Text>
           </View>
         )}
 
@@ -507,6 +494,16 @@ export default function ResultScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* Share button */}
+        <TouchableOpacity
+          style={styles.shareButton}
+          activeOpacity={0.7}
+          onPress={() => captureAndShare(shareCardRef, displayName, score)}
+        >
+          <Ionicons name="share-outline" size={18} color={Colors.accent} />
+          <Text style={styles.shareButtonText}>Share Result</Text>
+        </TouchableOpacity>
+
         {/* ─── Below Fold ─────────────────────────────────── */}
 
         {/* Score Waterfall (D-094) */}
@@ -515,46 +512,39 @@ export default function ResultScreen() {
             scoredResult={scoredResult}
             petName={displayName}
             species={species}
-            category={scoredResult.category}
+            category={product?.is_supplemental ? 'supplemental' : scoredResult.category}
           />
         )}
 
-        {/* Portion advisory — daily food (D-106: display-only, no score impact) */}
-        {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
-          <View style={styles.portionSection}>
-            <PortionCard pet={pet} product={product} conditions={[]} />
-          </View>
+        {/* Position Map — ingredient composition strip */}
+        {hydratedIngredients.length > 0 && (
+          <PositionMap
+            ingredients={hydratedIngredients.map((ing) => ({
+              canonical_name: ing.canonical_name,
+              position: ing.position,
+              severity: species === 'dog' ? ing.dog_base_severity : ing.cat_base_severity,
+              allergenOverride: scoredResult?.layer3.allergenWarnings.some(
+                (w) => w.label.includes(ing.canonical_name),
+              ),
+            }))}
+          />
         )}
 
-        {/* Treat advisory — treat budget + per-day count */}
-        {scoredResult && pet && product && product.category === 'treat' && petDer != null && (
-          <View style={styles.portionSection}>
-            <TreatBatteryGauge
-              treatBudgetKcal={treatBudget}
-              consumedKcal={0}
-              petName={displayName}
+        {/* Full Ingredient List (D-031, D-108) */}
+        {hydratedIngredients.length > 0 && (() => {
+          const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
+          const annotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
+            ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
+            : null;
+          return (
+            <IngredientList
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+              flavorAnnotation={annotation}
             />
-            {treatsPerDay != null && treatsPerDay.count > 0 && (
-              <Text style={styles.treatCountText}>
-                {displayName} can have {treatsPerDay.count} of these per day
-              </Text>
-            )}
-            {treatsPerDay?.warning && (
-              <Text style={styles.treatWarningText}>
-                A single treat exceeds {displayName}'s daily treat budget
-              </Text>
-            )}
-          </View>
-        )}
-
-        {/* GA Table (D-038, D-104, D-016) */}
-        {scoredResult && product && (
-          <GATable
-            product={product}
-            scoredResult={scoredResult}
-            species={species}
-          />
-        )}
+          );
+        })()}
 
         {/* AAFCO Progress Bars — nutritional bucket transparency */}
         {scoredResult && product && (
@@ -589,6 +579,15 @@ export default function ResultScreen() {
           />
         )}
 
+        {/* GA Table (D-038, D-104, D-016) */}
+        {scoredResult && product && (
+          <GATable
+            product={product}
+            scoredResult={scoredResult}
+            species={species}
+          />
+        )}
+
         {/* Bonus Nutrient Grid — supplemental nutrient indicators */}
         {product && hydratedIngredients.length > 0 && (
           <BonusNutrientGrid
@@ -601,20 +600,6 @@ export default function ResultScreen() {
             }}
             species={species}
             petName={displayName}
-          />
-        )}
-
-        {/* Position Map — ingredient composition strip */}
-        {hydratedIngredients.length > 0 && (
-          <PositionMap
-            ingredients={hydratedIngredients.map((ing) => ({
-              canonical_name: ing.canonical_name,
-              position: ing.position,
-              severity: species === 'dog' ? ing.dog_base_severity : ing.cat_base_severity,
-              allergenOverride: scoredResult?.layer3.allergenWarnings.some(
-                (w) => w.label.includes(ing.canonical_name),
-              ),
-            }))}
           />
         )}
 
@@ -676,21 +661,41 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Full Ingredient List (D-031, D-108) */}
-        {hydratedIngredients.length > 0 && (() => {
-          const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
-          const annotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
-            ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
-            : null;
-          return (
-            <IngredientList
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-              flavorAnnotation={annotation}
+        {/* Portion advisory — daily food (D-106: display-only, no score impact) */}
+        {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
+          <View style={styles.portionSection}>
+            <PortionCard pet={pet} product={product} conditions={[]} />
+          </View>
+        )}
+
+        {/* Treat advisory — treat budget + per-day count */}
+        {scoredResult && pet && product && product.category === 'treat' && petDer != null && (
+          <View style={styles.portionSection}>
+            <TreatBatteryGauge
+              treatBudgetKcal={treatBudget}
+              consumedKcal={0}
+              petName={displayName}
             />
-          );
-        })()}
+            {treatsPerDay != null && treatsPerDay.count > 0 && (
+              <Text style={styles.treatCountText}>
+                {displayName} can have {treatsPerDay.count} of these per day
+              </Text>
+            )}
+            {treatsPerDay?.warning && (
+              <Text style={styles.treatWarningText}>
+                A single treat exceeds {displayName}'s daily treat budget
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* "What Good Looks Like" reference card */}
+        {scoredResult && (
+          <WhatGoodLooksLike
+            category={scoredResult.category === 'treat' ? 'treat' : 'daily_food'}
+            species={species}
+          />
+        )}
 
         {/* Compare button (D-052: premium gate) */}
         <TouchableOpacity
@@ -717,14 +722,6 @@ export default function ResultScreen() {
           <Text style={styles.trackButtonText}>Track this food</Text>
           <Text style={styles.comingSoonBadge}>Coming soon</Text>
         </TouchableOpacity>
-
-        {/* "What Good Looks Like" reference card */}
-        {scoredResult && (
-          <WhatGoodLooksLike
-            category={scoredResult.category === 'treat' ? 'treat' : 'daily_food'}
-            species={species}
-          />
-        )}
 
         {/* AAFCO statement */}
         {product!.aafco_statement && (

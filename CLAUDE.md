@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 14, 2026 (M4 Session 6 — D-136 supplemental classification, SVG score ring, scoring engine wiring)
+> Last updated: March 15, 2026 (M4 Complete — 501 tests, compliance audit 20/20, D-136 supplemental classification)
 
 ---
 
@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M4 Product Detail + Education (M0–M3 Complete)
+**Current phase:** M4 Product Detail + Education (M0–M4 Complete)
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat (installed M3 Session 5)
 - **Audio:** `expo-av` for scan confirmation tone
-- **Testing:** Jest for scoring engine, reference product regression tests (497 tests passing)
+- **Testing:** Jest for scoring engine, reference product regression tests (501 tests passing)
 - **SVG:** `react-native-svg` for score ring (270° open arc for supplementals)
 
 ## Project Structure

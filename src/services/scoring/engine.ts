@@ -17,6 +17,7 @@ import type { NutritionalProfileInput } from './nutritionalProfile';
 import { scoreFormulation } from './formulationScore';
 import { applySpeciesRules } from './speciesRules';
 import { applyPersonalization, buildAllergenOverrideMap } from './personalization';
+import { SCORING_WEIGHTS } from '../../utils/constants';
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -203,21 +204,21 @@ export function computeScore(
   let iqWeight: number;
 
   if (isTreat) {
-    // Treat: 100% IQ
-    iqWeight = 1.0;
+    const w = SCORING_WEIGHTS.treat;
+    iqWeight = w.iq;
     weightedComposite = iqResult.ingredientScore;
   } else if (isPartialScore) {
-    // D-017: missing GA → normalized 78/22
-    iqWeight = 0.7857;
-    weightedComposite = iqResult.ingredientScore * 0.7857 + fcScore * 0.2143;
+    const w = SCORING_WEIGHTS.daily_food_partial;
+    iqWeight = w.iq;
+    weightedComposite = iqResult.ingredientScore * w.iq + fcScore * w.fc;
   } else if (isSupplemental) {
-    // D-136: supplemental 65/35/0 — formulation skipped
-    iqWeight = 0.65;
-    weightedComposite = iqResult.ingredientScore * 0.65 + npScore * 0.35;
+    const w = SCORING_WEIGHTS.supplemental;
+    iqWeight = w.iq;
+    weightedComposite = iqResult.ingredientScore * w.iq + npScore * w.np;
   } else {
-    // Daily food, full GA
-    iqWeight = 0.55;
-    weightedComposite = iqResult.ingredientScore * 0.55 + npScore * 0.30 + fcScore * 0.15;
+    const w = SCORING_WEIGHTS.daily_food;
+    iqWeight = w.iq;
+    weightedComposite = iqResult.ingredientScore * w.iq + npScore * w.np + fcScore * w.fc;
   }
 
   // D-129: allergen delta — weighted difference between base and override IQ
