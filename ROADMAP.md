@@ -35,6 +35,7 @@
 - M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
 - M4.5 (in progress): D-137 DCM Pulse Framework — replace grain-free gate with positional pulse load detection, narrow scope from all legumes to pulses only, update Pure Balance regression 65 → 62.
 - M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
+- M4.5: D-135 vet diet bypass — pipeline skips scoring engine for `is_vet_diet = true` products, ResultScreen renders vet diet badge + ingredient list only (no score ring, no waterfall, no benchmark).
 
 ---
 
@@ -503,6 +504,19 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] D-137 appended to DECISIONS.md
 - [x] CLAUDE.md updated: DCM description, regression target, concern tags, schema, self-check
 - [x] ROADMAP.md updated: M4.5 section added
+
+### D-135: Vet Diet Bypass
+- [x] `is_vet_diet BOOLEAN` on products table (Migration 008, backfilled from dataset — 125 products)
+- [x] `is_vet_diet` added to Product type (`src/types/index.ts`)
+- [x] Pipeline bypass: `pipeline.ts` skips `computeScore()` when `is_vet_diet = true`, returns `vet_diet_bypass` flag
+- [x] ResultScreen vet diet view: medkit badge, D-135 copy, ingredient list + severity dots, allergen warnings, breed contraindications
+- [x] Suppressed for vet diets: ScoreRing, verdict, BenchmarkBar, ScoreWaterfall, ConcernTags, Safe Swap, Compare, Share, GATable, AAFCO bars, Portion/Treat cards
+- [x] D-135 added to CLAUDE.md: Non-Negotiable Rule #13, "What NOT to Build", self-check items
+
+### Migration 008: Dataset Field Backfill
+- [x] Add `feeding_guidelines`, `is_vet_diet`, `special_diet`, `image_url`, `source_url` to products table
+- [x] Backfill 9,078 products from `dataset_kiba_v6_merged.json` (0 errors)
+- [x] `references/dataset-field-mapping.md` — full audit of mapped vs dropped fields
 
 ---
 

@@ -38,6 +38,9 @@ kiba-app/
 ├── BREED_MODIFIERS_CATS.md             ← 21 cat breed entries (scoring engine lookup table)
 ├── PET_PROFILE_SPEC.md                 ← M2 canonical: profile fields, conditions, allergens, breed modifiers
 ├── PORTION_CALCULATOR_SPEC.md          ← M2 canonical: RER/DER math, goal weight, cat safety guards
+├── references/
+│   ├── scoring-rules.md               ← consolidated scoring rules reference
+│   └── dataset-field-mapping.md       ← v6 dataset → Supabase field audit (mapped vs dropped)
 ├── app.json
 ├── tsconfig.json
 ├── assets/
@@ -336,6 +339,7 @@ See `supabase/migrations/001_initial_schema.sql` for full schema. Critical table
 10. **Suitability framing (D-094).** Scores are always "[X]% match for [Pet Name]." Never display a score without pet context. No "naked" scores exist.
 11. **UPVM compliance (D-095).** Never use these terms in user-facing copy: "prescribe," "treat," "cure," "prevent," "diagnose." Map label data → published literature → compatibility deduction. Kiba is a data-mapping tool, not a digital veterinarian.
 12. **Breed modifier cap.** Total breed modifiers within the nutritional bucket capped at ±10 points. Every modifier requires `citation_source` and `vet_audit_status = 'cleared'` before production.
+13. **Vet diet bypass (D-135).** Products with `is_vet_diet = true` are NEVER scored. No composite score, no color zone, no benchmark. Ingredient list + severity dots + educational cards still render. Vet diet badge with copy: "This is a veterinary diet formulated for specific health needs. Ingredient details are shown below — discuss suitability with your veterinarian."
 
 ## Weight Management (D-106)
 
@@ -365,6 +369,7 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ Breed-specific avatar silhouettes (rejected M2 — asset pipeline doesn't exist, use generic species silhouette)
 - ❌ Score supplements (M16+, D-096 — store only). NOTE: `haiku_suggested_category = 'supplement'` (D-096) ≠ `is_supplemental = true` (D-136). Different classification axes.
 - ❌ Score grooming products (M16+, D-083 — store only)
+- ❌ Score vet diets (D-135 — `is_vet_diet = true` products bypass scoring engine entirely, show ingredient list only)
 - ❌ API keys in app binary (D-127 — all external calls via Edge Functions)
 - ❌ Paywall on recall alerts (D-125 — free tier, safety-critical)
 - ❌ Compare flow (deferred M6 — button + paywall gate already exist)
@@ -485,3 +490,5 @@ M2: pet profile CRUD with Supabase auth integration
 □ D-137: No grain-free gate — DCM evaluates pure ingredient composition?
 □ D-137: Potatoes, sweet potatoes, soy excluded from pulse classification?
 □ D-137: Heart Risk concern tag fires on D-137 rules, not D-013 count?
+□ D-135: Vet diet products (`is_vet_diet = true`) never scored — pipeline returns vet_diet_bypass?
+□ D-135: ResultScreen shows vet diet badge + ingredients, suppresses ScoreRing/Waterfall/BenchmarkBar?
