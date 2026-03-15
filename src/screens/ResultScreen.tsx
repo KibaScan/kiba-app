@@ -46,6 +46,7 @@ import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
 import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
 import { detectFlavorDeception } from '../utils/flavorDeception';
 import { DcmAdvisoryCard } from '../components/DcmAdvisoryCard';
+import { evaluateDcmRisk } from '../services/scoring/speciesRules';
 import { FormulaChangeTimeline } from '../components/FormulaChangeTimeline';
 import { WhatGoodLooksLike } from '../components/WhatGoodLooksLike';
 import { PetShareCard } from '../components/PetShareCard';
@@ -580,6 +581,7 @@ export default function ResultScreen() {
             ingredients={hydratedIngredients}
             product={product}
             species={species}
+            dcmFires={species === 'dog' && scoredResult?.layer2.appliedRules.some(r => r.ruleId === 'DCM_ADVISORY' && r.fired)}
           />
         )}
 
@@ -775,29 +777,16 @@ export default function ResultScreen() {
           ) : null;
         })()}
 
-        {/* DCM Advisory Card (D-013 — dog-only, grain-free + legumes) */}
-        {scoredResult && product && species === 'dog' && product.is_grain_free && (() => {
+        {/* DCM Advisory Card (D-137 — dog-only, pulse load) */}
+        {scoredResult && product && species === 'dog' && (() => {
           const dcmRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
           const mitigationRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
           if (!dcmRule?.fired) return null;
-          const legumesFound = hydratedIngredients
-            .filter(i => i.position <= 7 && i.is_legume)
-            .map(i => ({
-              name: i.display_name || i.canonical_name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-              position: i.position,
-            }));
-          const hasTaurine = hydratedIngredients.some(i => i.canonical_name.toLowerCase().includes('taurine'));
-          const hasLCarnitine = hydratedIngredients.some(i =>
-            i.canonical_name.toLowerCase().includes('l-carnitine') ||
-            i.canonical_name.toLowerCase().includes('l_carnitine'),
-          );
+          const dcmResult = evaluateDcmRisk(hydratedIngredients);
           const dcmPenalty = Math.abs(dcmRule.adjustment) - (mitigationRule?.adjustment ?? 0);
           return (
             <DcmAdvisoryCard
-              legumesFound={legumesFound}
-              isGrainFree={product.is_grain_free}
-              hasTaurine={hasTaurine}
-              hasLCarnitine={hasLCarnitine}
+              dcmResult={dcmResult}
               dcmPenalty={dcmPenalty}
               petName={displayName}
             />

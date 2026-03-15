@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M4.5 DCM Pulse Framework (M0–M4 Complete, M4.5 in progress)
+**Current phase:** M5 Pantry + Recall Siren (M0–M4.5 Complete)
 
 ## Tech Stack
 
@@ -492,5 +492,6 @@ M2: pet profile CRUD with Supabase auth integration
 □ D-137: No grain-free gate — DCM evaluates pure ingredient composition?
 □ D-137: Potatoes, sweet potatoes, soy excluded from pulse classification?
 □ D-137: Heart Risk concern tag fires on D-137 rules, not D-013 count?
+□ D-137: is_pulse_protein is strict subset of is_pulse (every pulse protein is also a pulse)?
 □ D-135: Vet diet products (`is_vet_diet = true`) never scored — pipeline returns vet_diet_bypass?
 □ D-135: ResultScreen shows vet diet badge + ingredients, suppresses ScoreRing/Waterfall/BenchmarkBar?

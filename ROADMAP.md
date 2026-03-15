@@ -6,7 +6,7 @@
 
 ---
 
-## Current Status: M4.5 DCM Pulse Framework In Progress (M0 + M1 + M2 + M3 + M4 Done)
+## Current Status: M4.5 DCM Pulse Framework Complete (M0 + M1 + M2 + M3 + M4 + M4.5 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -33,7 +33,7 @@
 - M3 data pipeline + paywall complete: Apify import pipeline (1,589 products), GA refinery (Haiku extraction + validator), formula detection (ingredients_hash), database miss flow (D-091 external UPC + D-128 Haiku classification), parse-ingredients Edge Function, RevenueCat paywall (D-126 psychology patterns), rolling 7-day scan window, legal clickwrap TOS, scan experience polish (haptic/animation/sound). 447 tests passing.
 - M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
 - M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
-- M4.5 (in progress): D-137 DCM Pulse Framework — replace grain-free gate with positional pulse load detection, narrow scope from all legumes to pulses only, update Pure Balance regression 65 → 62.
+- M4.5 (complete): D-137 DCM Pulse Framework — replaced grain-free gate with positional pulse load detection, narrowed scope from all legumes to pulses only, updated Pure Balance regression 65 → 62. DcmAdvisoryCard shows rule-specific copy, Heart Risk concern tag fires on D-137 rules. 509 tests passing.
 - M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
 - M4.5: D-135 vet diet bypass — pipeline skips scoring engine for `is_vet_diet = true` products, ResultScreen renders vet diet badge + ingredient list only (no score ring, no waterfall, no benchmark).
 
@@ -492,8 +492,8 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] `evaluateDcmRisk()` exported — returns `DcmResult` with triggered rules, pulse ingredients, mitigation status
 
 ### UI Updates
-- [ ] `DcmAdvisoryCard.tsx`: Updated copy showing which rule(s) fired + mechanism-cited explanations
-- [ ] `ConcernTags.tsx`: Heart Risk membership updated — pulses only, potatoes removed, fires on D-137 rules
+- [x] `DcmAdvisoryCard.tsx`: Updated copy showing which rule(s) fired + mechanism-cited explanations
+- [x] `ConcernTags.tsx`: Heart Risk membership updated — pulses only, potatoes removed, fires on D-137 rules
 
 ### Testing
 - [x] Update regression tests: Pure Balance = 62 (was 65) — updated in engine.test.ts, realDataTrace.test.ts, allergenOverride.test.ts

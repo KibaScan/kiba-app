@@ -78,8 +78,9 @@ All three layers must be independently testable. Species rules never share betwe
 **Source:** AAFCO Definitions 9.3 (Poultry Fat), 9.14 (Fish Meal), 2023 ed.
 
 ### D-013: DCM Advisory (Dogs Only)
-**Status:** LOCKED
+**Status:** SUPERSEDED by D-137
 **Date:** Feb 19, 2026
+**Superseded:** Mar 14, 2026 — DCM trigger logic replaced by D-137 positional pulse load framework. Grain-free gate removed, potatoes exonerated, 3-rule OR replaces simple count threshold. Penalty magnitude unchanged (−8% / +3% mitigation).
 **Decision:** −8% penalty for grain-free formulas with 3+ legume/potato sources in top 7 ingredients. +3% mitigation if both Taurine AND L-Carnitine are supplemented.
 **Net effect:** −5% when both conditions met, −8% when no mitigation.
 **Source:** FDA Center for Veterinary Medicine — DCM Investigation (2019, updated 2024).

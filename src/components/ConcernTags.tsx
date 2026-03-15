@@ -34,6 +34,8 @@ interface ConcernTagsProps {
   ingredients: ProductIngredient[];
   product: Product;
   species: 'dog' | 'cat';
+  /** D-137: true when evaluateDcmRisk().fires — gates Heart Risk tag */
+  dcmFires?: boolean;
 }
 
 // ─── Static Tag Map (D-107) ─────────────────────────────
@@ -47,10 +49,9 @@ const CONCERN_TAG_DEFS: ConcernTagDef[] = [
     icon: 'heart-outline',
     members: [
       'peas', 'lentils', 'chickpeas', 'pea_protein', 'pea_starch',
-      'potatoes', 'sweet_potatoes', 'potato_starch',
     ],
     tooltip:
-      'Contains multiple legume or potato sources in primary positions. The FDA has investigated a potential link between these dietary patterns and dilated cardiomyopathy (DCM) in dogs.',
+      'Contains pulse ingredients in positions associated with high dietary load. The FDA has investigated a potential link between pulse-heavy diets and dilated cardiomyopathy (DCM) in dogs.',
   },
   {
     id: 'synthetic_additive',
@@ -100,23 +101,16 @@ const MAX_VISIBLE = 3;
 
 // ─── Component ──────────────────────────────────────────
 
-export function ConcernTags({ ingredients, product, species }: ConcernTagsProps) {
+export function ConcernTags({ ingredients, product, species, dcmFires }: ConcernTagsProps) {
   const [expanded, setExpanded] = useState(false);
 
   const ingredientNames = new Set(ingredients.map((i) => i.canonical_name));
 
   const firedTags: ConcernTagDef[] = CONCERN_TAG_DEFS.filter((tag) => {
     if (tag.id === 'heart_risk') {
-      // Dogs only (D-013)
+      // D-137: dogs only, fires when DCM pulse load result fires
       if (species !== 'dog') return false;
-      // D-013 gate: grain-free AND 3+ legume/potato in positions 1-7
-      // Uses is_legume flag (same as speciesRules.ts DCM check) — robust
-      // against canonical_name format differences (spaces vs underscores).
-      if (!product.is_grain_free) return false;
-      const legumesInTop7 = ingredients.filter(
-        (i) => i.position <= 7 && i.is_legume,
-      ).length;
-      return legumesInTop7 >= 3;
+      return dcmFires === true;
     }
     // Other tags: any member present in ingredient list
     return tag.members.some((member) => ingredientNames.has(member));

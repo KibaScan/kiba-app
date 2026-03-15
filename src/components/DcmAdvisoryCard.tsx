@@ -1,39 +1,51 @@
 // Kiba — DCM Advisory Card
-// Educational card for grain-free + legume DCM advisory (Layer 2, D-013).
-// D-095: Factual language only. "Potential association," "no causal link established."
+// Educational card for D-137 DCM pulse load advisory (Layer 2).
+// Shows which rules fired with mechanism-cited explanations.
+// D-095: Factual language only. "May," "associated with," "different profile."
 // D-084: No emoji. Ionicons only. D-094: Pet name in score impact line.
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import type { DcmResult } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 
 // ─── Props ──────────────────────────────────────────────
 
 interface DcmAdvisoryCardProps {
-  legumesFound: Array<{ name: string; position: number }>;
-  isGrainFree: boolean;
-  hasTaurine: boolean;
-  hasLCarnitine: boolean;
+  dcmResult: DcmResult;
   dcmPenalty: number;
   petName: string;
+}
+
+// ─── Helpers ────────────────────────────────────────────
+
+/** Convert canonical_name to display form: "dried_peas" → "Dried Peas" */
+function formatName(canonical: string): string {
+  return canonical
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 // ─── Component ──────────────────────────────────────────
 
 export function DcmAdvisoryCard({
-  legumesFound,
-  isGrainFree,
-  hasTaurine,
-  hasLCarnitine,
+  dcmResult,
   dcmPenalty,
   petName,
 }: DcmAdvisoryCardProps) {
-  // Guard: only render when DCM advisory conditions are met
-  if (!isGrainFree || legumesFound.length < 3) return null;
+  if (!dcmResult.fires) return null;
 
-  const hasBothSupplements = hasTaurine && hasLCarnitine;
+  const { triggeredRules, hasMitigation, pulseIngredients } = dcmResult;
+
+  // Gather data for each rule section
+  const heavyweightPulses = pulseIngredients.filter(p => p.position <= 3);
+  const pulsesInTop10 = pulseIngredients.filter(p => p.position <= 10);
+  const pulseProteins = pulseIngredients.filter(
+    p => p.position <= 10 && p.isPulseProtein,
+  );
 
   return (
     <View style={styles.card}>
@@ -46,32 +58,59 @@ export function DcmAdvisoryCard({
         <Text style={styles.title}>Heart Health Advisory</Text>
       </View>
 
-      <Text style={styles.body}>
-        This product is grain-free and contains {legumesFound.length} legume
-        ingredients in the first 7 positions:
+      {/* Rule 1 — Heavyweight */}
+      {triggeredRules.includes('heavyweight') && heavyweightPulses.length > 0 && (
+        <View style={styles.ruleSection}>
+          {heavyweightPulses.map(p => (
+            <Text key={`hw-${p.name}`} style={styles.body}>
+              {formatName(p.name)} appears at position {p.position} in the
+              ingredient list. Dried pulses listed near the top often outweigh
+              meat in the cooked product, as fresh meat contains ~70% water that
+              evaporates during processing.
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* Rule 2 — Density */}
+      {triggeredRules.includes('density') && (
+        <View style={styles.ruleSection}>
+          <Text style={styles.body}>
+            This product contains {pulsesInTop10.length} pulse-based ingredients
+            in the top 10:{' '}
+            {pulsesInTop10
+              .map(p => `${formatName(p.name)} (position ${p.position})`)
+              .join(', ')}
+            . Combined, these pulses may represent a significant portion of the
+            total formula.
+          </Text>
+        </View>
+      )}
+
+      {/* Rule 3 — Substitution */}
+      {triggeredRules.includes('substitution') && pulseProteins.length > 0 && (
+        <View style={styles.ruleSection}>
+          {pulseProteins.map(p => (
+            <Text key={`sub-${p.name}`} style={styles.body}>
+              {formatName(p.name)} is a pulse protein isolate used to increase
+              the protein percentage on the label. Plant protein isolates have a
+              different amino acid profile than animal proteins.
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <Text style={styles.citation}>
+        FDA Center for Veterinary Medicine, DCM Investigation (2019, updated
+        2024). Research is ongoing and no causal link has been established.
       </Text>
 
-      <View style={styles.bulletList}>
-        {legumesFound.map((legume) => (
-          <BulletRow
-            key={`${legume.name}-${legume.position}`}
-            text={`${legume.name} — position ${legume.position}`}
-          />
-        ))}
-      </View>
-
-      <Text style={styles.body}>
-        The FDA has investigated a potential association between grain-free
-        diets high in legumes and dilated cardiomyopathy (DCM) in dogs.
-        Research is ongoing and no causal link has been established.
-      </Text>
-
-      {hasBothSupplements ? (
+      {/* Mitigation */}
+      {hasMitigation ? (
         <View style={styles.mitigationSection}>
           <Text style={styles.mitigationText}>
-            This product includes taurine and L-carnitine supplementation,
-            which are associated with heart health support in veterinary
-            research. Score impact reduced from {'\u2212'}8 to {'\u2212'}5 points.
+            This product supplements both taurine and L-carnitine, which support
+            the amino acid pathways associated with cardiac function.
           </Text>
         </View>
       ) : (
@@ -84,22 +123,6 @@ export function DcmAdvisoryCard({
       <Text style={styles.scoreImpact}>
         Score impact: {'\u2212'}{Math.abs(dcmPenalty)} points for {petName}
       </Text>
-    </View>
-  );
-}
-
-// ─── Bullet Row ─────────────────────────────────────────
-
-function BulletRow({ text }: { text: string }) {
-  return (
-    <View style={styles.bulletRow}>
-      <Ionicons
-        name="chevron-forward-outline"
-        size={12}
-        color={Colors.textTertiary}
-        style={styles.bulletIcon}
-      />
-      <Text style={styles.bulletText}>{text}</Text>
     </View>
   );
 }
@@ -127,30 +150,21 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     flex: 1,
   },
+  ruleSection: {
+    marginBottom: Spacing.xs,
+  },
   body: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: Spacing.sm,
   },
-  bulletList: {
+  citation: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    lineHeight: 18,
+    fontStyle: 'italic',
     marginBottom: Spacing.sm,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-    paddingLeft: 4,
-  },
-  bulletIcon: {
-    marginTop: 3,
-    marginRight: 6,
-  },
-  bulletText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-    flex: 1,
   },
   mitigationSection: {
     borderLeftWidth: 3,
