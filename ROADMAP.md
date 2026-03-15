@@ -6,13 +6,13 @@
 
 ---
 
-## Current Status: M4 Product Detail + Education Complete (M0 + M1 + M2 + M3 + M4 Done)
+## Current Status: M4.5 DCM Pulse Framework In Progress (M0 + M1 + M2 + M3 + M4 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (136 decisions, D-001 through D-136)
+- Decision log established (137 decisions, D-001 through D-137)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -33,6 +33,8 @@
 - M3 data pipeline + paywall complete: Apify import pipeline (1,589 products), GA refinery (Haiku extraction + validator), formula detection (ingredients_hash), database miss flow (D-091 external UPC + D-128 Haiku classification), parse-ingredients Edge Function, RevenueCat paywall (D-126 psychology patterns), rolling 7-day scan window, legal clickwrap TOS, scan experience polish (haptic/animation/sound). 447 tests passing.
 - M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
 - M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
+- M4.5 (in progress): D-137 DCM Pulse Framework — replace grain-free gate with positional pulse load detection, narrow scope from all legumes to pulses only, update Pure Balance regression 65 → 62.
+- M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
 
 ---
 
@@ -84,6 +86,11 @@ products
 ├── is_recalled BOOLEAN DEFAULT false
 ├── is_grain_free BOOLEAN DEFAULT false
 ├── is_supplemental BOOLEAN DEFAULT false  ← D-136: AAFCO intermittent/supplemental feeding. Routes to 65/35/0 scoring.
+├── is_vet_diet BOOLEAN DEFAULT false      ← Migration 008: veterinary/prescription diet flag (~125 products)
+├── special_diet TEXT                      ← Migration 008: diet tags (high-protein, limited-ingredient, etc.)
+├── image_url TEXT                         ← Migration 008: Chewy product image URL
+├── feeding_guidelines TEXT                ← Migration 008: full feeding guide text (D-136 supplemental detection)
+├── source_url TEXT                        ← Migration 008: Chewy product page URL (debugging + rescrapes)
 ├── score_confidence TEXT DEFAULT 'high'
 ├── last_verified_at TIMESTAMPTZ
 ├── formula_change_log JSONB
@@ -107,6 +114,8 @@ ingredients_dict
 ├── cat_base_severity ENUM ('danger' | 'caution' | 'neutral' | 'good')
 ├── is_unnamed_species BOOLEAN DEFAULT false
 ├── is_legume BOOLEAN DEFAULT false
+├── is_pulse BOOLEAN DEFAULT false         ← D-137: peas, lentils, chickpeas, fava/beans (NOT potatoes, soy)
+├── is_pulse_protein BOOLEAN DEFAULT false  ← D-137: pulse protein isolates/concentrates only (subset of is_pulse)
 ├── position_reduction_eligible BOOLEAN DEFAULT false
 ├── cat_carb_flag BOOLEAN DEFAULT false
 ├── base_description TEXT            ← species-agnostic
@@ -262,7 +271,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
   - [x] Protein naming specificity
 - [x] Category-adaptive weighting: 55/30/15 for daily food, 65/35/0 for supplemental (D-136), 100/0/0 for treats
 - [x] Layer 2: Species rules
-  - [x] Dog: DCM advisory (−8% for grain-free + 3+ legumes in top 7)
+  - [x] Dog: DCM advisory (−8% via D-137 positional pulse load — supersedes D-013 grain-free gate)
   - [x] Dog: DCM mitigation (+3% for taurine + L-carnitine supplementation)
   - [x] Cat: Carb overload (−15% for 3+ high-glycemic carbs in top 5)
   - [x] Cat: Mandatory taurine check
@@ -462,6 +471,38 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Open arc ring (270°) for supplemental products — SVG-based via react-native-svg, proper fill remapping
 - [x] "Supplemental" badge + "Best paired with a complete meal" contextual line
 - [x] AafcoProgressBars: macro bars only for supplemental products (hide micronutrient bars)
+
+---
+
+## M4.5: DCM Pulse Framework — D-137 (Post-M4 Patch)
+
+> Goal: Replace marketing-label proxy (grain-free gate) with biochemistry-based positional pulse load detection for DCM risk scoring.
+
+### Schema
+- [ ] Migration: `is_pulse BOOLEAN DEFAULT FALSE` on `ingredients_dict`
+- [ ] Migration: `is_pulse_protein BOOLEAN DEFAULT FALSE` on `ingredients_dict`
+- [ ] Backfill: set `is_pulse = true` on pea/lentil/chickpea/fava/bean clusters and all derivatives
+- [ ] Backfill: set `is_pulse_protein = true` on pulse protein isolates/concentrates only
+
+### Scoring Engine
+- [ ] `speciesRules.ts`: Replace D-013 DCM trigger with D-137 three-rule OR (heavyweight / density / substitution)
+- [ ] Remove `is_grain_free` dependency from DCM evaluation path
+- [ ] DCM penalty unchanged: −8% (×0.92), mitigation +3% (×1.03) when taurine + L-carnitine supplemented
+
+### UI Updates
+- [ ] `DcmAdvisoryCard.tsx`: Updated copy showing which rule(s) fired + mechanism-cited explanations
+- [ ] `ConcernTags.tsx`: Heart Risk membership updated — pulses only, potatoes removed, fires on D-137 rules
+
+### Testing
+- [ ] Update regression tests: Pure Balance = 62 (was 65)
+- [ ] New tests: D-137 Rule 1 (pulse in top 3), Rule 2 (2+ pulses in top 10), Rule 3 (pulse protein isolate)
+- [ ] Verify potatoes, soy, tapioca do NOT trigger DCM
+- [ ] Verify grain-inclusive products with pulse load correctly trigger DCM
+
+### Documentation
+- [x] D-137 appended to DECISIONS.md
+- [x] CLAUDE.md updated: DCM description, regression target, concern tags, schema, self-check
+- [x] ROADMAP.md updated: M4.5 section added
 
 ---
 

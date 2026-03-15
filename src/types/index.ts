@@ -110,6 +110,7 @@ export interface Product {
   is_recalled: boolean;
   is_grain_free: boolean;
   is_supplemental: boolean;
+  is_vet_diet: boolean;
   score_confidence: string;
   needs_review: boolean;
 

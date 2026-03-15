@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 15, 2026 (136 decisions: D-001 through D-136. D-052 revised for M3. D-113 superseded by D-136.)
+> Updated: March 15, 2026 (137 decisions: D-001 through D-137. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136.)
 
 ---
 
@@ -1908,6 +1908,146 @@ This opens the door for cross-product nutritional analysis: "Does [Pet Name]'s t
 ---
 
 *This decision establishes the architectural foundation for supplemental product handling across classification, scoring, display, and pantry safety. The scoring engine remains deterministic, brand-blind, and citation-backed. Diet-level assessment lives in the pantry layer, not the product scoring layer.*
+---
+
+## D-137: DCM Pulse Framework — Positional Pulse Load Detection
+
+**Status:** LOCKED
+**Date:** 2026-03-14
+**Milestone:** M4.5 (post-M4 patch — schema + engine change, regression update)
+**Supersedes:** D-013 DCM trigger logic (grain-free + 3+ legumes in top 7). D-013's Heart Risk concern tag membership list also updated.
+
+---
+
+### Problem Statement
+
+The original DCM rule (D-013) had three scientific weaknesses:
+
+1. **Grain-free gate was a marketing proxy, not a biochemical signal.** The rule required `is_grain_free = true` before evaluating legume density. Companies have started adding token grains to heavily pulse-based formulas specifically to shed the "grain-free" label. The mechanism (methionine/cysteine depletion → impaired taurine synthesis → cardiac muscle dysfunction) doesn't care whether the bag says "grain-free."
+
+2. **Simple count threshold missed positional risk.** "3+ legumes in top 7" treated a pea at position 1 the same as a pea at position 7. A dried legume at position 2–3 behind a wet meat is almost certainly the heaviest ingredient in the cooked product — fresh meat is ~70% water that evaporates during kibble extrusion.
+
+3. **Potatoes were included without sufficient evidence.** The FDA investigation found potatoes in 42% of DCM cases vs peas/lentils in 93%. Subsequent research has isolated pulses as the relevant ingredient class via the amino acid depletion mechanism.
+
+### Decision
+
+Replace D-013 DCM trigger with a three-part positional pulse load framework. Penalty fires if **ANY** of the following conditions are met in the **top 10 ingredients:**
+
+**Rule 1 — Heavyweight (Positional Dominance):** 1 or more pulse ingredients in positions 1–3.
+
+**Rule 2 — Density / Splitting (Aggregate Pulse Load):** 2 or more pulse-based ingredients anywhere in positions 1–10.
+
+**Rule 3 — Protein Substitution (Biochemical Red Flag):** 1 or more pulse protein isolate/concentrate in positions 1–10.
+
+### Penalty
+
+- **DCM fires:** −8% (multiply composite by 0.92) — unchanged from D-013
+- **Mitigation:** +3% (multiply by 1.03) when BOTH taurine AND L-carnitine are supplemented — unchanged from D-013
+- **Net with mitigation:** approximately −5%
+
+### What Changed from D-013
+
+| Aspect | Old (D-013) | New (D-137) |
+|--------|------------|-------------|
+| Gate | `is_grain_free = true` required | No gate — fires on any diet |
+| Trigger | 3+ `is_legume` in top 7 | 3-part OR: heavyweight / density / substitution in top 10 |
+| Ingredient scope | All `is_legume = true` (included potatoes, soy) | Pulses only: peas, lentils, chickpeas, fava/dry beans. Excludes potatoes, sweet potatoes, soy, tapioca |
+| Position awareness | None (count only) | Position 1–3 weighted differently from 4–10 |
+| Protein isolate detection | None | Dedicated Rule 3 for pulse protein isolates |
+| Penalty magnitude | −8% / +3% mitigation | −8% / +3% mitigation (unchanged) |
+| Concern tag scope | Included potatoes + sweet potatoes | Pulses only (potatoes removed) |
+
+### Schema Changes
+
+New flags on `ingredients_dict`:
+
+```sql
+ALTER TABLE ingredients_dict ADD COLUMN is_pulse BOOLEAN DEFAULT FALSE;
+ALTER TABLE ingredients_dict ADD COLUMN is_pulse_protein BOOLEAN DEFAULT FALSE;
+```
+
+**`is_pulse = true`:** whole peas, dried peas, green peas, yellow peas, pea flour, pea starch, pea fiber, pea hull fiber, split peas, lentils, red lentils, green lentils, lentil flour, lentil fiber, chickpeas, garbanzo beans, chickpea flour, fava beans, dried beans, navy beans, black beans, white beans.
+
+**`is_pulse_protein = true`:** pea protein, pea protein isolate, pea protein concentrate, lentil protein, chickpea protein. (Subset of `is_pulse`.)
+
+**`is_pulse = false` (explicit exclusions):** potatoes, sweet potatoes, soy, tapioca, yam, taro.
+
+**`is_legume` disposition:** Unchanged — remains for SplittingDetectionCard and general ingredient classification. DCM trigger uses ONLY `is_pulse` and `is_pulse_protein`.
+
+### DCM Trigger Logic (Layer 2 — speciesRules.ts)
+
+```typescript
+function evaluateDcmRisk(ingredients: ProductIngredient[]): {
+  fires: boolean;
+  triggeredRules: ('heavyweight' | 'density' | 'substitution')[];
+  hasMitigation: boolean;
+} {
+  const top10 = ingredients.filter(i => i.position <= 10);
+  const top3 = ingredients.filter(i => i.position <= 3);
+
+  const pulsesInTop3 = top3.filter(i => i.is_pulse).length;
+  const pulsesInTop10 = top10.filter(i => i.is_pulse).length;
+  const pulseProteinsInTop10 = top10.filter(i => i.is_pulse_protein).length;
+
+  const triggeredRules: ('heavyweight' | 'density' | 'substitution')[] = [];
+
+  if (pulsesInTop3 >= 1) triggeredRules.push('heavyweight');
+  if (pulsesInTop10 >= 2) triggeredRules.push('density');
+  if (pulseProteinsInTop10 >= 1) triggeredRules.push('substitution');
+
+  const fires = triggeredRules.length > 0;
+
+  const hasTaurine = ingredients.some(i => i.canonical_name === 'taurine');
+  const hasLCarnitine = ingredients.some(i =>
+    i.canonical_name === 'l_carnitine' || i.canonical_name === 'l-carnitine'
+  );
+  const hasMitigation = hasTaurine && hasLCarnitine;
+
+  return { fires, triggeredRules, hasMitigation };
+}
+```
+
+### DcmAdvisoryCard Copy Updates
+
+**Rule 1 fires:** "This diet contains [ingredient] as a primary ingredient (position [N]). Dried pulses at the top of the ingredient list often outweigh meat in the final cooked product."
+
+**Rule 2 fires:** "This diet contains [N] pulse-based ingredients in the top 10: [list]. Combined, pulses may represent a larger portion of this diet than individual positions suggest."
+
+**Rule 3 fires:** "This diet contains [ingredient], a pulse protein isolate. Plant protein isolates are used to increase the protein percentage on the label but are deficient in the amino acids (methionine, cysteine) that dogs use to synthesize taurine."
+
+All copy D-095 compliant.
+
+### Heart Risk Concern Tag Update (D-107)
+
+**New membership:** All `is_pulse = true` ingredients. Potatoes, sweet potatoes, potato starch removed. Tag fires when any D-137 rule fires (not on mere presence of a single pulse).
+
+### Impact on Pure Balance Wild & Free Salmon & Pea (Dog)
+
+- Dried Peas at position 3 → Rule 1 (Heavyweight) **FIRES**
+- Dried Peas (#3) + Pea Starch (#7) = 2 pulses in top 10 → Rule 2 (Density) **FIRES**
+- No pulse protein isolate → Rule 3 does not fire
+- Taurine + L-Carnitine both supplemented → Mitigation **FIRES**
+- Score: Base 65 × 0.92 = 59.8 × 1.03 = 61.6 → **62** (was 65)
+
+### Citations
+
+| Source | Key Finding |
+|--------|------------|
+| FDA CVM, Investigation into Potential Link between Certain Diets and Canine DCM, Feb 2019 | 91% grain-free, 93% contained peas/lentils, 42% contained potatoes |
+| FDA CVM, Dec 2022 | Ended routine updates. 1,382 total reports (2014–2022). |
+| Kaplan JL et al., *PLOS ONE*, 2018;13(12) | Taurine deficiency and DCM in golden retrievers fed grain-free/legume-rich diets |
+| PMC Review, "Role of Diet as a Predisposing Factor for DCM in Dogs," 2025 | Dogs showed larger LV diameters and reduced systolic function on non-traditional diets |
+| AKC Canine Health Foundation, Apr 2024 | "Peas are the most-implicated pulse... potatoes and sweet potatoes may be involved, but they were in fewer of the grain-free diets evaluated." |
+
+### Rejected Alternatives
+
+| Alternative | Why Rejected |
+|------------|-------------|
+| Keep grain-free gate | Companies adding token grains to pulse-heavy formulas bypass the gate |
+| Keep potatoes in trigger | 42% vs 93% presence. Amino acid depletion mechanism doesn't apply to tubers |
+| Three stacking penalties | Overpenalizes. Three rules are OR gates for same underlying risk |
+| Include soy in pulse definition | Different amino acid profile, decades of safe use, not implicated in DCM |
+
 ---
 
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

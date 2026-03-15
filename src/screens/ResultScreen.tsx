@@ -310,6 +310,157 @@ export default function ResultScreen() {
     );
   }
 
+  // ─── D-135: Vet diet bypass — no score, ingredients only ──
+  const isVetDiet = product?.is_vet_diet === true;
+
+  if (isVetDiet && scoredResult) {
+    const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
+    const flavorAnnotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
+      ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
+      : null;
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.productBrand} numberOfLines={1}>
+              {product!.brand}
+            </Text>
+            <Text style={styles.productName} numberOfLines={1}>
+              {product!.name}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Product image */}
+          {product!.image_url && (
+            <View style={styles.productImageContainer}>
+              <Image
+                source={{ uri: product!.image_url }}
+                style={styles.productImage}
+                resizeMode="contain"
+              />
+              <LinearGradient
+                colors={['transparent', Colors.background]}
+                style={styles.imageGradientBottom}
+              />
+              <LinearGradient
+                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.imageGradientSides}
+              />
+            </View>
+          )}
+
+          {/* Vet diet badge — replaces ScoreRing (D-135) */}
+          <View style={styles.vetDietBadgeContainer}>
+            <View style={styles.vetDietBadge}>
+              <Ionicons name="medkit-outline" size={24} color="#6366F1" />
+              <Text style={styles.vetDietBadgeTitle}>Veterinary Diet</Text>
+            </View>
+            <Text style={styles.vetDietCopy}>
+              This is a veterinary diet formulated for specific health needs.
+              Ingredient details are shown below — discuss suitability with your veterinarian.
+            </Text>
+          </View>
+
+          {/* Recall warning */}
+          {scoredResult.isRecalled && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+              <Text style={styles.recallText}>
+                This product has been subject to a recall
+              </Text>
+            </View>
+          )}
+
+          {/* Allergen warnings — always shown for safety (D-135) */}
+          {scoredResult.layer3.allergenWarnings.length > 0 && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="alert-circle-outline" size={20} color={Colors.severityAmber} />
+              <Text style={styles.recallText}>
+                Contains potential allergens for {displayName}
+              </Text>
+            </View>
+          )}
+
+          {/* Breed Contraindication Cards (D-112) — safety-critical, always render */}
+          <BreedContraindicationCard
+            contraindications={scoredResult.layer3.personalizations.filter(
+              (p) => p.type === 'breed_contraindication',
+            )}
+          />
+
+          {/* Severity Badge Strip */}
+          {hydratedIngredients.length > 0 && (
+            <SeverityBadgeStrip
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+            />
+          )}
+
+          {/* Full Ingredient List */}
+          {hydratedIngredients.length > 0 && (
+            <IngredientList
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+              flavorAnnotation={flavorAnnotation}
+            />
+          )}
+
+          {/* Splitting Detection */}
+          {hydratedIngredients.length > 0 && (
+            <SplittingDetectionCard
+              clusters={buildSplittingClusters(hydratedIngredients)}
+            />
+          )}
+
+          {/* Flavor Deception Card */}
+          {fd?.detected && fd.namedProtein && fd.actualPrimaryProtein && (
+            <FlavorDeceptionCard
+              namedProtein={fd.namedProtein}
+              actualPrimaryProtein={fd.actualPrimaryProtein}
+              actualPrimaryPosition={fd.actualPrimaryPosition}
+              namedProteinPosition={fd.namedProteinPosition}
+              variant={fd.variant}
+            />
+          )}
+
+          {/* Formula Change Timeline */}
+          {product?.formula_change_log && product.formula_change_log.length > 0 && (
+            <FormulaChangeTimeline
+              changes={product.formula_change_log}
+              currentScore={0}
+            />
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        {/* Ingredient Detail Modal */}
+        {selectedIngredient && (
+          <IngredientDetailModal
+            ingredient={selectedIngredient}
+            species={species}
+            onClose={() => setSelectedIngredient(null)}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+
   // ─── Full result view ─────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
@@ -986,6 +1137,36 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: '600',
     color: Colors.accent,
+  },
+
+  // ─── D-135 Vet Diet Bypass
+  vetDietBadgeContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  vetDietBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  vetDietBadgeTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  vetDietCopy: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.md,
   },
 
   // ─── No Ingredient Data

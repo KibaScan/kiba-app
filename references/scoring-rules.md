@@ -1,7 +1,7 @@
 # Kiba — Scoring Rules Reference
 
 > **Read this before implementing ANY scoring logic.**
-> **Last updated:** March 14, 2026 (D-136 implementation verified — SVG ring, scoring engine wired)
+> **Last updated:** March 15, 2026 (D-137 DCM Pulse Framework — supersedes D-013, Pure Balance 65 → 62)
 > **Canonical sources:** This file consolidates rules from DECISIONS.md, NUTRITIONAL_PROFILE_BUCKET_SPEC.md, BREED_MODIFIERS_DOGS.md, BREED_MODIFIERS_CATS.md, and PORTION_CALCULATOR_SPEC.md. If this file conflicts with DECISIONS.md, DECISIONS.md wins.
 
 ---
@@ -20,7 +20,7 @@
 
 ### Supplemental Classification (D-136)
 
-Products with AAFCO "intermittent or supplemental feeding" language in their feeding guide. Detected at import time by `supplementalClassifier.ts` keyword matching. Stored as `is_supplemental BOOLEAN DEFAULT FALSE` on products table.
+Products with AAFCO "intermittent or supplemental feeding" language in their feeding guide. Detected at import time by `supplementalClassifier.ts` keyword matching against `aafco_statement` and `feeding_guidelines` (Migration 008). Stored as `is_supplemental BOOLEAN DEFAULT FALSE` on products table.
 
 **Match patterns:** "intermittent", "supplemental feeding", "not intended as a sole diet", "for supplemental feeding only", "intended for intermittent or supplemental feeding", "mix with [brand]", "serve alongside", "not complete and balanced", "not a complete".
 
@@ -66,9 +66,13 @@ Weighted composite of three sub-buckets (or two for supplemental, or one for tre
 Applied as percentage multipliers to the composite score:
 
 **Dogs:**
-- DCM advisory: ×0.92 (−8%) when grain-free + 3+ legumes in top 7
+- DCM advisory (D-137): ×0.92 (−8%) via positional pulse load detection — three-rule OR:
+  - Rule 1 (Heavyweight): 1+ pulse in positions 1–3
+  - Rule 2 (Density): 2+ pulses in positions 1–10
+  - Rule 3 (Substitution): 1+ pulse protein isolate in positions 1–10
 - DCM mitigation: ×1.03 (+3%) when taurine + L-carnitine both supplemented
-- Detection uses `is_grain_free` flag + `is_legume` flag with position check
+- Detection uses `is_pulse` + `is_pulse_protein` flags on `ingredients_dict`. No grain-free gate. `is_legume` is NOT used for DCM.
+- Pulse scope: peas, lentils, chickpeas, fava/dry beans + all derivatives. Excludes potatoes, sweet potatoes, soy, tapioca.
 
 **Cats:**
 - Carb overload: ×0.85 (−15%) when 3+ high-glycemic carbs in top 5 (uses `cat_carb_flag`)
@@ -249,7 +253,7 @@ Full specs: `BREED_MODIFIERS_DOGS.md` (23 breeds), `BREED_MODIFIERS_CATS.md` (21
 | Breed | Primary Concern | Max Penalty | Key Threshold |
 |-------|----------------|-------------|---------------|
 | Miniature Schnauzer | Pancreatitis (fat) | −6 | fat_dmb > 18% |
-| Cocker Spaniel | Pancreatitis + DCM | −5 (fat) + −2 (DCM) | fat_dmb > 18%, grain-free+legumes |
+| Cocker Spaniel | Pancreatitis + DCM | −5 (fat) + −2 (DCM) | fat_dmb > 18%, D-137 pulse load |
 | Dalmatian / English Bulldog / BRT | Urate stones (SLC2A9) | D-112 contraindication card | High-purine ingredients |
 | German Shepherd | EPI (fat) | −4 | fat_dmb > 18% |
 | Labrador Retriever | Calcium (puppy) | −3 | Ca_dmb > 1.8% (puppy only) |
@@ -312,15 +316,17 @@ These are UI notes only — they never affect the score:
 
 ## 11. Regression Targets
 
-### Pure Balance Grain-Free Salmon & Pea (Dog)
+### Pure Balance Wild & Free Salmon & Pea (Dog)
 
-**Expected:** base_score = **69** (non-negotiable)
+**Expected:** final_score = **62** (non-negotiable)
 
 Breakdown:
-- IQ: 60, NP: 82, FC: 78
-- Base: (60 × 0.55) + (82 × 0.30) + (78 × 0.15) = 33.0 + 24.6 + 11.7 = 69.3
-- Layer 2: DCM −8% → 63.8, Mitigation +3% → 65.7
-- Rounded: **69**
+- IQ: 58, NP: 79, FC: 63
+- Base: (58 × 0.55) + (79 × 0.30) + (63 × 0.15) = 31.9 + 23.7 + 9.45 = 65.05 → 65
+- Layer 2 (D-137): DCM fires — Rule 1 (Dried Peas at pos 3) + Rule 2 (2 pulses in top 10)
+  - ×0.92 → 59.8
+  - Mitigation (taurine + L-carnitine) → ×1.03 → 61.6
+- Rounded: **62**
 
 ### Temptations Classic Tuna (Cat Treat)
 
@@ -332,12 +338,13 @@ Breakdown:
 
 ### Test Count
 
-**497 tests** must pass after any change:
+**501 tests** must pass after any change:
 - 447 M1-M3 baseline
 - 18 allergen override (D-129)
 - 8 flavor deception (D-133)
 - 16 supplemental classifier (D-136)
 - 8 supplemental scoring (D-136)
+- 4 E2E scoring (M4 Session 6)
 
 ---
 
@@ -345,9 +352,10 @@ Breakdown:
 
 ```typescript
 export const SCORING_WEIGHTS = {
-  daily_food: { ingredientQuality: 0.55, nutritionalProfile: 0.30, formulation: 0.15 },
-  supplemental: { ingredientQuality: 0.65, nutritionalProfile: 0.35, formulation: 0 },
-  treat: { ingredientQuality: 1.0, nutritionalProfile: 0, formulation: 0 },
+  daily_food: { iq: 0.55, np: 0.30, fc: 0.15 },
+  daily_food_partial: { iq: 0.78, np: 0, fc: 0.22 },
+  supplemental: { iq: 0.65, np: 0.35, fc: 0 },
+  treat: { iq: 1.0, np: 0, fc: 0 },
 } as const;
 
 // Sub-nutrient weights within the NP bucket

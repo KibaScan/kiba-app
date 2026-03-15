@@ -150,6 +150,18 @@ export async function scoreProduct(
     flags.push('partial_ingredient_data');
   }
 
+  // D-135: Vet diets are NOT scored — return hydrated ingredients without running engine
+  if (product.is_vet_diet) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['vet_diet_bypass']).scoredResult,
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
   // Step 3: Run scoring engine
   const result = computeScore(
     product,

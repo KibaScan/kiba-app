@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-03-15T05:25:27.414670+00:00",
+  "matched": 9089,
+  "unmatched": 1,
+  "applied": 9078,
+  "errors": [],
+  "counts": {
+    "is_vet_diet": 125,
+    "special_diet": 2281,
+    "image_url": 9076,
+    "feeding_guidelines": 5422
+  }
+}

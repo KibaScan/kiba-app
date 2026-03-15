@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 15, 2026 (M4 Complete — 501 tests, compliance audit 20/20, D-136 supplemental classification)
+> Last updated: March 15, 2026 (M4.5 — D-137 DCM Pulse Framework, D-135 vet diet bypass, Migration 008 backfill)
 
 ---
 
@@ -12,7 +12,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 
 **Owner:** Steven (product decisions, non-coder)
 **Developer:** Claude Code (you)
-**Current phase:** M4 Product Detail + Education (M0–M4 Complete)
+**Current phase:** M4.5 DCM Pulse Framework (M0–M4 Complete, M4.5 in progress)
 
 ## Tech Stack
 
@@ -31,7 +31,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (136 decisions, D-001 through D-136)
+├── DECISIONS.md            ← canonical decision log (137 decisions, D-001 through D-137)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -50,7 +50,8 @@ kiba-app/
 │   │   └── validator.py           ← D-043 range validation before DB insert
 │   └── scoring/                   ← M4 batch scoring (batch_score.ts)
 │   └── data/
-│       └── backfill_supplemental.ts ← D-136: classify existing products via aafco_statement keyword match
+│       ├── backfill_supplemental.ts ← D-136: classify existing products via aafco_statement keyword match
+│       └── backfill_product_metadata.py ← Migration 008: backfill dropped dataset fields from v6 JSON
 ├── supabase/
 │   ├── functions/
 │   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
@@ -61,7 +62,8 @@ kiba-app/
 │       ├── 004_m3_community_products.sql ← M3 community contribution columns
 │       ├── 005_m4_category_averages.sql  ← category_averages table, base_score, review_status
 │       ├── 006_ingredient_content_columns.sql ← ingredient content: primary_concern_basis, context columns
-│       └── 007_m4_supplemental.sql       ← D-136: is_supplemental column on products
+│       ├── 007_m4_supplemental.sql       ← D-136: is_supplemental column on products
+│       └── 008_product_metadata_backfill.sql ← feeding_guidelines, is_vet_diet, special_diet, image_url, source_url
 ├── src/
 │   ├── types/              ← all TypeScript interfaces
 │   │   └── index.ts
@@ -239,7 +241,7 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Formulation (0-100): AAFCO statement, preservative type, protein naming
 
 **Layer 2 — Species Rules:**
-- Dog: DCM advisory −8% (grain-free + 3+ legumes in top 7), +3% mitigation (taurine + L-carnitine)
+- Dog: DCM advisory −8% via D-137 positional pulse load (3-rule OR: heavyweight pulse in top 3, 2+ pulses in top 10, pulse protein isolate in top 10). No grain-free gate. +3% mitigation (taurine + L-carnitine). Supersedes D-013.
 - Cat: Carb overload −15% (3+ high-glycemic carbs in top 5), mandatory taurine check, UGT1A6 warnings
 
 **Layer 3 — Personalization:**
@@ -253,8 +255,8 @@ Ring color and verdict text always share the same tier. Verdict renders below th
 - Neutral if no conflicts detected
 
 ### Reference Scores (Regression Tests)
-- **Pure Balance Wild & Free Salmon & Pea (Dog):** 65/100
-  - IQ: 58, NP: 79, FC: 63 → Base: 65 → DCM: not fired (only 2 legumes in top 7) → **65**
+- **Pure Balance Wild & Free Salmon & Pea (Dog):** 62/100
+  - IQ: 58, NP: 79, FC: 63 → Base: 65 → D-137 DCM: fires (Rule 1: Dried Peas at pos 3, Rule 2: 2 pulses in top 10) → ×0.92 = 59.8 → Mitigation (taurine + L-carnitine) → ×1.03 = 61.6 → **62**
   - Source: Walmart bag data (not on Chewy). Manually inserted + scored against v6 pipeline.
 - **Temptations Classic Tuna (Cat Treat):** 44/100
   - IQ: 52 → Cat carb penalty −8 → 44
@@ -282,7 +284,7 @@ Five consumer-facing badges displayed above the fold on scan results. Tags answe
 | Added Sugar | 🍬 | Sugar, Cane Molasses (2 members) |
 | Unnamed Source | ❓ | Meat Meal, Animal Fat, Animal Digest, Natural Flavor, etc. (7 members) |
 | Synthetic Additive | 🧪 | BHA, BHT, TBHQ, Propylene Glycol, etc. (9 members) |
-| Heart Risk | 🫘 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch, Potatoes, Sweet Potatoes, Potato Starch (8 members, dogs only, gated to D-013: renders only when 3+ legume/potato in top 7) |
+| Heart Risk | 🫘 | All `is_pulse = true` ingredients (dogs only, gated to D-137: renders only when any DCM pulse rule fires). Potatoes/sweet potatoes removed. |
 
 Tags are informational only — they do NOT modify scores. Derived at render time from a static tag membership map in app code. Max 3 displayed above fold. "Filler" tag explicitly rejected (see D-107 rationale). Emoji in the table above are documentation identifiers only — the app UI renders SF Symbols per D-084/D-111.
 
@@ -299,9 +301,9 @@ Poop Check / Symptom Tracker → Me tab, NOT scan result screen.
 
 See `supabase/migrations/001_initial_schema.sql` for full schema. Critical tables:
 
-- `products` — includes all GA columns, `ingredients_hash` for formula change detection, `affiliate_links` JSONB (invisible to scoring)
+- `products` — includes all GA columns, `ingredients_hash` for formula change detection, `affiliate_links` JSONB (invisible to scoring), `feeding_guidelines` (D-136 supplemental detection), `is_vet_diet` (125 vet diets), `special_diet` (diet tags), `image_url`, `source_url`. See `references/dataset-field-mapping.md` for full field mapping from dataset.
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
-- `ingredients_dict` — canonical ingredients with `cluster_id`, severity per species, `position_reduction_eligible` flag, `allergen_group` + `allergen_group_possible` (D-098), display content columns (D-105: `display_name`, `tldr`, `detail_body`, `citations_display`, `position_context`)
+- `ingredients_dict` — canonical ingredients with `cluster_id`, severity per species, `position_reduction_eligible` flag, `allergen_group` + `allergen_group_possible` (D-098), `is_pulse` + `is_pulse_protein` (D-137 DCM pulse detection), display content columns (D-105: `display_name`, `tldr`, `detail_body`, `citations_display`, `position_context`)
 - `product_ingredients` — junction linking products to ingredients with `position`
 - `pets` — RLS enforced, canonical name per D-110 (NOT `pet_profiles`). Key columns: `weight_current_lbs` (not `weight_lbs`), `weight_goal_lbs`, `date_of_birth` (not `birth_date`), `is_neutered` (not `is_spayed_neutered`), `activity_level` ('low'|'moderate'|'high'|'working'), `sex` ('male'|'female'|null, D-118), `dob_is_approximate` (D-116), `weight_updated_at` (D-117), `life_stage` (derived, never user-entered)
 - `pet_conditions` — D-097 many-to-many (pet → condition_tag). RLS via pets table join
@@ -467,7 +469,7 @@ M2: pet profile CRUD with Supabase auth integration
 □ Supplement/grooming exit paths store-only, no scoring? (D-096, D-083)
 □ Haiku classification stored with user corrections? (D-128)
 □ Scan sound respects mute toggle? (AsyncStorage preference)
-□ Pure Balance regression = 65 after any scoring change?
+□ Pure Balance regression = 62 after any scoring change? (D-137: DCM fires, mitigation applies)
 □ D-129 allergen override is per-pet-per-score only — base severity unchanged?
 □ Benchmark bar excludes partial-score products from averages?
 □ All Haiku-generated ingredient content has review_status = 'llm_generated'?
@@ -479,3 +481,7 @@ M2: pet profile CRUD with Supabase auth integration
 □ D-136: Open arc ring (270°) for supplementals, full circle for daily food?
 □ D-136: is_supplemental is orthogonal to haiku_suggested_category — not confused?
 □ D-136: Score color uses getScoreColor() with correct product type — no hardcoded D-113 values?
+□ D-137: DCM trigger uses `is_pulse`/`is_pulse_protein` — never reads `is_legume` for DCM?
+□ D-137: No grain-free gate — DCM evaluates pure ingredient composition?
+□ D-137: Potatoes, sweet potatoes, soy excluded from pulse classification?
+□ D-137: Heart Risk concern tag fires on D-137 rules, not D-013 count?
