@@ -2,7 +2,7 @@
 // Product not on Chewy; manually inserted into v6 pipeline.
 // product_id: 557b94d9-9d26-4cd3-83d5-05eb4dacb5db
 //
-// The app displays 65% — this test verifies that math.
+// The app displays 62% — this test verifies that math. (D-137: DCM fires → 65 → 62)
 
 import { computeScore } from '../../../src/services/scoring/engine';
 import type { Product, PetProfile } from '../../../src/types';
@@ -64,6 +64,8 @@ function makeIngredient(
     cat_base_severity: 'neutral',
     is_unnamed_species: false,
     is_legume: false,
+    is_pulse: false,
+    is_pulse_protein: false,
     position_reduction_eligible: true,
     cluster_id: null,
     cat_carb_flag: false,
@@ -77,11 +79,11 @@ function makeIngredient(
 const REAL_INGREDIENTS: ProductIngredient[] = [
   makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cat_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
   makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cat_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
-  makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cat_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
+  makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cat_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
   makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral', cat_base_severity: 'neutral' }),
   makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral', cat_base_severity: 'neutral' }),
   makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution', cat_base_severity: 'caution' }),
-  makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cat_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
+  makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cat_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
   makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', cat_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
   makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral', cat_base_severity: 'neutral' }),
   makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good',    cat_base_severity: 'good' }),
@@ -123,7 +125,7 @@ const PET: PetProfile = {
 // ─── Test ────────────────────────────────────────────────────
 
 describe('Real Data Trace: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
-  test('full pipeline trace → 65', () => {
+  test('full pipeline trace → 62 (D-137: DCM fires, mitigation applies)', () => {
     const result = computeScore(PURE_BALANCE_PRODUCT, REAL_INGREDIENTS, PET);
 
     const iq = result.layer1.ingredientQuality;
@@ -153,7 +155,7 @@ describe('Real Data Trace: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
     console.log(`  FC: ${fc} × 0.15 = ${(fc * 0.15).toFixed(2)}`);
     console.log(`  Base: ${base}`);
     console.log('');
-    console.log('Layer 2 — Species Rules');
+    console.log('Layer 2 — Species Rules (D-137)');
     console.log(`  DCM fired: ${dcm!.fired}, adjustment: ${dcm!.adjustment}`);
     console.log(`  Mitigation fired: ${mit!.fired}, adjustment: ${mit!.adjustment}`);
     console.log('');
@@ -177,20 +179,22 @@ describe('Real Data Trace: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
     // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 ≈ 65
     expect(base).toBeCloseTo(64.8, 1);
 
-    // DCM does NOT fire — only 2 legumes in top 7 (peas pos 3, pea_starch pos 7)
-    expect(dcm!.fired).toBe(false);
-    expect(dcm!.adjustment).toBe(0);
+    // D-137: DCM fires — Rule 1 (peas at pos 3) + Rule 2 (2 pulses in top 10)
+    expect(dcm!.fired).toBe(true);
+    // DCM: −round(65 × 0.08) = −round(5.2) = −5
+    expect(dcm!.adjustment).toBe(-5);
 
-    // Mitigation does not fire when DCM doesn't fire
-    expect(mit!.fired).toBe(false);
-    expect(mit!.adjustment).toBe(0);
+    // Mitigation fires: taurine (pos 17) + l_carnitine (pos 40) both present
+    expect(mit!.fired).toBe(true);
+    // Mitigation: +round(65 × 0.03) = +round(1.95) = +2
+    expect(mit!.adjustment).toBe(2);
 
     // Layer 3: neutral (no allergens, no conditions)
     const l3Adjustment = result.layer3.personalizations.reduce((sum, p) => sum + p.adjustment, 0);
     expect(l3Adjustment).toBe(0);
 
-    // Final: 65
-    expect(result.finalScore).toBe(65);
+    // Final: 65 − 5 + 2 = 62
+    expect(result.finalScore).toBe(62);
     expect(result.petName).toBe('Buster');
   });
 });

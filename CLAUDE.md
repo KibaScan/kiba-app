@@ -23,7 +23,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat (installed M3 Session 5)
 - **Audio:** `expo-av` for scan confirmation tone
-- **Testing:** Jest for scoring engine, reference product regression tests (501 tests passing)
+- **Testing:** Jest for scoring engine, reference product regression tests (509 tests passing)
 - **SVG:** `react-native-svg` for score ring (270° open arc for supplementals)
 
 ## Project Structure
@@ -54,7 +54,8 @@ kiba-app/
 │   └── scoring/                   ← M4 batch scoring (batch_score.ts)
 │   └── data/
 │       ├── backfill_supplemental.ts ← D-136: classify existing products via aafco_statement keyword match
-│       └── backfill_product_metadata.py ← Migration 008: backfill dropped dataset fields from v6 JSON
+│       ├── backfill_product_metadata.py ← Migration 008: backfill dropped dataset fields from v6 JSON
+│       └── backfill_pulse_flags.ts ← D-137: classify pulse ingredients for DCM detection
 ├── supabase/
 │   ├── functions/
 │   │   └── parse-ingredients/     ← Edge Function: OCR text → Haiku → parsed ingredients + D-128 classification
@@ -66,7 +67,8 @@ kiba-app/
 │       ├── 005_m4_category_averages.sql  ← category_averages table, base_score, review_status
 │       ├── 006_ingredient_content_columns.sql ← ingredient content: primary_concern_basis, context columns
 │       ├── 007_m4_supplemental.sql       ← D-136: is_supplemental column on products
-│       └── 008_product_metadata_backfill.sql ← feeding_guidelines, is_vet_diet, special_diet, image_url, source_url
+│       ├── 008_product_metadata_backfill.sql ← feeding_guidelines, is_vet_diet, special_diet, image_url, source_url
+│       └── 009_m45_pulse_flags.sql       ← D-137: is_pulse + is_pulse_protein on ingredients_dict
 ├── src/
 │   ├── types/              ← all TypeScript interfaces
 │   │   └── index.ts

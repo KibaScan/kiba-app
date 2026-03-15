@@ -4,37 +4,43 @@
 // DCM and carb overload are percentages of baseScore, not flat points.
 
 import type { Product } from '../../types';
-import type { ProductIngredient, AppliedRule, SpeciesRuleResult } from '../../types/scoring';
+import type { ProductIngredient, AppliedRule, SpeciesRuleResult, DcmResult } from '../../types/scoring';
 
 // ─── UGT1A6 concern ingredients ────────────────────────
 
 const UGT1A6_INGREDIENTS = ['propylene glycol', 'onion powder', 'garlic powder'];
 
-// ─── Dog Rules ─────────────────────────────────────────
+// ─── D-137 DCM Pulse Detection ───────────────────────────
 
-function applyDogRules(
-  product: Product,
-  ingredients: ProductIngredient[],
-  baseScore: number,
-): AppliedRule[] {
-  const rules: AppliedRule[] = [];
+export function evaluateDcmRisk(ingredients: ProductIngredient[]): DcmResult {
+  const pulseIngredients = ingredients
+    .filter(i => i.is_pulse)
+    .map(i => ({
+      name: i.canonical_name,
+      position: i.position,
+      isPulseProtein: i.is_pulse_protein,
+    }));
 
-  // DCM Advisory (D-013)
-  const legumesInTop7 = ingredients.filter(
-    i => i.position <= 7 && i.is_legume,
-  ).length;
-  const dcmFired = product.is_grain_free && legumesInTop7 >= 3;
-  const dcmAdjustment = dcmFired ? -Math.round(baseScore * 0.08) : 0;
+  // Rule 1 — Heavyweight: 1+ pulse in positions 1–3
+  const heavyweight = pulseIngredients.some(p => p.position <= 3);
 
-  rules.push({
-    ruleId: 'DCM_ADVISORY',
-    label: 'DCM risk advisory (grain-free + legumes)',
-    adjustment: dcmAdjustment,
-    fired: dcmFired,
-    citation: 'FDA CVM DCM Investigation, 2019 (updated 2024)',
-  });
+  // Rule 2 — Density: 2+ pulses in positions 1–10
+  const pulsesInTop10 = pulseIngredients.filter(p => p.position <= 10).length;
+  const density = pulsesInTop10 >= 2;
 
-  // Taurine + L-Carnitine Mitigation (D-013)
+  // Rule 3 — Substitution: 1+ pulse protein isolate in positions 1–10
+  const substitution = pulseIngredients.some(
+    p => p.position <= 10 && p.isPulseProtein,
+  );
+
+  const fires = heavyweight || density || substitution;
+
+  const triggeredRules: DcmResult['triggeredRules'] = [];
+  if (heavyweight) triggeredRules.push('heavyweight');
+  if (density) triggeredRules.push('density');
+  if (substitution) triggeredRules.push('substitution');
+
+  // Mitigation: taurine + L-carnitine both present
   const hasTaurine = ingredients.some(i =>
     i.canonical_name.toLowerCase().includes('taurine'),
   );
@@ -42,14 +48,40 @@ function applyDogRules(
     i.canonical_name.toLowerCase().includes('l-carnitine') ||
     i.canonical_name.toLowerCase().includes('l_carnitine'),
   );
-  const mitigationFired = dcmFired && hasTaurine && hasLCarnitine;
-  const mitigationAdjustment = mitigationFired ? Math.round(baseScore * 0.03) : 0;
+  const hasMitigation = fires && hasTaurine && hasLCarnitine;
+
+  return { fires, triggeredRules, hasMitigation, pulseIngredients };
+}
+
+// ─── Dog Rules ─────────────────────────────────────────
+
+function applyDogRules(
+  _product: Product,
+  ingredients: ProductIngredient[],
+  baseScore: number,
+): AppliedRule[] {
+  const rules: AppliedRule[] = [];
+
+  // DCM Advisory (D-137 — replaces D-013)
+  const dcm = evaluateDcmRisk(ingredients);
+  const dcmAdjustment = dcm.fires ? -Math.round(baseScore * 0.08) : 0;
+
+  rules.push({
+    ruleId: 'DCM_ADVISORY',
+    label: 'DCM pulse load advisory',
+    adjustment: dcmAdjustment,
+    fired: dcm.fires,
+    citation: 'FDA CVM DCM Investigation, 2019 (updated 2024)',
+  });
+
+  // Taurine + L-Carnitine Mitigation (D-137)
+  const mitigationAdjustment = dcm.hasMitigation ? Math.round(baseScore * 0.03) : 0;
 
   rules.push({
     ruleId: 'TAURINE_MITIGATION',
     label: 'Taurine + L-Carnitine supplementation',
     adjustment: mitigationAdjustment,
-    fired: mitigationFired,
+    fired: dcm.hasMitigation,
     citation: 'FDA CVM DCM Investigation, 2019 (updated 2024)',
   });
 

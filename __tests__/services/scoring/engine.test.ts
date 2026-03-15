@@ -83,6 +83,8 @@ function makeIngredient(
     cat_base_severity: 'neutral',
     is_unnamed_species: false,
     is_legume: false,
+    is_pulse: false,
+    is_pulse_protein: false,
     position_reduction_eligible: true,
     cluster_id: null,
     cat_carb_flag: false,
@@ -305,13 +307,13 @@ describe('computeScore — Orchestrator', () => {
   // ─── Layer 2 Passes Through ────────────────────────────
 
   test('species rules apply to weighted composite', () => {
-    // Grain-free + 3+ legumes in top 7 → DCM fires
+    // D-137: pulse load in top positions → DCM fires
     const product = makeProduct({ is_grain_free: true });
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'salmon', is_protein_fat_source: true }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'chickpeas', is_legume: true }),
+      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true, is_pulse: true }),
+      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true, is_pulse: true }),
+      makeIngredient({ position: 4, canonical_name: 'chickpeas', is_legume: true, is_pulse: true }),
     ];
     const result = computeScore(product, ingredients);
     const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
@@ -355,11 +357,11 @@ describe('computeScore — Orchestrator', () => {
     const ingredients: ProductIngredient[] = [
       makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
       makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
-      makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
+      makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
       makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral' }),
       makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral' }),
       makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution' }),
-      makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true }),
+      makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
       makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
       makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral' }),
       makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
@@ -377,7 +379,7 @@ describe('computeScore — Orchestrator', () => {
 
     const pet = makePet({ life_stage: LifeStage.Adult });
 
-    test('full breakdown → 65', () => {
+    test('full breakdown → 62 (D-137: DCM fires, mitigation applies)', () => {
       const result = computeScore(product, ingredients, pet);
 
       // Layer 1a: IQ = 57.6
@@ -401,21 +403,25 @@ describe('computeScore — Orchestrator', () => {
       // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 = 64.83 → 65
       expect(result.layer1.weightedComposite).toBeCloseTo(64.8, 1);
 
-      // Layer 2: DCM does NOT fire — only 2 legumes in top 7 (peas pos 3, pea_starch pos 7)
+      // Layer 2 — D-137: DCM fires (Rule 1: peas at pos 3; Rule 2: 2 pulses in top 10)
       const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
       expect(dcm).toBeDefined();
-      expect(dcm!.fired).toBe(false);
+      expect(dcm!.fired).toBe(true);
+      // DCM: −round(65 × 0.08) = −round(5.2) = −5
+      expect(dcm!.adjustment).toBe(-5);
 
-      // Mitigation does not fire when DCM doesn't fire
+      // Mitigation fires: taurine (pos 17) + l_carnitine (pos 40)
       const mitigation = result.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
       expect(mitigation).toBeDefined();
-      expect(mitigation!.fired).toBe(false);
+      expect(mitigation!.fired).toBe(true);
+      // Mitigation: +round(65 × 0.03) = +round(1.95) = +2
+      expect(mitigation!.adjustment).toBe(2);
 
-      // L2 net: 0
-      expect(result.layer2.speciesAdjustment).toBe(0);
+      // L2 net: −5 + 2 = −3
+      expect(result.layer2.speciesAdjustment).toBe(-3);
 
-      // Final: 65
-      expect(result.finalScore).toBe(65);
+      // Final: 65 − 3 = 62
+      expect(result.finalScore).toBe(62);
     });
   });
 

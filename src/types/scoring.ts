@@ -16,6 +16,8 @@ export interface ProductIngredient {
   cat_base_severity: IngredientSeverity;
   is_unnamed_species: boolean;
   is_legume: boolean;
+  is_pulse: boolean;                     // D-137 DCM pulse detection
+  is_pulse_protein: boolean;             // D-137 Rule 3 (pulse protein isolates)
   position_reduction_eligible: boolean;
   cluster_id: string | null;
   cat_carb_flag: boolean;
@@ -27,6 +29,18 @@ export interface ProductIngredient {
   tldr?: string | null;                    // D-105 2-3 sentence engaging summary
   detail_body?: string | null;             // D-105 full explanation (1-2 paragraphs)
   citations_display?: string | null;       // D-105 source strings for UI footer
+}
+
+// ─── DCM Pulse Detection (D-137) ────────────────────────
+
+export type DcmRuleName = 'heavyweight' | 'density' | 'substitution';
+
+/** D-137: DCM positional pulse load evaluation result */
+export interface DcmResult {
+  fires: boolean;
+  triggeredRules: DcmRuleName[];
+  hasMitigation: boolean;
+  pulseIngredients: { name: string; position: number; isPulseProtein: boolean }[];
 }
 
 // ─── Breed & Modifier Types ─────────────────────────────

@@ -10,6 +10,8 @@ function makeIngredient(overrides: Partial<ProductIngredient> & { position: numb
     cat_base_severity: 'neutral',
     is_unnamed_species: false,
     is_legume: false,
+    is_pulse: false,
+    is_pulse_protein: false,
     position_reduction_eligible: true,
     cluster_id: null,
     cat_carb_flag: false,

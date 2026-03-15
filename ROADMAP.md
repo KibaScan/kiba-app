@@ -480,25 +480,28 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: Replace marketing-label proxy (grain-free gate) with biochemistry-based positional pulse load detection for DCM risk scoring.
 
 ### Schema
-- [ ] Migration: `is_pulse BOOLEAN DEFAULT FALSE` on `ingredients_dict`
-- [ ] Migration: `is_pulse_protein BOOLEAN DEFAULT FALSE` on `ingredients_dict`
-- [ ] Backfill: set `is_pulse = true` on pea/lentil/chickpea/fava/bean clusters and all derivatives
-- [ ] Backfill: set `is_pulse_protein = true` on pulse protein isolates/concentrates only
+- [x] Migration 009: `is_pulse BOOLEAN DEFAULT FALSE` on `ingredients_dict`
+- [x] Migration 009: `is_pulse_protein BOOLEAN DEFAULT FALSE` on `ingredients_dict`
+- [x] Backfill script: `scripts/data/backfill_pulse_flags.ts` — set `is_pulse = true` on pea/lentil/chickpea/fava/bean clusters and all derivatives
+- [x] Backfill script: set `is_pulse_protein = true` on pulse protein isolates/concentrates only
 
 ### Scoring Engine
-- [ ] `speciesRules.ts`: Replace D-013 DCM trigger with D-137 three-rule OR (heavyweight / density / substitution)
-- [ ] Remove `is_grain_free` dependency from DCM evaluation path
-- [ ] DCM penalty unchanged: −8% (×0.92), mitigation +3% (×1.03) when taurine + L-carnitine supplemented
+- [x] `speciesRules.ts`: Replace D-013 DCM trigger with D-137 three-rule OR (heavyweight / density / substitution)
+- [x] Remove `is_grain_free` dependency from DCM evaluation path
+- [x] DCM penalty unchanged: −8% (×0.92), mitigation +3% (×1.03) when taurine + L-carnitine supplemented
+- [x] `evaluateDcmRisk()` exported — returns `DcmResult` with triggered rules, pulse ingredients, mitigation status
 
 ### UI Updates
 - [ ] `DcmAdvisoryCard.tsx`: Updated copy showing which rule(s) fired + mechanism-cited explanations
 - [ ] `ConcernTags.tsx`: Heart Risk membership updated — pulses only, potatoes removed, fires on D-137 rules
 
 ### Testing
-- [ ] Update regression tests: Pure Balance = 62 (was 65)
-- [ ] New tests: D-137 Rule 1 (pulse in top 3), Rule 2 (2+ pulses in top 10), Rule 3 (pulse protein isolate)
-- [ ] Verify potatoes, soy, tapioca do NOT trigger DCM
-- [ ] Verify grain-inclusive products with pulse load correctly trigger DCM
+- [x] Update regression tests: Pure Balance = 62 (was 65) — updated in engine.test.ts, realDataTrace.test.ts, allergenOverride.test.ts
+- [x] New tests: 11 D-137 tests in speciesRules.test.ts (3 rules + exclusions + mitigation + grain-free gate removal + Pure Balance)
+- [x] Verify potatoes, soy, tapioca do NOT trigger DCM (explicit test cases)
+- [x] Verify grain-inclusive products with pulse load correctly trigger DCM (explicit test case)
+- [x] Added `is_pulse`/`is_pulse_protein` defaults to all 10 test file `makeIngredient` helpers
+- [x] 509 tests passing (was 501)
 
 ### Documentation
 - [x] D-137 appended to DECISIONS.md
@@ -654,7 +657,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 69/100 (regression test — may change at M3 with full ingredient data)
+- [ ] Pure Balance Grain-Free Salmon → 62/100 (regression test — D-137 DCM fires, mitigation applies)
 - [ ] Temptations Classic Tuna → 44/100 (regression test)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling

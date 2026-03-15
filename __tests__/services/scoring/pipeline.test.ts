@@ -113,6 +113,8 @@ function makeDbRow(position: number, overrides?: Record<string, unknown>) {
       cat_base_severity: 'neutral' as const,
       is_unnamed_species: false,
       is_legume: false,
+      is_pulse: false,
+      is_pulse_protein: false,
       position_reduction_eligible: false,
       cat_carb_flag: false,
       display_name: null,

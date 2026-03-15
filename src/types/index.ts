@@ -152,6 +152,8 @@ export interface IngredientDict {
   // Scoring flags
   is_unnamed_species: boolean;
   is_legume: boolean;
+  is_pulse: boolean;                    // D-137 DCM pulse detection
+  is_pulse_protein: boolean;            // D-137 Rule 3 (pulse protein isolates)
   position_reduction_eligible: boolean;
   cat_carb_flag: boolean;
 

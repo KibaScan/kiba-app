@@ -1,4 +1,4 @@
-import { applySpeciesRules } from '../../../src/services/scoring/speciesRules';
+import { applySpeciesRules, evaluateDcmRisk } from '../../../src/services/scoring/speciesRules';
 import type { Product } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
 import { Category } from '../../../src/types';
@@ -59,6 +59,8 @@ function makeIngredient(
     cat_base_severity: 'neutral',
     is_unnamed_species: false,
     is_legume: false,
+    is_pulse: false,
+    is_pulse_protein: false,
     position_reduction_eligible: true,
     cluster_id: null,
     cat_carb_flag: false,
@@ -69,40 +71,179 @@ function makeIngredient(
   };
 }
 
-// ─── Dog Rules ─────────────────────────────────────────────
+// ─── D-137 DCM Pulse Detection ───────────────────────────────
 
-describe('applySpeciesRules — Dog rules', () => {
-  const BASE = 69.3; // test input (actual Pure Balance base is 73.2)
+describe('evaluateDcmRisk — D-137 three-rule OR', () => {
+  test('Rule 1 (Heavyweight): 1 pulse at position 2 → fires', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 3, canonical_name: 'rice' }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.triggeredRules).toContain('heavyweight');
+  });
 
-  test('DCM fires: grain-free + 4 legumes in top 7, no mitigation → −8%', () => {
-    const product = makeProduct({ is_grain_free: true });
+  test('1 pulse at position 4 only → no rules fire', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 2, canonical_name: 'rice' }),
+      makeIngredient({ position: 3, canonical_name: 'corn' }),
+      makeIngredient({ position: 4, canonical_name: 'peas', is_pulse: true }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(false);
+    expect(result.triggeredRules).toEqual([]);
+  });
+
+  test('Rule 2 (Density): 2 pulses at positions 5 and 8 → fires', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 5, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 8, canonical_name: 'lentils', is_pulse: true }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.triggeredRules).toContain('density');
+    expect(result.triggeredRules).not.toContain('heavyweight');
+  });
+
+  test('Rule 3 (Substitution): pea_protein at position 6, no other pulses → fires', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 6, canonical_name: 'pea_protein', is_pulse: true, is_pulse_protein: true }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.triggeredRules).toContain('substitution');
+  });
+
+  test('pea_starch at position 6, no other pulses → NO rules fire (not pulse protein)', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 6, canonical_name: 'pea_starch', is_pulse: true, is_pulse_protein: false }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(false);
+    expect(result.triggeredRules).toEqual([]);
+  });
+
+  test('potatoes at positions 3, 5, 7 → NO rules fire (potatoes excluded from pulse)', () => {
+    const ingredients = [
+      makeIngredient({ position: 3, canonical_name: 'potato', is_pulse: false }),
+      makeIngredient({ position: 5, canonical_name: 'sweet_potato', is_pulse: false }),
+      makeIngredient({ position: 7, canonical_name: 'potato_starch', is_pulse: false }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(false);
+    expect(result.triggeredRules).toEqual([]);
+  });
+
+  test('soy at position 2 → NO rules fire (soy excluded from pulse)', () => {
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 2, canonical_name: 'soybean_meal', is_pulse: false }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(false);
+  });
+
+  test('pulse + taurine + L-carnitine → mitigation applies', () => {
+    const ingredients = [
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 10, canonical_name: 'taurine' }),
+      makeIngredient({ position: 11, canonical_name: 'l-carnitine' }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.hasMitigation).toBe(true);
+  });
+
+  test('pulse + taurine only (no L-carnitine) → mitigation does NOT apply', () => {
+    const ingredients = [
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 10, canonical_name: 'taurine' }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.hasMitigation).toBe(false);
+  });
+
+  test('grain-inclusive product with 2 pulses in top 10 → Rule 2 fires (no grain-free gate)', () => {
+    // This product is NOT grain-free — D-137 removed the grain-free gate
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 3, canonical_name: 'brown_rice' }),  // grain present
+      makeIngredient({ position: 5, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 8, canonical_name: 'lentils', is_pulse: true }),
+    ];
+    const result = evaluateDcmRisk(ingredients);
+    expect(result.fires).toBe(true);
+    expect(result.triggeredRules).toContain('density');
+  });
+
+  test('Pure Balance: Rule 1 + Rule 2 fire, Rule 3 does not, mitigation fires → 62', () => {
+    // Peas at pos 3 (Rule 1: heavyweight), Pea starch at pos 7 (Rule 2: density = 2 pulses in top 10)
+    // No pulse protein isolate (Rule 3 does not fire)
+    // Taurine + L-carnitine present → mitigation
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'chickpeas', is_legume: true }),
-      makeIngredient({ position: 5, canonical_name: 'pea_starch', is_legume: true }),
+      makeIngredient({ position: 2, canonical_name: 'salmon_meal' }),
+      makeIngredient({ position: 3, canonical_name: 'peas', is_legume: true, is_pulse: true }),
+      makeIngredient({ position: 4, canonical_name: 'potato' }),
+      makeIngredient({ position: 5, canonical_name: 'sweet_potato' }),
+      makeIngredient({ position: 6, canonical_name: 'poultry_fat' }),
+      makeIngredient({ position: 7, canonical_name: 'pea_starch', is_legume: true, is_pulse: true }),
+      makeIngredient({ position: 17, canonical_name: 'taurine' }),
+      makeIngredient({ position: 40, canonical_name: 'l_carnitine' }),
+    ];
+    const dcm = evaluateDcmRisk(ingredients);
+    expect(dcm.fires).toBe(true);
+    expect(dcm.triggeredRules).toContain('heavyweight');
+    expect(dcm.triggeredRules).toContain('density');
+    expect(dcm.triggeredRules).not.toContain('substitution');
+    expect(dcm.hasMitigation).toBe(true);
+    expect(dcm.pulseIngredients).toHaveLength(2);
+    expect(dcm.pulseIngredients.every(p => !p.isPulseProtein)).toBe(true);
+
+    // Verify score via applySpeciesRules: base 65 → DCM −5, mitigation +2 → 62
+    const product = makeProduct({ is_grain_free: true });
+    const result = applySpeciesRules(product, 'dog', ingredients, 65);
+    expect(result.adjustedScore).toBe(62);
+  });
+});
+
+// ─── Dog Rules (via applySpeciesRules) ──────────────────────
+
+describe('applySpeciesRules — Dog rules', () => {
+  const BASE = 69.3;
+
+  test('DCM fires with pulse load, no mitigation → −8%', () => {
+    const product = makeProduct();
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'salmon' }),
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 3, canonical_name: 'lentils', is_pulse: true }),
+      makeIngredient({ position: 5, canonical_name: 'chickpeas', is_pulse: true }),
       makeIngredient({ position: 6, canonical_name: 'canola_oil' }),
-      makeIngredient({ position: 7, canonical_name: 'flaxseed' }),
     ];
     const result = applySpeciesRules(product, 'dog', ingredients, BASE);
     const dcm = result.rules.find(r => r.ruleId === 'DCM_ADVISORY');
     expect(dcm!.fired).toBe(true);
     expect(dcm!.adjustment).toBe(-Math.round(BASE * 0.08));
-    expect(result.adjustedScore).toBe(BASE + dcm!.adjustment);
 
     const mitigation = result.rules.find(r => r.ruleId === 'TAURINE_MITIGATION');
     expect(mitigation!.fired).toBe(false);
   });
 
-  test('DCM + mitigation: grain-free + 4 legumes + taurine + l-carnitine → net −5%', () => {
-    const product = makeProduct({ is_grain_free: true });
+  test('DCM + mitigation: pulse load + taurine + l-carnitine → net −5%', () => {
+    const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'chickpeas', is_legume: true }),
-      makeIngredient({ position: 5, canonical_name: 'pea_protein', is_legume: true }),
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 3, canonical_name: 'lentils', is_pulse: true }),
+      makeIngredient({ position: 5, canonical_name: 'pea_protein', is_pulse: true, is_pulse_protein: true }),
       makeIngredient({ position: 10, canonical_name: 'taurine' }),
       makeIngredient({ position: 11, canonical_name: 'l-carnitine' }),
     ];
@@ -113,19 +254,16 @@ describe('applySpeciesRules — Dog rules', () => {
     expect(mit!.fired).toBe(true);
     expect(dcm!.adjustment).toBe(-Math.round(BASE * 0.08));
     expect(mit!.adjustment).toBe(Math.round(BASE * 0.03));
-    // Net: −8% + 3% = −5% of baseScore
     const net = dcm!.adjustment + mit!.adjustment;
     expect(result.adjustedScore).toBe(BASE + net);
   });
 
-  test('DCM does NOT fire: only 2 legumes in top 7', () => {
-    const product = makeProduct({ is_grain_free: true });
+  test('no pulses → DCM does not fire', () => {
+    const product = makeProduct();
     const ingredients = [
-      makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'sweet_potatoes' }),
-      makeIngredient({ position: 4, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 5, canonical_name: 'chicken_fat' }),
+      makeIngredient({ position: 1, canonical_name: 'chicken' }),
+      makeIngredient({ position: 2, canonical_name: 'rice' }),
+      makeIngredient({ position: 3, canonical_name: 'corn' }),
     ];
     const result = applySpeciesRules(product, 'dog', ingredients, BASE);
     const dcm = result.rules.find(r => r.ruleId === 'DCM_ADVISORY');
@@ -134,22 +272,8 @@ describe('applySpeciesRules — Dog rules', () => {
     expect(result.adjustedScore).toBe(BASE);
   });
 
-  test('DCM does NOT fire: not grain-free regardless of legume count', () => {
-    const product = makeProduct({ is_grain_free: false });
-    const ingredients = [
-      makeIngredient({ position: 1, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 2, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'chickpeas', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'pea_starch', is_legume: true }),
-    ];
-    const result = applySpeciesRules(product, 'dog', ingredients, BASE);
-    const dcm = result.rules.find(r => r.ruleId === 'DCM_ADVISORY');
-    expect(dcm!.fired).toBe(false);
-    expect(result.adjustedScore).toBe(BASE);
-  });
-
   test('mitigation does NOT fire without DCM', () => {
-    const product = makeProduct({ is_grain_free: false });
+    const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'chicken' }),
       makeIngredient({ position: 10, canonical_name: 'taurine' }),
@@ -159,20 +283,6 @@ describe('applySpeciesRules — Dog rules', () => {
     const mit = result.rules.find(r => r.ruleId === 'TAURINE_MITIGATION');
     expect(mit!.fired).toBe(false);
     expect(mit!.adjustment).toBe(0);
-  });
-
-  test('legumes at position 8+ do not count toward DCM threshold', () => {
-    const product = makeProduct({ is_grain_free: true });
-    const ingredients = [
-      makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 8, canonical_name: 'chickpeas', is_legume: true }),
-      makeIngredient({ position: 9, canonical_name: 'pea_starch', is_legume: true }),
-    ];
-    const result = applySpeciesRules(product, 'dog', ingredients, BASE);
-    const dcm = result.rules.find(r => r.ruleId === 'DCM_ADVISORY');
-    expect(dcm!.fired).toBe(false);
   });
 });
 
@@ -278,7 +388,7 @@ describe('applySpeciesRules — Cat rules', () => {
 
 describe('applySpeciesRules — species isolation', () => {
   test('dog product → no cat rules present', () => {
-    const product = makeProduct({ is_grain_free: false });
+    const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'chicken' }),
     ];
@@ -304,29 +414,6 @@ describe('applySpeciesRules — species isolation', () => {
     expect(ruleIds).toContain('UGT1A6_WARNING');
     expect(ruleIds).not.toContain('DCM_ADVISORY');
     expect(ruleIds).not.toContain('TAURINE_MITIGATION');
-  });
-});
-
-// ─── Reference Score (D-013) ───────────────────────────────
-
-describe('applySpeciesRules — reference scores', () => {
-  test('Pure Balance reference: 73.2 → DCM −8% + mitigation +3% → 69 (rounded)', () => {
-    const product = makeProduct({ is_grain_free: true });
-    const ingredients = [
-      makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'salmon_meal' }),
-      makeIngredient({ position: 3, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'dried_peas', is_legume: true }),
-      makeIngredient({ position: 5, canonical_name: 'pea_protein', is_legume: true }),
-      makeIngredient({ position: 6, canonical_name: 'canola_oil' }),
-      makeIngredient({ position: 13, canonical_name: 'taurine' }),
-      makeIngredient({ position: 14, canonical_name: 'l_carnitine' }),
-    ];
-    const result = applySpeciesRules(product, 'dog', ingredients, 73.2);
-    // DCM: -round(73.2 * 0.08) = -round(5.856) = -6
-    // Mitigation: +round(73.2 * 0.03) = +round(2.196) = +2
-    // Net: 73.2 - 6 + 2 = 69.2
-    expect(result.adjustedScore).toBeCloseTo(69.2, 0);
   });
 });
 
@@ -356,12 +443,12 @@ describe('applySpeciesRules — edge cases', () => {
   });
 
   test('deterministic: same inputs → identical output', () => {
-    const product = makeProduct({ is_grain_free: true });
+    const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'salmon' }),
-      makeIngredient({ position: 2, canonical_name: 'peas', is_legume: true }),
-      makeIngredient({ position: 3, canonical_name: 'lentils', is_legume: true }),
-      makeIngredient({ position: 4, canonical_name: 'chickpeas', is_legume: true }),
+      makeIngredient({ position: 2, canonical_name: 'peas', is_pulse: true }),
+      makeIngredient({ position: 3, canonical_name: 'lentils', is_pulse: true }),
+      makeIngredient({ position: 5, canonical_name: 'chickpeas', is_pulse: true }),
     ];
     const a = applySpeciesRules(product, 'dog', ingredients, 80);
     const b = applySpeciesRules(product, 'dog', ingredients, 80);
