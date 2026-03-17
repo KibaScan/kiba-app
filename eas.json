@@ -6,10 +6,16 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "appl_HLjQJhuBYtmrBfFzSzcoKDdcEoY"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "appl_HLjQJhuBYtmrBfFzSzcoKDdcEoY"
+      }
     },
     "production": {
       "autoIncrement": true

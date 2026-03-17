@@ -17,6 +17,7 @@
       "bundleIdentifier": "com.kibascan.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Kiba needs camera access to scan pet food barcodes",
+        "NSPhotoLibraryUsageDescription": "Kiba needs photo access to set your pet's profile picture",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -39,7 +40,20 @@
     },
     "plugins": [
       "expo-font",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kiba needs camera access to scan pet food barcodes"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kiba needs photo access to set your pet's profile picture"
+        }
+      ],
+      "expo-audio"
     ]
   }
 }
