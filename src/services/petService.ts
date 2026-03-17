@@ -56,18 +56,19 @@ async function uploadPetPhoto(
 ): Promise<string | null> {
   try {
     const response = await fetch(localUri);
-    const blob = await response.blob();
+    // Use arrayBuffer instead of blob — more reliable in React Native
+    const arrayBuffer = await response.arrayBuffer();
     const path = petPhotoPath(userId, petId);
 
     const { error } = await supabase.storage
       .from('pet-photos')
-      .upload(path, blob, {
+      .upload(path, arrayBuffer, {
         contentType: 'image/jpeg',
         upsert: true,
       });
 
     if (error) {
-      console.warn('Pet photo upload failed:', error.message);
+      console.warn('Pet photo upload error:', error.message, '| path:', path);
       return null;
     }
 
@@ -75,9 +76,10 @@ async function uploadPetPhoto(
       .from('pet-photos')
       .getPublicUrl(path);
 
-    return data.publicUrl;
+    // Append cache-buster to force Image component refresh on re-upload
+    return `${data.publicUrl}?t=${Date.now()}`;
   } catch (err) {
-    console.warn('Pet photo upload failed:', (err as Error).message);
+    console.warn('Pet photo upload error:', (err as Error).message, '| uri:', localUri.slice(0, 60));
     return null;
   }
 }
