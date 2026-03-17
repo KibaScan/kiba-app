@@ -20,7 +20,27 @@ const SUPPLEMENTAL_PATTERNS: RegExp[] = [
   /not\s+a\s+complete/i,
 ];
 
+/** Product name keywords that indicate toppers/mixers (not formal AAFCO). */
+const SUPPLEMENTAL_NAME_PATTERNS: RegExp[] = [
+  /topper/i,
+  /meal\s+topper/i,
+  /food\s+topper/i,
+  /mixer/i,
+  /meal\s+mixer/i,
+  /meal\s+enhancer/i,
+  /meal\s+booster/i,
+  /sprinkle/i,
+  /dinner\s+dust/i,
+];
+
+/** Detect via AAFCO feeding guide language. */
 export function isSupplementalProduct(feedingGuide: string | null): boolean {
   if (!feedingGuide || feedingGuide.trim() === '') return false;
   return SUPPLEMENTAL_PATTERNS.some((pattern) => pattern.test(feedingGuide));
+}
+
+/** Detect via product name keywords (toppers, mixers, etc.). */
+export function isSupplementalByName(productName: string | null): boolean {
+  if (!productName || productName.trim() === '') return false;
+  return SUPPLEMENTAL_NAME_PATTERNS.some((pattern) => pattern.test(productName));
 }
