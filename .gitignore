@@ -59,3 +59,4 @@ secrets.json
 
 # production
 /build
+__pycache__/
