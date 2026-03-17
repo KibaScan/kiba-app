@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Colors, FontSizes, Spacing, AAFCO_STATEMENT_STATUS } from '../utils/constants';
+import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { canUseSafeSwaps, canCompare } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
@@ -38,6 +38,7 @@ import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
 import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
 import { BenchmarkBar } from '../components/BenchmarkBar';
+import { MetadataBadgeStrip } from '../components/MetadataBadgeStrip';
 import { AafcoProgressBars } from '../components/AafcoProgressBars';
 import { BonusNutrientGrid } from '../components/BonusNutrientGrid';
 import { PositionMap } from '../components/PositionMap';
@@ -46,6 +47,7 @@ import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
 import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
 import { detectFlavorDeception } from '../utils/flavorDeception';
 import { DcmAdvisoryCard } from '../components/DcmAdvisoryCard';
+import { NursingAdvisoryCard } from '../components/NursingAdvisoryCard';
 import { evaluateDcmRisk } from '../services/scoring/speciesRules';
 import { FormulaChangeTimeline } from '../components/FormulaChangeTimeline';
 import { WhatGoodLooksLike } from '../components/WhatGoodLooksLike';
@@ -58,6 +60,7 @@ import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 import { resolveCalories } from '../utils/calorieEstimation';
+import { stripBrandFromName } from '../utils/formatters';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
@@ -224,7 +227,7 @@ export default function ResultScreen() {
                 {product.brand}
               </Text>
               <Text style={styles.productName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
-                {product.name}
+                {stripBrandFromName(product.brand, product.name)}
               </Text>
             </View>
           )}
@@ -308,11 +311,6 @@ export default function ResultScreen() {
               <Text style={styles.comingSoonBadge}>Coming soon</Text>
             </TouchableOpacity>
           </View>
-
-          {/* AAFCO statement — only show if meaningful */}
-          {product!.aafco_statement && product!.aafco_statement.trim().length > 20 && (
-            <Text style={styles.aafcoText} numberOfLines={3}>{product!.aafco_statement}</Text>
-          )}
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -488,7 +486,7 @@ export default function ResultScreen() {
               {product.brand}
             </Text>
             <Text style={styles.productName} numberOfLines={2}>
-              {product.name}
+              {stripBrandFromName(product.brand, product.name)}
             </Text>
           </View>
           <View style={styles.headerSpacer} />
@@ -583,7 +581,7 @@ export default function ResultScreen() {
               {product.brand}
             </Text>
             <Text style={styles.productName} numberOfLines={2}>
-              {product.name}
+              {stripBrandFromName(product.brand, product.name)}
             </Text>
           </View>
           <View style={styles.headerSpacer} />
@@ -655,7 +653,7 @@ export default function ResultScreen() {
             {product!.brand}
           </Text>
           <Text style={styles.productName} numberOfLines={2}>
-            {product!.name}
+            {stripBrandFromName(product!.brand, product!.name)}
           </Text>
         </View>
         <View style={styles.headerSpacer} />
@@ -700,7 +698,11 @@ export default function ResultScreen() {
         />
 
         {/* Verdict text — qualitative suitability label (D-094 compliant) */}
-        <Text style={[styles.verdictText, { color: getScoreColor(score, isSupplemental) }]}>
+        <Text
+          style={[styles.verdictText, { color: getScoreColor(score, isSupplemental) }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {getVerdictLabel(score, petName)}
         </Text>
 
@@ -709,6 +711,19 @@ export default function ResultScreen() {
           <Text style={styles.supplementalRingLine}>
             Best paired with a complete meal
           </Text>
+        )}
+
+        {/* Metadata Badge Strip — TL;DR zone */}
+        {product && scoredResult && (
+          <MetadataBadgeStrip
+            aafcoStatement={product.aafco_statement}
+            category={scoredResult.category}
+            isSupplemental={isSupplemental}
+            productForm={product.product_form}
+            preservativeType={product.preservative_type}
+            lifeStageClaim={product.life_stage_claim}
+            targetSpecies={species}
+          />
         )}
 
         {/* Benchmark Bar (D-132) */}
@@ -735,19 +750,9 @@ export default function ResultScreen() {
                     </View>
                   );
                 }
-                if (flag === 'aafco_statement_not_available') {
-                  return (
-                    <View key={flag} style={styles.flagChipMuted}>
-                      <Text style={styles.flagChipMutedText}>{AAFCO_STATEMENT_STATUS.missing.label}</Text>
-                    </View>
-                  );
-                }
-                if (flag === 'aafco_statement_unrecognized') {
-                  return (
-                    <View key={flag} style={styles.flagChipMuted}>
-                      <Text style={styles.flagChipMutedText}>{AAFCO_STATEMENT_STATUS.unrecognized.label}</Text>
-                    </View>
-                  );
+                // AAFCO flags now shown in MetadataBadgeStrip — skip here
+                if (flag === 'aafco_statement_not_available' || flag === 'aafco_statement_unrecognized') {
+                  return null;
                 }
                 // Generic flag
                 const label = flag.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
@@ -770,6 +775,11 @@ export default function ResultScreen() {
           </View>
         )}
 
+        {/* Nursing Advisory — pets under 4 weeks */}
+        {scoredResult?.flags.includes('nursing_advisory') && (
+          <NursingAdvisoryCard />
+        )}
+
         {/* Concern Tags (D-107) */}
         {hydratedIngredients.length > 0 && product && (
           <ConcernTags
@@ -778,15 +788,6 @@ export default function ResultScreen() {
             species={species}
             dcmFires={species === 'dog' && scoredResult?.layer2.appliedRules.some(r => r.ruleId === 'DCM_ADVISORY' && r.fired)}
           />
-        )}
-
-        {/* Supplemental badge (D-136) — context line already shown below score ring */}
-        {isSupplemental && (
-          <View style={styles.supplementalBadgeContainer}>
-            <View style={styles.supplementalBadge}>
-              <Text style={styles.supplementalBadgeText}>Supplemental</Text>
-            </View>
-          </View>
         )}
 
         {/* Breed Contraindication Cards (D-112) */}
@@ -1052,11 +1053,6 @@ export default function ResultScreen() {
           <Text style={styles.comingSoonBadge}>Coming soon</Text>
         </TouchableOpacity>
 
-        {/* AAFCO statement — only show if meaningful (not orphan fragments from bad data) */}
-        {product!.aafco_statement && product!.aafco_statement.trim().length > 20 && (
-          <Text style={styles.aafcoText} numberOfLines={3}>{product!.aafco_statement}</Text>
-        )}
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -1210,28 +1206,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
-  },
-
-  // ─── Supplemental Badge (D-136)
-  supplementalBadgeContainer: {
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-    gap: 4,
-  },
-  supplementalBadge: {
-    backgroundColor: '#14B8A6',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  supplementalBadgeText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  supplementalContextLine: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
   },
 
   // ─── Portion / Treat Section
@@ -1471,15 +1445,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
     overflow: 'hidden',
-  },
-
-  // ─── AAFCO Statement
-  aafcoText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.lg,
-    lineHeight: 16,
   },
 
   // ─── Share Button

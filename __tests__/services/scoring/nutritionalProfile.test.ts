@@ -248,16 +248,14 @@ describe('Senior cat protein modifier', () => {
   });
 });
 
-describe('Puppy eating adult food', () => {
-  it('−15 bucket modifier when life_stage_claim contains "adult"', () => {
+describe('Puppy eating adult food (moved to Layer 3)', () => {
+  it('NO penalty in NP bucket — life stage mismatch is now Layer 3 personalization', () => {
     const result = scoreNutritionalProfile(makeAdultDogDry({
       lifeStage: 'puppy',
       lifeStageClaim: 'For adult dogs',
     }));
     const mod = result.modifiersApplied.find(m => m.name === 'growth_adult_food_penalty');
-    expect(mod).toBeDefined();
-    expect(mod!.points).toBe(-15);
-    expect(mod!.target).toBe('bucket');
+    expect(mod).toBeUndefined();
   });
 });
 

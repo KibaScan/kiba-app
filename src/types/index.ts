@@ -106,6 +106,9 @@ export interface Product {
   // Image (D-093 — gradient edge fade on scan result screen)
   image_url: string | null;
 
+  // Product form
+  product_form: string | null;
+
   // Flags
   is_recalled: boolean;
   is_grain_free: boolean;

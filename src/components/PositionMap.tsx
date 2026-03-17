@@ -1,10 +1,10 @@
 // Kiba — Position Map
 // Horizontal strip of colored segments representing ingredient composition.
 // First ingredient = widest segment, tapering right. Color = severity.
-// Swipe/drag to scrub across segments; tap to toggle. Zero emoji (D-084).
+// Tap a segment to identify; tap again to dismiss. Zero emoji (D-084).
 
-import React, { useState, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, PanResponder } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 
 import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
 import { toDisplayName } from '../utils/formatters';
@@ -45,9 +45,7 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
 
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [labelWidth, setLabelWidth] = useState(0);
-  const barWidthRef = useRef(0);
   const [barWidth, setBarWidth] = useState(0);
-  const isDraggingRef = useRef(false);
 
   const sorted = [...ingredients].sort((a, b) => a.position - b.position);
 
@@ -55,7 +53,7 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
   const rawWeights = sorted.map((ing) => getPositionWeight(ing.position));
   const totalWeight = rawWeights.reduce((sum, w) => sum + w, 0);
 
-  // Cumulative widths for label positioning and hit testing
+  // Cumulative widths for label positioning
   const cumulativeWidths: number[] = [];
   let cumWidth = 0;
   for (let i = 0; i < sorted.length; i++) {
@@ -75,67 +73,15 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
     }
   }
 
-  // ─── Hit testing: X pixel → segment index ──────────
-  function segmentIndexFromX(x: number): number {
-    const bw = barWidthRef.current;
-    if (bw <= 0 || totalWeight <= 0) return -1;
-    const clampedX = Math.max(0, Math.min(x, bw));
-    const fraction = clampedX / bw;
-    const weightAtX = fraction * totalWeight;
-
-    // Linear scan — segments are typically <60, no need for binary search
-    let cum = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      cum += rawWeights[i];
-      if (weightAtX < cum) return i;
-    }
-    return sorted.length - 1;
+  // ─── Tap handler: toggle segment selection ──────────
+  function handleSegmentTap(position: number) {
+    setSelectedPosition((prev) => {
+      if (prev === position) return null; // tap same → dismiss
+      return position;
+    });
+    setLabelWidth(0); // re-measure for new label
+    onSegmentPress?.(position);
   }
-
-  function selectSegment(x: number) {
-    const idx = segmentIndexFromX(x);
-    if (idx >= 0 && idx < sorted.length) {
-      const pos = sorted[idx].position;
-      setSelectedPosition(pos);
-      setLabelWidth(0); // re-measure for new label
-      onSegmentPress?.(pos);
-    }
-  }
-
-  // ─── PanResponder: scrub + tap ────────────────────
-  const panResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        isDraggingRef.current = false;
-        selectSegment(evt.nativeEvent.locationX);
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        // Only treat as drag if moved more than 5px (prevents jitter on tap)
-        if (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5) {
-          isDraggingRef.current = true;
-        }
-        if (isDraggingRef.current) {
-          selectSegment(evt.nativeEvent.locationX);
-        }
-      },
-      onPanResponderRelease: (evt) => {
-        if (!isDraggingRef.current) {
-          // Tap: toggle — if same segment tapped again, dismiss
-          const idx = segmentIndexFromX(evt.nativeEvent.locationX);
-          if (idx >= 0 && idx < sorted.length) {
-            const pos = sorted[idx].position;
-            setSelectedPosition(prev => prev === pos ? null : pos);
-            setLabelWidth(0);
-          }
-        }
-        isDraggingRef.current = false;
-      },
-    }),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [sorted.length, totalWeight],
-  );
 
   // Selected segment label data
   const selectedIdx = selectedPosition != null
@@ -152,15 +98,10 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Ingredient Composition</Text>
       <View
-        style={styles.barWrapper}
-        onLayout={(e) => {
-          const w = e.nativeEvent.layout.width;
-          barWidthRef.current = w;
-          setBarWidth(w);
-        }}
-        {...panResponder.panHandlers}
+        style={[styles.barWrapper, selectedIdx >= 0 && { marginBottom: 36 }]}
+        onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
       >
-        {/* Floating label above selected segment — clamped to bar edges */}
+        {/* Floating label below bar — clamped to bar edges */}
         {selectedIdx >= 0 && (
           <View
             key={selectedPosition}
@@ -191,8 +132,9 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
             const isDimmed = selectedPosition != null && selectedPosition !== ing.position;
 
             return (
-              <View
+              <Pressable
                 key={`${ing.position}-${ing.canonical_name}`}
+                onPress={() => handleSegmentTap(ing.position)}
                 style={[
                   styles.segment,
                   {
@@ -212,7 +154,7 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
         <View style={styles.barHighlight} pointerEvents="none" />
         {/* Top 10 divider */}
         {top10Found && top10CumulativePct < 98 && (
-          <View style={[styles.top10Line, { left: `${top10CumulativePct}%` }]} />
+          <View style={[styles.top10Line, { left: `${top10CumulativePct}%` }]} pointerEvents="none" />
         )}
       </View>
       {top10Found && top10CumulativePct < 98 && (
@@ -289,7 +231,7 @@ const styles = StyleSheet.create({
   },
   floatingLabel: {
     position: 'absolute',
-    bottom: 26,
+    top: 26,
     backgroundColor: '#1F1F1F',
     padding: 8,
     borderRadius: 6,

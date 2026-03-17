@@ -38,7 +38,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import get_client, BATCH_SIZE
-from ingredient_matcher import IngredientMatcher, load_synonyms, normalize_ingredient
+from ingredient_matcher import IngredientMatcher, load_synonyms, normalize_ingredient, normalize_colorant_canonical
 
 REPORTS_DIR = Path(__file__).resolve().parent
 JUNCTION_BATCH_SIZE = 500
@@ -930,13 +930,14 @@ def main():
                 result = matcher.match(primary)
 
                 if result.ingredient_id:
-                    matched_counts[result.canonical_name] += group_size
+                    canon = normalize_colorant_canonical(result.canonical_name)
+                    matched_counts[canon] += group_size
                     ingredient_links.append((
-                        position, result.canonical_name,
+                        position, canon,
                         result.ingredient_id, recipe_name
                     ))
                 elif result.normalized:
-                    normalized = result.normalized
+                    normalized = normalize_colorant_canonical(result.normalized)
                     if normalized not in new_ingredients:
                         new_ingredients[normalized] = {
                             'display_name': primary,
@@ -969,13 +970,14 @@ def main():
                         pres_result = matcher.match(pres_primary)
                         synth_pos = 900 + position_offset + local_pos + pres_idx
                         if pres_result.ingredient_id:
-                            matched_counts[pres_result.canonical_name] += group_size
+                            pres_canon = normalize_colorant_canonical(pres_result.canonical_name)
+                            matched_counts[pres_canon] += group_size
                             ingredient_links.append((
-                                synth_pos, pres_result.canonical_name,
+                                synth_pos, pres_canon,
                                 pres_result.ingredient_id, recipe_name
                             ))
                         elif pres_result.normalized:
-                            norm_pres = pres_result.normalized
+                            norm_pres = normalize_colorant_canonical(pres_result.normalized)
                             if norm_pres not in new_ingredients:
                                 new_ingredients[norm_pres] = {
                                     'display_name': pres_primary,
@@ -1043,7 +1045,7 @@ def main():
             rows = []
             for canonical, info in batch:
                 rows.append({
-                    'canonical_name': canonical,
+                    'canonical_name': normalize_colorant_canonical(canonical),
                     'display_name': info['display_name'],
                     # Schema CHECK: ('danger','caution','neutral','good')
                     # 'unknown' not allowed — neutral is safe default

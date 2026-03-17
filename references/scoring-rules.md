@@ -1,7 +1,7 @@
 # Kiba — Scoring Rules Reference
 
 > **Read this before implementing ANY scoring logic.**
-> **Last updated:** March 15, 2026 (D-137 DCM Pulse Framework — supersedes D-013, Pure Balance 65 → 62. D-138–D-141 UI polish — zero scoring math changes.)
+> **Last updated:** March 17, 2026 (M4.5 Round 5: D-150 life stage mismatch moved from NP bucket to Layer 3 with category-scaled penalties; D-151 under-4-weeks nursing advisory suppresses life stage penalty. 641 tests passing.)
 > **Canonical sources:** This file consolidates rules from DECISIONS.md, NUTRITIONAL_PROFILE_BUCKET_SPEC.md, BREED_MODIFIERS_DOGS.md, BREED_MODIFIERS_CATS.md, and PORTION_CALCULATOR_SPEC.md. If this file conflicts with DECISIONS.md, DECISIONS.md wins.
 
 ---
@@ -82,7 +82,12 @@ Applied as percentage multipliers to the composite score:
 ### Layer 3 — Personalization
 
 - Allergy cross-reference (D-097, D-098, D-129)
-- Life stage matching (AAFCO profile vs pet's derived life stage)
+- **Life stage mismatch (category-scaled, moved from NP bucket):**
+  - Puppy/kitten eating "Adult"/"Maintenance" food: daily food −15, supplemental −10, treat −5
+  - Adult/junior/mature/senior/geriatric eating "Growth"/"Puppy"/"Kitten" food: −5 (all categories)
+  - "All Life Stages" or null claim → no penalty
+  - **Suppressed for pets under 4 weeks** — nursing advisory flag takes precedence
+  - Citation: AAFCO Official Publication, Nutritional Adequacy — Growth & Reproduction vs Adult Maintenance profiles
 - Breed-specific modifiers from `BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md`
 - Breed modifier cap: ±10 total within the nutritional bucket
 - Neutral (zero effect) if no conflicts detected
@@ -193,6 +198,8 @@ Six tiers collapse to four DER buckets. Life stage determines AAFCO threshold se
 - Senior/geriatric cats: protein < 30% DMB → −5 sub-score penalty — **unless** pet has CKD condition (CKD requires protein restriction)
 - Geriatric cats: +3 protein sub-score bonus (higher protein supports muscle mass — D-063)
 - Kitten food fed to senior cat: −5 bucket-level penalty (mismatched life stage claim)
+
+**NOTE:** The general life stage mismatch penalty (puppy/kitten eating adult food, adult eating growth food) was **moved from the NP bucket to Layer 3 personalization** to ensure it applies equally across all product categories. See §2 Layer 3. The NP bucket retains only the senior-specific modifiers listed above.
 
 ### Large/Giant Breed Puppies (Dogs)
 
@@ -338,14 +345,7 @@ Breakdown:
 
 ### Test Count
 
-**509 tests** must pass after any change:
-- 447 M1-M3 baseline
-- 18 allergen override (D-129)
-- 8 flavor deception (D-133)
-- 16 supplemental classifier (D-136)
-- 8 supplemental scoring (D-136)
-- 4 E2E scoring (M4 Session 6)
-- 8 D-137 DCM pulse detection (M4.5)
+**641 tests** across 32 suites must pass after any change.
 
 ---
 
@@ -373,12 +373,13 @@ export const NP_SUB_WEIGHTS = {
 1. **Classify product:** treat → 100/0/0. Supplemental → 65/35/0. Daily food → 55/30/15.
 2. **DMB conversion** if moisture > 12%
 3. **Layer 1 — Ingredient Quality:** position-weighted severity deductions. If pet has allergens: score twice (baseIqResult + overrideIqResult).
-4. **Layer 1 — Nutritional Profile (if applicable):** DMB values → sub-nutrient trapezoidal curves → sub-score modifiers (life stage, breed) → clamp [0,100] → weighted sum → bucket-level modifiers → clamp [0,100]. For supplementals: macro-only (skip micronutrients).
+4. **Layer 1 — Nutritional Profile (if applicable):** DMB values → sub-nutrient trapezoidal curves → sub-score modifiers (life stage, breed) → clamp [0,100] → weighted sum → bucket-level modifiers (senior/geriatric, large breed puppy Ca) → clamp [0,100]. For supplementals: macro-only (skip micronutrients). **Note:** general life stage mismatch penalty is no longer in this step — moved to step 8.
 5. **Layer 1 — Formulation (if applicable):** AAFCO statement + preservative + naming.
 6. **Composite:** weighted sum of applicable buckets.
 7. **Layer 2 — Species Rules:** percentage multipliers (DCM, carb overload, taurine check).
-8. **Layer 3 — Personalization:** allergen delta applied, life stage matching, breed modifiers (already applied within NP in step 4 — don't double-count).
-9. **Final clamp** [0, 100], round to integer.
+8. **Layer 3 — Personalization:** allergen delta applied, **category-scaled life stage mismatch** (daily −15, supplemental −10, treat −5 for puppy/kitten+adult food; −5 all categories for adult+growth food; suppressed for pets under 4 weeks), breed modifiers (already applied within NP in step 4 — don't double-count).
+9. **Nursing advisory flag** added if pet is under 4 weeks old (informational, no score impact).
+10. **Final clamp** [0, 100], round to integer.
 
 ---
 
@@ -406,9 +407,10 @@ export const NP_SUB_WEIGHTS = {
 | `src/services/scoring/nutritionalProfile.ts` | NP bucket — AAFCO curves, sub-nutrients, skipMicronutrients flag |
 | `src/services/scoring/formulationScore.ts` | FC bucket — AAFCO statement, preservatives, naming |
 | `src/services/scoring/speciesRules.ts` | Layer 2 — DCM, carb overload, taurine |
-| `src/services/scoring/personalization.ts` | Layer 3 — allergens, life stage, breed modifiers |
+| `src/services/scoring/personalization.ts` | Layer 3 — allergens, category-scaled life stage mismatch, breed modifiers, under-4-weeks nursing advisory suppression |
 | `src/services/scoring/dmbConversion.ts` | DMB math |
 | `src/services/scoring/carbEstimate.ts` | NFE calculation + ash estimation |
+| `src/utils/lifeStage.ts` | Life stage derivation, `isUnder4Weeks()` for nursing advisory |
 | `src/utils/supplementalClassifier.ts` | D-136 feeding guide keyword parser |
 | `src/utils/constants.ts` | SCORING_WEIGHTS, SCORE_COLORS, SEVERITY_COLORS, AAFCO_STATEMENT_STATUS, getScoreColor(), getVerdictLabel() |
 | `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | Full NP bucket spec (trapezoidal curves, worked examples) |

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-03-17T16:45:23.240567+00:00",
+  "total_products": 9090,
+  "already_set": 0,
+  "pass1_dataset": 9007,
+  "pass2_inference": 20,
+  "remaining_null": 63,
+  "form_counts": {
+    "dry": 6104,
+    "freeze_dried": 646,
+    "wet": 2277
+  },
+  "dry_run": false
+}

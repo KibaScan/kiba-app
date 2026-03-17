@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 16, 2026 (149 decisions: D-001 through D-149. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143.)
+> Updated: March 17, 2026 (151 decisions: D-001 through D-151. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory.)
 
 ---
 
@@ -2245,6 +2245,57 @@ Eight display bug fixes — no scoring engine changes, all presentation-layer:
 - TreatBatteryGauge shows "Calories estimated from nutritional profile" note with InfoTooltip when `calorieSource === 'estimated'`
 - Products with label calorie data completely unaffected — label values always take priority
 - Display-only: Atwater estimate does NOT enter scoring engine
+
+---
+
+### D-150: Life Stage Mismatch — Layer 3 Restructure — LOCKED
+
+**Date:** 2026-03-17
+**Status:** LOCKED
+**Scope:** `personalization.ts`, `nutritionalProfile.ts`, `engine.ts`, `scoring-rules.md`
+
+**Problem:** The life stage mismatch penalty (−15 for puppy/kitten eating adult food) lived in the NP bucket (§5a). Because treats weight NP at 0% and supplementals at 35%, the penalty had no effect on treats and minimal effect on supplementals. A 1-month-old kitten scanning adult treats saw no penalty.
+
+**Decision:** Move life stage mismatch from NP bucket to Layer 3 personalization as a category-scaled modifier on the final composite score:
+
+| Scenario | Daily Food | Supplemental | Treat |
+|----------|-----------|-------------|-------|
+| Puppy/kitten eating "Adult"/"Maintenance" | −15 | −10 | −5 |
+| Adult+ eating "Growth"/"Puppy"/"Kitten" | −5 | −5 | −5 |
+| "All Life Stages" or null claim | 0 | 0 | 0 |
+
+**Trigger conditions:**
+- Puppy/kitten + explicit "Adult"/"Maintenance" claim (case-insensitive)
+- Adult/junior/mature/senior/geriatric + explicit "Growth"/"Puppy"/"Kitten" claim
+- "All Life Stages" or null/empty claim → no penalty
+
+**Reverse case rationale:** Growth formulas have excess calcium/phosphorus for adult animals, especially risky for large breed adults. −5 is appropriate as a mild warning — growth food isn't dangerous for adults the way adult food is for growing animals.
+
+**Citations:** AAFCO Official Publication, Nutritional Adequacy — Growth & Reproduction vs Adult Maintenance profiles.
+
+**Regression:** Pure Balance = 62 (unaffected — adult pet, no life_stage_claim).
+
+---
+
+### D-151: Under-4-Weeks Nursing Advisory — LOCKED
+
+**Date:** 2026-03-17
+**Status:** LOCKED
+**Scope:** `personalization.ts`, `engine.ts`, `lifeStage.ts`, `NursingAdvisoryCard.tsx`, `ResultScreen.tsx`
+
+**Problem:** Pets under 4 weeks old should be primarily nursing. The D-150 life stage mismatch penalty is inappropriate for these very young animals — the issue isn't food quality, it's age-appropriateness.
+
+**Decision:**
+- If pet's DOB indicates under 4 weeks old, suppress D-150 life stage mismatch penalty entirely
+- Add `'nursing_advisory'` flag to scored result
+- Render `NursingAdvisoryCard` on ResultScreen (amber/caution style, below verdict, above concern tags)
+- Card copy: "Pets under 4 weeks old should be primarily nursing. Consult your veterinarian before introducing solid food."
+- D-095 compliant: factual language, vet consult recommendation, not prescriptive
+- Species-agnostic — same message for puppies and kittens
+- Food still scored normally — the advisory is informational, not a bypass
+- `isUnder4Weeks()` utility in `lifeStage.ts` calculates weeks from DOB string
+
+**No score impact.** The user might be scanning to compare foods for when their pet IS ready for solids.
 
 ---
 

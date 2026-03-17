@@ -243,6 +243,50 @@ def normalize_ingredient(raw: str, synonyms: dict[str, str] | None = None) -> st
     return s
 
 
+# ─── Colorant Canonical Name Normalizer ──────────────────────
+
+# Mirrors src/utils/ingredientNormalizer.ts for the Python import pipeline.
+# Catches variant canonical names that _match_color() misses when the input
+# is already in underscore form (e.g. from a previous import or dataset).
+
+_COLORANT_ROOTS = ('red_40', 'red_3', 'yellow_5', 'yellow_6',
+                   'blue_1', 'blue_2', 'titanium_dioxide')
+
+
+def normalize_colorant_canonical(canonical: str) -> str:
+    """Normalize FD&C colorant canonical names to their base form.
+
+    fd&c_blue_no._1 → blue_1, red_40_lake → red_40, blue_1_b410922 → blue_1
+    Non-colorant names pass through unchanged.
+    """
+    s = canonical.lower()
+    # Strip FD&C prefixes (including typos/OCR artifacts: fd*c, fd_&_c)
+    s = re.sub(r'^(?:fd&c_|fd_and_c_|fd_&_c_|fd\*c_|fdc_|f\.d\.&c\._|f\.d\.&c\.)', '', s)
+    # Strip # symbols, then ensure underscore between color word and number
+    s = s.replace('#', '')
+    s = re.sub(r'^(red|yellow|blue)(\d)', r'\1_\2', s)
+    # Strip "no" variants
+    s = re.sub(r'_no\._', '_', s)
+    s = re.sub(r'_no_', '_', s)
+    s = re.sub(r'_number_', '_', s)
+    # Strip _lake suffix and interior _lake_
+    s = re.sub(r'_lake$', '', s)
+    s = s.replace('_lake_', '_')
+    # Strip trailing batch/registry codes
+    s = re.sub(r'_[a-z]?\d{4,}$', '', s)
+    # Strip parsing artifacts: trailing content after dot following number
+    s = re.sub(r'((?:red|yellow|blue)_\d+)\._.*$', r'\1', s)
+    # Collapse double underscores + trim trailing
+    s = re.sub(r'__+', '_', s).rstrip('_')
+    # Match against known roots
+    for root in _COLORANT_ROOTS:
+        if s == root:
+            return root
+        if s.startswith(root) and (len(s) == len(root) or s[len(root)] == '_'):
+            return root
+    return canonical  # non-colorant — return unchanged
+
+
 class MatchResult(NamedTuple):
     ingredient_id: str | None
     canonical_name: str | None

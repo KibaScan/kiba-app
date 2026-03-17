@@ -330,17 +330,10 @@ export function scoreNutritionalProfile(
   const claim = input.lifeStageClaim?.toLowerCase() ?? '';
 
   if (!input.isSupplemental) {
-  // Puppy/kitten eating adult food
-  if (isGrowth && (claim.includes('adult') || claim.includes('maintenance'))) {
-    modifiers.push({
-      name: 'growth_adult_food_penalty',
-      points: -15,
-      target: 'bucket',
-      reason: "Adult food doesn't meet growth nutritional demands",
-      citationSource: 'AAFCO-2023; NRC-2006',
-    });
-    bucketScore -= 15;
-  }
+  // NOTE: Life stage mismatch penalty (puppy/kitten eating adult food) moved to Layer 3
+  // personalization.ts — category-scaled: daily food −15, supplemental −10, treat −5.
+  // Removed from NP bucket to avoid zero-effect on treats (0% NP weight) and
+  // diluted effect on supplementals (35% NP weight).
 
   // Puppy/kitten Ca:P ratio outside 1.1:1–2:1
   if (isGrowth && input.gaCalciumPct !== null && input.gaPhosphorusPct !== null) {

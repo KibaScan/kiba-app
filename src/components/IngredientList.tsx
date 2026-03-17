@@ -68,6 +68,12 @@ export function IngredientList({
   onIngredientPress,
   flavorAnnotation,
 }: IngredientListProps) {
+  // Build ordinal position map: DB position → 1-based ordinal index
+  // (DB positions can be non-contiguous, e.g. preservative sub-ingredients at #905)
+  const byPosition = [...ingredients].sort((a, b) => a.position - b.position);
+  const ordinalMap = new Map<number, number>();
+  byPosition.forEach((ing, idx) => ordinalMap.set(ing.position, idx + 1));
+
   // Sort by severity worst→best, then by position within same severity
   const sorted = [...ingredients].sort((a, b) => {
     const sevA = SEVERITY_ORDER[getSeverity(a, species)];
@@ -116,7 +122,7 @@ export function IngredientList({
         activeOpacity={0.7}
       >
         <View style={styles.rowTop}>
-          <Text style={styles.positionNumber}>#{ingredient.position}</Text>
+          <Text style={styles.positionNumber}>#{ordinalMap.get(ingredient.position) ?? ingredient.position}</Text>
           <View style={styles.nameBlock}>
             <Text style={styles.ingredientName}>{primary}</Text>
             {parenthetical && (

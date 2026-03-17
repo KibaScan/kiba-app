@@ -930,7 +930,7 @@ const styles = StyleSheet.create({
   staleWeightCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF950015',
+    backgroundColor: '#F59E0B15',
     borderRadius: 12,
     padding: Spacing.md,
     borderLeftWidth: 3,

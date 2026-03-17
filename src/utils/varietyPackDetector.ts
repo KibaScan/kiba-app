@@ -20,6 +20,14 @@ const VARIETY_PACK_PATTERNS: RegExp[] = [
 
 const INGREDIENT_COUNT_THRESHOLD = 80;
 
+/**
+ * Minimum number of distinct canonical names appearing more than once
+ * to trigger the duplicate detection rule. Legitimate single-recipe products
+ * can have 1-2 duplicates (e.g. mixed_tocopherols listed as both ingredient
+ * and preservative). Concatenated variety packs will have many more.
+ */
+const DUPLICATE_NAME_THRESHOLD = 4;
+
 export function detectVarietyPack(
   productName: string,
   ingredients: ProductIngredient[],
@@ -34,13 +42,17 @@ export function detectVarietyPack(
     return true;
   }
 
-  // Rule 3: Duplicate canonical names at different positions
-  const seen = new Set<string>();
+  // Rule 3: Many duplicate canonical names at different positions
+  const counts = new Map<string, number>();
   for (const ing of ingredients) {
-    if (seen.has(ing.canonical_name)) {
-      return true;
-    }
-    seen.add(ing.canonical_name);
+    counts.set(ing.canonical_name, (counts.get(ing.canonical_name) ?? 0) + 1);
+  }
+  let duplicateNames = 0;
+  for (const count of counts.values()) {
+    if (count > 1) duplicateNames++;
+  }
+  if (duplicateNames >= DUPLICATE_NAME_THRESHOLD) {
+    return true;
   }
 
   return false;

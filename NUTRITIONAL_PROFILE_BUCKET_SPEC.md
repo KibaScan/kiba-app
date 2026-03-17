@@ -5,6 +5,7 @@
 > **Prerequisite:** DMB conversion MUST run before this bucket. See §1.
 >
 > **Changelog:**
+> - Mar 17, 2026: §5a life stage mismatch penalty (−15 bucket-level) moved to Layer 3 personalization (D-150) — category-scaled: daily −15, supplemental −10, treat −5. §8 step 8 updated. NP bucket retains only puppy protein/fat boosts and Ca:P ratio check.
 > - Mar 1, 2026: §3 life stage tables aligned to PET_PROFILE_SPEC 6-tier system; breed size thresholds updated; §5c modifier triggers use life_stage enum; breed counts corrected (23 dog, 21 cat); geriatric cat DER locked at 1.5×
 > - Feb 27, 2026 (evening): Math.max(0) floor on NFE formulas (D-104)
 > - Feb 27, 2026 (night): §2c ash defaults corrected (As-Fed, not DMB — must convert before NFE); §4b fat curve decoupled by species (dog vs cat thresholds — cat excess at 25% DMB, not 40.5%); §4b fiber exception updated for D-106 pet conditions; §5c CKD gate on senior cat protein penalty; §5d advisory text D-095 compliant; §8 order of operations clarified (sub-score vs bucket-level modifiers); §8 worked example recalculated with corrected ash, exact trapezoidal math, and decoupled cat fat curve (regression target 93 → 90); §10 CKD gate test added; §11 Q4/Q5 updated
@@ -296,7 +297,7 @@ These modifiers come in two types — **sub-score modifiers** (adjust individual
 |---|---|---|---|
 | Protein DMB ≥ Growth min × 1.3 | +5 to protein sub-score (cap at 100) | Sub-score | Growing animals benefit from higher protein for tissue development |
 | Fat DMB ≥ Growth min × 1.5 | +3 to fat sub-score (cap at 100) | Sub-score | Energy-dense diets support rapid growth |
-| Product labeled "Adult" or "Maintenance" | −15 from overall bucket score | Bucket-level | Adult food doesn't meet growth nutritional demands; may be calcium/phosphorus inadequate |
+| ~~Product labeled "Adult" or "Maintenance"~~ | ~~−15 from overall bucket score~~ | ~~Bucket-level~~ | **MOVED to Layer 3 personalization (D-150).** Category-scaled: daily food −15, supplemental −10, treat −5. Applied to final composite, not NP bucket. See `personalization.ts`. |
 | Ca:P ratio outside 1.1:1 to 2:1 | −10 from overall bucket score | Bucket-level | Critical for skeletal development; source: AAFCO, NRC (2006) |
 
 ### 5b. Senior Dog Modifiers
@@ -439,7 +440,7 @@ This is **non-negotiable.** LLM-extracted GA data is useful but not authoritativ
 
 8.  Apply BUCKET-LEVEL modifiers from §5 and §6:
     These target the overall bucket score AFTER the weighted sum:
-    — "−15 from overall bucket" (§5a adult food for puppy/kitten)
+    — (§5a adult food for puppy/kitten — MOVED to Layer 3 per D-150)
     — "−10 from overall bucket" (§5a Ca:P ratio for puppy)
     — "−8 from overall bucket" (§5b senior dog phosphorus >1.4%)
     — "+3 to overall bucket" (§5b senior dog glucosamine/omega-3)

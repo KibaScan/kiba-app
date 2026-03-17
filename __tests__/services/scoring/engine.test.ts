@@ -40,6 +40,8 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    is_supplemental: false,
+    is_vet_diet: false,
     score_confidence: 'high',
     needs_review: false,
     last_verified_at: null,
@@ -496,17 +498,196 @@ describe('computeScore — Orchestrator', () => {
     });
   });
 
-  // ─── Personalization Passes Through ──────────────────
+  // ─── Life Stage Mismatch (category-scaled, Layer 3) ──
 
-  test('life stage mismatch penalty flows through', () => {
-    const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });
-    const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
-    const pet = makePet({ life_stage: LifeStage.Puppy });
-    const result = computeScore(product, ingredients, pet);
+  describe('Life stage mismatch — puppy/kitten eating adult food', () => {
+    test('kitten + adult daily food → −15', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Adult Maintenance',
+        target_species: Species.Cat,
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+      const result = computeScore(product, ingredients, pet);
 
-    const lifeStage = result.layer3.personalizations.find(p => p.type === 'life_stage');
-    expect(lifeStage).toBeDefined();
-    expect(lifeStage!.adjustment).toBe(-10);
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-15);
+      expect(ls!.label).toContain('kitten');
+    });
+
+    test('puppy + adult daily food → −15', () => {
+      const product = makeProduct({ life_stage_claim: 'Adult Maintenance', is_supplemental: false });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ life_stage: LifeStage.Puppy });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-15);
+      expect(ls!.label).toContain('puppy');
+    });
+
+    test('kitten + adult treat → −5', () => {
+      const product = makeProduct({
+        category: Category.Treat,
+        life_stage_claim: 'Adult',
+        target_species: Species.Cat,
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-5);
+    });
+
+    test('kitten + adult supplemental → −10', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Adult Maintenance',
+        target_species: Species.Cat,
+        is_supplemental: true,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-10);
+    });
+
+    test('kitten + "All Life Stages" food → 0 (no penalty)', () => {
+      const product = makeProduct({
+        life_stage_claim: 'All Life Stages',
+        target_species: Species.Cat,
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeUndefined();
+    });
+
+    test('kitten + NULL life stage claim → 0 (no penalty)', () => {
+      const product = makeProduct({
+        life_stage_claim: null,
+        target_species: Species.Cat,
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeUndefined();
+    });
+
+    test('puppy + "Growth" food → 0 (correct match)', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Growth & Reproduction',
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ life_stage: LifeStage.Puppy });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeUndefined();
+    });
+  });
+
+  describe('Life stage mismatch — adult eating growth food', () => {
+    test('adult dog + "Growth" food → −5', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Growth & Reproduction',
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ life_stage: LifeStage.Adult });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-5);
+      expect(ls!.label).toContain('excess calcium');
+    });
+
+    test('adult cat + "All Life Stages" food → 0 (no penalty)', () => {
+      const product = makeProduct({
+        life_stage_claim: 'All Life Stages',
+        target_species: Species.Cat,
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Adult });
+      const result = computeScore(product, ingredients, pet);
+
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeUndefined();
+    });
+  });
+
+  // ─── Nursing Advisory (under 4 weeks) ────────────────
+
+  describe('Under-4-weeks nursing advisory', () => {
+    function dobWeeksAgo(weeks: number): string {
+      const d = new Date();
+      d.setDate(d.getDate() - weeks * 7);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    test('under 4 weeks → nursing_advisory flag, no life stage penalty', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Adult Maintenance',
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({
+        life_stage: LifeStage.Puppy,
+        date_of_birth: dobWeeksAgo(2),
+      });
+      const result = computeScore(product, ingredients, pet);
+
+      expect(result.flags).toContain('nursing_advisory');
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeUndefined();
+    });
+
+    test('over 4 weeks → no nursing_advisory flag, life stage penalty applies', () => {
+      const product = makeProduct({
+        life_stage_claim: 'Adult Maintenance',
+        is_supplemental: false,
+      });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({
+        life_stage: LifeStage.Puppy,
+        date_of_birth: dobWeeksAgo(6),
+      });
+      const result = computeScore(product, ingredients, pet);
+
+      expect(result.flags).not.toContain('nursing_advisory');
+      const ls = result.layer3.personalizations.find(p => p.type === 'life_stage');
+      expect(ls).toBeDefined();
+      expect(ls!.adjustment).toBe(-15);
+    });
+
+    test('null DOB → no nursing_advisory flag', () => {
+      const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });
+      const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+      const pet = makePet({ life_stage: LifeStage.Puppy, date_of_birth: null });
+      const result = computeScore(product, ingredients, pet);
+
+      expect(result.flags).not.toContain('nursing_advisory');
+    });
   });
 
   // ─── D-106: petConditions pass to nutritionalProfile ──

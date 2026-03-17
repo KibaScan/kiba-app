@@ -47,6 +47,10 @@ export default function TreatBatteryGauge({
   petName,
   calorieSource,
 }: TreatBatteryGaugeProps) {
+  // calorieSource === null means product has no calorie data AND Atwater can't estimate.
+  // undefined means not passed (e.g. PetHubScreen general view) — show normally.
+  const noCalorieData = calorieSource === null;
+
   const percent = getBarPercent(consumedKcal, treatBudgetKcal);
   const barColor = getBarColor(percent);
   // Visual fill capped at 100% width
@@ -59,42 +63,56 @@ export default function TreatBatteryGauge({
         {petName}'s Treat Budget
       </Text>
 
-      {/* Budget label */}
-      <Text style={styles.budgetLabel}>
-        {Math.round(consumedKcal)}/{Math.round(treatBudgetKcal)} kcal
-      </Text>
+      {noCalorieData ? (
+        <>
+          {/* No calorie data — show unavailable state */}
+          <View style={styles.barTrack}>
+            <Text style={styles.unavailableText}>Calorie data not available</Text>
+          </View>
+          <Text style={styles.unavailableHint}>
+            This treat doesn't list calorie content and can't be estimated
+          </Text>
+        </>
+      ) : (
+        <>
+          {/* Budget label */}
+          <Text style={styles.budgetLabel}>
+            {Math.round(consumedKcal)}/{Math.round(treatBudgetKcal)} kcal
+          </Text>
 
-      {/* Bar */}
-      <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${fillWidth}%`,
-              backgroundColor: barColor,
-            },
-          ]}
-        />
-        {/* Percentage text overlaid on bar */}
-        <Text style={styles.barText}>
-          {Math.round(percent)}%
-        </Text>
-      </View>
+          {/* Bar */}
+          <View style={styles.barTrack}>
+            <View
+              style={[
+                styles.barFill,
+                {
+                  width: `${fillWidth}%`,
+                  backgroundColor: barColor,
+                },
+              ]}
+            />
+            {/* Percentage text overlaid on bar */}
+            <Text style={styles.barText}>
+              {Math.round(percent)}%
+            </Text>
+          </View>
 
-      {/* Status label */}
-      <Text style={[styles.statusLabel, { color: barColor }]}>
-        {getStatusLabel(percent)}
-      </Text>
+          {/* Status label */}
+          <Text style={[styles.statusLabel, { color: barColor }]}>
+            {getStatusLabel(percent)}
+          </Text>
 
-      {/* Atwater estimation note */}
-      {calorieSource === 'estimated' && (
-        <View style={styles.estimateRow}>
-          <Text style={styles.estimateNote}>Calories estimated from nutritional profile</Text>
-          <InfoTooltip
-            maxWidth={280}
-            text="This product doesn't list calorie content. Estimated using the Modified Atwater method (NRC, 2006) based on protein, fat, and carbohydrate percentages."
-          />
-        </View>
+          {/* Atwater estimation note */}
+          {calorieSource === 'estimated' && (
+            <View style={styles.estimateRow}>
+              <Text style={styles.estimateNote}>Calories estimated from nutritional profile</Text>
+              <InfoTooltip
+                maxWidth={280}
+                text="This product doesn't list calorie content. Estimated using the Modified Atwater method (NRC, 2006) based on protein, fat, and carbohydrate percentages."
+              />
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -148,6 +166,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   estimateNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  unavailableText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+  },
+  unavailableHint: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
   },

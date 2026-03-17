@@ -3,10 +3,10 @@
 // Optional layer — returns score unchanged when petProfile is null.
 // All labels follow D-094 suitability framing and D-095 UPVM compliance.
 
-import type { Product } from '../../types';
-import type { PetProfile } from '../../types';
+import type { Product, PetProfile } from '../../types';
 import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../../types/scoring';
 import { toDisplayName } from '../../utils/formatters';
+import { isUnder4Weeks } from '../../utils/lifeStage';
 
 // ─── D-129: Allergen Override Map ─────────────────────────
 
@@ -54,38 +54,6 @@ export function buildAllergenOverrideMap(
 const ALL_LIFE_STAGES_KEYWORDS = ['all life stages'];
 const GROWTH_KEYWORDS = ['puppy', 'kitten', 'growth'];
 const ADULT_KEYWORDS = ['adult', 'maintenance'];
-
-function lifeStageCovers(claim: string, petLifeStage: string): boolean {
-  const lower = claim.toLowerCase();
-
-  if (ALL_LIFE_STAGES_KEYWORDS.some(k => lower.includes(k))) {
-    return true;
-  }
-
-  const isGrowthPet = petLifeStage === 'puppy' || petLifeStage === 'kitten';
-  // junior/adult/mature/senior/geriatric are all post-growth — Adult Maintenance covers them
-  const isAdultPet =
-    petLifeStage === 'junior' ||
-    petLifeStage === 'adult' ||
-    petLifeStage === 'mature' ||
-    petLifeStage === 'senior' ||
-    petLifeStage === 'geriatric';
-
-  if (isGrowthPet && GROWTH_KEYWORDS.some(k => lower.includes(k))) {
-    return true;
-  }
-
-  if (isAdultPet && ADULT_KEYWORDS.some(k => lower.includes(k))) {
-    return true;
-  }
-
-  // Growth claim also covers adults (more restrictive formulation)
-  if (isAdultPet && GROWTH_KEYWORDS.some(k => lower.includes(k))) {
-    return true;
-  }
-
-  return false;
-}
 
 // ─── Main Function ─────────────────────────────────────
 
@@ -141,17 +109,55 @@ export function applyPersonalization(
     }
   }
 
-  // ─── 2. Life Stage Matching ──────────────────────────
+  // ─── 2. Life Stage Matching (category-scaled) ───────
+  // Moved from NP bucket to Layer 3 so penalty applies equally to treats,
+  // supplementals, and daily food — not diluted by category-adaptive weights.
+  // Citation: AAFCO Official Publication, Nutritional Adequacy —
+  // Growth & Reproduction vs Adult Maintenance profiles
+  // Suppressed for pets under 4 weeks — nursing advisory takes precedence.
 
-  if (product.life_stage_claim && petProfile.life_stage) {
-    if (!lifeStageCovers(product.life_stage_claim, petProfile.life_stage)) {
-      adjustment -= 10;
-      personalizations.push({
-        type: 'life_stage',
-        label: `${petName}'s Life Stage Compatibility`,
-        adjustment: -10,
-        petName,
-      });
+  const under4Weeks = isUnder4Weeks(petProfile.date_of_birth);
+
+  if (!under4Weeks && product.life_stage_claim && petProfile.life_stage) {
+    const claim = product.life_stage_claim.toLowerCase();
+    const petStage = petProfile.life_stage;
+    const isGrowthPet = petStage === 'puppy' || petStage === 'kitten';
+    const isAdultPet =
+      petStage === 'junior' || petStage === 'adult' ||
+      petStage === 'mature' || petStage === 'senior' ||
+      petStage === 'geriatric';
+    const isAllLifeStages = ALL_LIFE_STAGES_KEYWORDS.some(k => claim.includes(k));
+
+    if (!isAllLifeStages) {
+      const isAdultClaim = ADULT_KEYWORDS.some(k => claim.includes(k));
+      const isGrowthClaim = GROWTH_KEYWORDS.some(k => claim.includes(k));
+
+      // Case 1: Puppy/kitten eating explicitly adult food — category-scaled penalty
+      if (isGrowthPet && isAdultClaim) {
+        const isTreat = product.category === 'treat';
+        const isSupplemental = product.is_supplemental === true;
+        const penalty = isTreat ? -5 : isSupplemental ? -10 : -15;
+        const petLabel = petStage === 'puppy' ? 'puppy' : 'kitten';
+
+        adjustment += penalty;
+        personalizations.push({
+          type: 'life_stage',
+          label: `Adult food for a ${petLabel} — does not meet growth nutritional requirements (AAFCO)`,
+          adjustment: penalty,
+          petName,
+        });
+      }
+
+      // Case 2: Adult+ eating growth/puppy/kitten food — flat penalty all categories
+      if (isAdultPet && isGrowthClaim) {
+        adjustment -= 5;
+        personalizations.push({
+          type: 'life_stage',
+          label: 'Growth formula fed to an adult — excess calcium and phosphorus levels may stress kidneys over time',
+          adjustment: -5,
+          petName,
+        });
+      }
     }
   }
 

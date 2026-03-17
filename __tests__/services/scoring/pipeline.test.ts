@@ -428,12 +428,19 @@ describe('scoreProduct', () => {
     expect(mockComputeScore).not.toHaveBeenCalled();
   });
 
-  it('returns variety_pack bypass when duplicate canonical ingredients detected', async () => {
+  it('returns variety_pack bypass when 4+ distinct duplicate canonical names detected', async () => {
     queryResult = {
       data: [
         makeDbRow(1, { canonical_name: 'chicken' }),
-        makeDbRow(2, { canonical_name: 'rice' }),
-        makeDbRow(3, { canonical_name: 'chicken' }), // duplicate
+        makeDbRow(2, { canonical_name: 'water' }),
+        makeDbRow(3, { canonical_name: 'rice' }),
+        makeDbRow(4, { canonical_name: 'natural_flavor' }),
+        makeDbRow(5, { canonical_name: 'salt' }),
+        // Second recipe — 4 duplicated names
+        makeDbRow(20, { canonical_name: 'chicken' }),
+        makeDbRow(21, { canonical_name: 'water' }),
+        makeDbRow(22, { canonical_name: 'rice' }),
+        makeDbRow(23, { canonical_name: 'natural_flavor' }),
       ],
       error: null,
     };

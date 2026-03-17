@@ -8,6 +8,7 @@ import type { Product, PetProfile, IngredientDict } from '../../types';
 import type { ProductIngredient, ScoredResult } from '../../types/scoring';
 import { detectVarietyPack } from '../../utils/varietyPackDetector';
 import { isSupplementalByName } from '../../utils/supplementalClassifier';
+import { normalizeCanonicalName } from '../../utils/ingredientNormalizer';
 
 // ─── Supabase Row Shape ──────────────────────────────────
 
@@ -34,7 +35,7 @@ function hydrateIngredient(
 
   return {
     position: row.position,
-    canonical_name: dict.canonical_name,
+    canonical_name: normalizeCanonicalName(dict.canonical_name),
     display_name: dict.display_name,
     dog_base_severity: dict.dog_base_severity,
     cat_base_severity: dict.cat_base_severity,

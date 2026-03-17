@@ -45,6 +45,8 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    is_supplemental: false,
+    is_vet_diet: false,
     score_confidence: 'high',
     needs_review: false,
     last_verified_at: null,
@@ -199,7 +201,7 @@ describe('applyPersonalization — Layer 3', () => {
 
   // ─── Life Stage Matching ──────────────────────────────
 
-  test('puppy + adult food → −10 points', () => {
+  test('puppy + adult daily food → −15 points', () => {
     const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const pet = makePet({ life_stage: LifeStage.Puppy });
@@ -207,8 +209,8 @@ describe('applyPersonalization — Layer 3', () => {
 
     const lifeStage = result.personalizations.find(p => p.type === 'life_stage');
     expect(lifeStage).toBeDefined();
-    expect(lifeStage!.adjustment).toBe(-10);
-    expect(result.finalScore).toBe(70);
+    expect(lifeStage!.adjustment).toBe(-15);
+    expect(result.finalScore).toBe(65);
   });
 
   test('puppy + "All Life Stages" → no penalty', () => {
@@ -232,14 +234,16 @@ describe('applyPersonalization — Layer 3', () => {
     expect(lifeStage).toBeUndefined();
   });
 
-  test('adult pet + puppy food → no penalty (growth covers adults)', () => {
+  test('adult pet + puppy food → −5 penalty (growth formula excess Ca/P)', () => {
     const product = makeProduct({ life_stage_claim: 'Puppy Growth' });
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const pet = makePet({ life_stage: LifeStage.Adult });
     const result = applyPersonalization(80, product, ingredients, pet);
 
     const lifeStage = result.personalizations.find(p => p.type === 'life_stage');
-    expect(lifeStage).toBeUndefined();
+    expect(lifeStage).toBeDefined();
+    expect(lifeStage!.adjustment).toBe(-5);
+    expect(result.finalScore).toBe(75);
   });
 
   test('senior pet + adult food → no penalty', () => {
@@ -252,8 +256,31 @@ describe('applyPersonalization — Layer 3', () => {
     expect(lifeStage).toBeUndefined();
   });
 
-  test('kitten + adult food → −10 points', () => {
+  test('kitten + adult daily food → −15 points', () => {
     const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });
+    const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+    const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+    const result = applyPersonalization(80, product, ingredients, pet);
+
+    const lifeStage = result.personalizations.find(p => p.type === 'life_stage');
+    expect(lifeStage).toBeDefined();
+    expect(lifeStage!.adjustment).toBe(-15);
+    expect(result.finalScore).toBe(65);
+  });
+
+  test('kitten + adult treat → −5 points', () => {
+    const product = makeProduct({ life_stage_claim: 'Adult', category: Category.Treat });
+    const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+    const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
+    const result = applyPersonalization(80, product, ingredients, pet);
+
+    const lifeStage = result.personalizations.find(p => p.type === 'life_stage');
+    expect(lifeStage).toBeDefined();
+    expect(lifeStage!.adjustment).toBe(-5);
+  });
+
+  test('kitten + adult supplemental → −10 points', () => {
+    const product = makeProduct({ life_stage_claim: 'Adult', is_supplemental: true });
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Kitten });
     const result = applyPersonalization(80, product, ingredients, pet);

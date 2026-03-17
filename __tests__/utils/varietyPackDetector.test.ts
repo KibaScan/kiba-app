@@ -76,24 +76,45 @@ describe('detectVarietyPack', () => {
     expect(detectVarietyPack('Normal Product Name', ingredients)).toBe(false);
   });
 
-  // ─── Rule 3: Duplicate canonical names ────────────────
+  // ─── Rule 3: Duplicate canonical names (threshold = 4 distinct duped names) ──
 
-  it('detects duplicate canonical ingredient names at different positions', () => {
+  it('detects 4+ distinct duplicate canonical names (concatenated recipes)', () => {
     const ingredients = [
       makeIngredient(1, 'chicken'),
-      makeIngredient(2, 'rice'),
-      makeIngredient(3, 'tapioca_starch'),
-      makeIngredient(10, 'tapioca_starch'), // duplicate
+      makeIngredient(2, 'water'),
+      makeIngredient(3, 'rice'),
+      makeIngredient(4, 'natural_flavor'),
+      makeIngredient(5, 'salt'),
+      // Second recipe — same ingredients at different positions
+      makeIngredient(20, 'chicken'),
+      makeIngredient(21, 'water'),
+      makeIngredient(22, 'rice'),
+      makeIngredient(23, 'natural_flavor'),
     ];
     expect(detectVarietyPack('Normal Product Name', ingredients)).toBe(true);
   });
 
-  it('detects natural_flavor appearing twice (common in variety packs)', () => {
+  it('does NOT flag 1-2 duplicates (common in real products — e.g. mixed_tocopherols)', () => {
     const ingredients = [
-      makeIngredient(3, 'natural_flavor'),
-      makeIngredient(9, 'natural_flavor'), // duplicate
+      makeIngredient(1, 'chicken'),
+      makeIngredient(2, 'rice'),
+      makeIngredient(3, 'mixed_tocopherols'),
+      makeIngredient(4, 'vitamin_e'),
+      makeIngredient(30, 'mixed_tocopherols'), // preservative listed separately
     ];
-    expect(detectVarietyPack('Normal Product Name', ingredients)).toBe(true);
+    expect(detectVarietyPack('Normal Product Name', ingredients)).toBe(false);
+  });
+
+  it('does NOT flag 3 distinct duplicates (below threshold)', () => {
+    const ingredients = [
+      makeIngredient(1, 'chicken'),
+      makeIngredient(2, 'water'),
+      makeIngredient(3, 'natural_flavor'),
+      makeIngredient(10, 'chicken'),
+      makeIngredient(11, 'water'),
+      makeIngredient(12, 'natural_flavor'),
+    ];
+    expect(detectVarietyPack('Normal Product Name', ingredients)).toBe(false);
   });
 
   // ─── Negative cases ──────────────────────────────────

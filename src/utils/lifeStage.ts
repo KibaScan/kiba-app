@@ -70,6 +70,21 @@ function catLifeStage(ageMonths: number): LifeStage {
 }
 
 /**
+ * Returns true if pet is under 4 weeks old based on DOB string.
+ * Pets this young should be primarily nursing — used to suppress
+ * life stage mismatch penalty and trigger NursingAdvisoryCard.
+ */
+export function isUnder4Weeks(dateOfBirth: string | null): boolean {
+  if (!dateOfBirth) return false;
+  const parts = dateOfBirth.split('-').map(Number);
+  const dob = new Date(parts[0], parts[1] - 1, parts[2]);
+  const now = new Date();
+  const diffMs = now.getTime() - dob.getTime();
+  const diffWeeks = diffMs / (1000 * 60 * 60 * 24 * 7);
+  return diffWeeks >= 0 && diffWeeks < 4;
+}
+
+/**
  * Derives breed size from weight for mixed-breed / unknown-breed dogs.
  * PET_PROFILE_SPEC.md §2: <25 lbs = small, 25–55 = medium, 55–90 = large, >90 = giant.
  * Returns 'medium' if weight is null. Cats don't use breed size for life stage.

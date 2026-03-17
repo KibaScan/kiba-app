@@ -6,6 +6,7 @@
 import { supabase } from './supabase';
 import { Product } from '../types';
 import * as Haptics from 'expo-haptics';
+import { normalizeCanonicalName } from '../utils/ingredientNormalizer';
 
 // ─── Constants ─────────────────────────────────────────
 
@@ -218,7 +219,9 @@ export async function saveCommunityProduct(
 
     // Match parsed ingredients against ingredients_dict and create junction rows
     if (params.parsedIngredients.length > 0) {
-      const lowerNames = params.parsedIngredients.map((n) => n.toLowerCase().trim());
+      const lowerNames = params.parsedIngredients.map((n) =>
+        normalizeCanonicalName(n.toLowerCase().trim()),
+      );
 
       const { data: dictRows } = await supabase
         .from('ingredients_dict')
@@ -228,14 +231,14 @@ export async function saveCommunityProduct(
       if (dictRows && dictRows.length > 0) {
         const nameToId = new Map(
           dictRows.map((r: { id: string; canonical_name: string }) => [
-            r.canonical_name.toLowerCase(),
+            normalizeCanonicalName(r.canonical_name.toLowerCase()),
             r.id,
           ]),
         );
 
         const junctionRows = params.parsedIngredients
           .map((name, idx) => {
-            const ingredientId = nameToId.get(name.toLowerCase().trim());
+            const ingredientId = nameToId.get(normalizeCanonicalName(name.toLowerCase().trim()));
             if (!ingredientId) return null;
             return {
               product_id: product.id,

@@ -18,6 +18,7 @@ import { scoreFormulation } from './formulationScore';
 import { applySpeciesRules } from './speciesRules';
 import { applyPersonalization, buildAllergenOverrideMap } from './personalization';
 import { SCORING_WEIGHTS } from '../../utils/constants';
+import { isUnder4Weeks } from '../../utils/lifeStage';
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -259,6 +260,11 @@ export function computeScore(
   const allFlags = new Set<string>();
   for (const f of iqResult.flags) allFlags.add(f);
   for (const f of fcFlags) allFlags.add(f);
+
+  // Nursing advisory: pet under 4 weeks should be primarily nursing
+  if (petProfile && isUnder4Weeks(petProfile.date_of_birth)) {
+    allFlags.add('nursing_advisory');
+  }
 
   // ─── Step 13: Filter allergen warnings
   const allergenWarnings = personalizations.filter(p => p.type === 'allergen');

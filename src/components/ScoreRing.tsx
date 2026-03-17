@@ -62,7 +62,9 @@ export function ScoreRing({
 }: ScoreRingProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [displayScore, setDisplayScore] = useState(0);
-  const displayName = petName || (species === 'dog' ? 'your dog' : 'your cat');
+  const fullName = petName || (species === 'dog' ? 'your dog' : 'your cat');
+  // Inside the ring: first name only — full name shown in verdict below
+  const displayName = fullName.split(' ')[0];
   const ringColor = getScoreColor(score, isSupplemental);
 
   useEffect(() => {
@@ -163,7 +165,9 @@ export function ScoreRing({
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.matchLabel}>match for {displayName}</Text>
+          <Text style={styles.matchLabel} numberOfLines={1}>
+            match for {displayName}
+          </Text>
         </View>
 
         {/* Pet photo */}
