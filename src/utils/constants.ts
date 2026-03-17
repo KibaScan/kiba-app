@@ -12,11 +12,11 @@ export const Colors = {
   accent: '#00B4D8',
   accentDark: '#0090AD',
 
-  // Severity
-  severityRed: '#FF3B30',
-  severityAmber: '#FF9500',
-  severityGreen: '#34C759',
-  severityNone: '#666666',
+  // Severity (D-136 unified palette)
+  severityRed: '#EF4444',
+  severityAmber: '#F59E0B',
+  severityGreen: '#4ADE80',   // green-400: inline indicators (rows, dots, badges)
+  severityNone: '#6B7280',
 
   // Tab bar
   tabBarBackground: '#1A1A1A',
@@ -55,6 +55,24 @@ export const SCORING_WEIGHTS = {
   daily_food_partial: { iq: 0.78, np: 0, fc: 0.22 }, // D-017: missing GA → normalized 55/15
   supplemental: { iq: 0.65, np: 0.35, fc: 0 },        // D-136: macro-only NP, no formulation
   treat: { iq: 1.0, np: 0, fc: 0 },
+} as const;
+
+// ─── Severity Colors Map (single source of truth) ──────
+
+export const SEVERITY_COLORS = {
+  danger: Colors.severityRed,
+  caution: Colors.severityAmber,
+  good: Colors.severityGreen,
+  neutral: Colors.severityNone,
+} as const;
+
+// ─── Severity Display Labels (UI-facing — DB enum unchanged) ──
+
+export const SEVERITY_DISPLAY_LABELS = {
+  danger: 'Severe',
+  caution: 'Caution',
+  good: 'Good',
+  neutral: 'Neutral',
 } as const;
 
 // ─── Score Ring Colors (D-136 — supersedes D-113) ──────
@@ -101,6 +119,21 @@ export const Limits = {
   freeScansPerWeek: 5,
   freePetsMax: 1,
   premiumPetsMax: 10,
+} as const;
+
+// ─── AAFCO Statement Status (standardized copy) ────────
+
+export const AAFCO_STATEMENT_STATUS = {
+  /** Product has no AAFCO statement field at all, or the field is null/empty */
+  missing: {
+    label: 'No AAFCO statement on label',
+    collapsedSummary: 'No AAFCO statement found on label',
+  },
+  /** Product has an AAFCO statement but it doesn't match any recognized pattern */
+  unrecognized: {
+    label: 'AAFCO statement not recognized',
+    collapsedSummary: 'AAFCO statement present but format not recognized',
+  },
 } as const;
 
 // ─── Misc ───────────────────────────────────────────────

@@ -2,7 +2,7 @@
 // 360° full circle for daily food/treats. 270° open arc for supplementals.
 // D-084: zero emoji. D-094: score always shown with pet context.
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -45,8 +45,8 @@ const CENTER = RING_SIZE / 2;
 const RADIUS = (RING_SIZE - RING_BORDER) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ARC_270 = CIRCUMFERENCE * 0.75;
-const TRACK_COLOR = '#333333';
-const ANIMATION_DURATION = 800;
+const TRACK_COLOR = Colors.cardBorder;
+const ANIMATION_DURATION = 900;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -61,16 +61,30 @@ export function ScoreRing({
   isSupplemental = false,
 }: ScoreRingProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const [displayScore, setDisplayScore] = useState(0);
   const displayName = petName || (species === 'dog' ? 'your dog' : 'your cat');
   const ringColor = getScoreColor(score, isSupplemental);
 
   useEffect(() => {
+    animatedValue.setValue(0);
+    setDisplayScore(0);
+
+    const listenerId = animatedValue.addListener(({ value }) => {
+      setDisplayScore(Math.round(value));
+    });
+
     Animated.timing(animatedValue, {
       toValue: score,
       duration: ANIMATION_DURATION,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-    }).start();
+    }).start(() => {
+      setDisplayScore(score); // ensure exact final value
+    });
+
+    return () => {
+      animatedValue.removeListener(listenerId);
+    };
   }, [score]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showDisclaimer = () => {
@@ -134,7 +148,7 @@ export function ScoreRing({
         <View style={styles.centerContent}>
           <View style={styles.scoreRow}>
             <Text style={[styles.scoreValue, { color: ringColor }]}>
-              {score}
+              {displayScore}
             </Text>
             <Text style={[styles.scorePercent, { color: ringColor }]}>%</Text>
             <TouchableOpacity
@@ -244,7 +258,7 @@ const styles = StyleSheet.create({
   },
   partialBadge: {
     marginTop: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,

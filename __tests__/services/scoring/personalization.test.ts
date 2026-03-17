@@ -128,7 +128,7 @@ describe('applyPersonalization — Layer 3', () => {
     expect(allergenFlags).toHaveLength(1);
     expect(allergenFlags[0].severity).toBe('direct_match');
     expect(allergenFlags[0].adjustment).toBe(0);
-    expect(allergenFlags[0].label).toContain('chicken meal');
+    expect(allergenFlags[0].label).toContain('Chicken meal');
     expect(allergenFlags[0].label).toContain('Mochi');
     expect(result.finalScore).toBe(80);
   });
@@ -151,7 +151,7 @@ describe('applyPersonalization — Layer 3', () => {
     expect(allergenFlags).toHaveLength(1);
     expect(allergenFlags[0].severity).toBe('possible_match');
     expect(allergenFlags[0].adjustment).toBe(0);
-    expect(allergenFlags[0].label).toContain('poultry fat');
+    expect(allergenFlags[0].label).toContain('Poultry fat');
     expect(allergenFlags[0].label).toContain('chicken');
     expect(allergenFlags[0].label).toContain('Verify with manufacturer');
     expect(result.finalScore).toBe(80);

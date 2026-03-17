@@ -358,6 +358,117 @@ describe('scoreProduct', () => {
     expect(ingredients[0].allergen_group_possible).toEqual([]);
   });
 
+  // ─── Species Mismatch Bypass ───────────────────────────
+
+  it('returns species_mismatch bypass when cat food scored for dog pet', async () => {
+    queryResult = { data: [makeDbRow(1), makeDbRow(2)], error: null };
+    const catProduct = { ...MOCK_PRODUCT, target_species: Species.Cat };
+
+    const { scoredResult, ingredients } = await scoreProduct(catProduct, MOCK_PET);
+
+    expect(scoredResult.bypass).toBe('species_mismatch');
+    expect(scoredResult.bypassReason).toBe('This product is formulated for cats');
+    expect(scoredResult.flags).toContain('species_mismatch');
+    expect(scoredResult.finalScore).toBe(0);
+    expect(scoredResult.isPartialScore).toBe(false);
+    expect(ingredients).toHaveLength(2); // ingredients still hydrated
+    expect(mockComputeScore).not.toHaveBeenCalled();
+  });
+
+  it('returns species_mismatch bypass when dog food scored for cat pet', async () => {
+    queryResult = { data: [makeDbRow(1)], error: null };
+    const catPet = { ...MOCK_PET, species: Species.Cat, name: 'Whiskers' };
+
+    const { scoredResult, ingredients } = await scoreProduct(MOCK_PRODUCT, catPet);
+
+    expect(scoredResult.bypass).toBe('species_mismatch');
+    expect(scoredResult.bypassReason).toBe('This product is formulated for dogs');
+    expect(scoredResult.flags).toContain('species_mismatch');
+    expect(scoredResult.petName).toBe('Whiskers');
+    expect(ingredients).toHaveLength(1);
+    expect(mockComputeScore).not.toHaveBeenCalled();
+  });
+
+  it('scores normally when dog food matches dog pet (no bypass)', async () => {
+    queryResult = { data: [makeDbRow(1)], error: null };
+
+    const { scoredResult } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+
+    expect(scoredResult.bypass).toBeUndefined();
+    expect(scoredResult.finalScore).toBe(75);
+    expect(mockComputeScore).toHaveBeenCalledTimes(1);
+  });
+
+  it('scores normally when cat food matches cat pet (no bypass)', async () => {
+    queryResult = { data: [makeDbRow(1)], error: null };
+    const catProduct = { ...MOCK_PRODUCT, target_species: Species.Cat };
+    const catPet = { ...MOCK_PET, species: Species.Cat };
+
+    const { scoredResult } = await scoreProduct(catProduct, catPet);
+
+    expect(scoredResult.bypass).toBeUndefined();
+    expect(scoredResult.finalScore).toBe(75);
+    expect(mockComputeScore).toHaveBeenCalledTimes(1);
+  });
+
+  // ─── Variety Pack Bypass ────────────────────────────────
+
+  it('returns variety_pack bypass when product name contains "variety pack"', async () => {
+    queryResult = { data: [makeDbRow(1), makeDbRow(2)], error: null };
+    const vpProduct = { ...MOCK_PRODUCT, name: 'Fancy Feast Variety Pack 24ct' };
+
+    const { scoredResult, ingredients } = await scoreProduct(vpProduct, MOCK_PET);
+
+    expect(scoredResult.bypass).toBe('variety_pack');
+    expect(scoredResult.bypassReason).toBe('This is a variety pack with multiple recipes');
+    expect(scoredResult.flags).toContain('variety_pack');
+    expect(scoredResult.finalScore).toBe(0);
+    expect(scoredResult.isPartialScore).toBe(false);
+    expect(ingredients).toHaveLength(2);
+    expect(mockComputeScore).not.toHaveBeenCalled();
+  });
+
+  it('returns variety_pack bypass when duplicate canonical ingredients detected', async () => {
+    queryResult = {
+      data: [
+        makeDbRow(1, { canonical_name: 'chicken' }),
+        makeDbRow(2, { canonical_name: 'rice' }),
+        makeDbRow(3, { canonical_name: 'chicken' }), // duplicate
+      ],
+      error: null,
+    };
+
+    const { scoredResult } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+
+    expect(scoredResult.bypass).toBe('variety_pack');
+    expect(mockComputeScore).not.toHaveBeenCalled();
+  });
+
+  it('scores normally when product is not a variety pack', async () => {
+    queryResult = {
+      data: [
+        makeDbRow(1, { canonical_name: 'chicken' }),
+        makeDbRow(2, { canonical_name: 'rice' }),
+      ],
+      error: null,
+    };
+
+    const { scoredResult } = await scoreProduct(MOCK_PRODUCT, MOCK_PET);
+
+    expect(scoredResult.bypass).toBeUndefined();
+    expect(scoredResult.finalScore).toBe(75);
+    expect(mockComputeScore).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips species mismatch bypass when no pet profile (null)', async () => {
+    queryResult = { data: [makeDbRow(1)], error: null };
+
+    const { scoredResult } = await scoreProduct(MOCK_PRODUCT, null);
+
+    expect(scoredResult.bypass).toBeUndefined();
+    expect(mockComputeScore).toHaveBeenCalledTimes(1);
+  });
+
   it('hydrates display_name from ingredients_dict', async () => {
     queryResult = {
       data: [

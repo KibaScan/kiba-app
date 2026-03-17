@@ -1,12 +1,12 @@
 // Kiba — Bonus Nutrient Grid
-// Small indicator cards for supplemental nutrients that differentiate products.
+// Present-first layout for supplemental nutrients that differentiate products.
 // Positive differentiation only — no penalty for absent nutrients.
 // Zero emoji (D-084). Factual language (D-095).
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -23,6 +23,8 @@ interface BonusNutrientGridProps {
   };
   species: 'dog' | 'cat';
   petName: string;
+  /** Keys of nutrients to exclude from display */
+  excludeKeys?: Set<string>;
 }
 
 // ─── Card Data ──────────────────────────────────────────
@@ -32,12 +34,10 @@ interface CardData {
   label: string;
   present: boolean;
   displayValue: string;
-  note: string | null;
 }
 
 function buildCards(
   nutrients: BonusNutrientGridProps['nutrients'],
-  species: 'dog' | 'cat',
 ): CardData[] {
   const fmt = (v: number) => (v < 0.01 ? v.toFixed(3) : v.toFixed(2));
 
@@ -49,7 +49,6 @@ function buildCards(
       displayValue: nutrients.dha_pct != null && nutrients.dha_pct > 0
         ? `${fmt(nutrients.dha_pct)}%`
         : 'Not listed',
-      note: null,
     },
     {
       key: 'omega3',
@@ -58,7 +57,6 @@ function buildCards(
       displayValue: nutrients.omega3_pct != null && nutrients.omega3_pct > 0
         ? `${fmt(nutrients.omega3_pct)}%`
         : 'Not listed',
-      note: null,
     },
     {
       key: 'omega6',
@@ -67,7 +65,6 @@ function buildCards(
       displayValue: nutrients.omega6_pct != null && nutrients.omega6_pct > 0
         ? `${fmt(nutrients.omega6_pct)}%`
         : 'Not listed',
-      note: null,
     },
     {
       key: 'taurine',
@@ -76,134 +73,69 @@ function buildCards(
       displayValue: nutrients.taurine_pct != null && nutrients.taurine_pct > 0
         ? `${fmt(nutrients.taurine_pct)}%`
         : 'Not listed',
-      note: species === 'cat' ? 'Essential for cats' : null,
     },
     {
       key: 'lcarnitine',
       label: 'L-Carnitine',
       present: nutrients.lcarnitine,
       displayValue: nutrients.lcarnitine ? 'Present' : 'Not listed',
-      note: species === 'dog' && nutrients.lcarnitine
-        ? 'Associated with heart health in veterinary research'
-        : null,
     },
     {
       key: 'zinc',
       label: 'Zinc',
       present: nutrients.zinc,
       displayValue: nutrients.zinc ? 'Present' : 'Not listed',
-      note: null,
     },
     {
       key: 'probiotics',
       label: 'Probiotics',
       present: nutrients.probiotics,
       displayValue: nutrients.probiotics ? 'Present' : 'Not listed',
-      note: null,
     },
     {
       key: 'glucosamine',
       label: 'Glucosamine',
       present: nutrients.glucosamine,
       displayValue: nutrients.glucosamine ? 'Present' : 'Not listed',
-      note: null,
     },
   ];
 }
 
-// ─── Card Component ─────────────────────────────────────
-
-function NutrientCard({ card }: { card: CardData }) {
-  return (
-    <View style={cardStyles.container}>
-      <Text style={cardStyles.label} numberOfLines={1}>{card.label}</Text>
-      <View style={cardStyles.statusRow}>
-        <View
-          style={[
-            cardStyles.dot,
-            { backgroundColor: card.present ? Colors.severityGreen : Colors.textTertiary },
-          ]}
-        />
-        <Text
-          style={[
-            cardStyles.value,
-            { color: card.present ? Colors.textPrimary : Colors.textTertiary },
-          ]}
-          numberOfLines={1}
-        >
-          {card.displayValue}
-        </Text>
-      </View>
-      {card.note && (
-        <Text style={cardStyles.note} numberOfLines={2}>{card.note}</Text>
-      )}
-    </View>
-  );
-}
-
-const cardStyles = StyleSheet.create({
-  container: {
-    width: '48%',
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    padding: 10,
-    minHeight: 60,
-  },
-  label: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  value: {
-    fontSize: FontSizes.sm,
-    fontWeight: '500',
-    flex: 1,
-  },
-  note: {
-    fontSize: 10,
-    color: Colors.accent,
-    marginTop: 3,
-    lineHeight: 13,
-  },
-});
-
 // ─── Main Component ─────────────────────────────────────
 
-export function BonusNutrientGrid({ nutrients, species }: BonusNutrientGridProps) {
-  // Don't render if nothing to show
-  const hasAny =
-    (nutrients.dha_pct != null && nutrients.dha_pct > 0) ||
-    (nutrients.omega3_pct != null && nutrients.omega3_pct > 0) ||
-    (nutrients.omega6_pct != null && nutrients.omega6_pct > 0) ||
-    (nutrients.taurine_pct != null && nutrients.taurine_pct > 0) ||
-    nutrients.lcarnitine ||
-    nutrients.zinc ||
-    nutrients.probiotics ||
-    nutrients.glucosamine;
+export function BonusNutrientGrid({ nutrients, excludeKeys }: BonusNutrientGridProps) {
+  const allCards = buildCards(nutrients);
+  const cards = excludeKeys
+    ? allCards.filter((c) => !excludeKeys.has(c.key))
+    : allCards;
 
-  if (!hasAny) return null;
+  if (cards.length === 0) return null;
 
-  const cards = buildCards(nutrients, species);
+  const present = cards.filter(c => c.present);
+  const absent = cards.filter(c => !c.present);
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Bonus Nutrients</Text>
-      <View style={styles.grid}>
-        {cards.map((card) => (
-          <NutrientCard key={card.key} card={card} />
-        ))}
-      </View>
+
+      {present.length === 0 ? (
+        <Text style={styles.absentText}>No bonus nutrients listed</Text>
+      ) : (
+        <>
+          {present.map(card => (
+            <View key={card.key} style={styles.presentRow}>
+              <View style={styles.presentDot} />
+              <Text style={styles.presentName}>{card.label}</Text>
+              <Text style={styles.presentValue}> {'\u00B7'} {card.displayValue}</Text>
+            </View>
+          ))}
+          {absent.length > 0 && (
+            <Text style={styles.absentText}>
+              {absent.map(c => c.label).join(', ')} not listed.
+            </Text>
+          )}
+        </>
+      )}
     </View>
   );
 }
@@ -220,9 +152,29 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
-  grid: {
+  presentRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  presentDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: SEVERITY_COLORS.good,
+    marginRight: 8,
+  },
+  presentName: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+  },
+  presentValue: {
+    fontSize: 14,
+    color: SEVERITY_COLORS.good,
+  },
+  absentText: {
+    fontSize: FontSizes.sm,
+    color: '#9CA3AF',
+    marginTop: 8,
   },
 });

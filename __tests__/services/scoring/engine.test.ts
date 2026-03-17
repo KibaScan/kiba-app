@@ -452,9 +452,9 @@ describe('computeScore — Orchestrator', () => {
       makeIngredient({ position: 7, canonical_name: 'natural flavor', cat_base_severity: 'neutral', is_unnamed_species: true, is_protein_fat_source: true }),
       makeIngredient({ position: 8, canonical_name: 'dried yeast', cat_base_severity: 'neutral' }),
       makeIngredient({ position: 9, canonical_name: 'potassium chloride', cat_base_severity: 'neutral' }),
-      makeIngredient({ position: 10, canonical_name: 'yellow 5', cat_base_severity: 'danger' }),
-      makeIngredient({ position: 11, canonical_name: 'red 40', cat_base_severity: 'danger', position_reduction_eligible: false }),
-      makeIngredient({ position: 12, canonical_name: 'blue 2', cat_base_severity: 'danger', position_reduction_eligible: false }),
+      makeIngredient({ position: 10, canonical_name: 'yellow 5', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
+      makeIngredient({ position: 11, canonical_name: 'red 40', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
+      makeIngredient({ position: 12, canonical_name: 'blue 2', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
     ];
 
     const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Adult });

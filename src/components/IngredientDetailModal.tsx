@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ProductIngredient, IngredientSeverity } from '../types/scoring';
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, FontSizes, Spacing, SEVERITY_COLORS, SEVERITY_DISPLAY_LABELS } from '../utils/constants';
+import { toDisplayName } from '../utils/formatters';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -27,19 +28,7 @@ interface IngredientDetailModalProps {
 
 // ─── Helpers ────────────────────────────────────────────
 
-const SEVERITY_COLORS: Record<IngredientSeverity, string> = {
-  danger: Colors.severityRed,
-  caution: Colors.severityAmber,
-  neutral: Colors.severityNone,
-  good: Colors.severityGreen,
-};
-
-const SEVERITY_LABELS: Record<IngredientSeverity, string> = {
-  danger: 'Danger',
-  caution: 'Caution',
-  neutral: 'Neutral',
-  good: 'Good',
-};
+// SEVERITY_COLORS + SEVERITY_DISPLAY_LABELS imported from constants.ts — single source of truth
 
 function getSeverity(
   ingredient: ProductIngredient,
@@ -52,10 +41,7 @@ function getSeverity(
 
 function formatName(ingredient: ProductIngredient): string {
   if (ingredient.display_name) return ingredient.display_name;
-  return ingredient.canonical_name
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return toDisplayName(ingredient.canonical_name);
 }
 
 function getPositionContext(ingredient: ProductIngredient): string | null {
@@ -89,7 +75,7 @@ export function IngredientDetailModal({
 
   const severity = getSeverity(ingredient, species);
   const color = SEVERITY_COLORS[severity];
-  const label = SEVERITY_LABELS[severity];
+  const label = SEVERITY_DISPLAY_LABELS[severity];
   const positionContext = getPositionContext(ingredient);
 
   return (
@@ -159,7 +145,7 @@ export function IngredientDetailModal({
                   <Ionicons
                     name={detailExpanded ? 'chevron-down' : 'chevron-forward'}
                     size={16}
-                    color={Colors.accent}
+                    color={Colors.textSecondary}
                   />
                   <Text style={styles.detailToggleText}>Read more</Text>
                 </TouchableOpacity>
@@ -277,7 +263,7 @@ const styles = StyleSheet.create({
   detailToggleText: {
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: Colors.accent,
+    color: Colors.textSecondary,
   },
   detailBody: {
     fontSize: FontSizes.md,
@@ -293,12 +279,13 @@ const styles = StyleSheet.create({
   citationsHeader: {
     fontSize: FontSizes.xs,
     fontWeight: '600',
-    color: Colors.textTertiary,
+    color: '#737373',
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   citationsText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
+    fontSize: 12,
+    color: '#737373',
     lineHeight: 16,
     fontStyle: 'italic',
   },

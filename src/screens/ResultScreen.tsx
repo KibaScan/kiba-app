@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, FontSizes, Spacing, AAFCO_STATEMENT_STATUS } from '../utils/constants';
 import { canUseSafeSwaps, canCompare } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
@@ -33,7 +33,7 @@ import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/ScoreRi
 import { ConcernTags } from '../components/ConcernTags';
 import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
 import { ScoreWaterfall } from '../components/ScoreWaterfall';
-import { GATable } from '../components/GATable';
+// GATable removed — raw GA values now accessible via expand/collapse in AafcoProgressBars
 import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
 import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
@@ -54,8 +54,11 @@ import { captureAndShare } from '../utils/shareCard';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
+import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
+import { resolveCalories } from '../utils/calorieEstimation';
+import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -93,9 +96,12 @@ export default function ResultScreen() {
   }, [pet]);
 
   const treatBudget = petDer != null ? calculateTreatBudget(petDer) : 0;
+  const calorieData = product ? resolveCalories(product) : null;
+  const effectiveKcalPerUnit = calorieData?.kcalPerUnit ?? null;
+  const calorieSource: CalorieSource = calorieData?.source ?? null;
   const treatsPerDay =
-    product?.kcal_per_unit && treatBudget > 0
-      ? calculateTreatsPerDay(treatBudget, product.kcal_per_unit)
+    effectiveKcalPerUnit && treatBudget > 0
+      ? calculateTreatsPerDay(treatBudget, effectiveKcalPerUnit)
       : null;
 
   // D-094: never display a naked score — fall back to species name
@@ -217,7 +223,7 @@ export default function ResultScreen() {
               <Text style={styles.productBrand} numberOfLines={1}>
                 {product.brand}
               </Text>
-              <Text style={styles.productName} numberOfLines={1}>
+              <Text style={styles.productName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {product.name}
               </Text>
             </View>
@@ -246,9 +252,12 @@ export default function ResultScreen() {
   const score = scoredResult?.finalScore ?? 0;
   const hasNoIngredientData = scoredResult?.flags.includes('no_ingredient_data') ?? false;
 
+  // Runtime supplemental detection — DB flag OR product name keywords
+  const isSupplemental = (product?.is_supplemental ?? false) || isSupplementalByName(product?.name ?? null);
+
   // ─── Flags for display (below ScoreRing) ──────────────
   const displayFlags = (scoredResult?.flags ?? []).filter(
-    (f) => f !== 'dcm_advisory' && f !== 'no_ingredient_data',
+    (f) => f !== 'dcm_advisory' && f !== 'no_ingredient_data' && f !== 'preservative_type_unknown',
   );
 
   // ─── No ingredient data — simplified view ─────────────
@@ -263,7 +272,7 @@ export default function ResultScreen() {
             <Text style={styles.productBrand} numberOfLines={1}>
               {product!.brand}
             </Text>
-            <Text style={styles.productName} numberOfLines={1}>
+            <Text style={styles.productName} numberOfLines={2}>
               {product!.name}
             </Text>
           </View>
@@ -300,9 +309,9 @@ export default function ResultScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* AAFCO statement */}
-          {product!.aafco_statement && (
-            <Text style={styles.aafcoText}>{product!.aafco_statement}</Text>
+          {/* AAFCO statement — only show if meaningful */}
+          {product!.aafco_statement && product!.aafco_statement.trim().length > 20 && (
+            <Text style={styles.aafcoText} numberOfLines={3}>{product!.aafco_statement}</Text>
           )}
 
           <View style={styles.bottomSpacer} />
@@ -330,7 +339,7 @@ export default function ResultScreen() {
             <Text style={styles.productBrand} numberOfLines={1}>
               {product!.brand}
             </Text>
-            <Text style={styles.productName} numberOfLines={1}>
+            <Text style={styles.productName} numberOfLines={2}>
               {product!.name}
             </Text>
           </View>
@@ -462,6 +471,178 @@ export default function ResultScreen() {
     );
   }
 
+  // ─── Species mismatch bypass — wrong species, no score ──
+  const isSpeciesMismatch = scoredResult?.bypass === 'species_mismatch';
+
+  if (isSpeciesMismatch && scoredResult && product) {
+    const targetSpeciesLabel = product.target_species === 'cat' ? 'cats' : 'dogs';
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.productBrand} numberOfLines={1}>
+              {product.brand}
+            </Text>
+            <Text style={styles.productName} numberOfLines={2}>
+              {product.name}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Product image */}
+          {product.image_url && (
+            <View style={styles.productImageContainer}>
+              <Image
+                source={{ uri: product.image_url }}
+                style={styles.productImage}
+                resizeMode="contain"
+              />
+              <LinearGradient
+                colors={['transparent', Colors.background]}
+                style={styles.imageGradientBottom}
+              />
+              <LinearGradient
+                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.imageGradientSides}
+              />
+            </View>
+          )}
+
+          {/* Species mismatch badge — red, replaces ScoreRing */}
+          <View style={styles.speciesMismatchContainer}>
+            <View style={styles.speciesMismatchBadge}>
+              <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.speciesMismatchBadgeText}>
+                For {targetSpeciesLabel} only
+              </Text>
+            </View>
+            <Text style={styles.speciesMismatchCopy}>
+              {product.name} is formulated for {targetSpeciesLabel}.
+              It is not recommended for {displayName}.
+            </Text>
+          </View>
+
+          {/* Recall warning */}
+          {scoredResult.isRecalled && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+              <Text style={styles.recallText}>
+                This product has been subject to a recall
+              </Text>
+            </View>
+          )}
+
+          {/* Full Ingredient List — still useful for curious owners */}
+          {hydratedIngredients.length > 0 && (
+            <IngredientList
+              ingredients={hydratedIngredients}
+              species={product.target_species === 'cat' ? 'cat' : 'dog'}
+              onIngredientPress={setSelectedIngredient}
+            />
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        {/* Ingredient Detail Modal */}
+        {selectedIngredient && (
+          <IngredientDetailModal
+            ingredient={selectedIngredient}
+            species={product.target_species === 'cat' ? 'cat' : 'dog'}
+            onClose={() => setSelectedIngredient(null)}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Variety pack bypass — multi-recipe, no score ──
+  const isVarietyPack = scoredResult?.bypass === 'variety_pack';
+
+  if (isVarietyPack && scoredResult && product) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.productBrand} numberOfLines={1}>
+              {product.brand}
+            </Text>
+            <Text style={styles.productName} numberOfLines={2}>
+              {product.name}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Product image */}
+          {product.image_url && (
+            <View style={styles.productImageContainer}>
+              <Image
+                source={{ uri: product.image_url }}
+                style={styles.productImage}
+                resizeMode="contain"
+              />
+              <LinearGradient
+                colors={['transparent', Colors.background]}
+                style={styles.imageGradientBottom}
+              />
+              <LinearGradient
+                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.imageGradientSides}
+              />
+            </View>
+          )}
+
+          {/* Variety pack badge — amber, replaces ScoreRing */}
+          <View style={styles.varietyPackContainer}>
+            <View style={styles.varietyPackBadge}>
+              <Ionicons name="layers-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.varietyPackBadgeText}>Variety Pack</Text>
+            </View>
+            <Text style={styles.varietyPackCopy}>
+              This product contains multiple recipes.
+              For accurate scoring, scan individual items from the pack.
+            </Text>
+          </View>
+
+          {/* Recall warning */}
+          {scoredResult.isRecalled && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+              <Text style={styles.recallText}>
+                This product has been subject to a recall
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   // ─── Full result view ─────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
@@ -473,7 +654,7 @@ export default function ResultScreen() {
           <Text style={styles.productBrand} numberOfLines={1}>
             {product!.brand}
           </Text>
-          <Text style={styles.productName} numberOfLines={1}>
+          <Text style={styles.productName} numberOfLines={2}>
             {product!.name}
           </Text>
         </View>
@@ -515,16 +696,16 @@ export default function ResultScreen() {
           petPhotoUri={pet?.photo_url ?? null}
           species={species}
           isPartialScore={scoredResult?.isPartialScore ?? false}
-          isSupplemental={product?.is_supplemental ?? false}
+          isSupplemental={isSupplemental}
         />
 
         {/* Verdict text — qualitative suitability label (D-094 compliant) */}
-        <Text style={[styles.verdictText, { color: getScoreColor(score, product?.is_supplemental ?? false) }]}>
+        <Text style={[styles.verdictText, { color: getScoreColor(score, isSupplemental) }]}>
           {getVerdictLabel(score, petName)}
         </Text>
 
         {/* Supplemental contextual line below score ring (D-136, D-095 compliant) */}
-        {product?.is_supplemental && (
+        {isSupplemental && (
           <Text style={styles.supplementalRingLine}>
             Best paired with a complete meal
           </Text>
@@ -537,7 +718,7 @@ export default function ResultScreen() {
             category={scoredResult?.category ?? 'daily_food'}
             targetSpecies={species}
             isGrainFree={product.is_grain_free}
-            isSupplemental={product.is_supplemental ?? false}
+            isSupplemental={isSupplemental}
           />
         )}
 
@@ -551,6 +732,20 @@ export default function ResultScreen() {
                   return (
                     <View key={flag} style={styles.flagChipMuted}>
                       <Text style={styles.flagChipMutedText}>Some ingredient data missing</Text>
+                    </View>
+                  );
+                }
+                if (flag === 'aafco_statement_not_available') {
+                  return (
+                    <View key={flag} style={styles.flagChipMuted}>
+                      <Text style={styles.flagChipMutedText}>{AAFCO_STATEMENT_STATUS.missing.label}</Text>
+                    </View>
+                  );
+                }
+                if (flag === 'aafco_statement_unrecognized') {
+                  return (
+                    <View key={flag} style={styles.flagChipMuted}>
+                      <Text style={styles.flagChipMutedText}>{AAFCO_STATEMENT_STATUS.unrecognized.label}</Text>
                     </View>
                   );
                 }
@@ -586,7 +781,7 @@ export default function ResultScreen() {
         )}
 
         {/* Supplemental badge (D-136) — context line already shown below score ring */}
-        {product?.is_supplemental && (
+        {isSupplemental && (
           <View style={styles.supplementalBadgeContainer}>
             <View style={styles.supplementalBadge}>
               <Text style={styles.supplementalBadgeText}>Supplemental</Text>
@@ -665,7 +860,8 @@ export default function ResultScreen() {
             scoredResult={scoredResult}
             petName={displayName}
             species={species}
-            category={product?.is_supplemental ? 'supplemental' : scoredResult.category}
+            category={isSupplemental ? 'supplemental' : scoredResult.category}
+            ingredients={hydratedIngredients}
           />
         )}
 
@@ -728,16 +924,8 @@ export default function ResultScreen() {
             category={scoredResult.category}
             petName={displayName}
             nutritionalDataSource={product.nutritional_data_source}
-            isSupplemental={product.is_supplemental ?? false}
-          />
-        )}
-
-        {/* GA Table (D-038, D-104, D-016) */}
-        {scoredResult && product && (
-          <GATable
-            product={product}
-            scoredResult={scoredResult}
-            species={species}
+            isSupplemental={isSupplemental}
+            carbEstimate={scoredResult.carbEstimate}
           />
         )}
 
@@ -804,7 +992,7 @@ export default function ResultScreen() {
         {/* Portion advisory — daily food (D-106: display-only, no score impact) */}
         {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
           <View style={styles.portionSection}>
-            <PortionCard pet={pet} product={product} conditions={[]} />
+            <PortionCard pet={pet} product={product} conditions={[]} isSupplemental={isSupplemental} />
           </View>
         )}
 
@@ -815,6 +1003,7 @@ export default function ResultScreen() {
               treatBudgetKcal={treatBudget}
               consumedKcal={0}
               petName={displayName}
+              calorieSource={calorieSource}
             />
             {treatsPerDay != null && treatsPerDay.count > 0 && (
               <Text style={styles.treatCountText}>
@@ -863,9 +1052,9 @@ export default function ResultScreen() {
           <Text style={styles.comingSoonBadge}>Coming soon</Text>
         </TouchableOpacity>
 
-        {/* AAFCO statement */}
-        {product!.aafco_statement && (
-          <Text style={styles.aafcoText}>{product!.aafco_statement}</Text>
+        {/* AAFCO statement — only show if meaningful (not orphan fragments from bad data) */}
+        {product!.aafco_statement && product!.aafco_statement.trim().length > 20 && (
+          <Text style={styles.aafcoText} numberOfLines={3}>{product!.aafco_statement}</Text>
         )}
 
         <View style={styles.bottomSpacer} />
@@ -885,9 +1074,9 @@ export default function ResultScreen() {
           petName={displayName}
           petPhoto={pet?.photo_url ?? null}
           species={species}
-          productName={product ? `${product.brand} ${product.name}` : ''}
+          productName={product ? `${product.brand} ${product.name.startsWith(product.brand) ? product.name.slice(product.brand.length).trim() : product.name}` : ''}
           score={score}
-          scoreColor={getScoreColor(score, product?.is_supplemental ?? false)}
+          scoreColor={getScoreColor(score, isSupplemental)}
         />
       </View>
     </SafeAreaView>
@@ -992,6 +1181,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 8,
+    marginTop: Spacing.sm,
     marginBottom: Spacing.md,
   },
   flagChipMuted: {
@@ -1151,6 +1341,66 @@ const styles = StyleSheet.create({
     color: '#6366F1',
   },
   vetDietCopy: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.md,
+  },
+
+  // ─── Variety Pack Bypass
+  varietyPackContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  varietyPackBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.severityAmber,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  varietyPackBadgeText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  varietyPackCopy: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.md,
+  },
+
+  // ─── Species Mismatch Bypass
+  speciesMismatchContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  speciesMismatchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.severityRed,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  speciesMismatchBadgeText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  speciesMismatchCopy: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
     textAlign: 'center',

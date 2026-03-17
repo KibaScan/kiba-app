@@ -9,11 +9,27 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { InfoTooltip } from './InfoTooltip';
 import type { LifeStage } from '../types/pet';
+import type { CarbEstimate } from '../types/scoring';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+function getCarbColor(label: string | null): string {
+  if (label === 'Low') return Colors.severityGreen;
+  if (label === 'Moderate') return Colors.severityAmber;
+  return Colors.severityRed;
+}
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -35,6 +51,7 @@ interface AafcoProgressBarsProps {
   petName: string;
   nutritionalDataSource?: 'manual' | 'llm_extracted' | null;
   isSupplemental?: boolean;
+  carbEstimate?: CarbEstimate | null;
 }
 
 // ─── AAFCO Thresholds (from NUTRITIONAL_PROFILE_BUCKET_SPEC.md §2a/§2b) ───
@@ -130,11 +147,7 @@ function NutrientBar({ label, value, threshold, barMax }: NutrientBarProps) {
   // Threshold marker position
   const thresholdValue = threshold.min ?? threshold.max;
   const markerFraction = thresholdValue != null ? Math.min(thresholdValue / barMax, 1) : null;
-  const thresholdLabel = threshold.min != null
-    ? `Min: ${threshold.min}%`
-    : threshold.max != null
-      ? `Max: ${threshold.max}%`
-      : null;
+  const isMin = threshold.min != null;
 
   return (
     <View style={barStyles.container}>
@@ -153,17 +166,24 @@ function NutrientBar({ label, value, threshold, barMax }: NutrientBarProps) {
           ]}
         />
         {markerFraction != null && (
-          <View
-            style={[
-              barStyles.marker,
-              { left: `${markerFraction * 100}%` },
-            ]}
-          />
+          <>
+            <View
+              style={[
+                barStyles.marker,
+                { left: `${markerFraction * 100}%` },
+              ]}
+            />
+            <Text
+              style={[
+                barStyles.markerLabel,
+                { left: `${markerFraction * 100}%` },
+              ]}
+            >
+              {isMin ? 'min' : 'max'}
+            </Text>
+          </>
         )}
       </View>
-      {thresholdLabel && (
-        <Text style={barStyles.thresholdText}>{thresholdLabel}</Text>
-      )}
     </View>
   );
 }
@@ -201,17 +221,19 @@ const barStyles = StyleSheet.create({
   },
   marker: {
     position: 'absolute',
-    top: -2,
+    top: -4,
     width: 2,
-    height: 12,
-    backgroundColor: Colors.textPrimary,
+    height: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 1,
     marginLeft: -1,
   },
-  thresholdText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    marginTop: 2,
+  markerLabel: {
+    position: 'absolute',
+    top: 10,
+    fontSize: 9,
+    color: '#9CA3AF',
+    marginLeft: -6,
   },
 });
 
@@ -226,20 +248,56 @@ export function AafcoProgressBars({
   petName,
   nutritionalDataSource,
   isSupplemental = false,
+  carbEstimate,
 }: AafcoProgressBarsProps) {
   const [showDmb, setShowDmb] = useState(false);
+  const [gaExpanded, setGaExpanded] = useState(false);
 
-  // Don't render for treats
-  if (category === 'treat') return null;
+  const { protein_pct, fat_pct, fiber_pct, moisture_pct } = gaValues;
+  const isTreat = category === 'treat';
+
+  // Treats: show only carb estimate (NP bucket is 0% weight — GA bars imply scoring relevance)
+  if (isTreat) {
+    if (!carbEstimate || carbEstimate.valueDmb == null) return null;
+    return (
+      <View style={styles.container}>
+        <View style={styles.carbRow}>
+          <Text style={styles.carbLabel}>Carbohydrate</Text>
+          <View style={styles.carbRight}>
+            <Text
+              style={[
+                styles.carbValue,
+                carbEstimate.qualitativeLabel != null && {
+                  color: getCarbColor(carbEstimate.qualitativeLabel),
+                },
+              ]}
+            >
+              Est. {Math.round(carbEstimate.valueDmb)}%
+              {carbEstimate.qualitativeLabel ? ` \u00B7 ${carbEstimate.qualitativeLabel}` : ''}
+            </Text>
+            <InfoTooltip
+              maxWidth={300}
+              text={`Estimated using the nitrogen-free extract method:\n100 \u2212 ${protein_pct ?? '?'}% protein \u2212 ${fat_pct ?? '?'}% fat \u2212 ${fiber_pct ?? '?'}% fiber \u2212 ${moisture_pct ?? '?'}% moisture \u2212 ${carbEstimate.ashUsedPct ?? '?'}% ash${carbEstimate.confidence === 'estimated' ? ' (est.)' : ''} = ${Math.round(carbEstimate.valueDmb)}%\nThis value is not stated on the label.`}
+            />
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   // Don't render if all GA values are null
-  const { protein_pct, fat_pct, fiber_pct, moisture_pct } = gaValues;
   if (protein_pct == null && fat_pct == null && fiber_pct == null) return null;
 
   const isGrowth = isGrowthStage(lifeStage);
   const thresholds = getThresholds(species, isGrowth);
   const hasDmb = dmbValues != null;
-  const standardLabel = isGrowth ? 'Growth standard' : 'Adult standard';
+
+  // Supplementals: no AAFCO comparison — show as-label macro profile
+  const noThreshold: NutrientThreshold = { min: null, max: null };
+  const displayThresholds = isSupplemental
+    ? { protein: noThreshold, fat: noThreshold, fiber: noThreshold }
+    : thresholds;
+  const standardLabel = isSupplemental ? null : (isGrowth ? 'Growth standard' : 'Adult standard');
 
   // Select which values to display
   const displayProtein = showDmb && dmbValues ? dmbValues.protein_pct : protein_pct;
@@ -257,9 +315,13 @@ export function AafcoProgressBars({
   return (
     <View style={styles.container}>
       {/* Section Header */}
-      <Text style={styles.sectionTitle}>{petName}'s Nutritional Fit</Text>
+      <Text style={styles.sectionTitle}>
+        {isSupplemental ? 'Macro Profile' : `${petName}'s Nutritional Fit`}
+      </Text>
       <Text style={styles.subtitle}>
-        vs. AAFCO {speciesLabel} {lifeStageLabel} standards
+        {isSupplemental
+          ? 'As listed on label'
+          : `vs. AAFCO ${speciesLabel} ${lifeStageLabel} standards`}
       </Text>
 
       {/* AI extraction note */}
@@ -300,15 +362,24 @@ export function AafcoProgressBars({
         </Text>
       )}
 
-      {/* Standard label */}
-      <Text style={styles.standardLabel}>{standardLabel}</Text>
+      {/* Ultra-high-moisture context note (broths, lickables >80% water) */}
+      {hasDmb && showDmb && moisture_pct != null && moisture_pct > 80 && (
+        <Text style={styles.dmbExplainer}>
+          This product is {moisture_pct.toFixed(0)}% water. DMB values appear high because the dry portion is very concentrated. This is normal for broths and lickable treats.
+        </Text>
+      )}
+
+      {/* Standard label (hidden for supplementals — no AAFCO comparison) */}
+      {standardLabel && (
+        <Text style={styles.standardLabel}>{standardLabel}</Text>
+      )}
 
       {/* Nutrient Bars */}
       {displayProtein != null && (
         <NutrientBar
           label="Protein"
           value={displayProtein}
-          threshold={thresholds.protein}
+          threshold={displayThresholds.protein}
           barMax={BAR_MAX}
         />
       )}
@@ -316,7 +387,7 @@ export function AafcoProgressBars({
         <NutrientBar
           label="Fat"
           value={displayFat}
-          threshold={thresholds.fat}
+          threshold={displayThresholds.fat}
           barMax={BAR_MAX}
         />
       )}
@@ -324,7 +395,7 @@ export function AafcoProgressBars({
         <NutrientBar
           label="Fiber"
           value={displayFiber}
-          threshold={thresholds.fiber}
+          threshold={displayThresholds.fiber}
           barMax={BAR_MAX}
         />
       )}
@@ -337,11 +408,78 @@ export function AafcoProgressBars({
         />
       )}
 
+      {/* Carb estimate (D-104 — display only, not on label) */}
+      {carbEstimate && carbEstimate.valueDmb != null && (
+        <View style={styles.carbRow}>
+          <Text style={styles.carbLabel}>Carbohydrate</Text>
+          <View style={styles.carbRight}>
+            <Text
+              style={[
+                styles.carbValue,
+                carbEstimate.qualitativeLabel != null && {
+                  color: getCarbColor(carbEstimate.qualitativeLabel),
+                },
+              ]}
+            >
+              Est. {Math.round(carbEstimate.valueDmb)}%
+              {carbEstimate.qualitativeLabel ? ` \u00B7 ${carbEstimate.qualitativeLabel}` : ''}
+            </Text>
+            <InfoTooltip
+              maxWidth={300}
+              text={`Estimated using the nitrogen-free extract method:\n100 \u2212 ${protein_pct ?? '?'}% protein \u2212 ${fat_pct ?? '?'}% fat \u2212 ${fiber_pct ?? '?'}% fiber \u2212 ${moisture_pct ?? '?'}% moisture \u2212 ${carbEstimate.ashUsedPct ?? '?'}% ash${carbEstimate.confidence === 'estimated' ? ' (est.)' : ''} = ${Math.round(carbEstimate.valueDmb)}%\nThis value is not stated on the label.`}
+            />
+          </View>
+        </View>
+      )}
+
       {/* D-136: Supplemental products — macro profile only note */}
       {isSupplemental && (
         <Text style={styles.supplementalNote}>
           Showing macro profile only — supplemental products are not designed to meet full AAFCO nutritional standards
         </Text>
+      )}
+
+      {/* Expand/collapse raw GA values */}
+      <TouchableOpacity
+        style={styles.gaToggle}
+        onPress={() => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setGaExpanded(v => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.gaToggleText}>
+          {gaExpanded ? 'Hide guaranteed analysis \u25B4' : 'View guaranteed analysis \u25BE'}
+        </Text>
+      </TouchableOpacity>
+
+      {gaExpanded && (
+        <View style={styles.gaCompact}>
+          {protein_pct != null && (
+            <View style={styles.gaCompactRow}>
+              <Text style={styles.gaCompactLabel}>Crude Protein (min)</Text>
+              <Text style={styles.gaCompactValue}>{protein_pct}%</Text>
+            </View>
+          )}
+          {fat_pct != null && (
+            <View style={styles.gaCompactRow}>
+              <Text style={styles.gaCompactLabel}>Crude Fat (min)</Text>
+              <Text style={styles.gaCompactValue}>{fat_pct}%</Text>
+            </View>
+          )}
+          {fiber_pct != null && (
+            <View style={styles.gaCompactRow}>
+              <Text style={styles.gaCompactLabel}>Crude Fiber (max)</Text>
+              <Text style={styles.gaCompactValue}>{fiber_pct}%</Text>
+            </View>
+          )}
+          {moisture_pct != null && (
+            <View style={styles.gaCompactRow}>
+              <Text style={styles.gaCompactLabel}>Moisture (max)</Text>
+              <Text style={styles.gaCompactValue}>{moisture_pct}%</Text>
+            </View>
+          )}
+        </View>
       )}
     </View>
   );
@@ -404,5 +542,51 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     lineHeight: 16,
     marginTop: Spacing.xs,
+  },
+  carbRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  carbLabel: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  carbRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  carbValue: {
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  gaToggle: {
+    marginTop: Spacing.sm,
+    paddingVertical: 4,
+  },
+  gaToggleText: {
+    fontSize: FontSizes.sm,
+    color: '#9CA3AF',
+  },
+  gaCompact: {
+    marginTop: Spacing.sm,
+  },
+  gaCompactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+  },
+  gaCompactLabel: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  gaCompactValue: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
 });

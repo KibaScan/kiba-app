@@ -134,7 +134,7 @@ const P2_INGREDIENTS: ProductIngredient[] = [
   ing(9, 'natural_flavor', { cat_base_severity: 'caution', is_unnamed_species: true }),
   ing(10, 'sodium_tripolyphosphate', { cat_base_severity: 'caution', position_reduction_eligible: true }),
   ing(11, 'soy_flour', { cat_base_severity: 'caution', position_reduction_eligible: true }),
-  ing(12, 'titanium_dioxide', { cat_base_severity: 'caution', position_reduction_eligible: false }),
+  ing(12, 'titanium_dioxide', { cat_base_severity: 'danger', position_reduction_eligible: false }),
   ing(13, 'glycine', { cat_base_severity: 'neutral' }),
   ing(14, 'potassium_chloride', { cat_base_severity: 'neutral' }),
   ing(15, 'salt', { cat_base_severity: 'caution', position_reduction_eligible: true }),

@@ -8,10 +8,10 @@ import {
   getStatusLabel,
 } from '../../src/components/TreatBatteryGauge';
 
-// Colors from constants.ts
-const GREEN = '#34C759';
-const AMBER = '#FF9500';
-const RED = '#FF3B30';
+// Colors from constants.ts (D-136 unified palette)
+const GREEN = '#4ADE80';
+const AMBER = '#F59E0B';
+const RED = '#EF4444';
 
 // ─── getBarPercent ──────────────────────────────────────
 

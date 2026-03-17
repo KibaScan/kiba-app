@@ -27,6 +27,7 @@ interface PortionCardProps {
   pet: Pet;
   product: Product | null;
   conditions: string[];
+  isSupplemental?: boolean;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -62,6 +63,15 @@ export function getAgeMonths(dateOfBirth: string | null, now?: Date): number | u
   return (ref.getFullYear() - dob.getFullYear()) * 12 + (ref.getMonth() - dob.getMonth());
 }
 
+/** Truncate product name for inline portion text — strip package size info. */
+function shortenProductName(name: string, maxLen = 40): string {
+  // Strip common suffixes after comma (package size, format info)
+  const commaIdx = name.indexOf(',');
+  const short = commaIdx > 0 ? name.substring(0, commaIdx).trim() : name;
+  if (short.length <= maxLen) return short;
+  return short.substring(0, maxLen - 1).trim() + '\u2026';
+}
+
 /** Whether to show goal weight section. Premium-gated per permissions.ts. */
 export function shouldShowGoalWeight(
   weightGoalLbs: number | null,
@@ -79,7 +89,7 @@ export function shouldShowGoalWeight(
 
 // ─── Component ───────────────────────────────────────────
 
-export default function PortionCard({ pet, product, conditions }: PortionCardProps) {
+export default function PortionCard({ pet, product, conditions, isSupplemental }: PortionCardProps) {
   const [showInfo, setShowInfo] = useState(false);
 
   const portionData = useMemo(() => {
@@ -143,6 +153,18 @@ export default function PortionCard({ pet, product, conditions }: PortionCardPro
     }
   }, [portionData?.goalResult?.hepaticWarning]);
 
+  // Supplemental products — portion calculation is nonsensical for toppers/mixers
+  if (isSupplemental) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Serving Size</Text>
+        <Text style={styles.supplementalText}>
+          This product is a meal topper. Refer to package feeding guidelines for serving size.
+        </Text>
+      </View>
+    );
+  }
+
   // No weight — prompt user
   if (!portionData) {
     return (
@@ -175,6 +197,24 @@ export default function PortionCard({ pet, product, conditions }: PortionCardPro
         <Text style={styles.derUnit}> kcal/day for {pet.name}</Text>
       </Text>
 
+      {/* Quick cups conversion when kcal_per_cup available */}
+      {product?.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 && (() => {
+        const cups = der / product.ga_kcal_per_cup;
+        const isVerySmall = pet.species === 'cat' ? cups < 0.25 : cups < 0.33;
+        return (
+          <>
+            <Text style={styles.cupsLine}>
+              {'\u2248'} {formatCups(cups)} cups/day
+            </Text>
+            {isVerySmall && (
+              <Text style={styles.cupsNote}>
+                Portions are very small at this caloric density
+              </Text>
+            )}
+          </>
+        );
+      })()}
+
       {/* Multiplier label */}
       <Text style={styles.multiplierLabel}>
         Based on: {multiplierResult.label} ({multiplierResult.multiplier}× RER)
@@ -192,13 +232,13 @@ export default function PortionCard({ pet, product, conditions }: PortionCardPro
 
       {/* Product portions: cups preferred, grams fallback */}
       {dailyPortion?.cups != null && product && (
-        <Text style={styles.portionLine}>
-          ~{formatCups(dailyPortion.cups)} cups/day of {product.name}
+        <Text style={styles.portionLine} numberOfLines={1}>
+          ~{formatCups(dailyPortion.cups)} cups/day of {shortenProductName(product.name)}
         </Text>
       )}
       {dailyPortion?.cups == null && dailyPortion?.grams != null && product && (
-        <Text style={styles.portionLine}>
-          ~{formatGrams(dailyPortion.grams)}g/day of {product.name}
+        <Text style={styles.portionLine} numberOfLines={1}>
+          ~{formatGrams(dailyPortion.grams)}g/day of {shortenProductName(product.name)}
         </Text>
       )}
 
@@ -263,6 +303,11 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
   },
+  supplementalText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    lineHeight: 22,
+  },
   derLine: {
     marginTop: Spacing.xs,
   },
@@ -274,6 +319,16 @@ const styles = StyleSheet.create({
   derUnit: {
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
+  },
+  cupsLine: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  cupsNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
   },
   multiplierLabel: {
     fontSize: FontSizes.sm,
@@ -314,7 +369,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   hepaticCard: {
-    backgroundColor: '#FF950015',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderRadius: 8,
     borderLeftWidth: 3,
     borderLeftColor: Colors.severityAmber,

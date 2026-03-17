@@ -2,7 +2,7 @@
 // Only shows danger + caution severity ingredients. Sorted worst-first, then by position.
 // Ionicons only — zero emoji (D-084).
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ProductIngredient } from '../types/scoring';
 import type { IngredientSeverity } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { toDisplayName } from '../utils/formatters';
 
 // ─── Severity Icon Map (WCAG colorblind support) ────────
 
@@ -52,11 +54,7 @@ function getSeverity(
 
 function formatName(ingredient: ProductIngredient): string {
   if (ingredient.display_name) return ingredient.display_name;
-  // Format canonical_name: replace underscores, capitalize each word
-  return ingredient.canonical_name
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return toDisplayName(ingredient.canonical_name);
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -84,37 +82,71 @@ export function SeverityBadgeStrip({
 
   const visible = sorted.slice(0, MAX_BADGES);
 
+  const [showFades, setShowFades] = useState({ left: false, right: true });
+
+  const handleScroll = (e: { nativeEvent: { contentOffset: { x: number }; contentSize: { width: number }; layoutMeasurement: { width: number } } }) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    setShowFades({
+      left: contentOffset.x > 4,
+      right: contentOffset.x < contentSize.width - layoutMeasurement.width - 4,
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {visible.map((ingredient) => {
-          const severity = getSeverity(ingredient, species) as 'danger' | 'caution';
-          const color = severity === 'danger' ? Colors.severityRed : Colors.severityAmber;
-          return (
-            <TouchableOpacity
-              key={`${ingredient.canonical_name}-${ingredient.position}`}
-              style={[
-                styles.chip,
-                severity === 'danger' ? styles.chipDanger : styles.chipCaution,
-              ]}
-              onPress={() => onIngredientPress(ingredient)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={SEVERITY_ICONS[severity]} size={14} color={color} />
-              <Text
-                style={[styles.chipText, { color }]}
-                numberOfLines={1}
+      <View style={styles.scrollWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {visible.map((ingredient) => {
+            const severity = getSeverity(ingredient, species) as 'danger' | 'caution';
+            const color = severity === 'danger' ? Colors.severityRed : Colors.severityAmber;
+            return (
+              <TouchableOpacity
+                key={`${ingredient.canonical_name}-${ingredient.position}`}
+                style={[
+                  styles.chip,
+                  severity === 'danger' ? styles.chipDanger : styles.chipCaution,
+                ]}
+                onPress={() => onIngredientPress(ingredient)}
+                activeOpacity={0.7}
               >
-                {formatName(ingredient)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                <Ionicons name={SEVERITY_ICONS[severity]} size={14} color={color} />
+                <Text
+                  style={[styles.chipText, { color }]}
+                  numberOfLines={1}
+                >
+                  {formatName(ingredient)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Fade overlays to indicate scrollable content */}
+        {showFades.left && (
+          <LinearGradient
+            colors={[Colors.background, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.fadeLeft}
+            pointerEvents="none"
+          />
+        )}
+        {showFades.right && (
+          <LinearGradient
+            colors={['transparent', Colors.background]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.fadeRight}
+            pointerEvents="none"
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -125,8 +157,26 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: Spacing.md,
   },
+  scrollWrapper: {
+    position: 'relative',
+  },
   scrollContent: {
     gap: 8,
+    paddingHorizontal: 4,
+  },
+  fadeLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 20,
+  },
+  fadeRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 20,
   },
   chip: {
     flexDirection: 'row',
@@ -138,10 +188,10 @@ const styles = StyleSheet.create({
     minHeight: 36,
   },
   chipDanger: {
-    backgroundColor: 'rgba(255, 59, 48, 0.15)',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
   },
   chipCaution: {
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
   },
   chipText: {
     fontSize: FontSizes.sm,

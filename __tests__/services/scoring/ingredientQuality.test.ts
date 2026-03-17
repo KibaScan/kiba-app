@@ -203,6 +203,23 @@ describe('scoreIngredients — Layer 1a', () => {
     expect(result.unnamedSpeciesCount).toBe(1);
   });
 
+  test('artificial colorants at high positions get full penalty — no position discount (presence-based)', () => {
+    const colorants: ProductIngredient[] = [
+      makeIngredient({ position: 18, canonical_name: 'red_40', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
+      makeIngredient({ position: 22, canonical_name: 'yellow_5', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
+      makeIngredient({ position: 25, canonical_name: 'blue_2', dog_base_severity: 'danger', cat_base_severity: 'danger', position_reduction_eligible: false }),
+    ];
+    const result = scoreIngredients(colorants, 'dog');
+    // All 3 colorants at positions 18, 22, 25 — well past position 10.
+    // Danger severity (−15) with position_reduction_eligible: false → full penalty each.
+    expect(result.penalties).toHaveLength(3);
+    result.penalties.forEach(p => {
+      expect(p.rawPenalty).toBe(15);
+      expect(p.positionAdjustedPenalty).toBe(15); // no discount
+    });
+    expect(result.ingredientScore).toBe(100 - 45); // 3 × 15 = 45
+  });
+
   test('ingredient splitting detected — flag only, no score penalty (D-015)', () => {
     const ingredients: ProductIngredient[] = [
       makeIngredient({ position: 3, canonical_name: 'Peas', cluster_id: 'legume_pea' }),

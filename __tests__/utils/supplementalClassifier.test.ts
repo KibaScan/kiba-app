@@ -1,4 +1,4 @@
-import { isSupplementalProduct } from '../../src/utils/supplementalClassifier';
+import { isSupplementalProduct, isSupplementalByName } from '../../src/utils/supplementalClassifier';
 
 describe('isSupplementalProduct (D-136)', () => {
   describe('positive matches — supplemental feeding language', () => {
@@ -94,6 +94,70 @@ describe('isSupplementalProduct (D-136)', () => {
       expect(
         isSupplementalProduct('Daily supplement for hip and joint support')
       ).toBe(false);
+    });
+  });
+});
+
+describe('isSupplementalByName — product name keyword detection', () => {
+  describe('positive matches — topper/mixer keywords', () => {
+    it('detects "Magical Dinner Dust" (dinner dust keyword)', () => {
+      expect(
+        isSupplementalByName("Stella & Chewy's Marie's Magical Dinner Dust")
+      ).toBe(true);
+    });
+
+    it('detects "Dog Food Topper"', () => {
+      expect(isSupplementalByName('Charlee Bear Necessities Dog Food Topper')).toBe(true);
+    });
+
+    it('detects "topper" alone', () => {
+      expect(isSupplementalByName('Chicken Topper')).toBe(true);
+    });
+
+    it('detects "meal topper"', () => {
+      expect(isSupplementalByName('Premium Meal Topper for Dogs')).toBe(true);
+    });
+
+    it('detects "mixer"', () => {
+      expect(isSupplementalByName('Grain-Free Mixer')).toBe(true);
+    });
+
+    it('detects "meal mixer"', () => {
+      expect(isSupplementalByName("Stella & Chewy's Meal Mixer")).toBe(true);
+    });
+
+    it('detects "meal enhancer"', () => {
+      expect(isSupplementalByName('Natural Meal Enhancer')).toBe(true);
+    });
+
+    it('detects "meal booster"', () => {
+      expect(isSupplementalByName('Primal Meal Booster')).toBe(true);
+    });
+
+    it('detects "sprinkle"', () => {
+      expect(isSupplementalByName('Freeze-Dried Sprinkle')).toBe(true);
+    });
+
+    it('is case-insensitive', () => {
+      expect(isSupplementalByName('DINNER DUST Premium')).toBe(true);
+    });
+  });
+
+  describe('negative matches — normal product names', () => {
+    it('"Chicken & Rice Recipe" is NOT supplemental', () => {
+      expect(isSupplementalByName('Chicken & Rice Recipe')).toBe(false);
+    });
+
+    it('"Premium Adult Dog Food" is NOT supplemental', () => {
+      expect(isSupplementalByName('Premium Adult Dog Food')).toBe(false);
+    });
+
+    it('returns false for null', () => {
+      expect(isSupplementalByName(null)).toBe(false);
+    });
+
+    it('returns false for empty string', () => {
+      expect(isSupplementalByName('')).toBe(false);
     });
   });
 });
