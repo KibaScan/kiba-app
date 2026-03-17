@@ -43,12 +43,6 @@ function carbLabelColor(label: string | null): string {
   return '#FF9500'; // High — orange
 }
 
-function confidenceBadgeColor(confidence: CarbEstimate['confidence']): string {
-  if (confidence === 'exact') return Colors.severityGreen;
-  if (confidence === 'estimated') return Colors.severityAmber;
-  return Colors.textTertiary;
-}
-
 function isCarbEstimateValid(
   ce: CarbEstimate | null,
 ): ce is CarbEstimate & { valueDmb: number } {
@@ -161,11 +155,12 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
             activeOpacity={0.7}
           >
             <View style={styles.carbHeader}>
-              <Text style={styles.macroLabel}>Carbohydrate (est.)</Text>
+              <Text style={styles.macroLabel}>
+                {carbEstimate.confidence === 'estimated'
+                  ? `Carbohydrate (est.): ~${Math.round(carbEstimate.valueDmb)}%`
+                  : `Carbohydrate: ~${Math.round(carbEstimate.valueDmb)}%`}
+              </Text>
               <View style={styles.carbValueRow}>
-                <Text style={styles.macroValue}>
-                  ~{Math.round(carbEstimate.valueDmb)}%
-                </Text>
                 {carbEstimate.qualitativeLabel && (
                   <Text
                     style={[
@@ -176,30 +171,12 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
                     {carbEstimate.qualitativeLabel}
                   </Text>
                 )}
+                <Ionicons
+                  name={carbExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={Colors.textTertiary}
+                />
               </View>
-            </View>
-            <View style={styles.carbBadgeRow}>
-              <View
-                style={[
-                  styles.confidenceBadge,
-                  { backgroundColor: `${confidenceBadgeColor(carbEstimate.confidence)}20` },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.confidenceText,
-                    { color: confidenceBadgeColor(carbEstimate.confidence) },
-                  ]}
-                >
-                  {carbEstimate.confidence.charAt(0).toUpperCase() +
-                    carbEstimate.confidence.slice(1)}
-                </Text>
-              </View>
-              <Ionicons
-                name={carbExpanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={Colors.textTertiary}
-              />
             </View>
           </TouchableOpacity>
 
@@ -232,19 +209,7 @@ export function GATable({ product, scoredResult, species }: GATableProps) {
         <View style={styles.carbSection}>
           <View style={styles.carbHeader}>
             <Text style={styles.macroLabel}>Carbohydrate (est.)</Text>
-            <View style={styles.carbValueRow}>
-              <Text style={styles.macroValue}>Unknown</Text>
-              <View
-                style={[
-                  styles.confidenceBadge,
-                  { backgroundColor: `${Colors.severityNone}20` },
-                ]}
-              >
-                <Text style={[styles.confidenceText, { color: Colors.severityNone }]}>
-                  Unknown
-                </Text>
-              </View>
-            </View>
+            <Text style={styles.macroValue}>Unknown</Text>
           </View>
         </View>
       )}
@@ -458,20 +423,6 @@ const styles = StyleSheet.create({
   qualLabel: {
     fontSize: FontSizes.sm,
     fontWeight: '700',
-  },
-  carbBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  confidenceBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  confidenceText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
   },
   carbExplainer: {
     backgroundColor: Colors.background,

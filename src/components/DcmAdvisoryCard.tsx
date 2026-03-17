@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { DcmResult } from '../types/scoring';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { toDisplayName } from '../utils/formatters';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -23,10 +24,7 @@ interface DcmAdvisoryCardProps {
 
 /** Convert canonical_name to display form: "dried_peas" → "Dried Peas" */
 function formatName(canonical: string): string {
-  return canonical
-    .split('_')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return toDisplayName(canonical);
 }
 
 // ─── Component ──────────────────────────────────────────

@@ -2,6 +2,8 @@
 // Detects mismatch between product name protein and actual primary protein.
 // Pure function — no scoring impact. D-095: factual language only.
 
+import { toDisplayName } from './formatters';
+
 // ─── Types ──────────────────────────────────────────────
 
 export interface FlavorDeceptionResult {
@@ -98,7 +100,7 @@ export function detectFlavorDeception(
     detected: true,
     namedProtein: capitalize(namedProtein),
     namedProteinPosition,
-    actualPrimaryProtein: formatIngredientName(primaryProtein.canonical_name),
+    actualPrimaryProtein: toDisplayName(primaryProtein.canonical_name),
     actualPrimaryPosition: primaryProtein.position,
     variant,
   };
@@ -110,9 +112,4 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function formatIngredientName(name: string): string {
-  return name
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+// formatIngredientName replaced by toDisplayName from utils/formatters

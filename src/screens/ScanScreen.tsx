@@ -2,7 +2,7 @@
 // D-092: Camera opens immediately. Scan-first flow.
 // D-084: No emoji. Ionicons only.
 // Zero scoring logic — this screen only scans and routes.
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   Modal,
 } from 'react-native';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -53,15 +53,12 @@ export default function ScanScreen() {
 
   // Sound
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const player = useAudioPlayer(scanConfirmSound);
 
   useEffect(() => {
     AsyncStorage.getItem(SOUND_PREF_KEY).then((val) => {
       if (val === 'false') setSoundEnabled(false);
     });
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
   }, []);
 
   const toggleSound = useCallback(async () => {
@@ -70,16 +67,14 @@ export default function ScanScreen() {
     await AsyncStorage.setItem(SOUND_PREF_KEY, String(next));
   }, [soundEnabled]);
 
-  const playScanSound = useCallback(async () => {
+  const playScanSound = useCallback(() => {
     if (!soundEnabled) return;
     try {
-      const { sound } = await Audio.Sound.createAsync(scanConfirmSound);
-      soundRef.current = sound;
-      await sound.playAsync();
+      player.play();
     } catch {
       // Sound playback is best-effort
     }
-  }, [soundEnabled]);
+  }, [soundEnabled, player]);
 
   // Pet profile modal state
   const [showPetModal, setShowPetModal] = useState(false);

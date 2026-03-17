@@ -145,6 +145,7 @@ export function ConcernTags({ ingredients, product, species, dcmFires }: Concern
           >
             <Ionicons name={tag.icon} size={14} color={Colors.textPrimary} />
             <Text style={styles.tagLabel}>{tag.label}</Text>
+            <Ionicons name="chevron-forward" size={12} color={Colors.textTertiary} />
           </TouchableOpacity>
         ))}
         {overflowCount > 0 && !expanded && (

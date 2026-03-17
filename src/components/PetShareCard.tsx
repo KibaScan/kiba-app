@@ -57,7 +57,7 @@ export const PetShareCard = React.forwardRef<View, PetShareCardProps>(
         </View>
 
         {/* Product name */}
-        <Text style={styles.productName} numberOfLines={2}>
+        <Text style={styles.productName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
           {productName}
         </Text>
 

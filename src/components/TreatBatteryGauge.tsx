@@ -6,6 +6,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { InfoTooltip } from './InfoTooltip';
+import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -13,6 +15,7 @@ interface TreatBatteryGaugeProps {
   treatBudgetKcal: number;
   consumedKcal: number;
   petName: string;
+  calorieSource?: CalorieSource;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -42,6 +45,7 @@ export default function TreatBatteryGauge({
   treatBudgetKcal,
   consumedKcal,
   petName,
+  calorieSource,
 }: TreatBatteryGaugeProps) {
   const percent = getBarPercent(consumedKcal, treatBudgetKcal);
   const barColor = getBarColor(percent);
@@ -81,6 +85,17 @@ export default function TreatBatteryGauge({
       <Text style={[styles.statusLabel, { color: barColor }]}>
         {getStatusLabel(percent)}
       </Text>
+
+      {/* Atwater estimation note */}
+      {calorieSource === 'estimated' && (
+        <View style={styles.estimateRow}>
+          <Text style={styles.estimateNote}>Calories estimated from nutritional profile</Text>
+          <InfoTooltip
+            maxWidth={280}
+            text="This product doesn't list calorie content. Estimated using the Modified Atwater method (NRC, 2006) based on protein, fat, and carbohydrate percentages."
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -126,5 +141,14 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: FontSizes.sm,
     fontWeight: '500',
+  },
+  estimateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  estimateNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
   },
 });

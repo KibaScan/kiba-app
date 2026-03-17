@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { toDisplayName } from '../utils/formatters';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -35,11 +36,11 @@ export function buildSplittingClusters(
     if (ing.cluster_id == null) continue;
     const entry = clusterMap.get(ing.cluster_id);
     if (entry) {
-      entry.ingredients.push(ing.canonical_name);
+      entry.ingredients.push(toDisplayName(ing.canonical_name));
       entry.positions.push(ing.position);
     } else {
       clusterMap.set(ing.cluster_id, {
-        ingredients: [ing.canonical_name],
+        ingredients: [toDisplayName(ing.canonical_name)],
         positions: [ing.position],
       });
     }
