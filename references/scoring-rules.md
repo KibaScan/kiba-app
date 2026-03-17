@@ -1,7 +1,7 @@
 # Kiba — Scoring Rules Reference
 
 > **Read this before implementing ANY scoring logic.**
-> **Last updated:** March 15, 2026 (D-137 DCM Pulse Framework — supersedes D-013, Pure Balance 65 → 62)
+> **Last updated:** March 15, 2026 (D-137 DCM Pulse Framework — supersedes D-013, Pure Balance 65 → 62. D-138–D-141 UI polish — zero scoring math changes.)
 > **Canonical sources:** This file consolidates rules from DECISIONS.md, NUTRITIONAL_PROFILE_BUCKET_SPEC.md, BREED_MODIFIERS_DOGS.md, BREED_MODIFIERS_CATS.md, and PORTION_CALCULATOR_SPEC.md. If this file conflicts with DECISIONS.md, DECISIONS.md wins.
 
 ---
@@ -338,13 +338,14 @@ Breakdown:
 
 ### Test Count
 
-**501 tests** must pass after any change:
+**509 tests** must pass after any change:
 - 447 M1-M3 baseline
 - 18 allergen override (D-129)
 - 8 flavor deception (D-133)
 - 16 supplemental classifier (D-136)
 - 8 supplemental scoring (D-136)
 - 4 E2E scoring (M4 Session 6)
+- 8 D-137 DCM pulse detection (M4.5)
 
 ---
 
@@ -409,7 +410,7 @@ export const NP_SUB_WEIGHTS = {
 | `src/services/scoring/dmbConversion.ts` | DMB math |
 | `src/services/scoring/carbEstimate.ts` | NFE calculation + ash estimation |
 | `src/utils/supplementalClassifier.ts` | D-136 feeding guide keyword parser |
-| `src/utils/constants.ts` | SCORING_WEIGHTS, SCORE_COLORS, getScoreColor() |
+| `src/utils/constants.ts` | SCORING_WEIGHTS, SCORE_COLORS, SEVERITY_COLORS, AAFCO_STATEMENT_STATUS, getScoreColor(), getVerdictLabel() |
 | `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | Full NP bucket spec (trapezoidal curves, worked examples) |
 | `BREED_MODIFIERS_DOGS.md` | 23 dog breeds with full citations |
 | `BREED_MODIFIERS_CATS.md` | 21 cat breeds with full citations |
