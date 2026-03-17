@@ -2,7 +2,7 @@
 // Pure function. No Supabase, no side effects, no brand awareness.
 // Products start at 100. All penalties are deductions. Floor at 0.
 
-import type { ProductIngredient, IngredientScoreResult, Penalty, IngredientSeverity } from '../../types/scoring';
+import type { ProductIngredient, IngredientScoreResult, IngredientPenaltyResult, Penalty, IngredientSeverity } from '../../types/scoring';
 
 const SEVERITY_ORDER: Record<IngredientSeverity, number> = {
   good: 0,
@@ -117,9 +117,58 @@ export function scoreIngredients(
     }
   }
 
+  // ─── Group penalties by ingredient ────────────────────────
+  const grouped = new Map<string, {
+    position: number;
+    displayName: string;
+    reasons: Array<{ reason: string; rawPoints: number; weightedPoints: number; citationSource: string }>;
+    maxRawPenalty: number;
+  }>();
+
+  for (const penalty of penalties) {
+    const existing = grouped.get(penalty.ingredientName);
+    if (existing) {
+      existing.reasons.push({
+        reason: penalty.reason,
+        rawPoints: penalty.rawPenalty,
+        weightedPoints: penalty.positionAdjustedPenalty,
+        citationSource: penalty.citationSource,
+      });
+      if (penalty.rawPenalty > existing.maxRawPenalty) {
+        existing.maxRawPenalty = penalty.rawPenalty;
+      }
+    } else {
+      const ing = ingredients.find(i => i.canonical_name === penalty.ingredientName);
+      grouped.set(penalty.ingredientName, {
+        position: penalty.position,
+        displayName: ing?.display_name ?? penalty.ingredientName,
+        reasons: [{
+          reason: penalty.reason,
+          rawPoints: penalty.rawPenalty,
+          weightedPoints: penalty.positionAdjustedPenalty,
+          citationSource: penalty.citationSource,
+        }],
+        maxRawPenalty: penalty.rawPenalty,
+      });
+    }
+  }
+
+  const groupedPenalties: IngredientPenaltyResult[] = [];
+  for (const [canonicalName, data] of grouped) {
+    groupedPenalties.push({
+      ingredientName: data.displayName,
+      canonicalName,
+      severity: data.maxRawPenalty >= 15 ? 'danger' : 'caution',
+      position: data.position,
+      reasons: data.reasons,
+      totalWeightedPoints: data.reasons.reduce((sum, r) => sum + r.weightedPoints, 0),
+    });
+  }
+
   return {
     ingredientScore: Math.max(0, score),
     penalties,
+    groupedPenalties,
     flags,
     unnamedSpeciesCount,
   };

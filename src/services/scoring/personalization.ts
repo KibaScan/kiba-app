@@ -6,6 +6,7 @@
 import type { Product } from '../../types';
 import type { PetProfile } from '../../types';
 import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../../types/scoring';
+import { toDisplayName } from '../../utils/formatters';
 
 // ─── D-129: Allergen Override Map ─────────────────────────
 
@@ -115,7 +116,7 @@ export function applyPersonalization(
       ) {
         personalizations.push({
           type: 'allergen',
-          label: `Contains ${ingredient.canonical_name} — ${ingredient.allergen_group} is a known allergen for ${petName}`,
+          label: `Contains ${toDisplayName(ingredient.canonical_name)} — ${ingredient.allergen_group} is a known allergen for ${petName}`,
           adjustment: 0,
           petName,
           severity: 'direct_match',
@@ -128,7 +129,7 @@ export function applyPersonalization(
           if (petAllergens.includes(possibleAllergen)) {
             personalizations.push({
               type: 'allergen',
-              label: `Contains ${ingredient.canonical_name} — may include ${possibleAllergen}. Verify with manufacturer.`,
+              label: `Contains ${toDisplayName(ingredient.canonical_name)} — may include ${possibleAllergen}. Verify with manufacturer.`,
               adjustment: 0,
               petName,
               severity: 'possible_match',

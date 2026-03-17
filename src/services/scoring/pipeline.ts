@@ -6,6 +6,8 @@ import { supabase } from '../supabase';
 import { computeScore } from './engine';
 import type { Product, PetProfile, IngredientDict } from '../../types';
 import type { ProductIngredient, ScoredResult } from '../../types/scoring';
+import { detectVarietyPack } from '../../utils/varietyPackDetector';
+import { isSupplementalByName } from '../../utils/supplementalClassifier';
 
 // ─── Supabase Row Shape ──────────────────────────────────
 
@@ -157,6 +159,7 @@ export async function scoreProduct(
     return {
       scoredResult: {
         ...makeEmptyResult(product, petProfile, ['vet_diet_bypass']).scoredResult,
+        bypass: 'vet_diet_bypass' as const,
         isPartialScore: false,
         isRecalled: product.is_recalled,
       },
@@ -164,9 +167,43 @@ export async function scoreProduct(
     };
   }
 
+  // Species mismatch bypass — cat food scored for dogs (and vice versa)
+  if (petProfile && product.target_species !== petProfile.species) {
+    const targetLabel = product.target_species === 'cat' ? 'cats' : 'dogs';
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['species_mismatch']).scoredResult,
+        bypass: 'species_mismatch' as const,
+        bypassReason: `This product is formulated for ${targetLabel}`,
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // Variety pack bypass — concatenated multi-recipe lists produce unreliable scores
+  if (detectVarietyPack(product.name, hydrated)) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['variety_pack']).scoredResult,
+        bypass: 'variety_pack' as const,
+        bypassReason: 'This is a variety pack with multiple recipes',
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // Runtime supplemental detection — catch toppers/mixers missed by DB classification
+  const scoringProduct = (!product.is_supplemental && isSupplementalByName(product.name))
+    ? { ...product, is_supplemental: true }
+    : product;
+
   // Step 3: Run scoring engine
   const result = computeScore(
-    product,
+    scoringProduct,
     hydrated,
     petProfile ?? undefined,
     petAllergens,

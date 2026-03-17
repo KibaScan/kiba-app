@@ -68,10 +68,26 @@ export interface Penalty {
   citationSource: string;
 }
 
+/** Per-ingredient grouped penalty result (for waterfall UI) */
+export interface IngredientPenaltyResult {
+  ingredientName: string;           // display name (human-readable)
+  canonicalName: string;            // database key
+  severity: IngredientSeverity;
+  position: number;
+  reasons: Array<{
+    reason: string;                 // short description for sub-reason display
+    rawPoints: number;              // before position weighting
+    weightedPoints: number;         // after position weighting
+    citationSource: string;
+  }>;
+  totalWeightedPoints: number;      // sum of all weightedPoints
+}
+
 /** Layer 1a — Ingredient Quality bucket output */
 export interface IngredientScoreResult {
   ingredientScore: number;        // 0-100
   penalties: Penalty[];
+  groupedPenalties: IngredientPenaltyResult[];
   flags: string[];                // non-scoring signals (e.g. 'ingredient_splitting_detected')
   unnamedSpeciesCount: number;
 }
@@ -141,12 +157,19 @@ export interface CarbEstimate {
   ashUsedPct: number | null;        // as-fed ash % used in formula (display only)
 }
 
+/** Pipeline bypass reasons — scoring engine not run */
+export type BypassReason = 'vet_diet_bypass' | 'species_mismatch' | 'variety_pack';
+
 /** Orchestrator final output — composite of all layers */
 export interface ScoredResult {
   // Core score
   finalScore: number;               // 0-100, clamped
   displayScore: number;             // same as finalScore — for D-094 "[X]% match" rendering
   petName: string | null;           // null if no petProfile
+
+  // Pipeline bypass — when set, scoring engine was not run
+  bypass?: BypassReason;
+  bypassReason?: string;
 
   // Layer breakdowns (for waterfall UI per D-094)
   layer1: {
@@ -166,6 +189,9 @@ export interface ScoredResult {
 
   // Ingredient penalties (pass-through from Layer 1a for waterfall detail)
   ingredientPenalties: Penalty[];
+
+  // Per-ingredient grouped penalties (for waterfall UI)
+  ingredientResults: IngredientPenaltyResult[];
 
   // Flags for UI (merged from all layers)
   flags: string[];

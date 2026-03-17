@@ -284,6 +284,7 @@ export function computeScore(
     },
 
     ingredientPenalties: iqResult.penalties,
+    ingredientResults: baseIqResult.groupedPenalties,
 
     flags: [...allFlags],
 

@@ -9,7 +9,7 @@ import type { ProductIngredient, FormulationScoreResult } from '../../types/scor
 
 function scoreAafco(statement: string | null): { score: number; flag: string | null } {
   if (!statement || statement.trim() === '') {
-    return { score: 30, flag: null };
+    return { score: 30, flag: 'aafco_statement_not_available' };
   }
 
   const lower = statement.toLowerCase();
@@ -22,6 +22,18 @@ function scoreAafco(statement: string | null): { score: number; flag: string | n
   }
   if (lower.includes('adult') || lower.includes('maintenance')) {
     return { score: 90, flag: null };
+  }
+  // Common AAFCO phrasing: "complete and balanced", "formulated to meet"
+  if (lower.includes('complete and balanced') || lower.includes('formulated to meet')) {
+    return { score: 90, flag: null };
+  }
+  // Supplemental feeding statement
+  if (lower.includes('supplemental') || lower.includes('intermittent')) {
+    return { score: 70, flag: null };
+  }
+  // Animal feeding tests / AAFCO feeding trial
+  if (lower.includes('feeding test') || lower.includes('feeding trial')) {
+    return { score: 100, flag: null };
   }
 
   return { score: 50, flag: 'aafco_statement_unrecognized' };
