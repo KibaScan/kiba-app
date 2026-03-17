@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 15, 2026 (137 decisions: D-001 through D-137. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136.)
+> Updated: March 16, 2026 (149 decisions: D-001 through D-149. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143.)
 
 ---
 
@@ -2048,6 +2048,203 @@ All copy D-095 compliant.
 | Keep potatoes in trigger | 42% vs 93% presence. Amino acid depletion mechanism doesn't apply to tubers |
 | Three stacking penalties | Overpenalizes. Three rules are OR gates for same underlying risk |
 | Include soy in pulse definition | Different amino acid profile, decades of safe use, not implicated in DCM |
+
+---
+
+## 25. Presentation-Layer Polish (Sessions A–C)
+
+### D-138: Score Waterfall Redesign (presentation-layer) — LOCKED
+
+**Date:** 2026-03-15
+**Status:** LOCKED
+**Scope:** `ScoreWaterfall.tsx` — UI only, zero scoring math changes
+
+- Category headers: removed "(after position weighting)", added ⓘ tooltip per category, full-width name rendering (no truncation)
+- Row 1 renamed from "Ingredient Concerns" to "Ingredients"
+- Ingredient grouping: one row per ingredient with nested sub-reasons (left-border nesting), post-weighted values displayed using largest remainder method for exact reconciliation with header total
+- Severity progress bars: 3px with dark track (`rgba(255,255,255,0.06)`), proportional fill (`|pts|/50`), color = `SEVERITY_COLORS.danger` (≥10) or `.caution` (<10)
+- Final score row: uses `getScoreColor(score, productType)` per D-136 (no more hardcoded cyan)
+- Collapsed categories: one-line summary of top concern or status
+- 0-deduction categories: green checkmark + contextual "No issues found" text in `SEVERITY_COLORS.good`
+- Citations: demoted from bright cyan links to muted ⓘ icon (10px, 18% opacity) with joined citation text
+- Chevron icon retained for expand/collapse affordance
+
+---
+
+### D-139: Global Severity Color Constants — LOCKED
+
+**Date:** 2026-03-15
+**Status:** LOCKED
+**Scope:** `constants.ts` + all components referencing severity colors
+
+- Danger: `#EF4444`, Caution: `#F59E0B`, Good: `#4ADE80`, Neutral: `#6B7280`
+- All components reference `SEVERITY_COLORS` from `constants.ts` — no hardcoded hex values for severity
+- Waterfall deduction text now matches ingredient severity (amber for caution, red for danger)
+- Score colors unchanged — `getScoreColor()` still implements D-136's 5-tier dual system (green family for daily food, teal/cyan family for supplemental)
+- `#4ADE80` (green-400) for inline severity indicators vs `#22C55E` (green-500) for score ring — distinct purposes
+
+---
+
+### D-140: AAFCO Statement Copy Standardization — LOCKED
+
+**Date:** 2026-03-15
+**Status:** LOCKED
+**Scope:** `constants.ts` (`AAFCO_STATEMENT_STATUS`), `ResultScreen.tsx`, `ScoreWaterfall.tsx`
+
+- Missing (null/empty field): label = "No AAFCO statement on label", collapsed = "No AAFCO statement found on label"
+- Unrecognized (present but unparseable): label = "AAFCO statement not recognized", collapsed = "AAFCO statement present but format not recognized"
+- Constants defined in `constants.ts` as `AAFCO_STATEMENT_STATUS`, used in waterfall collapsed summary + result screen display
+- Scoring engine (`formulationScore.ts`) unchanged — produces machine-readable flag keys, not display strings
+
+---
+
+### D-141: Supporting Screen Polish — LOCKED
+
+**Date:** 2026-03-15
+**Status:** LOCKED
+**Scope:** `IngredientList.tsx`, `IngredientDetailModal.tsx`, `AafcoProgressBars.tsx`, `BonusNutrientGrid.tsx`, `PositionMap.tsx`, `ResultScreen.tsx`
+
+- **Ingredient list:** grouped by severity tier with "DANGER · {count}" headers (11px uppercase), position order preserved within tiers. Two-line rows: primary name (14px semibold) + parenthetical (12px `#9CA3AF`). Position numbers demoted to 11px `#737373` on far left. Severity icons removed from rows (section headers establish context).
+- **Nutritional Fit:** removed duplicate "Nutritional Profile" section (`GATable` no longer rendered). Added expandable raw GA view ("View guaranteed analysis ▾") with `LayoutAnimation` smooth expand/collapse. AAFCO threshold markers improved: 2px × 16px, `rgba(255,255,255,0.7)`, with positioned "min"/"max" label (9px `#9CA3AF`).
+- **Carb estimate:** moved from `GATable` to `AafcoProgressBars`. "Est. {value}%" replaces "~{value}%". InfoTooltip shows full nitrogen-free extract formula with actual product values and ash estimation note.
+- **Bonus Nutrients:** present-first layout replaces 2-column grid. Present items as compact rows (green dot + name + value). Absent items as single comma-separated line ("{names} not listed."). All absent: "No bonus nutrients listed".
+- **Composition bar:** tap-to-identify interaction — tapped segment highlights (others dim to 0.4), floating label shows display name + position number. Label clamped to bar edges (4px margin).
+- **Modal citations:** "Sources" header 11px uppercase `#737373`. Citation text 12px italic `#737373`. "Read more" toggle changed from cyan to `Colors.textSecondary`. Zero `Colors.accent` in modal.
+
+---
+
+### D-142: Artificial Colorant Severity Escalation — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `ingredients_dict` (DB), test fixtures
+
+- All FD&C artificial colorants escalated from `caution` to `danger` severity for both `dog_base_severity` and `cat_base_severity`
+- Affected: Red 40, Yellow 5, Yellow 6, Blue 1, Blue 2, Red 3, Titanium Dioxide
+- All colorants confirmed `position_reduction_eligible = FALSE` (presence-based — full penalty regardless of position)
+- Rationale: zero nutritional benefit for the animal, purely cosmetic additives marketed to humans, cumulative synthetic dye exposure flagged by EFSA and FDA
+- Score impact: single-dye product drops ~92→~85, double-dye ~84→~70, triple-dye ~76 "Good"→~55 "Low"
+- Pure Balance regression unaffected (62 — no colorants)
+- Test fixtures updated in `engine.test.ts`, `ingredientQuality.test.ts`, `realProductScoring.test.ts`
+- DB migration: `UPDATE ingredients_dict SET dog_base_severity = 'danger', cat_base_severity = 'danger' WHERE canonical_name IN ('red_40', 'yellow_5', 'yellow_6', 'blue_1', 'blue_2', 'red_3', 'titanium_dioxide');`
+
+---
+
+### D-143: "Danger" → "Severe" Display Label — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `constants.ts` (`SEVERITY_DISPLAY_LABELS`), `IngredientList.tsx`, `IngredientDetailModal.tsx`
+
+- UI displays "Severe" for `danger`-level ingredients; "Caution" / "Good" / "Neutral" unchanged
+- Database enum unchanged — `danger` remains the internal value everywhere (scoring engine, types, DB)
+- `SEVERITY_DISPLAY_LABELS` added to `constants.ts` as single source of truth for UI-facing severity text
+- Local `SEVERITY_LABELS` maps removed from `IngredientList.tsx` and `IngredientDetailModal.tsx` — both now import from constants
+- Section headers render as "SEVERE · 4" (was "DANGER · 4"), severity badge text as "Severe" (was "Danger")
+- Rationale: "Danger" implies acute toxicity/immediate physical harm; "Severe" accurately describes chronic quality concerns per D-095 Clinical Copy Rule
+- Supersedes D-141 section header label ("DANGER · {count}" → "SEVERE · {count}")
+
+### D-144: Species Mismatch Bypass — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `pipeline.ts`, `scoring.ts` (`BypassReason` type), `ResultScreen.tsx`
+
+- Products where `product.target_species !== pet.species` skip scoring entirely — engine never runs
+- Pipeline returns `bypass: 'species_mismatch'` with hydrated ingredients (still viewable)
+- ResultScreen renders species mismatch view: red badge ("For cats/dogs only"), warning message, ingredient list
+- Copy: "[Product Name] is formulated for [species]. It is not recommended for [Pet Name]." (D-095 compliant — factual restatement of manufacturer's declared target species, no prescriptive language)
+- Same architectural pattern as D-135 vet diet bypass: early exit in pipeline, dedicated ResultScreen branch
+- `BypassReason` type union added to `scoring.ts` — shared by vet diet, species mismatch, and variety pack bypasses
+- Triggered by: Greenies Feline scanned for dog, Fancy Feast scanned for dog, any cross-species scan
+
+---
+
+### D-145: Variety Pack Detection + Bypass — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `varietyPackDetector.ts` (new), `pipeline.ts`, `scoring.ts`, `ResultScreen.tsx`
+
+- Variety packs have concatenated multi-recipe ingredient lists producing unreliable scores, false flavor deception flags, and absurd position numbers
+- Detection fires if ANY of: (1) product name contains "variety", "multi-pack", "assorted", "sampler" (case-insensitive), (2) ingredient count exceeds 80, (3) duplicate canonical ingredient names at different positions
+- Pipeline returns `bypass: 'variety_pack'` — scoring engine never runs
+- ResultScreen renders variety pack view: amber badge ("Variety Pack"), message "This product contains multiple recipes. For accurate scoring, scan individual items from the pack."
+- Suppresses: ScoreRing, Waterfall, BenchmarkBar, PortionCard, ingredient list, FlavorDeceptionCard, SplittingDetectionCard (all produce misleading output on concatenated lists)
+- Shows: product image, recall banner (safety-critical, always shown)
+- Triggered by: Hartz Delectables 12ct, Fancy Feast Variety Pack, any multi-recipe product
+
+---
+
+### D-146: Expanded Supplemental Classifier — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `supplementalClassifier.ts`, `pipeline.ts`, `BenchmarkBar.tsx`, `PortionCard.tsx`, `ResultScreen.tsx`
+
+- Product name now scanned for topper/mixer/enhancer keywords: "topper", "meal topper", "food topper", "mixer", "meal mixer", "meal enhancer", "meal booster", "sprinkle", "dinner dust"
+- `isSupplementalByName()` exported alongside existing `isSupplementalProduct()` (feeding guide AAFCO check)
+- Pipeline applies runtime override: if DB `is_supplemental` is false but name matches, creates product copy with `is_supplemental: true` before passing to scoring engine (65/35/0 weights, macro-only NP)
+- ResultScreen derives unified `isSupplemental` from DB flag OR name detection — used for ScoreRing (270° arc, teal/cyan), BenchmarkBar, PortionCard, and all supplemental UI elements
+- PortionCard: when `isSupplemental=true`, shows "This product is a meal topper. Refer to package feeding guidelines for serving size." instead of calculated daily portion (prevents nonsensical "~1876g/day" for toppers)
+- BenchmarkBar: supplementals skip fetch entirely and return null — no supplemental benchmark segment exists with ≥30 products, and comparing toppers against daily food averages is meaningless
+- BenchmarkBar: added MIN_BENCHMARK_PEERS threshold (30) — treats with <30 peers also hide instead of showing statistically unreliable comparisons
+- NOT a bypass — supplemental products are fully scored with D-136 weights. This expands classification, not pipeline control flow
+- Triggered by: Stella & Chewy's Magical Dinner Dust, Charlee Bear Necessities Dog Food Topper
+
+### D-147: Presentation Layer Polish (Priority 3) — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `AafcoProgressBars.tsx`, `BenchmarkBar.tsx`, `PortionCard.tsx`, `PositionMap.tsx`, `ResultScreen.tsx`
+
+Eight display bug fixes — no scoring engine changes, all presentation-layer:
+
+1. **AafcoProgressBars supplemental header:** Supplementals show "Macro Profile" / "As listed on label" instead of "[Pet Name]'s Nutritional Fit" / "vs. AAFCO standards". Threshold markers (min/max) hidden — AAFCO doesn't apply to supplementals. DMB toggle and carb estimate preserved.
+2. **AafcoProgressBars treat handling:** Treats hide GA progress bars entirely (NP bucket is 0% — showing bars implies scoring relevance). Carb estimate still renders standalone when GA data exists.
+3. **Ultra-high-moisture DMB note:** Products with moisture >80% show contextual note when DMB toggled on: "This product is {X}% water. DMB values appear high because the dry portion is very concentrated. This is normal for broths and lickable treats."
+4. **BenchmarkBar delta label:** Changed from bare "+14" / "−37" to "+14 above avg match" (green) / "−37 below avg match" (red) / "At category average" (gray). Number colored via SEVERITY_COLORS, suffix in muted gray.
+5. **AAFCO statement chip consistency:** "AAFCO statement not recognized" changed from `flagChipGeneric` (card background, looks tappable) to `flagChipMuted` (plain text, matches "No AAFCO statement on label" treatment).
+6. **Product name 2-line wrap:** All ResultScreen header product name fields changed from `numberOfLines={1}` to `numberOfLines={2}`. Brand stays single line.
+7. **PortionCard name truncation:** Added `shortenProductName()` helper — strips package size info after first comma, truncates to 40 chars. Prevents "~1915g/day of Fancy Feast Gravy Lovers... 3-oz, case of 30".
+8. **Floating "likely" text:** AAFCO statement rendering now requires `trim().length > 20` — suppresses orphan fragments from bad DB data.
+9. **PositionMap ordinal fix:** Floating label changed from `sorted[idx].position` (raw DB value, sometimes non-ordinal) to `selectedIdx + 1` (1-based index in sorted array). Fixes "Mixed Tocopherols #921" → "#28".
+
+### D-148: Composition Bar Swipeable Scrub Interaction — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `PositionMap.tsx`
+
+- Replaced tap-per-segment (`Pressable`) with PanResponder-based scrub + tap interaction
+- Drag/scrub: `onPanResponderMove` calculates segment under finger from cumulative weight widths, updates floating label on every move event
+- Tap preserved as fallback: `onPanResponderRelease` toggles selection if movement < 5px dead zone
+- `segmentIndexFromX()` converts pixel X → segment index via linear scan over proportional weights
+- Segments changed from `Pressable` to `View` — all touch handling via single PanResponder on barWrapper
+- `barWidthRef` (ref) for gesture callbacks avoids stale closures; `barWidth` (state) for render positioning
+- No new dependencies — uses `PanResponder` from react-native core
+
+---
+
+### D-149: Atwater Caloric Estimation Fallback — LOCKED
+
+**Date:** 2026-03-16
+**Status:** LOCKED
+**Scope:** `calorieEstimation.ts` (new), `ResultScreen.tsx`, `TreatBatteryGauge.tsx`
+
+- Many treats and supplementals missing both `kcal_per_cup` and `kcal_per_kg`, making treat battery display useless
+- `resolveCalories(product)` implements a three-priority fallback chain:
+  1. `kcal_per_kg` from label (scraped — most accurate)
+  2. `kcal_per_cup` from label (partial data)
+  3. Modified Atwater ME estimate from GA data (NRC, 2006): protein×3.5 + fat×8.5 + carb×3.5 kcal/g
+  4. `null` — no calorie data available
+- `CalorieSource` type: `'label' | 'estimated' | null` — tracks provenance
+- Carb% for Atwater uses same NFE method as engine.ts `estimateCarbDisplay()` with matching ash defaults (treat 5%, dry 7%, wet 2%)
+- `kcalPerUnit` derived from `kcalPerKg × unit_weight_g / 1000` when both available
+- ResultScreen uses `resolveCalories()` instead of raw `product.kcal_per_unit` for treat battery
+- TreatBatteryGauge shows "Calories estimated from nutritional profile" note with InfoTooltip when `calorieSource === 'estimated'`
+- Products with label calorie data completely unaffected — label values always take priority
+- Display-only: Atwater estimate does NOT enter scoring engine
 
 ---
 

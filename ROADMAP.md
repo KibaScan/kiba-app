@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 15, 2026
+> Updated: March 16, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M4.5 DCM Pulse Framework Complete (M0 + M1 + M2 + M3 + M4 + M4.5 Done)
+## Current Status: M4.5 + UI Polish Complete (M0 + M1 + M2 + M3 + M4 + M4.5 + Polish Done — Ready for M5)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (137 decisions, D-001 through D-137)
+- Decision log established (149 decisions, D-001 through D-149)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -36,6 +36,8 @@
 - M4.5 (complete): D-137 DCM Pulse Framework — replaced grain-free gate with positional pulse load detection, narrowed scope from all legumes to pulses only, updated Pure Balance regression 65 → 62. DcmAdvisoryCard shows rule-specific copy, Heart Risk concern tag fires on D-137 rules. 509 tests passing.
 - M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
 - M4.5: D-135 vet diet bypass — pipeline skips scoring engine for `is_vet_diet = true` products, ResultScreen renders vet diet badge + ingredient list only (no score ring, no waterfall, no benchmark).
+- UI Polish Sessions A–C (D-138–D-141): Score waterfall redesign (grouped ingredients, severity progress bars, tooltips, final score color fix), global severity color constants (SEVERITY_COLORS single source of truth), AAFCO statement copy standardization, ingredient list grouped by severity tier, nutritional fit consolidation (removed duplicate GATable section), bonus nutrient present-first layout, composition bar tap-to-identify, carb estimate "Est." format, modal citation demotion. 509 tests passing.
+- UI Polish Session D (D-142–D-149): Artificial colorant severity escalation (caution → danger), "Danger" → "Severe" display labels, preservative_type_unknown chip suppressed, ScoreRing fill animation (900ms ease-out cubic), species mismatch bypass (D-144), variety pack detection + bypass (D-145), expanded supplemental classifier with product name keywords (D-146), BenchmarkBar ≥30 peer threshold, PortionCard supplemental guidance text, presentation layer polish (D-147: supplemental-aware AAFCO headers, treat GA bar suppression, ultra-high-moisture DMB note, benchmark delta labels, AAFCO chip consistency, product name wrapping, portion name truncation, orphan text suppression, PositionMap ordinal fix), composition bar swipeable scrub (D-148), Atwater caloric estimation fallback for missing kcal data (D-149). 558 tests passing.
 
 ---
 
@@ -437,26 +439,28 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: Full result screen with all UI components from mockups.
 
 ### Score Context
-- [ ] Benchmark bar — gradient track with product pin + category average marker (requires M3 product database for category averages). Answers "Is 66% normal for grain-free salmon?" Especially important in the 50-69% amber zone where "Fair match" needs relative context.
+- [x] Benchmark bar — gradient track with product pin + category average marker
+- [ ] "What Good Looks Like" reference card
 
 ### Nutrition Panel
-- [ ] AAFCO progress bars with threshold markers
-- [ ] DMB conversion display for wet food
-- [ ] Bonus nutrient grid
-- [ ] "[Pet Name]'s Nutritional Fit" label (D-094 — internal weight not exposed to users)
+- [x] AAFCO progress bars with threshold markers (D-141: improved marker visibility, min/max labels)
+- [x] DMB conversion display for wet food
+- [x] Bonus nutrient grid (D-141: present-first layout, absent-as-line)
+- [x] "[Pet Name]'s Nutritional Fit" label (D-094 — internal weight not exposed to users)
+- [x] Carb estimate display with "Est." format and InfoTooltip (D-141)
+- [x] Expandable raw GA view ("View guaranteed analysis") replacing duplicate Nutritional Profile section (D-141)
 
 ### Ingredient Experience
-- [ ] Worst-to-best sorted list with section dividers
-- [ ] Position map (colored bar strip)
-- [ ] Ingredient splitting detection card
-- [ ] Flavor deception card (when applicable)
-- [ ] DCM advisory card with mitigation callout
-- [ ] Singleton modal with TL;DR, clinical copy, citations
+- [x] Worst-to-best sorted list with section dividers (D-141: grouped by severity tier with counts)
+- [x] Position map (colored bar strip) with tap-to-identify interaction (D-141)
+- [x] Ingredient splitting detection card
+- [x] Flavor deception card (when applicable)
+- [x] DCM advisory card with mitigation callout
+- [x] Singleton modal with TL;DR, clinical copy, citations (D-141: muted citations)
 
 ### Education
-- [ ] "What Good Looks Like" reference card
-- [ ] Score waterfall breakdown — tappable, shows full Layer 1/2/3 math with pet name context (D-094)
-- [ ] Loading terminal with step-by-step messages
+- [x] Score waterfall breakdown — tappable, grouped ingredients with sub-reasons (D-138)
+- [x] Loading terminal with step-by-step messages
 
 ### Actions
 - [ ] Pantry button (add to user's pantry)

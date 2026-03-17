@@ -2,7 +2,7 @@
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of context for all development work.
-> Last updated: March 15, 2026 (M4.5 — D-137 DCM Pulse Framework, D-135 vet diet bypass, Migration 008 backfill)
+> Last updated: March 16, 2026 (M4.5 complete + UI Polish complete: D-137 DCM Pulse Framework, D-135 vet diet bypass, Migration 008 backfill, D-138–D-141 presentation-layer redesign, D-142–D-143 scoring/severity fixes, D-144–D-146 pipeline bypasses, D-147 display polish, D-148–D-149 composition bar scrub + Atwater calorie estimation. Ready for M5.)
 
 ---
 
@@ -23,7 +23,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 - **Barcode:** `expo-camera` built-in scanning (NOT `expo-barcode-scanner` — deprecated)
 - **Payments:** RevenueCat (installed M3 Session 5)
 - **Audio:** `expo-av` for scan confirmation tone
-- **Testing:** Jest for scoring engine, reference product regression tests (509 tests passing)
+- **Testing:** Jest for scoring engine, reference product regression tests (558 tests passing)
 - **SVG:** `react-native-svg` for score ring (270° open arc for supplementals)
 
 ## Project Structure
@@ -31,7 +31,7 @@ Kiba (kibascan.com — domain registered) is a pet food scanner iOS app — "Yuk
 ```
 kiba-app/
 ├── CLAUDE.md              ← you are here
-├── DECISIONS.md            ← canonical decision log (137 decisions, D-001 through D-137)
+├── DECISIONS.md            ← canonical decision log (149 decisions, D-001 through D-149)
 ├── ROADMAP.md              ← milestone-by-milestone plan
 ├── NUTRITIONAL_PROFILE_BUCKET_SPEC.md  ← 30% nutritional bucket: curves, thresholds, DMB
 ├── BREED_MODIFIERS_DOGS.md             ← 23 dog breed entries (scoring engine lookup table)
@@ -74,20 +74,28 @@ kiba-app/
 │   │   └── index.ts
 │   ├── components/         ← shared UI components
 │   │   ├── ScoreGauge.tsx
-│   │   ├── ScoreRing.tsx          ← SVG score ring: 360° daily food, 270° open arc supplementals (react-native-svg)
+│   │   ├── ScoreRing.tsx          ← SVG score ring: 360° daily food, 270° open arc supplementals, 900ms fill animation (react-native-svg)
 │   │   ├── ScannerOverlay.tsx     ← animated viewfinder: corner brackets + scan line + lock animation
 │   │   ├── LoadingTerminal.tsx    ← 6-step terminal message sequence
 │   │   ├── ConcernTags.tsx        ← D-107 consumer-facing badges
 │   │   ├── SeverityBadgeStrip.tsx ← worst 4-5 ingredients as color-coded chips
-│   │   ├── ScoreWaterfall.tsx     ← tappable breakdown showing Layer 1/2/3 math
-│   │   ├── GATable.tsx            ← GA panel with dual display (as-fed + DMB for wet food)
-│   │   ├── IngredientList.tsx
-│   │   ├── IngredientDetailModal.tsx ← D-105 singleton modal with TL;DR, citations
+│   │   ├── ScoreWaterfall.tsx     ← grouped ingredient penalties, severity progress bars, collapsed summaries, tooltips (D-138)
+│   │   ├── GATable.tsx            ← [DEAD CODE] GA panel — no longer imported from ResultScreen, replaced by AafcoProgressBars
+│   │   ├── AafcoProgressBars.tsx  ← AAFCO threshold viz + expandable raw GA + carb estimate + DMB toggle + supplemental/treat modes (D-147)
+│   │   ├── BonusNutrientGrid.tsx  ← present-first nutrient layout: present items as rows, absent as comma-separated line
+│   │   ├── PositionMap.tsx        ← ingredient composition bar with PanResponder scrub + tap-to-identify + edge-clamped floating label (D-148)
+│   │   ├── IngredientList.tsx     ← severity-grouped ingredient list, two-line rows with parentheticals (D-141)
+│   │   ├── IngredientDetailModal.tsx ← D-105 singleton modal with TL;DR, muted citations (D-141)
+│   │   ├── InfoTooltip.tsx         ← reusable press-to-reveal floating tooltip (D-138)
 │   │   ├── BreedContraindicationCard.tsx ← D-112 red warning cards
-│   │   ├── PortionCard.tsx        ← DER-based daily portion display
-│   │   ├── TreatBatteryGauge.tsx  ← visual treat budget gauge
+│   │   ├── PortionCard.tsx        ← DER-based daily portion display, supplemental package guidance (D-146), Atwater estimation note (D-149)
+│   │   ├── TreatBatteryGauge.tsx  ← visual treat budget gauge with Atwater estimation note (D-149)
+│   │   ├── DcmAdvisoryCard.tsx    ← D-137 DCM advisory with rule-specific copy
+│   │   ├── SplittingDetectionCard.tsx ← ingredient splitting detection via cluster_id
+│   │   ├── FlavorDeceptionCard.tsx ← label vs ingredients mismatch (D-095 compliant)
+│   │   ├── PetShareCard.tsx       ← off-screen share card for capture + social sharing
 │   │   ├── DevMenu.tsx            ← __DEV__ only: premium toggle, scan window management
-│   │   ├── BenchmarkBar.tsx
+│   │   ├── BenchmarkBar.tsx       ← score vs category average bar with contextual delta labels, ≥30 peer threshold (D-146/D-147)
 │   │   ├── PetPhotoSelector.tsx ← 96px circle, paw silhouette, ImagePicker (square crop, quality 0.7)
 │   │   └── StatChips.tsx
 │   ├── screens/
@@ -140,13 +148,16 @@ kiba-app/
 │   │   └── useScanStore.ts       ← scan cache, weekly count
 │   ├── utils/
 │   │   ├── permissions.ts   ← ONLY location for paywall checks
-│   │   ├── supplementalClassifier.ts ← D-136: AAFCO feeding guide keyword parser
+│   │   ├── supplementalClassifier.ts ← D-136 AAFCO feeding guide + D-146 product name keyword detection
+│   │   ├── varietyPackDetector.ts ← D-145: name keywords, ingredient count >80, duplicate detection
+│   │   ├── calorieEstimation.ts ← D-149: Atwater ME fallback, resolveCalories() priority chain
+│   │   ├── formatters.ts      ← toDisplayName() and shared formatting helpers
 │   │   ├── benchmarkData.ts ← Zustand-cached category average fetcher
 │   │   ├── bonusNutrients.ts ← boolean nutrient derivation from product_ingredients
 │   │   ├── flavorDeception.ts ← label vs ingredients detection logic
 │   │   ├── haptics.ts       ← D-121: named haptic functions wrapping expo-haptics
 │   │   ├── lifeStage.ts     ← deriveLifeStage, synthesizeDob, formatLocalDate, parseDateString
-│   │   └── constants.ts
+│   │   └── constants.ts     ← Colors, FontSizes, Spacing, SCORING_WEIGHTS, SEVERITY_COLORS (D-139), SEVERITY_DISPLAY_LABELS (D-143), SCORE_COLORS, getScoreColor(), AAFCO_STATEMENT_STATUS (D-140)
 │   └── navigation/
 │       └── index.tsx
 └── __tests__/
@@ -160,7 +171,9 @@ kiba-app/
     │   └── scoring/
     │       └── supplementalScoring.test.ts ← 8 tests: D-136 weight routing, modifier suppression
     ├── utils/
-    │   └── supplementalClassifier.test.ts ← 16 tests: AAFCO keyword matching, D-096/D-136 separation
+    │   ├── supplementalClassifier.test.ts ← 30 tests: AAFCO keywords + D-146 product name detection
+    │   ├── varietyPackDetector.test.ts ← 14 tests: name keywords, count threshold, duplicate detection
+    │   └── calorieEstimation.test.ts ← 12 tests: Atwater math, fallback chain, kcalPerUnit derivation
     └── referenceProducts.test.ts  ← regression tests
 ```
 
@@ -175,7 +188,7 @@ All Kiba scores are **pet-specific suitability matches**, not universal product 
 - All products start at 100; deductions are compatibility adjustments
 
 **User-facing layer names in waterfall breakdown (5 rows):**
-- Row 1: "Ingredient Concerns" (Layer 1 ingredient quality)
+- Row 1: "Ingredients" (Layer 1 ingredient quality — renamed from "Ingredient Concerns" per D-138)
 - Row 2: "[Pet Name]'s Nutritional Fit" (Layer 1 nutritional profile)
 - Row 3: "Formulation Quality" (Layer 1 formulation completeness)
 - Row 4: "[Species] Safety Checks" — "Canine Safety Checks" or "Feline Safety Checks" (Layer 2)
@@ -210,6 +223,8 @@ Two parallel color scales. Daily food uses green family. Supplemental uses teal/
 Supplemental products also display: "Supplemental" badge (teal background), contextual line "Best paired with a complete meal" below score ring.
 
 Ring color and verdict text always share the same tier. Verdict renders below the ring, 16pt semibold, color-matched.
+
+**Score ring animation:** Ring fill animates from 0 to final value over 900ms on mount (ease-out cubic). Score number counts up in sync. Uses RN Animated API (not Reanimated).
 
 ## Scoring Engine Architecture
 
@@ -342,6 +357,9 @@ See `supabase/migrations/001_initial_schema.sql` for full schema. Critical table
 11. **UPVM compliance (D-095).** Never use these terms in user-facing copy: "prescribe," "treat," "cure," "prevent," "diagnose." Map label data → published literature → compatibility deduction. Kiba is a data-mapping tool, not a digital veterinarian.
 12. **Breed modifier cap.** Total breed modifiers within the nutritional bucket capped at ±10 points. Every modifier requires `citation_source` and `vet_audit_status = 'cleared'` before production.
 13. **Vet diet bypass (D-135).** Products with `is_vet_diet = true` are NEVER scored. No composite score, no color zone, no benchmark. Ingredient list + severity dots + educational cards still render. Vet diet badge with copy: "This is a veterinary diet formulated for specific health needs. Ingredient details are shown below — discuss suitability with your veterinarian."
+14. **Species mismatch bypass (D-144).** When `product.target_species !== pet.species`, pipeline returns `bypass: 'species_mismatch'` — scoring engine never runs. ResultScreen shows red badge ("For cats/dogs only") + ingredient list.
+15. **Variety pack bypass (D-145).** Products detected via name keywords ("variety", "multi-pack", "assorted", "sampler"), ingredient count >80, or duplicate canonical ingredients bypass scoring entirely. No ingredient list shown (concatenated lists are misleading).
+16. **Supplemental classification expansion (D-146).** `isSupplementalByName()` scans product names for topper/mixer/enhancer/sprinkle/dinner dust keywords. Runtime override in pipeline ensures correct 65/35/0 weights even when DB `is_supplemental` is false. PortionCard shows package guidance for supplementals. BenchmarkBar hidden (no peer segment with ≥30 products).
 
 ## Weight Management (D-106)
 
@@ -376,6 +394,7 @@ Weight status affects **portions, not scores.** No caloric density modifiers in 
 - ❌ Paywall on recall alerts (D-125 — free tier, safety-critical)
 - ❌ Compare flow (deferred M6 — button + paywall gate already exist)
 - ❌ Vet Report PDF (deferred M5-M6 — based on soft launch feedback)
+- ❌ Score variety packs with concatenated ingredient lists (D-145 — bypass, scan individual items)
 
 ## M2 Profile Design (D-116 through D-121)
 
@@ -434,6 +453,8 @@ M2: pet profile CRUD with Supabase auth integration
 - **Haptics:** `expo-haptics` is no-op on web. Must test on physical iOS device.
 - **Score accuracy:** 6 fields × weighted points = 100%. Name (20) + Species (20) + Breed (15) + DOB (15) + Weight (15) + Health Reviewed (15). `health_reviewed_at` must be set for the last 15%.
 - **`checkmark-shield-outline` icon:** Invalid Ionicons name. Should be `shield-checkmark-outline` for "Perfectly Healthy" chip. Fix in ConditionChip.tsx.
+- **GATable.tsx is dead code:** No longer imported from ResultScreen — replaced by AafcoProgressBars. Delete in future cleanup.
+- **Pre-unification severity hex in GATable.tsx and PetHubScreen.tsx:** Still use old Apple colors (#FF9500 amber, etc.) instead of D-139 SEVERITY_COLORS. Fix in next polish pass.
 
 ## When You're Unsure
 
@@ -495,3 +516,17 @@ M2: pet profile CRUD with Supabase auth integration
 □ D-137: is_pulse_protein is strict subset of is_pulse (every pulse protein is also a pulse)?
 □ D-135: Vet diet products (`is_vet_diet = true`) never scored — pipeline returns vet_diet_bypass?
 □ D-135: ResultScreen shows vet diet badge + ingredients, suppresses ScoreRing/Waterfall/BenchmarkBar?
+□ D-138: Waterfall Row 1 = "Ingredients" (not "Ingredient Concerns")? Final score uses getScoreColor()?
+□ D-139: All severity colors via SEVERITY_COLORS from constants.ts — no hardcoded hex?
+□ D-141: Ingredient list grouped by severity tier? Composition bar tap-to-identify works? Carb shows "Est." not "~"?
+□ D-142: Artificial colorants at danger severity? position_reduction_eligible = FALSE?
+□ D-143: UI shows "Severe" not "Danger" for danger-level ingredients?
+□ D-144: Species mismatch bypass fires when product.target_species !== pet.species? No score rendered?
+□ D-145: Variety pack detected by name keywords OR >80 ingredients OR duplicate canonical names? No score/ingredients rendered?
+□ D-146: Supplemental name detection (topper/mixer/dinner dust) fires alongside AAFCO feeding guide check? PortionCard shows package guidance? BenchmarkBar hidden?
+□ D-147: Supplementals show "Macro Profile", treats hide GA bars? Ultra-high-moisture DMB note shows for >80%?
+□ D-148: PositionMap uses PanResponder scrub? Floating label uses ordinal index not DB position?
+□ D-149: Atwater calorie estimation fires when label kcal missing? Source='estimated' note visible?
+□ Score ring animates on mount (900ms ease-out cubic)?
+□ AAFCO statement copy uses AAFCO_STATEMENT_STATUS constants? Both states render as plain text?
+□ All severity colors from SEVERITY_COLORS map — no hardcoded hex in components?
