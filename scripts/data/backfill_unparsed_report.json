@@ -1,0 +1,367 @@
+{
+  "timestamp": "2026-03-15T23:05:35.151174+00:00",
+  "total_unparsed_found": 363,
+  "unique_formulas": 348,
+  "products_successfully_parsed": 291,
+  "total_junction_rows_inserted": 13673,
+  "new_ingredients_created": 49,
+  "parsing_errors": 71,
+  "match_rate_pct": 99.6,
+  "status_breakdown": {
+    "clean": 325,
+    "truncated": 19,
+    "contaminated": 4
+  },
+  "errors": [
+    {
+      "product_ids": [
+        "0a57beed-2bc0-44c4-96b0-c9f398ae38ea"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls Dog Chews, 2 count\u2014Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls treat pups to a delicious combination of three favo"
+    },
+    {
+      "product_ids": [
+        "94ec3ce6-ff59-41ff-a97b-b4d2190bd103"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Pearled Barley, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Ground Rice, Rice Bran, Canola Oil (Pr"
+    },
+    {
+      "product_ids": [
+        "40292428-73c9-4064-9002-01d59e17aa05"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Made in the USA.Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Dog treats for training and everyday treating.Pup-Peroni Original Bacon "
+    },
+    {
+      "product_ids": [
+        "a40a3f38-f617-463c-b703-3e9e39bebb43"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+    },
+    {
+      "product_ids": [
+        "c8c3075d-f5f4-44a7-bd57-f3ae20741dc4"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Rice, Rice Bran, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Canola Oil (Preserved with Mixed Toco"
+    },
+    {
+      "product_ids": [
+        "dfc1362f-8a97-4b07-b574-17ce0709fa4f"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Turkey Meal (Natural Source of Glucosamine and Chondroitin), Pumpkin, Butternut Squash, Tapioca, Sunflower Oil (Preserved with Mixed Tocopherols), Flaxseed, Natural Flavors, DL-Methionine, Choline (Ch"
+    },
+    {
+      "product_ids": [
+        "be9fb94a-e2c5-45d2-ba1e-2e2a7b13191b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Every Inaba product is made with yummy, high-quality ingredients including farm-raised chicken and/or wild-caught tuna.Each delicious, creamy Churu tube contains 91% moisture and only six calories, wh"
+    },
+    {
+      "product_ids": [
+        "a5fbbc11-a76e-48fb-83d1-45d92ed21e04"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Lamb Meal Oatmeal Brown Rice Chicken Fat (Preserved With Mixed Tocopherols) Tomato Pomace Brewer's Yeast Threonine Potassium Chloride DL Methionine Taurine Calcium Propionate Blueberries Raspberries C"
+    },
+    {
+      "product_ids": [
+        "cd5788d1-fe1a-440e-a3c8-12ab6208f208"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Pacific Ocean Fish Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Potassium Chloride Dicalcium Phosphate Salt Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (M"
+    },
+    {
+      "product_ids": [
+        "7d1de06d-b8b1-4a25-b6e2-e03f74a56dfc"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Yeast Extract Salt Potassium Chloride DL\u2013Methionine Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (Mang"
+    },
+    {
+      "product_ids": [
+        "7d3ea0d5-2e69-4105-b297-dbae1a081359"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Jinx Kibble Sauce Beef Bone Broth Wet Dog Food Topper, 12-fl oz bottle\u2014Made with high-quality beef and savory bone broth for a mouthwatering boost of flavor.Jinx Kibble Sauce Beef Bone Broth Wet Dog F"
+    },
+    {
+      "product_ids": [
+        "59baa59a-1c86-48a7-b91a-d5def6a354ad"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Whole Beef Cooked In Its Own Juices."
+    },
+    {
+      "product_ids": [
+        "3cf64cda-3767-4991-96bf-86645d445e95"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "American Sourced Human Grade Chicken Breast."
+    },
+    {
+      "product_ids": [
+        "a9957595-6aee-4c43-91f3-fcc91004200d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Boneless Turkey Water Sufficient For Processing Rice Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate Mang"
+    },
+    {
+      "product_ids": [
+        "71dedf91-b1f9-44b9-9ba0-49616fda090d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Potassium Chloride DL\u2013Methionine Threonine Choline Chloride Calcium Propionate (a preservative) Ta"
+    },
+    {
+      "product_ids": [
+        "c5e94010-6a82-4c65-a464-d0fa9299733b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "New: Chicken Meal (Natural Source of Glucosamine and Chondroitin), Chicken Fat (Preserved with Mixed Tocopherols), Peas, Pea Starch, Dried Yeast, Whitefish Meal (Source of DHA-Docosahexaenoic Acid), B"
+    },
+    {
+      "product_ids": [
+        "63e00327-98d0-41a1-94a7-7eb0a22f149e"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "picky dog didn't like it... more"
+    },
+    {
+      "product_ids": [
+        "ff016e21-5a38-4e84-82b6-8b1d0c30b29c"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Water| Corn Starch| Artificial And Natural Flavors| Artificial Chicken Flavor| Taurine| Thiamine Mononitrate (Vitamin B-1)."
+    },
+    {
+      "product_ids": [
+        "a3e7a2e6-4137-421d-974f-7e6dc2d6d394"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "My dogs enjoyed the food... more"
+    },
+    {
+      "product_ids": [
+        "ff6d0a0f-2ba0-491a-a0d8-0463cdab2a40"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Mealtime is always a highlight of a hound's day, especially when you serve Pedigree Choice Cuts in Gravy Variety Pack + Chopped Ground Dinner Variety Pack Adult Wet Dog Food Pouches! Together, these v"
+    },
+    {
+      "product_ids": [
+        "0497dc80-7fd4-43ea-88e9-c5e0184a78e7"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Organic 100% Grass Fed & Finished Beef Liver"
+    },
+    {
+      "product_ids": [
+        "d38ff452-b8b1-43ae-aa28-9f7937fe4b0a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Grass Fed Wagyu Beef Liver."
+    },
+    {
+      "product_ids": [
+        "4dc8faf3-58d8-48f6-912d-8bb2d79ba58c"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "American Sourced Human Grade Beef Liver."
+    },
+    {
+      "product_ids": [
+        "0e8c8205-fe6a-411c-b5b0-b3d33af85f5f"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "USA Sourced Wild-Caught Human Grade Sockeye Salmon."
+    },
+    {
+      "product_ids": [
+        "2d5c262e-7172-4c94-a526-538642dfa2ff"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure Ocean-Caught Human Grade Yellowfin Tuna"
+    },
+    {
+      "product_ids": [
+        "b0f3e529-5cec-4190-9d73-c7dfd3c3ddb2"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Potassium Chloride DL\u2013Methionine Choline Chloride Calcium Propionate (a preservative) Miner"
+    },
+    {
+      "product_ids": [
+        "c0d16597-9b6a-40d8-8738-138e33fd82af"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure Ocean-Caught Human Grade Minnow"
+    },
+    {
+      "product_ids": [
+        "556319d8-91ce-4458-ac0b-bc7721d832f9"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Certified Organic Cereal Grass (May Contain Oat, Rye, Barley) and Growing Medium."
+    },
+    {
+      "product_ids": [
+        "66f48b74-c070-497d-86c7-ef45b5bd937e"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure USA Sourced & Made Human Grade Turkey Breast"
+    },
+    {
+      "product_ids": [
+        "3242761e-cd84-4558-8f82-cffe8c768207"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Meal (Natural Source of Glucosamine and Chondroitin), Peas, Sweet Potato, Tapioca, Pea Starch, Pea Fiber, Dried Yeast, Pumpkin, Dried Egg, Flaxseed, Canola Oil, Natural Flavor, Salmon Meal, Al"
+    },
+    {
+      "product_ids": [
+        "b63bc464-77f2-4872-bcf5-e0d980b99a27"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
+    },
+    {
+      "product_ids": [
+        "a54501cb-d1ae-47b3-ab2a-0bf50e824b53"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Cage-Free Chicken Chicken Meal Lentils Peas Chicken Fat (preserved with Mixed Tocopherols) Chicken Liver Natural Chicken Flavor Chicken Gizzard Fenugreek Seed Salmon Oil (Preserved with Mixed Tocopher"
+    },
+    {
+      "product_ids": [
+        "f508cfc0-3a90-47cd-82c5-f6028818094a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+    },
+    {
+      "product_ids": [
+        "aaa058d9-c106-4370-a22f-219bfcc347a2"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "American Sourced Human Grade Chicken Heart."
+    },
+    {
+      "product_ids": [
+        "3fc3f377-2616-431f-83f4-b4d79deb7924"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Solid Gold Flavorful Feast Real Tuna & Sardine Grain-Free Gravy Pate Wet Cat Food, 3-oz can, case of 3\u2014Refine your furry friend's palate with a bowl of Solid Gold Flavorful Feast in Gravy with Real Tu"
+    },
+    {
+      "product_ids": [
+        "131176c2-c896-4909-848f-8f81c2df97cd"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Boneless Turkey Water Sufficient For Processing Potato Brewer'S Dried Yeast Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate"
+    },
+    {
+      "product_ids": [
+        "e3ce2108-4879-47ff-abd2-1117477132b7"
+      ],
+      "status": "contaminated",
+      "raw_preview": "\"Temptations Seafood Medley Flavor Adult Dry Cat Food, 13.5-lb bag\u2014Your kitty will be meowing with delight when you serve her Temptations Seafood Medley Flavor Adult Dry Cat Food. This purr-fect meal "
+    },
+    {
+      "product_ids": [
+        "4c6a4cfb-6894-4bdf-ae53-350dc09f17af"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "American Sourced Wild-Caught Human Grade Tuna."
+    },
+    {
+      "product_ids": [
+        "8f3b1aca-f278-413f-90af-ecec80032de0"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
+    },
+    {
+      "product_ids": [
+        "b09a4a98-a833-4247-aaea-7f20069ee551"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure USA Sourced & Made Human Grade Beef Liver"
+    },
+    {
+      "product_ids": [
+        "e8a7b885-6819-49e4-a046-67385943feb8"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
+    },
+    {
+      "product_ids": [
+        "002d460e-325a-4a29-8c1b-5f108827a68d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Calcium Propionate (A Preservative) Rosemary Extract."
+    },
+    {
+      "product_ids": [
+        "aefd3ffc-21b3-4f37-81d7-86220902859c"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
+    },
+    {
+      "product_ids": [
+        "56d5c77b-870d-4ee6-a146-de6232463908"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+    },
+    {
+      "product_ids": [
+        "93ec7852-a565-4687-bf72-ddb1e7a29048"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
+    },
+    {
+      "product_ids": [
+        "056bab38-ba9e-4eac-80ee-b1c2f9907f93"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Good 'n' Fun Triple Flavor Kabobs Chicken, Duck & Chicken Liver Dog Chews, 18 count\u2014Good 'n' Fun has created the ultimate rawhide treat with their Triple Flavor Kabobs Chicken, Duck & Chicken Liver Do"
+    },
+    {
+      "product_ids": [
+        "34d83d80-afe1-406d-80f1-d427ba02f055"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Turkey Meal (A Natural Source of Glucosamine and Chondroitin), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples,"
+    },
+    {
+      "product_ids": [
+        "31add3e3-9305-41d3-b26e-c50138bd5ecd"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Boneless Chicken Water Sufficient For Processing Potato Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate M"
+    },
+    {
+      "product_ids": [
+        "0e6be94a-a82a-4a1b-8c74-69c32a43a876"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure USA Sourced & Made Human Grade Duck Liver"
+    },
+    {
+      "product_ids": [
+        "9c23d7d8-0c51-4e1f-8d1f-35c0c8579456"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "100% Pure USA Sourced & Made Chicken Breast & Organic Catnip"
+    }
+  ]
+}

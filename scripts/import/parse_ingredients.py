@@ -57,7 +57,7 @@ CONTAMINATION_MARKERS = [
     'about this item', 'about this product',
     'can help', 'won\'t make', 'support normal', 'improve vitality',
     # Review text grabbed instead of ingredients (v2)
-    'rated ', 'out of 5 stars', 'received free product',
+    ' rated ', 'out of 5 stars', 'received free product',
     # JSON bleed (v2)
     '"offers"', '"pricecurrency"', '"@type"',
 ]
