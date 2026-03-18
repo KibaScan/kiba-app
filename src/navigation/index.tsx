@@ -1,6 +1,7 @@
 // Kiba — Navigation Shell
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, GestureResponderEvent } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator, BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -129,9 +130,17 @@ function TabNavigator() {
         headerShown: false,
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.tabBarInactive,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
         tabBarStyle: {
-          backgroundColor: Colors.tabBarBackground,
-          borderTopColor: Colors.tabBarBorder,
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
           height: 88,
           paddingBottom: 28,

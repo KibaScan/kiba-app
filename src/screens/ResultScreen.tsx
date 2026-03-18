@@ -33,6 +33,7 @@ import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/ScoreRi
 import { ConcernTags } from '../components/ConcernTags';
 import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
 import { ScoreWaterfall } from '../components/ScoreWaterfall';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 // GATable removed — raw GA values now accessible via expand/collapse in AafcoProgressBars
 import { IngredientList } from '../components/IngredientList';
 import { IngredientDetailModal } from '../components/IngredientDetailModal';
@@ -737,7 +738,7 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Flag chips (non-splitting flags only — splitting chip relocated below fold) */}
+        {/* Flag chips (non-splitting flags only) */}
         {displayFlags.filter((f) => f !== 'ingredient_splitting_detected').length > 0 && (
           <View style={styles.flagChipsRow}>
             {displayFlags
@@ -750,11 +751,9 @@ export default function ResultScreen() {
                     </View>
                   );
                 }
-                // AAFCO flags now shown in MetadataBadgeStrip — skip here
                 if (flag === 'aafco_statement_not_available' || flag === 'aafco_statement_unrecognized') {
                   return null;
                 }
-                // Generic flag
                 const label = flag.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
                 return (
                   <View key={flag} style={styles.flagChipGeneric}>
@@ -765,22 +764,7 @@ export default function ResultScreen() {
           </View>
         )}
 
-        {/* Recall warning */}
-        {scoredResult?.isRecalled && (
-          <View style={styles.recallBanner}>
-            <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
-            <Text style={styles.recallText}>
-              This product has been subject to a recall
-            </Text>
-          </View>
-        )}
-
-        {/* Nursing Advisory — pets under 4 weeks */}
-        {scoredResult?.flags.includes('nursing_advisory') && (
-          <NursingAdvisoryCard />
-        )}
-
-        {/* Concern Tags (D-107) */}
+        {/* Concern Tags (D-107) — above fold, quick glance */}
         {hydratedIngredients.length > 0 && product && (
           <ConcernTags
             ingredients={hydratedIngredients}
@@ -790,22 +774,39 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Breed Contraindication Cards (D-112) */}
-        {scoredResult && (
-          <BreedContraindicationCard
-            contraindications={scoredResult.layer3.personalizations.filter(
-              (p) => p.type === 'breed_contraindication',
-            )}
-          />
-        )}
-
-        {/* Severity Badge Strip (D-108) */}
+        {/* Severity Badge Strip (D-108) — above fold */}
         {hydratedIngredients.length > 0 && (
           <SeverityBadgeStrip
             ingredients={hydratedIngredients}
             species={species}
             onIngredientPress={setSelectedIngredient}
           />
+        )}
+
+        {/* ─── Advisories (expanded — safety-relevant) ─── */}
+        {(scoredResult?.isRecalled ||
+          scoredResult?.flags.includes('nursing_advisory') ||
+          (scoredResult?.layer3.personalizations.some((p) => p.type === 'breed_contraindication') ?? false)) && (
+          <CollapsibleSection title="Advisories" defaultExpanded>
+            {scoredResult?.isRecalled && (
+              <View style={styles.recallBanner}>
+                <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
+                <Text style={styles.recallText}>
+                  This product has been subject to a recall
+                </Text>
+              </View>
+            )}
+            {scoredResult?.flags.includes('nursing_advisory') && (
+              <NursingAdvisoryCard />
+            )}
+            {scoredResult && (
+              <BreedContraindicationCard
+                contraindications={scoredResult.layer3.personalizations.filter(
+                  (p) => p.type === 'breed_contraindication',
+                )}
+              />
+            )}
+          </CollapsibleSection>
         )}
 
         {/* Safe Swap CTA (D-126: blur + lock for free users) */}
@@ -853,20 +854,115 @@ export default function ResultScreen() {
           <Text style={styles.shareButtonText}>Share Result</Text>
         </TouchableOpacity>
 
-        {/* ─── Below Fold ─────────────────────────────────── */}
+        {/* ─── Below Fold — Collapsible Sections ─────────── */}
 
-        {/* Score Waterfall (D-094) */}
-        {scoredResult && (
-          <ScoreWaterfall
-            scoredResult={scoredResult}
-            petName={displayName}
-            species={species}
-            category={isSupplemental ? 'supplemental' : scoredResult.category}
-            ingredients={hydratedIngredients}
-          />
+        {/* Score Breakdown OR Treat Battery */}
+        {scoredResult?.category === 'treat' ? (
+          petDer != null && (
+            <CollapsibleSection title="Treat Battery">
+              <TreatBatteryGauge
+                treatBudgetKcal={treatBudget}
+                consumedKcal={0}
+                petName={displayName}
+                calorieSource={calorieSource}
+              />
+              {treatsPerDay != null && treatsPerDay.count > 0 && (
+                <Text style={styles.treatCountText}>
+                  {displayName} can have {treatsPerDay.count} of these per day
+                </Text>
+              )}
+              {treatsPerDay?.warning && (
+                <Text style={styles.treatWarningText}>
+                  A single treat exceeds {displayName}'s daily treat budget
+                </Text>
+              )}
+            </CollapsibleSection>
+          )
+        ) : (
+          <CollapsibleSection title="Score Breakdown">
+            {scoredResult && (
+              <ScoreWaterfall
+                scoredResult={scoredResult}
+                petName={displayName}
+                species={species}
+                category={isSupplemental ? 'supplemental' : scoredResult.category}
+                ingredients={hydratedIngredients}
+              />
+            )}
+          </CollapsibleSection>
         )}
 
-        {/* Position Map — ingredient composition strip */}
+        {/* Ingredients */}
+        {hydratedIngredients.length > 0 && (
+          <CollapsibleSection
+            title="Ingredients"
+            subtitle={`(${hydratedIngredients.length})`}
+          >
+            {(() => {
+              const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
+              const annotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
+                ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
+                : null;
+              return (
+                <IngredientList
+                  ingredients={hydratedIngredients}
+                  species={species}
+                  onIngredientPress={setSelectedIngredient}
+                  flavorAnnotation={annotation}
+                />
+              );
+            })()}
+          </CollapsibleSection>
+        )}
+
+        {/* Insights */}
+        <CollapsibleSection title="Insights">
+          {hydratedIngredients.length > 0 && (
+            <SplittingDetectionCard
+              clusters={buildSplittingClusters(hydratedIngredients)}
+            />
+          )}
+          {product && hydratedIngredients.length > 0 && (() => {
+            const fd = detectFlavorDeception(product.name, hydratedIngredients);
+            return fd.detected && fd.namedProtein && fd.actualPrimaryProtein ? (
+              <FlavorDeceptionCard
+                namedProtein={fd.namedProtein}
+                actualPrimaryProtein={fd.actualPrimaryProtein}
+                actualPrimaryPosition={fd.actualPrimaryPosition}
+                namedProteinPosition={fd.namedProteinPosition}
+                variant={fd.variant}
+              />
+            ) : null;
+          })()}
+          {scoredResult && product && species === 'dog' && (() => {
+            const dcmRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
+            const mitigationRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
+            if (!dcmRule?.fired) return null;
+            const dcmResult = evaluateDcmRisk(hydratedIngredients);
+            const dcmPenalty = Math.abs(dcmRule.adjustment) - (mitigationRule?.adjustment ?? 0);
+            return (
+              <DcmAdvisoryCard
+                dcmResult={dcmResult}
+                dcmPenalty={dcmPenalty}
+                petName={displayName}
+              />
+            );
+          })()}
+          {product?.formula_change_log && product.formula_change_log.length > 0 && (
+            <FormulaChangeTimeline
+              changes={product.formula_change_log}
+              currentScore={score}
+            />
+          )}
+          {scoredResult && (
+            <WhatGoodLooksLike
+              category={scoredResult.category === 'treat' ? 'treat' : 'daily_food'}
+              species={species}
+            />
+          )}
+        </CollapsibleSection>
+
+        {/* Ingredient Composition — position map */}
         {hydratedIngredients.length > 0 && (
           <PositionMap
             ingredients={hydratedIngredients.map((ing) => ({
@@ -880,23 +976,7 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Full Ingredient List (D-031, D-108) */}
-        {hydratedIngredients.length > 0 && (() => {
-          const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
-          const annotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
-            ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
-            : null;
-          return (
-            <IngredientList
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-              flavorAnnotation={annotation}
-            />
-          );
-        })()}
-
-        {/* AAFCO Progress Bars — nutritional bucket transparency */}
+        {/* Nutritional Fit — AAFCO progress bars + bonus nutrients */}
         {scoredResult && product && (
           <AafcoProgressBars
             gaValues={{
@@ -929,8 +1009,6 @@ export default function ResultScreen() {
             carbEstimate={scoredResult.carbEstimate}
           />
         )}
-
-        {/* Bonus Nutrient Grid — supplemental nutrient indicators */}
         {product && hydratedIngredients.length > 0 && (
           <BonusNutrientGrid
             nutrients={{
@@ -945,86 +1023,11 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Splitting Detection Card — replaces old splitting chip */}
-        {hydratedIngredients.length > 0 && (
-          <SplittingDetectionCard
-            clusters={buildSplittingClusters(hydratedIngredients)}
-          />
-        )}
-
-        {/* Flavor Deception Card (D-133) */}
-        {product && hydratedIngredients.length > 0 && (() => {
-          const fd = detectFlavorDeception(product.name, hydratedIngredients);
-          return fd.detected && fd.namedProtein && fd.actualPrimaryProtein ? (
-            <FlavorDeceptionCard
-              namedProtein={fd.namedProtein}
-              actualPrimaryProtein={fd.actualPrimaryProtein}
-              actualPrimaryPosition={fd.actualPrimaryPosition}
-              namedProteinPosition={fd.namedProteinPosition}
-              variant={fd.variant}
-            />
-          ) : null;
-        })()}
-
-        {/* DCM Advisory Card (D-137 — dog-only, pulse load) */}
-        {scoredResult && product && species === 'dog' && (() => {
-          const dcmRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
-          const mitigationRule = scoredResult.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
-          if (!dcmRule?.fired) return null;
-          const dcmResult = evaluateDcmRisk(hydratedIngredients);
-          const dcmPenalty = Math.abs(dcmRule.adjustment) - (mitigationRule?.adjustment ?? 0);
-          return (
-            <DcmAdvisoryCard
-              dcmResult={dcmResult}
-              dcmPenalty={dcmPenalty}
-              petName={displayName}
-            />
-          );
-        })()}
-
-        {/* Formula Change Timeline (D-044) */}
-        {product?.formula_change_log && product.formula_change_log.length > 0 && (
-          <FormulaChangeTimeline
-            changes={product.formula_change_log}
-            currentScore={score}
-          />
-        )}
-
-        {/* Portion advisory — daily food (D-106: display-only, no score impact) */}
+        {/* Portion advisory — daily food only (standalone, not collapsible) */}
         {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
           <View style={styles.portionSection}>
             <PortionCard pet={pet} product={product} conditions={[]} isSupplemental={isSupplemental} />
           </View>
-        )}
-
-        {/* Treat advisory — treat budget + per-day count */}
-        {scoredResult && pet && product && product.category === 'treat' && petDer != null && (
-          <View style={styles.portionSection}>
-            <TreatBatteryGauge
-              treatBudgetKcal={treatBudget}
-              consumedKcal={0}
-              petName={displayName}
-              calorieSource={calorieSource}
-            />
-            {treatsPerDay != null && treatsPerDay.count > 0 && (
-              <Text style={styles.treatCountText}>
-                {displayName} can have {treatsPerDay.count} of these per day
-              </Text>
-            )}
-            {treatsPerDay?.warning && (
-              <Text style={styles.treatWarningText}>
-                A single treat exceeds {displayName}'s daily treat budget
-              </Text>
-            )}
-          </View>
-        )}
-
-        {/* "What Good Looks Like" reference card */}
-        {scoredResult && (
-          <WhatGoodLooksLike
-            category={scoredResult.category === 'treat' ? 'treat' : 'daily_food'}
-            species={species}
-          />
         )}
 
         {/* Compare button (D-052: premium gate) */}

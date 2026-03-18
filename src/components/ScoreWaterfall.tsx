@@ -86,7 +86,7 @@ function buildRows(
   // Layer 1b — Nutritional Profile (daily food + supplemental, hidden when partial)
   if ((category === 'daily_food' || category === 'supplemental') && !isPartial) {
     const npDeduction = -Math.round((100 - layer1.nutritionalProfile) * w.np);
-    rows.push({ key: 'np', label: `${petName}'s Nutritional Fit`, points: npDeduction });
+    rows.push({ key: 'np', label: 'Nutritional Fit', points: npDeduction });
   }
 
   // Layer 1c — Formulation (daily food only — 0% for supplemental/treat)
@@ -114,7 +114,7 @@ function buildRows(
   if (scoredResult.allergenDelta > 0) {
     rows.push({
       key: 'allergen',
-      label: `${petName}'s Allergen Sensitivity`,
+      label: 'Allergen Sensitivity',
       points: -Math.round(scoredResult.allergenDelta),
     });
   }
@@ -496,7 +496,12 @@ export function ScoreWaterfall({
     : 'Poor match';
 
   const toggleRow = (key: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    LayoutAnimation.configureNext({
+      duration: 250,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+    });
     setExpandedKey((prev) => (prev === key ? null : key));
   };
 
@@ -524,8 +529,6 @@ export function ScoreWaterfall({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionHeader}>Score Breakdown</Text>
-
       {/* Baseline */}
       <View style={styles.baselineRow}>
         <Text style={styles.baselineLabel}>Starts at 100</Text>

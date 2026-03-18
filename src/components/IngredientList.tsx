@@ -151,9 +151,6 @@ export function IngredientList({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionHeader}>
-        All Ingredients ({ingredients.length})
-      </Text>
       {elements}
     </View>
   );

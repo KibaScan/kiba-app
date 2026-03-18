@@ -1,6 +1,7 @@
 // MetadataBadgeStrip — Compact metadata pill badges for TL;DR zone.
 // AAFCO status + category + product form + preservative type + life stage.
-// Horizontally scrollable. Zero emoji (D-084).
+// Default: centered flex-wrap grid. Fallback: horizontal scroll via centered={false}.
+// Zero emoji (D-084).
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
@@ -17,6 +18,8 @@ interface MetadataBadgeStripProps {
   preservativeType: string | null;
   lifeStageClaim: string | null;
   targetSpecies: 'dog' | 'cat';
+  /** When true (default), badges wrap in a centered grid. When false, horizontal scroll. */
+  centered?: boolean;
 }
 
 // ─── Badge Data ─────────────────────────────────────────
@@ -143,6 +146,7 @@ export function MetadataBadgeStrip({
   preservativeType,
   lifeStageClaim,
   targetSpecies,
+  centered = true,
 }: MetadataBadgeStripProps) {
   const badges: Badge[] = [];
 
@@ -164,6 +168,25 @@ export function MetadataBadgeStrip({
   const lifeStageBadge = getLifeStageBadge(lifeStageClaim, targetSpecies);
   if (lifeStageBadge) badges.push(lifeStageBadge);
 
+  const badgeElements = badges.map((badge, idx) => (
+    <View
+      key={idx}
+      style={[styles.pill, { backgroundColor: badge.bgColor }]}
+    >
+      <Text style={[styles.pillText, { color: badge.textColor }]}>
+        {badge.label}
+      </Text>
+    </View>
+  ));
+
+  if (centered) {
+    return (
+      <View style={styles.centeredContainer}>
+        {badgeElements}
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       horizontal
@@ -171,16 +194,7 @@ export function MetadataBadgeStrip({
       contentContainerStyle={styles.container}
       style={styles.scroll}
     >
-      {badges.map((badge, idx) => (
-        <View
-          key={idx}
-          style={[styles.pill, { backgroundColor: badge.bgColor }]}
-        >
-          <Text style={[styles.pillText, { color: badge.textColor }]}>
-            {badge.label}
-          </Text>
-        </View>
-      ))}
+      {badgeElements}
     </ScrollView>
   );
 }
@@ -188,6 +202,14 @@ export function MetadataBadgeStrip({
 // ─── Styles ─────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  centeredContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+  },
   scroll: {
     flexGrow: 0,
   },

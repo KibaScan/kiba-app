@@ -1,5 +1,8 @@
 // ScoreRing — SVG-based circular score gauge (D-094, D-136).
 // 360° full circle for daily food/treats. 270° open arc for supplementals.
+// Gaussian blur glow via feGaussianBlur filter — smooth Apple Health halo.
+// Ring radius preserved at original size; SVG canvas enlarged for blur headroom.
+// Pet photo on arc (44px) with glass frame.
 // D-084: zero emoji. D-094: score always shown with pet context.
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,7 +16,8 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, Filter, FeGaussianBlur } from 'react-native-svg';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Colors,
@@ -37,16 +41,38 @@ interface ScoreRingProps {
   isSupplemental?: boolean;
 }
 
-// ─── Constants ───────────────────────────────────────────
+// ─── Ring Geometry ───────────────────────────────────────
+// Ring radius PRESERVED at original size. SVG canvas enlarged for blur.
 
-const RING_SIZE = 180;
+const RING_SIZE = 200;
 const RING_BORDER = 8;
-const CENTER = RING_SIZE / 2;
-const RADIUS = (RING_SIZE - RING_BORDER) / 2;
+const CENTER = RING_SIZE / 2;                           // 100
+const RADIUS = (RING_SIZE - RING_BORDER) / 2;            // 96
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ARC_270 = CIRCUMFERENCE * 0.75;
 const TRACK_COLOR = Colors.cardBorder;
 const ANIMATION_DURATION = 900;
+
+// Enlarged SVG canvas for blur headroom
+const SVG_SIZE = RING_SIZE + 52;                        // 252
+const SVG_CENTER = SVG_SIZE / 2;                        // 126
+const SVG_OFFSET = -(SVG_SIZE - RING_SIZE) / 2;         // -26
+
+// Glow arc parameters (pre-blur)
+const GLOW_STROKE = 14;
+const GLOW_OPACITY = 0.55;
+const GLOW_BLUR_STD = 7;
+
+// Ring outline — thin dark strokes flanking the arc
+const OUTLINE_WIDTH = 1;
+const OUTLINE_COLOR = '#0D0D0D';
+const OUTLINE_INNER_R = RADIUS - RING_BORDER / 2 - OUTLINE_WIDTH / 2;  // just inside track
+const OUTLINE_OUTER_R = RADIUS + RING_BORDER / 2 + OUTLINE_WIDTH / 2;  // just outside track
+
+// ─── Pet Photo (bottom-right corner) ────────────────────
+
+const PHOTO_SIZE = 40;
+const PHOTO_BORDER = 3;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -116,24 +142,86 @@ export function ScoreRing({
     <View style={styles.wrapper}>
       {/* Score Ring */}
       <View style={styles.ringContainer}>
-        <Svg width={RING_SIZE} height={RING_SIZE}>
-          {/* Background track */}
+        {/* SVG canvas enlarged for blur headroom, offset to stay centered */}
+        <Svg
+          width={SVG_SIZE}
+          height={SVG_SIZE}
+          style={{ position: 'absolute', left: SVG_OFFSET, top: SVG_OFFSET }}
+        >
+          {/* Gaussian blur filter definition */}
+          <Defs>
+            <Filter
+              id="glow"
+              x="-40%"
+              y="-40%"
+              width="180%"
+              height="180%"
+            >
+              <FeGaussianBlur stdDeviation={GLOW_BLUR_STD} />
+            </Filter>
+          </Defs>
+
+          {/* 1a. Outer outline — thin dark stroke outside track */}
           <Circle
-            cx={CENTER}
-            cy={CENTER}
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
+            r={OUTLINE_OUTER_R}
+            stroke={OUTLINE_COLOR}
+            strokeWidth={OUTLINE_WIDTH}
+            fill="none"
+            strokeDasharray={trackDasharray}
+            rotation={rotation}
+            origin={`${SVG_CENTER}, ${SVG_CENTER}`}
+            strokeLinecap="round"
+          />
+          {/* 1b. Background track */}
+          <Circle
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
             r={RADIUS}
             stroke={TRACK_COLOR}
             strokeWidth={RING_BORDER}
             fill="none"
             strokeDasharray={trackDasharray}
             rotation={rotation}
-            origin={`${CENTER}, ${CENTER}`}
+            origin={`${SVG_CENTER}, ${SVG_CENTER}`}
             strokeLinecap="round"
           />
-          {/* Animated fill */}
+          {/* 1c. Inner outline — thin dark stroke inside track */}
+          <Circle
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
+            r={OUTLINE_INNER_R}
+            stroke={OUTLINE_COLOR}
+            strokeWidth={OUTLINE_WIDTH}
+            fill="none"
+            strokeDasharray={trackDasharray}
+            rotation={rotation}
+            origin={`${SVG_CENTER}, ${SVG_CENTER}`}
+            strokeLinecap="round"
+          />
+
+          {/* 2. Blurred glow arc — smooth Gaussian halo, follows filled portion */}
           <AnimatedCircle
-            cx={CENTER}
-            cy={CENTER}
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
+            r={RADIUS}
+            stroke={ringColor}
+            strokeWidth={GLOW_STROKE}
+            strokeOpacity={GLOW_OPACITY}
+            fill="none"
+            strokeDasharray={trackDasharray}
+            strokeDashoffset={strokeDashoffset}
+            rotation={rotation}
+            origin={`${SVG_CENTER}, ${SVG_CENTER}`}
+            strokeLinecap="round"
+            filter="url(#glow)"
+          />
+
+          {/* 3. Main arc — crisp, full opacity, on top */}
+          <AnimatedCircle
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
             r={RADIUS}
             stroke={ringColor}
             strokeWidth={RING_BORDER}
@@ -141,12 +229,12 @@ export function ScoreRing({
             strokeDasharray={trackDasharray}
             strokeDashoffset={strokeDashoffset}
             rotation={rotation}
-            origin={`${CENTER}, ${CENTER}`}
+            origin={`${SVG_CENTER}, ${SVG_CENTER}`}
             strokeLinecap="round"
           />
         </Svg>
 
-        {/* Center content */}
+        {/* Center content — positioned relative to layout container */}
         <View style={styles.centerContent}>
           <View style={styles.scoreRow}>
             <Text style={[styles.scoreValue, { color: ringColor }]}>
@@ -170,15 +258,39 @@ export function ScoreRing({
           </Text>
         </View>
 
-        {/* Pet photo */}
-        <View style={styles.petPhotoContainer}>
-          {petPhotoUri ? (
-            <Image source={{ uri: petPhotoUri }} style={styles.petPhoto} />
-          ) : (
-            <View style={styles.petPhotoPlaceholder}>
-              <Ionicons name="paw-outline" size={18} color={Colors.textSecondary} />
-            </View>
-          )}
+        {/* Pet photo — bottom-right corner with glow + glass backing */}
+        <View style={styles.petPhotoOuter}>
+          {/* Photo glow — same feGaussianBlur technique as ring */}
+          <Svg
+            width={PHOTO_SIZE + PHOTO_BORDER * 2 + 24}
+            height={PHOTO_SIZE + PHOTO_BORDER * 2 + 24}
+            style={styles.petGlowSvg}
+          >
+            <Defs>
+              <Filter id="photoGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <FeGaussianBlur stdDeviation={5} />
+              </Filter>
+            </Defs>
+            <Circle
+              cx={(PHOTO_SIZE + PHOTO_BORDER * 2 + 24) / 2}
+              cy={(PHOTO_SIZE + PHOTO_BORDER * 2 + 24) / 2}
+              r={PHOTO_SIZE / 2}
+              fill={ringColor}
+              fillOpacity={0.45}
+              filter="url(#photoGlow)"
+            />
+          </Svg>
+          <View style={styles.petPhotoContainer}>
+            <BlurView intensity={30} tint="dark" style={styles.petGlassBg}>
+              {petPhotoUri ? (
+                <Image source={{ uri: petPhotoUri }} style={styles.petPhoto} />
+              ) : (
+                <View style={styles.petPhotoPlaceholder}>
+                  <Ionicons name="paw-outline" size={18} color={Colors.textSecondary} />
+                </View>
+              )}
+            </BlurView>
+          </View>
         </View>
       </View>
 
@@ -206,6 +318,7 @@ const styles = StyleSheet.create({
     width: RING_SIZE,
     height: RING_SIZE,
     position: 'relative',
+    overflow: 'visible',
   },
   centerContent: {
     position: 'absolute',
@@ -222,11 +335,13 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     fontSize: 44,
-    fontWeight: '800',
+    fontWeight: '900',
+    letterSpacing: -1.5,
   },
   scorePercent: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -1.5,
     marginLeft: 1,
   },
   infoButton: {
@@ -238,25 +353,44 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  petPhotoContainer: {
+  petPhotoOuter: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
+    bottom: -6 - 12,
+    right: -8 - 12,
+    width: PHOTO_SIZE + PHOTO_BORDER * 2 + 24,
+    height: PHOTO_SIZE + PHOTO_BORDER * 2 + 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  petGlowSvg: {
+    position: 'absolute',
+  },
+  petPhotoContainer: {
+    width: PHOTO_SIZE + PHOTO_BORDER * 2,
+    height: PHOTO_SIZE + PHOTO_BORDER * 2,
+    borderRadius: (PHOTO_SIZE + PHOTO_BORDER * 2) / 2,
+    borderWidth: PHOTO_BORDER,
+    borderColor: Colors.background,
+    overflow: 'hidden',
+  },
+  petGlassBg: {
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   petPhoto: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: Colors.background,
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
   },
   petPhotoPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
     backgroundColor: Colors.card,
-    borderWidth: 2,
-    borderColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
