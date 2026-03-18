@@ -657,7 +657,12 @@ export default function ResultScreen() {
             {stripBrandFromName(product!.brand, product!.name)}
           </Text>
         </View>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          onPress={() => captureAndShare(shareCardRef, displayName, score)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -1120,6 +1125,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
+    paddingBottom: 88,
   },
 
   // ─── Product Image (D-093)

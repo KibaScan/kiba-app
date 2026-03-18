@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   continueButton: {
     flex: 0,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 88,
   },
 
   // Text input section

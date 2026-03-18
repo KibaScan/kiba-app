@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -49,6 +50,9 @@ export function LoadingTerminal({
 }: LoadingTerminalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const fadeAnims = useRef(
+    Array.from({ length: 6 }, () => new Animated.Value(0)),
+  ).current;
 
   // Build step messages
   const steps: string[] = [
@@ -65,10 +69,22 @@ export function LoadingTerminal({
   const totalSteps = steps.length;
 
   useEffect(() => {
-    // Step 0 is visible immediately. Schedule steps 1-5 + onComplete.
+    // Step 0 is visible immediately — fade it in.
+    Animated.timing(fadeAnims[0], {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+
+    // Schedule steps 1-5 + onComplete.
     for (let i = 1; i < totalSteps; i++) {
       const timer = setTimeout(() => {
         setCurrentStep(i);
+        Animated.timing(fadeAnims[i], {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
       }, STEP_DELAY_MS * i);
       timersRef.current.push(timer);
     }
@@ -95,7 +111,7 @@ export function LoadingTerminal({
         const isActive = index === currentStep;
 
         return (
-          <View key={index} style={styles.row}>
+          <Animated.View key={index} style={[styles.row, { opacity: fadeAnims[index] }]}>
             {isActive ? (
               <ActivityIndicator
                 size={14}
@@ -118,7 +134,7 @@ export function LoadingTerminal({
             >
               {message}
             </Text>
-          </View>
+          </Animated.View>
         );
       })}
     </View>

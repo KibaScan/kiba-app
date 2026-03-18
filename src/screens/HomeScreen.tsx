@@ -31,7 +31,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.emptyState}>
-          <Ionicons name="camera-outline" size={48} color={Colors.textTertiary} style={{ marginBottom: Spacing.md }} />
+          <Ionicons name="camera-outline" size={56} color={Colors.textTertiary} style={{ marginBottom: Spacing.lg }} />
           <Text style={styles.emptyTitle}>Scan your first product</Text>
           <Text style={styles.emptySubtitle}>
             Tap the scan button below to check{'\n'}a pet food, treat, or supplement.

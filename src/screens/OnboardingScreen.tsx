@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   primaryButtonText: {
     fontSize: FontSizes.lg,

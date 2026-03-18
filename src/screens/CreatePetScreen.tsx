@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 24 },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 88,
   },
 
   // ── Cards ──
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   primaryButtonText: {
     fontSize: FontSizes.lg,

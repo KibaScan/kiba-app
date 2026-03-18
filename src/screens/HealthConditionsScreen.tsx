@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 88,
   },
 
   // Card
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   skipButton: {
     alignItems: 'center',

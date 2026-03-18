@@ -17,6 +17,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -587,7 +588,7 @@ export default function PetHubScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>Settings</Text>
           <SettingsRow icon="notifications-outline" label="Recall Alerts" />
           <SettingsRow icon="shield-checkmark-outline" label="Subscription" />
-          <SettingsRow icon="information-circle-outline" label="About Kiba" />
+          <SettingsRow icon="information-circle-outline" label="About Kiba" isLast />
         </View>
 
         {/* (i) Delete pet */}
@@ -652,6 +653,7 @@ export default function PetHubScreen({ navigation }: Props) {
         onRequestClose={() => setDeleteModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
               Delete {activePet.name}?
@@ -710,9 +712,9 @@ export default function PetHubScreen({ navigation }: Props) {
 
 // ─── Settings Row (preserved from MeScreen) ──────────────
 
-function SettingsRow({ icon, label }: { icon: string; label: string }) {
+function SettingsRow({ icon, label, isLast }: { icon: string; label: string; isLast?: boolean }) {
   return (
-    <TouchableOpacity style={styles.settingsRow} activeOpacity={0.6}>
+    <TouchableOpacity style={[styles.settingsRow, isLast && styles.settingsRowLast]} activeOpacity={0.6}>
       <Ionicons
         name={icon as keyof typeof Ionicons.glyphMap}
         size={22}
@@ -733,6 +735,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
+    paddingBottom: 88,
   },
   header: {
     paddingTop: Spacing.md,
@@ -948,7 +951,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     marginBottom: Spacing.md,
   },
   statChip: {
@@ -1068,6 +1071,9 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.cardBorder,
     gap: Spacing.md,
   },
+  settingsRowLast: {
+    borderBottomWidth: 0,
+  },
   settingsLabel: {
     flex: 1,
     fontSize: FontSizes.md,
@@ -1116,7 +1122,6 @@ const styles = StyleSheet.create({
   // ─── Delete Modal ──────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     paddingHorizontal: Spacing.lg,
   },
@@ -1180,7 +1185,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.severityRed,
   },
   modalConfirmDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   modalConfirmText: {
     fontSize: FontSizes.md,

@@ -15,6 +15,7 @@ import {
   Platform,
   Modal,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useAudioPlayer } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -316,12 +317,12 @@ export default function ScanScreen() {
 
       {/* Loading overlay */}
       {isLoading && (
-        <View style={styles.loadingOverlay}>
+        <BlurView intensity={40} tint="dark" style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
             <ActivityIndicator size="large" color={Colors.accent} />
             <Text style={styles.loadingText}>Looking up product...</Text>
           </View>
-        </View>
+        </BlurView>
       )}
 
       {/* Inline pet profile modal (D-092: light capture) */}
@@ -338,6 +339,7 @@ export default function ScanScreen() {
           style={styles.modalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>First, tell us about your pet</Text>
             <Text style={styles.modalSubtitle}>
@@ -526,7 +528,6 @@ const styles = StyleSheet.create({
   // ─── Loading ─────────────────────────────────────────
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -546,7 +547,6 @@ const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: Colors.background,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   modalButtonText: {
     fontSize: FontSizes.lg,
