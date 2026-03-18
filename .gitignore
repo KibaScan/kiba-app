@@ -60,3 +60,10 @@ secrets.json
 # production
 /build
 __pycache__/
+*.pyc
+
+# Claude Code local settings (may contain tokens)
+.claude/settings.local.json
+
+# WSL zone transfer metadata
+*:Zone.Identifier
