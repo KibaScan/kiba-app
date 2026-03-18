@@ -47,12 +47,12 @@ Before any M3 code, apply these edits to `CLAUDE.md`:
 ```
 □ .env file in kiba-app/ root with:
     SUPABASE_URL=<https://jvvdghwbikwrzrowmlmt.supabase.co>
-    SUPABASE_ANON_KEY=<eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dmRnaHdiaWt3cnpyb3dtbG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDI1NzAsImV4cCI6MjA4NzY3ODU3MH0.T_GfKERixsZSJ5dT-zdzA7OhQxMpq9gGeJnUEWRNzdk>
-    SUPABASE_SERVICE_ROLE_KEY=<eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dmRnaHdiaWt3cnpyb3dtbG10Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjEwMjU3MCwiZXhwIjoyMDg3Njc4NTcwfQ.drgCK4FE4M4KwCab-thGQxyRJr4QuQRGnh1_62pvnp4>
-    ANTHROPIC_API_KEY=<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>        ← for LLM refinery scripts ONLY
-    SCRAPEDO_API_KEY=<c732ae3c21684c09914b1e9587ef065208fdea3bc0b>          ← for Chewy re-scrape (only proxy that bypasses Akamai)
+    SUPABASE_ANON_KEY=<your-anon-key>
+    SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+    ANTHROPIC_API_KEY=<your-anthropic-key>              ← for LLM refinery scripts ONLY
+    SCRAPEDO_API_KEY=<your-scrapedo-key>                ← for Chewy re-scrape (only proxy that bypasses Akamai)
     # NOTE: Once Chewy affiliate is approved, their API replaces Scrape.do entirely
-    REVENUECAT_API_KEY=<test_TYohyZGOaZfmqRPHDruNhQZhFup>       ← for paywall SDK
+    REVENUECAT_API_KEY=<your-revenuecat-key>            ← for paywall SDK
     # NOTE: UPCitemdb free tier needs NO API key — bare GET to /prod/trial/ endpoint
 □ Python 3.10+ available (for pipeline scripts)
 □ pip install supabase anthropic requests hashlib (pipeline deps)

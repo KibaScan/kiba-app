@@ -27,11 +27,12 @@ from supabase import create_client
 
 # ─── Config ──────────────────────────────────────────────────────
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://jvvdghwbikwrzrowmlmt.supabase.co")
-SUPABASE_SERVICE_KEY = os.environ.get(
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2dmRnaHdiaWt3cnpyb3dtbG10Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjEwMjU3MCwiZXhwIjoyMDg3Njc4NTcwfQ.drgCK4FE4M4KwCab-thGQxyRJr4QuQRGnh1_62pvnp4",
-)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+if not SUPABASE_URL:
+    sys.exit("SUPABASE_URL not set in .env")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+if not SUPABASE_SERVICE_KEY:
+    sys.exit("SUPABASE_SERVICE_ROLE_KEY not set in .env")
 
 BATCH_SIZE = 100  # rows per insert call
 JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "kiba_cleaned.json")
