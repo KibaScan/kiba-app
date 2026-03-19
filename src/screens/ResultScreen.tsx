@@ -28,31 +28,31 @@ import { useScanStore } from '../stores/useScanStore';
 import { supabase } from '../services/supabase';
 import { getPetAllergens, getPetConditions } from '../services/petService';
 import { scoreProduct } from '../services/scoring/pipeline';
-import { LoadingTerminal } from '../components/LoadingTerminal';
-import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/ScoreRing';
-import { ConcernTags } from '../components/ConcernTags';
-import { SeverityBadgeStrip } from '../components/SeverityBadgeStrip';
-import { ScoreWaterfall } from '../components/ScoreWaterfall';
-import { CollapsibleSection } from '../components/CollapsibleSection';
+import { LoadingTerminal } from '../components/ui/LoadingTerminal';
+import { ScoreRing, getScoreColor, getVerdictLabel } from '../components/scoring/ScoreRing';
+import { ConcernTags } from '../components/scoring/ConcernTags';
+import { SeverityBadgeStrip } from '../components/scoring/SeverityBadgeStrip';
+import { ScoreWaterfall } from '../components/scoring/ScoreWaterfall';
+import { CollapsibleSection } from '../components/ui/CollapsibleSection';
 // GATable removed — raw GA values now accessible via expand/collapse in AafcoProgressBars
-import { IngredientList } from '../components/IngredientList';
-import { IngredientDetailModal } from '../components/IngredientDetailModal';
-import { BreedContraindicationCard } from '../components/BreedContraindicationCard';
-import { BenchmarkBar } from '../components/BenchmarkBar';
-import { MetadataBadgeStrip } from '../components/MetadataBadgeStrip';
-import { AafcoProgressBars } from '../components/AafcoProgressBars';
-import { BonusNutrientGrid } from '../components/BonusNutrientGrid';
-import { PositionMap } from '../components/PositionMap';
-import { SplittingDetectionCard, buildSplittingClusters } from '../components/SplittingDetectionCard';
+import { IngredientList } from '../components/ingredients/IngredientList';
+import { IngredientDetailModal } from '../components/ingredients/IngredientDetailModal';
+import { BreedContraindicationCard } from '../components/pet/BreedContraindicationCard';
+import { BenchmarkBar } from '../components/scoring/BenchmarkBar';
+import { MetadataBadgeStrip } from '../components/ui/MetadataBadgeStrip';
+import { AafcoProgressBars } from '../components/scoring/AafcoProgressBars';
+import { BonusNutrientGrid } from '../components/scoring/BonusNutrientGrid';
+import { PositionMap } from '../components/scoring/PositionMap';
+import { SplittingDetectionCard, buildSplittingClusters } from '../components/ingredients/SplittingDetectionCard';
 import { deriveBonusNutrientFlags } from '../utils/bonusNutrients';
-import { FlavorDeceptionCard } from '../components/FlavorDeceptionCard';
+import { FlavorDeceptionCard } from '../components/ingredients/FlavorDeceptionCard';
 import { detectFlavorDeception } from '../utils/flavorDeception';
-import { DcmAdvisoryCard } from '../components/DcmAdvisoryCard';
-import { NursingAdvisoryCard } from '../components/NursingAdvisoryCard';
+import { DcmAdvisoryCard } from '../components/ingredients/DcmAdvisoryCard';
+import { NursingAdvisoryCard } from '../components/pet/NursingAdvisoryCard';
 import { evaluateDcmRisk } from '../services/scoring/speciesRules';
-import { FormulaChangeTimeline } from '../components/FormulaChangeTimeline';
-import { WhatGoodLooksLike } from '../components/WhatGoodLooksLike';
-import { PetShareCard } from '../components/PetShareCard';
+import { FormulaChangeTimeline } from '../components/ui/FormulaChangeTimeline';
+import { WhatGoodLooksLike } from '../components/scoring/WhatGoodLooksLike';
+import { PetShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
 import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
@@ -99,6 +99,11 @@ export default function ResultScreen() {
     return Math.round(rer * multiplier);
   }, [pet]);
 
+  // ─── State ──────────────────────────────────────────────
+  const [product, setProduct] = useState<Product | null>(
+    scanCache.find((p) => p.id === productId) ?? null,
+  );
+
   const treatBudget = petDer != null ? calculateTreatBudget(petDer) : 0;
   const calorieData = product ? resolveCalories(product) : null;
   const effectiveKcalPerUnit = calorieData?.kcalPerUnit ?? null;
@@ -113,11 +118,6 @@ export default function ResultScreen() {
   const species: 'dog' | 'cat' =
     pet?.species === 'cat' ? 'cat' : 'dog';
   const displayName = petName ?? (species === 'dog' ? 'your dog' : 'your cat');
-
-  // ─── State ──────────────────────────────────────────────
-  const [product, setProduct] = useState<Product | null>(
-    scanCache.find((p) => p.id === productId) ?? null,
-  );
   const [scoredResult, setScoredResult] = useState<ScoredResult | null>(null);
   const [hydratedIngredients, setHydratedIngredients] = useState<ProductIngredient[]>([]);
   const [terminalDone, setTerminalDone] = useState(false);

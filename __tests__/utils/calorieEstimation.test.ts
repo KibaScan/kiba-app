@@ -40,6 +40,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     ingredients_raw: null,
     ingredients_hash: null,
     image_url: null,
+    product_form: null,
     is_recalled: false,
     is_grain_free: false,
     is_supplemental: false,

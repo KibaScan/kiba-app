@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import { InfoTooltip } from './InfoTooltip';
+import { InfoTooltip } from './ui/InfoTooltip';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Props ───────────────────────────────────────────────

@@ -65,6 +65,8 @@ interface IngredientDictRow {
   cat_base_severity: string;
   is_unnamed_species: boolean;
   is_legume: boolean;
+  is_pulse: boolean;
+  is_pulse_protein: boolean;
   position_reduction_eligible: boolean;
   cat_carb_flag: boolean;
   allergen_group: string | null;
@@ -95,6 +97,8 @@ function hydrateIngredient(row: ProductIngredientRow): ProductIngredient | null 
     cat_base_severity: dict.cat_base_severity as ProductIngredient['cat_base_severity'],
     is_unnamed_species: dict.is_unnamed_species,
     is_legume: dict.is_legume,
+    is_pulse: dict.is_pulse,
+    is_pulse_protein: dict.is_pulse_protein,
     position_reduction_eligible: dict.position_reduction_eligible,
     cluster_id: dict.cluster_id,
     cat_carb_flag: dict.cat_carb_flag,

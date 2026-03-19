@@ -33,7 +33,7 @@ import { lookupByUpc, lookupExternalUpc } from '../services/scanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { createPet } from '../services/petService';
-import ScannerOverlay from '../components/ScannerOverlay';
+import ScannerOverlay from '../components/ui/ScannerOverlay';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
 

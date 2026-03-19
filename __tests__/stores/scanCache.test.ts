@@ -46,6 +46,11 @@ function makeProduct(id: string): Product {
     last_verified_at: null,
     formula_change_log: null,
     affiliate_links: null,
+    product_form: null,
+    is_supplemental: false,
+    is_vet_diet: false,
+    base_score: null,
+    base_score_computed_at: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   };

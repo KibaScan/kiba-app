@@ -7,7 +7,7 @@ import { scoreIngredients } from '../../../src/services/scoring/ingredientQualit
 import { buildAllergenOverrideMap } from '../../../src/services/scoring/personalization';
 import type { Product, PetProfile } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
-import { Category, Species, LifeStage } from '../../../src/types';
+import { Category, Species, LifeStage, PreservativeType } from '../../../src/types';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     source: 'curated',
     aafco_statement: 'All Life Stages',
     life_stage_claim: null,
-    preservative_type: 'natural',
+    preservative_type: PreservativeType.Natural,
     ga_protein_pct: 26,
     ga_fat_pct: 16,
     ga_fiber_pct: 4,
@@ -46,6 +46,9 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    product_form: null,
+    is_supplemental: false,
+    is_vet_diet: false,
     score_confidence: 'high',
     needs_review: false,
     base_score: null,
@@ -77,6 +80,7 @@ function makePet(overrides: Partial<PetProfile> = {}): PetProfile {
     breed_size: null,
     life_stage: LifeStage.Adult,
     photo_url: null,
+    health_reviewed_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -422,7 +426,7 @@ describe('Pure Balance regression — D-129 zero delta', () => {
       target_species: Species.Dog,
       is_grain_free: true,
       aafco_statement: 'All Life Stages',
-      preservative_type: 'natural',
+      preservative_type: PreservativeType.Natural,
       ga_protein_pct: 26,
       ga_fat_pct: 16,
       ga_fiber_pct: 4,

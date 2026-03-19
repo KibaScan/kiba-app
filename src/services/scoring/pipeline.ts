@@ -87,6 +87,7 @@ function makeEmptyResult(
         allergenWarnings: [],
       },
       ingredientPenalties: [],
+      ingredientResults: [],
       flags,
       allergenDelta: 0,
       isPartialScore: true,

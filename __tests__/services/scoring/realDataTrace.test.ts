@@ -7,7 +7,7 @@
 import { computeScore } from '../../../src/services/scoring/engine';
 import type { Product, PetProfile } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
-import { Category, Species, LifeStage } from '../../../src/types';
+import { Category, Species, LifeStage, PreservativeType } from '../../../src/types';
 
 // ─── Product: Walmart bag GA data ────────────────────────────
 
@@ -20,7 +20,7 @@ const PURE_BALANCE_PRODUCT: Product = {
   source: 'curated',
   aafco_statement: 'yes',
   life_stage_claim: 'All Life Stages',
-  preservative_type: 'natural',
+  preservative_type: PreservativeType.Natural,
   ga_protein_pct: 24.0,
   ga_fat_pct: 15.0,
   ga_fiber_pct: 5.0,
@@ -45,6 +45,11 @@ const PURE_BALANCE_PRODUCT: Product = {
   image_url: null,
   is_recalled: false,
   is_grain_free: true,
+  product_form: null,
+  is_supplemental: false,
+  is_vet_diet: false,
+  base_score: null,
+  base_score_computed_at: null,
   score_confidence: 'high',
   needs_review: false,
   last_verified_at: null,
@@ -118,6 +123,7 @@ const PET: PetProfile = {
   breed_size: null,
   life_stage: LifeStage.Adult,
   photo_url: null,
+  health_reviewed_at: null,
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
 };

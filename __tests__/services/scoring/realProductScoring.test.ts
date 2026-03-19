@@ -149,7 +149,7 @@ const DOG_PET = {
   breed: 'Labrador Retriever', date_of_birth: '2021-04-10',
   dob_is_approximate: false, weight_current_lbs: 72, weight_goal_lbs: null,
   weight_updated_at: null, activity_level: 'moderate' as const,
-  is_neutered: true, sex: 'male', breed_size: 'large',
+  is_neutered: true, sex: 'male' as const, breed_size: 'large' as const,
   life_stage: LifeStage.Adult, photo_url: null,
   health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
 };
@@ -159,7 +159,7 @@ const CAT_PET = {
   breed: 'Domestic Shorthair', date_of_birth: '2019-08-15',
   dob_is_approximate: true, weight_current_lbs: 11, weight_goal_lbs: null,
   weight_updated_at: null, activity_level: 'low' as const,
-  is_neutered: true, sex: 'female', breed_size: null,
+  is_neutered: true, sex: 'female' as const, breed_size: null,
   life_stage: LifeStage.Mature, photo_url: null,
   health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
 };

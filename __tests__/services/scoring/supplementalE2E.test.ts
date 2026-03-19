@@ -149,7 +149,7 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       breed: 'Labrador Retriever', date_of_birth: '2022-06-15',
       dob_is_approximate: false, weight_current_lbs: 70, weight_goal_lbs: null,
       weight_updated_at: null, activity_level: 'moderate' as const,
-      is_neutered: true, sex: null, breed_size: 'large',
+      is_neutered: true, sex: null, breed_size: 'large' as const,
       life_stage: LifeStage.Adult, photo_url: null,
       health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
     };
@@ -186,7 +186,7 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       breed: 'Domestic Shorthair', date_of_birth: '2020-03-10',
       dob_is_approximate: false, weight_current_lbs: 10, weight_goal_lbs: null,
       weight_updated_at: null, activity_level: 'low' as const,
-      is_neutered: true, sex: 'female', breed_size: null,
+      is_neutered: true, sex: 'female' as const, breed_size: null,
       life_stage: LifeStage.Adult, photo_url: null,
       health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
     };

@@ -1,7 +1,7 @@
 import { computeScore } from '../../../src/services/scoring/engine';
 import type { Product, PetProfile } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
-import { Category, Species, LifeStage } from '../../../src/types';
+import { Category, Species, LifeStage, PreservativeType } from '../../../src/types';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     source: 'curated',
     aafco_statement: 'All Life Stages',
     life_stage_claim: null,
-    preservative_type: 'natural',
+    preservative_type: PreservativeType.Natural,
     ga_protein_pct: 26,
     ga_fat_pct: 16,
     ga_fiber_pct: 4,
@@ -40,8 +40,11 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    product_form: null,
     is_supplemental: false,
     is_vet_diet: false,
+    base_score: null,
+    base_score_computed_at: null,
     score_confidence: 'high',
     needs_review: false,
     last_verified_at: null,
@@ -71,6 +74,7 @@ function makePet(overrides: Partial<PetProfile> = {}): PetProfile {
     breed_size: null,
     life_stage: LifeStage.Adult,
     photo_url: null,
+    health_reviewed_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -283,8 +287,8 @@ describe('computeScore — Orchestrator', () => {
     // columns — fields are undefined, not null. Must fall through to ash defaults.
     const product = makeProduct();
     // Delete the fields to simulate missing DB columns
-    delete (product as Record<string, unknown>).ga_calcium_pct;
-    delete (product as Record<string, unknown>).ga_phosphorus_pct;
+    delete (product as unknown as Record<string, unknown>).ga_calcium_pct;
+    delete (product as unknown as Record<string, unknown>).ga_phosphorus_pct;
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const result = computeScore(product, ingredients);
     expect(result.carbEstimate).not.toBeNull();
@@ -348,7 +352,7 @@ describe('computeScore — Orchestrator', () => {
       target_species: Species.Dog,
       is_grain_free: true,
       aafco_statement: 'yes',
-      preservative_type: 'natural',
+      preservative_type: PreservativeType.Natural,
       ga_protein_pct: 24,
       ga_fat_pct: 15,
       ga_fiber_pct: 5,
@@ -435,7 +439,7 @@ describe('computeScore — Orchestrator', () => {
       target_species: Species.Cat,
       is_grain_free: false,
       aafco_statement: null,
-      preservative_type: 'synthetic',
+      preservative_type: PreservativeType.Synthetic,
       // GA doesn't matter for treats (100% IQ weight)
       ga_protein_pct: 30,
       ga_fat_pct: 17,

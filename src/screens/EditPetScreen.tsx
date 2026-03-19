@@ -28,8 +28,8 @@ import { updatePet, deletePet } from '../services/petService';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
 import { useActivePetStore } from '../stores/useActivePetStore';
-import PetPhotoSelector from '../components/PetPhotoSelector';
-import BreedSelector from '../components/BreedSelector';
+import PetPhotoSelector from '../components/pet/PetPhotoSelector';
+import BreedSelector from '../components/pet/BreedSelector';
 import type { MeStackParamList } from '../types/navigation';
 import type { ActivityLevel, Sex } from '../types/pet';
 

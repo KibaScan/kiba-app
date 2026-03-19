@@ -46,8 +46,8 @@ import {
   isProfileComplete,
 } from '../utils/conditionLogic';
 import type { SelectedAllergen } from '../utils/conditionLogic';
-import ConditionChip from '../components/ConditionChip';
-import AllergenSelector from '../components/AllergenSelector';
+import ConditionChip from '../components/pet/ConditionChip';
+import AllergenSelector from '../components/pet/AllergenSelector';
 import type { MeStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'HealthConditions'>;

@@ -24,7 +24,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { isPremium, canAddPet } from '../utils/permissions';
 import { deleteConfirm } from '../utils/haptics';
-import DevMenu from '../components/DevMenu';
+import DevMenu from '../components/ui/DevMenu';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
   getPetConditions,
@@ -44,7 +44,7 @@ import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
 import type { MeStackParamList } from '../types/navigation';
-import { PetHubShareCard } from '../components/PetShareCard';
+import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
 
 // ─── Exported Pure Helpers (testable) ─────────────────────
@@ -540,7 +540,7 @@ export default function PetHubScreen({ navigation }: Props) {
           ) : conditions.length === 0 ? (
             <View style={styles.healthyBadge}>
               <Ionicons
-                name="checkmark-shield-outline"
+                name="shield-checkmark-outline"
                 size={16}
                 color={Colors.severityGreen}
               />
