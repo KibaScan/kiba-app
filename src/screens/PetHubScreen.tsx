@@ -26,6 +26,7 @@ import { isPremium, canAddPet } from '../utils/permissions';
 import { deleteConfirm } from '../utils/haptics';
 import DevMenu from '../components/ui/DevMenu';
 import { useActivePetStore } from '../stores/useActivePetStore';
+import { useScanStore } from '../stores/useScanStore';
 import {
   getPetConditions,
   getPetAllergens,
@@ -499,11 +500,24 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.portionSection}>
           <PortionCard pet={activePet} product={null} conditions={conditionTags} />
           {der != null && (
-            <TreatBatteryGauge
-              treatBudgetKcal={calculateTreatBudget(der)}
-              consumedKcal={0}
-              petName={activePet.name}
-            />
+            <>
+              <TreatBatteryGauge
+                treatBudgetKcal={calculateTreatBudget(der)}
+                consumedKcal={0}
+                petName={activePet.name}
+              />
+              <TouchableOpacity
+                style={styles.logTreatButton}
+                activeOpacity={0.7}
+                onPress={() => {
+                  useScanStore.getState().setTreatLogging(true);
+                  (navigation.getParent() as any)?.navigate('Scan');
+                }}
+              >
+                <Ionicons name="nutrition-outline" size={18} color={Colors.accent} />
+                <Text style={styles.logTreatButtonText}>Log a Treat</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -974,6 +988,22 @@ const styles = StyleSheet.create({
   portionSection: {
     gap: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  logTreatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  logTreatButtonText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 
   // ─── Health Card ───────────────────────────────────────

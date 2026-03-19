@@ -224,6 +224,20 @@ export default function ResultScreen() {
     setTerminalDone(true);
   }, []);
 
+  // ─── Treat logging auto-open (D-124) ─────────────────────
+  const treatLoggingHandled = useRef(false);
+  useEffect(() => {
+    if (phase !== 'ready' || !product || !pet || treatLoggingHandled.current) return;
+    const { treatLogging, setTreatLogging } = useScanStore.getState();
+    if (treatLogging) {
+      setTreatLogging(false);
+      treatLoggingHandled.current = true;
+      if (product.category === 'treat') {
+        handleTrackFood();
+      }
+    }
+  }, [phase, product, pet, handleTrackFood]);
+
   // ─── Error state ───────────────────────────────────────
   if (error) {
     return (
@@ -488,6 +502,20 @@ export default function ResultScreen() {
             />
           )}
 
+          {/* Add to Pantry — vet diets are purchasable, need inventory tracking */}
+          {product && pet && (
+            <TouchableOpacity
+              style={styles.trackButton}
+              onPress={handleTrackFood}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+              <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
+                Add to {displayName}'s Pantry
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
@@ -497,6 +525,17 @@ export default function ResultScreen() {
             ingredient={selectedIngredient}
             species={species}
             onClose={() => setSelectedIngredient(null)}
+          />
+        )}
+
+        {/* Add to Pantry sheet (M5) */}
+        {product && pet && (
+          <AddToPantrySheet
+            product={product}
+            pet={pet}
+            visible={pantrySheetVisible}
+            onClose={() => setPantrySheetVisible(false)}
+            onAdded={() => setPantrySheetVisible(false)}
           />
         )}
       </SafeAreaView>
@@ -669,8 +708,33 @@ export default function ResultScreen() {
             </View>
           )}
 
+          {/* Add to Pantry — variety packs are purchasable, need inventory tracking */}
+          {pet && (
+            <TouchableOpacity
+              style={styles.trackButton}
+              onPress={handleTrackFood}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+              <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
+                Add to {displayName}'s Pantry
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.bottomSpacer} />
         </ScrollView>
+
+        {/* Add to Pantry sheet (M5) */}
+        {product && pet && (
+          <AddToPantrySheet
+            product={product}
+            pet={pet}
+            visible={pantrySheetVisible}
+            onClose={() => setPantrySheetVisible(false)}
+            onAdded={() => setPantrySheetVisible(false)}
+          />
+        )}
       </SafeAreaView>
     );
   }
