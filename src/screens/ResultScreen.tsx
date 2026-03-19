@@ -12,6 +12,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -58,6 +59,9 @@ import PortionCard from '../components/PortionCard';
 import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { isSupplementalByName } from '../utils/supplementalClassifier';
+import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
+import { checkDuplicateUpc } from '../services/pantryService';
+import type { PantryItem } from '../types/pantry';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 import { resolveCalories } from '../utils/calorieEstimation';
@@ -124,10 +128,39 @@ export default function ResultScreen() {
   const [scoringDone, setScoringDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<ProductIngredient | null>(null);
+  const [pantrySheetVisible, setPantrySheetVisible] = useState(false);
   const shareCardRef = useRef<View>(null);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
+
+  // ─── Add to Pantry handler ────────────────────────────
+  const handleTrackFood = useCallback(async () => {
+    if (!product || !pet) return;
+
+    if (product.target_species !== pet.species) {
+      Alert.alert(
+        'Species Mismatch',
+        `This is a ${product.target_species} food \u2014 can't add to ${pet.name}'s pantry.`,
+      );
+      return;
+    }
+
+    const isDupe = await checkDuplicateUpc(product.id, pet.id);
+    if (isDupe) {
+      Alert.alert(
+        'Already in Pantry',
+        'This product is already in the pantry. Restock instead?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'OK' },
+        ],
+      );
+      return;
+    }
+
+    setPantrySheetVisible(true);
+  }, [product, pet]);
 
   // ─── Product fallback fetch ─────────────────────────────
   useEffect(() => {
@@ -1054,12 +1087,19 @@ export default function ResultScreen() {
           <Text style={styles.compareButtonText}>Compare with another product</Text>
         </TouchableOpacity>
 
-        {/* Track this food (M5 placeholder) */}
-        <TouchableOpacity style={styles.trackButton} disabled>
-          <Ionicons name="add-circle-outline" size={20} color={Colors.textTertiary} />
-          <Text style={styles.trackButtonText}>Track this food</Text>
-          <Text style={styles.comingSoonBadge}>Coming soon</Text>
-        </TouchableOpacity>
+        {/* Add to Pantry */}
+        {product && pet && (
+          <TouchableOpacity
+            style={styles.trackButton}
+            onPress={handleTrackFood}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
+              Add to {displayName}'s Pantry
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -1070,6 +1110,17 @@ export default function ResultScreen() {
         species={species}
         onClose={() => setSelectedIngredient(null)}
       />
+
+      {/* Add to Pantry sheet (M5) */}
+      {product && pet && (
+        <AddToPantrySheet
+          product={product}
+          pet={pet}
+          visible={pantrySheetVisible}
+          onClose={() => setPantrySheetVisible(false)}
+          onAdded={() => setPantrySheetVisible(false)}
+        />
+      )}
 
       {/* Off-screen share card for capture */}
       <View style={styles.offScreen} pointerEvents="none">
@@ -1439,7 +1490,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: Spacing.lg,
     gap: 8,
-    opacity: 0.5,
   },
   trackButtonText: {
     fontSize: FontSizes.md,

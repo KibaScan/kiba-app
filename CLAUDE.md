@@ -83,6 +83,10 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - Compare flow (M6), Vet Report PDF (M6), variety pack scoring (D-145)
 - Score recalled products (D-158 — bypass pattern, not score=0)
 
+## Workflow
+
+When executing plans, always proceed with implementation without presenting option menus. Keep context unless explicitly told to clear it.
+
 ## Commit Convention
 
 ```
