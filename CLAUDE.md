@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 19, 2026 — M4.5 complete, 641 tests/32 suites. Ready for M5.
+> Last updated: March 19, 2026 — M5 in progress, 674 tests/34 suites.
 
 ---
 
@@ -13,22 +13,24 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
 **Current phase:** M5 Pantry + Recall Siren
 
-**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (641 tests) | `react-native-svg` | `expo-blur`
+**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (674 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo`
 
 ## Spec Files — Read Before Changing
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 159 decisions (D-001–D-159) — check before implementing |
+| `DECISIONS.md` | 159 decisions (D-001–D-159) — check before implementing. D-152: pantry depletion (user-set servings, not DER-computed). D-153: pantry paywall (goal-weight DER only). D-154: sharing rules (active pet default, same-species, premium). D-155: empty item (gray out, sink, restock/remove). D-156: score source (live read, not snapshot). D-157: mixed feeding removal (no auto-rebalance, contextual nudge). D-158: recalled product bypass (no score, warning + ingredients). |
 | `ROADMAP.md` | Milestone plan, M5 scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
 | `docs/specs/BREED_MODIFIERS_DOGS.md` / `_CATS.md` | Breed data (23 dogs, 21 cats) |
 | `docs/specs/PET_PROFILE_SPEC.md` | Profile fields, conditions, allergens |
 | `docs/specs/PORTION_CALCULATOR_SPEC.md` | RER/DER math, goal weight, cat safety guards |
+| `docs/specs/PANTRY_SPEC.md` | M5 Pantry schema, depletion, UI, edge cases |
+| `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `supabase/migrations/` (001–010)
+**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` (pantry CRUD + offline guards), `src/utils/pantryHelpers.ts` (depletion math, calorie context, pure functions), `src/types/pantry.ts` (all pantry types + PantryOfflineError), `src/stores/pantryStore.ts` (Zustand pantry state — not yet created), `src/screens/PantryScreen.tsx` (pantry UI — not yet created), `supabase/migrations/` (001–011)
 
 ## Score Framing (D-094)
 
@@ -52,6 +54,9 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
 - `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring)
+- `pantry_items` — user-owned inventory (NO `pet_id`), `serving_mode` ('weight'|'unit'), `unit_label` ('cans'|'pouches'|'units'), soft-delete via `is_active`
+- `pantry_pet_assignments` — per-pet serving config, `feeding_times` is JSONB (`string[] | null`), UNIQUE(pantry_item_id, pet_id)
+- **Pantry offline:** Write functions throw `PantryOfflineError`, reads return `[]` gracefully. Network check via `src/utils/network.ts`.
 - **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
 
 ## Non-Negotiable Rules
@@ -76,6 +81,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - Score supplements (M16+, D-096), grooming/cosmetics, vet diets (D-135 bypass)
 - `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
 - Compare flow (M6), Vet Report PDF (M6), variety pack scoring (D-145)
+- Score recalled products (D-158 — bypass pattern, not score=0)
 
 ## Commit Convention
 

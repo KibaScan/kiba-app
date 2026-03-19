@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 16, 2026
+> Updated: March 19, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M4.5 + UI Polish Complete (M0 + M1 + M2 + M3 + M4 + M4.5 + Polish Done — Ready for M5)
+## Current Status: M5 In Progress (M0–M4.5 + Polish Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (149 decisions, D-001 through D-149)
+- Decision log established (159 decisions, D-001 through D-159)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -34,10 +34,12 @@
 - M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
 - M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
 - M4.5 (complete): D-137 DCM Pulse Framework — replaced grain-free gate with positional pulse load detection, narrowed scope from all legumes to pulses only, updated Pure Balance regression 65 → 62. DcmAdvisoryCard shows rule-specific copy, Heart Risk concern tag fires on D-137 rules. 509 tests passing.
-- M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
+- M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `docs/references/dataset-field-mapping.md`.
 - M4.5: D-135 vet diet bypass — pipeline skips scoring engine for `is_vet_diet = true` products, ResultScreen renders vet diet badge + ingredient list only (no score ring, no waterfall, no benchmark).
 - UI Polish Sessions A–C (D-138–D-141): Score waterfall redesign (grouped ingredients, severity progress bars, tooltips, final score color fix), global severity color constants (SEVERITY_COLORS single source of truth), AAFCO statement copy standardization, ingredient list grouped by severity tier, nutritional fit consolidation (removed duplicate GATable section), bonus nutrient present-first layout, composition bar tap-to-identify, carb estimate "Est." format, modal citation demotion. 509 tests passing.
 - UI Polish Session D (D-142–D-149): Artificial colorant severity escalation (caution → danger), "Danger" → "Severe" display labels, preservative_type_unknown chip suppressed, ScoreRing fill animation (900ms ease-out cubic), species mismatch bypass (D-144), variety pack detection + bypass (D-145), expanded supplemental classifier with product name keywords (D-146), BenchmarkBar ≥30 peer threshold, PortionCard supplemental guidance text, presentation layer polish (D-147: supplemental-aware AAFCO headers, treat GA bar suppression, ultra-high-moisture DMB note, benchmark delta labels, AAFCO chip consistency, product name wrapping, portion name truncation, orphan text suppression, PositionMap ordinal fix), composition bar swipeable scrub (D-148), Atwater caloric estimation fallback for missing kcal data (D-149). 558 tests passing.
+- D-150 through D-159: Life stage mismatch moved to Layer 3 (D-150), under-4-weeks nursing advisory (D-151), M5 pantry decisions locked (D-152–D-158), low-score feeding context line (D-159). 641 tests passing across 32 suites.
+- M5 Pantry backend: Migration 011 (pantry_items + pantry_pet_assignments tables with RLS), `src/types/pantry.ts` (all union types, DB interfaces, composite types, PantryOfflineError), `src/services/pantryService.ts` (9 CRUD functions with offline guards via `@react-native-community/netinfo`), `src/utils/pantryHelpers.ts` (6 pure functions: depletion math, calorie context, system recommendations, serving mode defaults), `src/utils/network.ts` (isOnline helper). 677 tests passing across 34 suites.
 
 ---
 
@@ -75,7 +77,7 @@ products
 ├── ga_kcal_per_kg INT
 ├── kcal_per_unit INT                ← for single-serve items (pouches, sticks, chews)
 ├── unit_weight_g DECIMAL            ← weight per single unit (e.g., 85g pouch, 14g treat stick)
-├── default_serving_format TEXT       ← 'bulk' | 'unit_count' | 'cans' (auto-set from product_type)
+├── default_serving_format TEXT       ← 'weight' | 'unit' (derived from product_form per D-152)
 ├── ga_taurine_pct DECIMAL(5,3)
 ├── ga_l_carnitine_mg DECIMAL(8,2)
 ├── ga_dha_pct DECIMAL(5,3)
@@ -94,6 +96,7 @@ products
 ├── image_url TEXT                         ← Migration 008: Chewy product image URL
 ├── feeding_guidelines TEXT                ← Migration 008: full feeding guide text (D-136 supplemental detection)
 ├── source_url TEXT                        ← Migration 008: Chewy product page URL (debugging + rescrapes)
+├── product_form TEXT                     ← Migration 010: 'dry' | 'wet' | 'raw' | 'freeze-dried' | 'dehydrated' | etc.
 ├── score_confidence TEXT DEFAULT 'high'
 ├── last_verified_at TIMESTAMPTZ
 ├── formula_change_log JSONB
@@ -157,6 +160,7 @@ pets
 ├── is_neutered BOOLEAN                  ← renamed from is_spayed_neutered per PET_PROFILE_SPEC
 ├── sex TEXT CHECK ('male' | 'female')   ← D-118: optional, null valid. For vet report + pronouns.
 ├── photo_url TEXT                        ← Supabase storage path
+├── health_reviewed_at TIMESTAMPTZ       ← Migration 003: null = never visited health screen. Used for Top Matches cache invalidation.
 ├── created_at TIMESTAMPTZ DEFAULT NOW()
 ├── updated_at TIMESTAMPTZ DEFAULT NOW()
 ├── RLS: auth.uid() = user_id
@@ -170,18 +174,37 @@ scans                                   ← canonical name per CLAUDE.md (was sc
 ├── score_breakdown JSONB            ← full Layer 1/2/3 snapshot
 ├── scanned_at TIMESTAMPTZ DEFAULT NOW()
 
-pantry_items
+pantry_items                            ← Migration 011: D-152/D-154/D-155 user-set serving model
 ├── id UUID PK
-├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pets(id)
-├── product_id UUID FK → products(id)
-├── role TEXT ('daily_food' | 'treat' | 'supplement' | 'topper')
-├── serving_format TEXT ('bulk' | 'unit_count' | 'cans')  ← auto-detected from product category
-├── pack_size_value DECIMAL          ← bag weight in lbs (bulk) OR unit count (pouches/sticks/cans)
-├── pack_size_unit TEXT ('lb' | 'oz' | 'kg' | 'units')
+├── user_id UUID FK → auth.users(id) ON DELETE CASCADE
+├── product_id UUID FK → products(id) ON DELETE CASCADE
+├── quantity_original DECIMAL(10,2) NOT NULL  ← bag weight or unit count at time of adding
+├── quantity_remaining DECIMAL(10,2) NOT NULL ← decremented by auto-depletion, floors at 0 (D-155)
+├── quantity_unit TEXT NOT NULL ('lbs' | 'oz' | 'kg' | 'g' | 'units')
+├── serving_mode TEXT NOT NULL ('weight' | 'unit')  ← D-152: weight-based (dry/raw) or unit-based (cans/pouches)
+├── unit_label TEXT DEFAULT 'units' ('cans' | 'pouches' | 'units')  ← display label for unit mode
 ├── added_at TIMESTAMPTZ DEFAULT NOW()
-├── is_active BOOLEAN DEFAULT true   ← false = removed from pantry but kept in history
+├── is_active BOOLEAN DEFAULT true     ← false = soft-deleted from pantry (D-155)
+├── last_deducted_at TIMESTAMPTZ       ← tracks last auto-depletion
+├── created_at TIMESTAMPTZ DEFAULT NOW()
+├── updated_at TIMESTAMPTZ DEFAULT NOW()
+├── INDEX (user_id, is_active) WHERE is_active = true
 ├── RLS: auth.uid() = user_id
+
+pantry_pet_assignments                  ← Migration 011: D-154 per-pet serving config
+├── id UUID PK
+├── pantry_item_id UUID FK → pantry_items(id) ON DELETE CASCADE
+├── pet_id UUID FK → pets(id) ON DELETE CASCADE
+├── serving_size DECIMAL(8,4) NOT NULL ← user-set: cups/scoops (weight) or fractional units (D-152)
+├── serving_size_unit TEXT NOT NULL ('cups' | 'scoops' | 'units')
+├── feedings_per_day SMALLINT NOT NULL DEFAULT 2
+├── feeding_frequency TEXT NOT NULL DEFAULT 'daily' ('daily' | 'as_needed')
+├── feeding_times JSONB                ← D-101: clock times for feeding notifications
+├── notifications_on BOOLEAN DEFAULT true
+├── created_at TIMESTAMPTZ DEFAULT NOW()
+├── updated_at TIMESTAMPTZ DEFAULT NOW()
+├── UNIQUE(pantry_item_id, pet_id)
+├── RLS: pantry_item_id IN (SELECT id FROM pantry_items WHERE user_id = auth.uid())
 
 symptom_logs
 ├── id UUID PK
@@ -311,7 +334,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 **NOT on scan result screen:** Poop Check, Symptom Tracker → Me tab (pet-over-time, not product-specific)
 
 ### Loading Experience
-- [x] 6-step terminal message sequence (see D-037)
+- [x] 6-step terminal message sequence (D-037)
 - [x] Minimum 1.2s display time even if data returns faster (perceived thoroughness)
 
 ---
@@ -332,7 +355,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] life_stage auto-derivation from age + species + breed size (D-064)
 - [x] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
 - [x] Active pet selector persists across sessions
-- [ ] Goal weight field (premium-gated, only editable when obesity/underweight condition set)
+- [ ] Goal weight field (premium-gated, only editable when obesity/underweight condition set) — deferred to M5 pantry integration
 - [x] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
 - [x] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
 - [x] Pet deletion: type name to confirm + 30-day soft-delete grace period
@@ -342,15 +365,15 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] RER calculation: `70 × (kg)^0.75`
 - [x] DER multiplier tables (species-specific, see D-060 through D-063)
 - [x] Daily portion display (cups/day or grams/day based on kcal/cup)
-- [ ] Goal weight mode: RER at goal weight, not current weight (premium)
+- [ ] Goal weight mode: RER at goal weight, not current weight (premium) — deferred to M5 (D-152 pantry integration)
 
 ### Treat Battery
 - [x] 10% of DER = daily treat budget in kcal
 - [x] Per-treat calculation: budget ÷ kcal_per_treat = safe count
 - [x] Visual battery gauge (% of daily budget consumed)
-- [ ] Cat hepatic lipidosis guard: warn if implied weekly loss >1% body weight
+- [ ] Cat hepatic lipidosis guard: warn if implied weekly loss >1% body weight — deferred, pending vet audit clearance
 
-### Veterinary Audit (CRITICAL — Moved to M2)
+### Veterinary Audit (CRITICAL — Pending vet partner, not blocking M2 feature completion)
 - [ ] Scope: danger-rated ingredients, species-specific physiological claims, scoring methodology
 - [ ] Review `BREED_MODIFIERS_DOGS.md` — 23 breed entries, all modifiers pending vet clearance
 - [ ] Review `BREED_MODIFIERS_CATS.md` — 21 breed entries, all modifiers pending vet clearance
@@ -440,7 +463,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Score Context
 - [x] Benchmark bar — gradient track with product pin + category average marker
-- [ ] "What Good Looks Like" reference card
+- [ ] "What Good Looks Like" reference card (deferred — post-M4)
 
 ### Nutrition Panel
 - [x] AAFCO progress bars with threshold markers (D-141: improved marker visibility, min/max labels)
@@ -523,7 +546,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ### Migration 008: Dataset Field Backfill
 - [x] Add `feeding_guidelines`, `is_vet_diet`, `special_diet`, `image_url`, `source_url` to products table
 - [x] Backfill 9,078 products from `dataset_kiba_v6_merged.json` (0 errors)
-- [x] `references/dataset-field-mapping.md` — full audit of mapped vs dropped fields
+- [x] `docs/references/dataset-field-mapping.md` — full audit of mapped vs dropped fields
 
 ---
 
@@ -536,7 +559,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
 - [ ] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
 - [ ] Pantry dashboard showing all products with scores
-- [ ] Bag/pack countdown with days remaining (D-065) — 3 serving formats: bulk (cups/day from DER ÷ kcal_per_cup), unit count (pouches/cans), treats (units from Treat Battery budget)
+- [ ] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (cans/pouches, fractional units per feeding)
 - [ ] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
 - [ ] User inputs bag size or pack quantity at add-to-pantry
 - [ ] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
@@ -548,8 +571,8 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ### Pantry Diet Completeness (D-136 Part 5)
 - [ ] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
 - [ ] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
-- [ ] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "⚠️ [Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
-- [ ] Only supplemental products in pantry, zero complete food → red diet health card: "🔴 No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
+- [ ] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "[Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
+- [ ] Only supplemental products in pantry, zero complete food → red diet health card: "No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
 - [ ] Warnings are per-pet (each pet's pantry evaluated independently)
 - [ ] All warning copy D-095 compliant — factual, no clinical language
 - [ ] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
@@ -566,8 +589,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] FDA recall RSS feed monitoring (automated, not manual checking)
 - [ ] Cross-reference recalled products against user pantry
 - [ ] Push notification to affected users — NOT premium-gated
-- [ ] Product score → 0 with recall banner on scan result
-- [ ] Recall detail screen with FDA link and recommended actions
+- [ ] Recalled product bypass — no score computed, bypass badge displayed (D-158, same pattern as vet diet D-135)
+- [ ] RecallDetailScreen with FDA link, allergen warnings, and "Remove from Pantry" action
+- [ ] Recalled pantry items pushed to top of list with red badge (D-158)
 - [ ] Historical recall log per product
 
 ### Weekly Digest Push Notification (D-130)
@@ -581,7 +605,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ## M6: Alternatives Engine (Weeks 24–27)
 
-> Goal: "This scored 44. Here are three options scoring 80+."
+> Goal: "This scored low. Here are three options scoring 80+."
 
 ### Compare & Vet Report (moved from M4)
 - [ ] Compare button (side-by-side product comparison) — paywall gate already wired
@@ -662,7 +686,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
 - [ ] Pure Balance Grain-Free Salmon → 62/100 (regression test — D-137 DCM fires, mitigation applies)
-- [ ] Temptations Classic Tuna → 44/100 (regression test)
+- [ ] Temptations Classic Tuna → 9/100 (regression test — updated per D-142 colorant escalation)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling
 - [ ] Performance: scan → score ≤2s perceived latency

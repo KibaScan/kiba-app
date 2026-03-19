@@ -227,16 +227,7 @@ export interface ScanRecord {
 }
 
 // ─── Pantry & Logging ───────────────────────────────────
-
-export interface PantryItem {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  product_id: string;
-  serving_format: string | null;
-  pack_size: string | null;
-  added_at: string;
-}
+export type { PantryItem, PantryPetAssignment, PantryCardData, AddToPantryInput } from './pantry';
 
 export interface SymptomLog {
   id: string;
