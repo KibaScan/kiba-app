@@ -1,0 +1,35 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/pc/kiba-app/.claude/hooks/protect-scoring.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Scoring regression anchors: Pure Balance (Dog) = 62, Temptations (Cat Treat) = 9. Verify after any scoring changes.\"}'"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Waiting for your input' 2>/dev/null || powershell.exe -Command \"[console]::beep(800,200)\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
