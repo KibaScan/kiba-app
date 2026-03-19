@@ -1,7 +1,8 @@
 # CLAUDE.md — Kiba Project Context
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
-> Last updated: March 18, 2026 — M4.5 complete, 641 tests/32 suites. Ready for M5.
+> Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
+> Last updated: March 19, 2026 — M4.5 complete, 641 tests/32 suites. Ready for M5.
 
 ---
 
@@ -18,16 +19,16 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 151 decisions (D-001–D-151) — check before implementing |
+| `DECISIONS.md` | 159 decisions (D-001–D-159) — check before implementing |
 | `ROADMAP.md` | Milestone plan, M5 scope |
-| `references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
-| `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
-| `BREED_MODIFIERS_DOGS.md` / `_CATS.md` | Breed data (23 dogs, 21 cats) |
-| `PET_PROFILE_SPEC.md` | Profile fields, conditions, allergens |
-| `PORTION_CALCULATOR_SPEC.md` | RER/DER math, goal weight, cat safety guards |
-| `references/dataset-field-mapping.md` | Apify → Supabase field mapping |
+| `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
+| `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
+| `docs/specs/BREED_MODIFIERS_DOGS.md` / `_CATS.md` | Breed data (23 dogs, 21 cats) |
+| `docs/specs/PET_PROFILE_SPEC.md` | Profile fields, conditions, allergens |
+| `docs/specs/PORTION_CALCULATOR_SPEC.md` | RER/DER math, goal weight, cat safety guards |
+| `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `supabase/migrations/` (001–009)
+**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `supabase/migrations/` (001–010)
 
 ## Score Framing (D-094)
 
@@ -35,7 +36,7 @@ All scores: `"[X]% match for [Pet Name]"` — NEVER naked scores. Two color scal
 
 ## Scoring Engine — Quick Reference
 
-Full rules in `references/scoring-rules.md`. Read that file before any scoring changes.
+Full rules in `docs/references/scoring-rules.md`. Read that file before any scoring changes.
 
 | Category | IQ | NP | FC |
 |----------|----|----|-----|
@@ -43,7 +44,7 @@ Full rules in `references/scoring-rules.md`. Read that file before any scoring c
 | Supplemental | 65% | 35% (macro-only) | 0% |
 | Treats | 100% | 0% | 0% |
 
-**Regression anchors:** Pure Balance (Dog) = 62, Temptations (Cat Treat) = 44
+**Regression anchors:** Pure Balance (Dog) = 62, Temptations (Cat Treat) = 9
 
 ## Schema Traps
 
@@ -65,7 +66,7 @@ Full rules in `references/scoring-rules.md`. Read that file before any scoring c
 8. **No `any` types** in TypeScript core entities
 9. **Suitability framing (D-094)** — always "[X]% match for [Pet Name]"
 10. **UPVM compliance (D-095)** — never: "prescribe," "treat," "cure," "prevent," "diagnose"
-11. **Bypasses:** vet diet (D-135), species mismatch (D-144), variety pack (D-145) — no scoring
+11. **Bypasses:** vet diet (D-135), species mismatch (D-144), variety pack (D-145), recalled product (D-158) — no scoring
 12. **API keys server-side only (D-127)** — all external calls via Edge Functions
 13. **Recall alerts free (D-125)** — no paywall gate
 
@@ -74,7 +75,7 @@ Full rules in `references/scoring-rules.md`. Read that file before any scoring c
 - Ask AI / chatbot (liability — permanently removed)
 - Score supplements (M16+, D-096), grooming/cosmetics, vet diets (D-135 bypass)
 - `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
-- Compare flow (M6), Vet Report PDF (M5-M6), variety pack scoring (D-145)
+- Compare flow (M6), Vet Report PDF (M6), variety pack scoring (D-145)
 
 ## Commit Convention
 
@@ -95,6 +96,6 @@ M5: pantry assignment with multi-pet sharing
 
 1. Check `DECISIONS.md` — follow if answered there
 2. Check `ROADMAP.md` — flag if out of scope
-3. Scoring math → `references/scoring-rules.md` then `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`
-4. Breed logic → `BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md`
+3. Scoring math → `docs/references/scoring-rules.md` then `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md`
+4. Breed logic → `docs/specs/BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md`
 5. If ambiguous, ask ONE focused question
