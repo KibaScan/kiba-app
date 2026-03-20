@@ -141,6 +141,7 @@ export default function PantryScreen({ navigation }: Props) {
   const loadPantry = usePantryStore(s => s.loadPantry);
   const removeItem = usePantryStore(s => s.removeItem);
   const restockItem = usePantryStore(s => s.restockItem);
+  const logTreat = usePantryStore(s => s.logTreat);
 
   // ── Local state ──
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
@@ -190,6 +191,11 @@ export default function PantryScreen({ navigation }: Props) {
       Alert.alert('Intake Changed', `${petName}'s daily intake from pantry items has changed.`);
     }
   }, [items, activePetId, activePet]);
+
+  const handleGaveTreat = useCallback(async (itemId: string) => {
+    if (!activePetId) return;
+    await logTreat(itemId, activePetId);
+  }, [activePetId, logTreat]);
 
   const handleRestock = useCallback(async (itemId: string) => {
     const item = items.find(i => i.id === itemId);
@@ -441,6 +447,7 @@ export default function PantryScreen({ navigation }: Props) {
             onTap={handleTap}
             onRestock={handleRestock}
             onRemove={handleRemove}
+            onGaveTreat={handleGaveTreat}
           />
         )}
         refreshControl={

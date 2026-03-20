@@ -16,6 +16,7 @@ interface TreatBatteryGaugeProps {
   consumedKcal: number;
   petName: string;
   calorieSource?: CalorieSource;
+  treatCount?: number;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -46,6 +47,7 @@ export default function TreatBatteryGauge({
   consumedKcal,
   petName,
   calorieSource,
+  treatCount,
 }: TreatBatteryGaugeProps) {
   // calorieSource === null means product has no calorie data AND Atwater can't estimate.
   // undefined means not passed (e.g. PetHubScreen general view) — show normally.
@@ -101,6 +103,13 @@ export default function TreatBatteryGauge({
           <Text style={[styles.statusLabel, { color: barColor }]}>
             {getStatusLabel(percent)}
           </Text>
+
+          {/* Treat count */}
+          {treatCount != null && treatCount > 0 && (
+            <Text style={styles.treatCountText}>
+              {treatCount} treat{treatCount !== 1 ? 's' : ''} today
+            </Text>
+          )}
 
           {/* Atwater estimation note */}
           {calorieSource === 'estimated' && (
@@ -159,6 +168,10 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: FontSizes.sm,
     fontWeight: '500',
+  },
+  treatCountText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
   },
   estimateRow: {
     flexDirection: 'row',

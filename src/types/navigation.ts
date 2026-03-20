@@ -25,6 +25,7 @@ export type HomeStackParamList = {
   HomeMain: undefined;
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
+  AppointmentDetail: { appointmentId: string };
 };
 
 export type SearchStackParamList = {
@@ -50,6 +51,7 @@ export type MeStackParamList = {
   Appointments: undefined;
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };
+  NotificationPreferences: undefined;
 };
 
 // ─── Paywall Trigger ─────────────────────────────────

@@ -31,6 +31,7 @@ interface PantryCardProps {
   onTap: (itemId: string) => void;
   onRestock: (itemId: string) => void;
   onRemove: (itemId: string) => void;
+  onGaveTreat?: (itemId: string) => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -93,7 +94,7 @@ function getDepletionBarColor(pct: number): string {
 
 // ─── Component ──────────────────────────────────────────
 
-export function PantryCard({ item, activePet, onTap, onRestock, onRemove }: PantryCardProps) {
+export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat }: PantryCardProps) {
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
@@ -239,6 +240,18 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove }: Pant
           <Text style={styles.calorieText}>
             ~{item.calorie_context.daily_kcal} kcal/day of {item.calorie_context.target_kcal} kcal target
           </Text>
+        )}
+
+        {/* Gave a treat action */}
+        {isTreat && !item.is_empty && onGaveTreat && (
+          <TouchableOpacity
+            style={styles.gaveTreatButton}
+            onPress={() => onGaveTreat(item.id)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+            <Text style={styles.gaveTreatText}>Gave a treat</Text>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -477,6 +490,23 @@ const styles = StyleSheet.create({
   calorieText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+  },
+
+  // Gave a treat
+  gaveTreatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: `${Colors.accent}15`,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  gaveTreatText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    fontWeight: '600',
   },
 
   // Empty actions

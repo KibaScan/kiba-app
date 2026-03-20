@@ -15,6 +15,7 @@ import {
   evaluateDietCompleteness,
 } from '../services/pantryService';
 import { useActivePetStore } from './useActivePetStore';
+import { useTreatBatteryStore, resolveTreatKcal } from './useTreatBatteryStore';
 import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 
 interface PantryState {
@@ -30,6 +31,7 @@ interface PantryState {
   restockItem: (itemId: string) => Promise<void>;
   updateItem: (itemId: string, updates: Parameters<typeof updatePantryItem>[1]) => Promise<void>;
   shareItem: (itemId: string, petId: string, assignment: Parameters<typeof sharePantryItem>[2]) => Promise<void>;
+  logTreat: (itemId: string, petId: string) => Promise<void>;
   refreshDietStatus: (petId: string) => Promise<void>;
 }
 
@@ -139,6 +141,39 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     } catch (e) {
       console.error('[usePantryStore] shareItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to share item.', loading: false });
+    }
+  },
+
+  logTreat: async (itemId, petId) => {
+    const items = get().items;
+    const item = items.find(i => i.id === itemId);
+    if (!item || item.is_empty) return;
+
+    const newQty = Math.max(0, item.quantity_remaining - 1);
+    const kcal = resolveTreatKcal(item.product);
+
+    // Optimistic update
+    set({
+      items: items.map(i =>
+        i.id === itemId
+          ? {
+              ...i,
+              quantity_remaining: newQty,
+              is_empty: newQty <= 0,
+              is_low_stock: newQty > 0 && newQty <= 5,
+            }
+          : i
+      ),
+    });
+
+    // Track in battery
+    useTreatBatteryStore.getState().addTreatConsumption(petId, kcal);
+
+    try {
+      await updatePantryItem(itemId, { quantity_remaining: newQty });
+    } catch {
+      // Revert optimistic update
+      set({ items });
     }
   },
 

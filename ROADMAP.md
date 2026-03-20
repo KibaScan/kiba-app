@@ -47,6 +47,11 @@
 - M5 Auto-deplete cron: `supabase/functions/auto-deplete/index.ts` (Deno Edge Function — service role auth, daily-total deduction across all users, unit conversion cups->kg->quantity_unit with calorie-based or 0.1134 fallback, idempotency via last_deducted_at guard, state transition detection for low stock/empty, push notifications via Expo Push API with dead token cleanup). Migration 015 (pg_cron + pg_net schedule, vault secrets for auth). 771 tests passing across 39 suites.
 - M5 Pet Appointments backend (D-103): Migration 017 (`pet_appointments` table — UUID[] pet_ids, 5 appointment types, reminder/recurring options, partial index on upcoming, GIN index on pet_ids, RLS). `src/types/appointment.ts` (Appointment, CreateAppointmentInput, UpdateAppointmentInput types). `src/services/appointmentService.ts` (6 CRUD functions with offline guards — create, update, hard delete, complete with auto-recurring spawn, getUpcoming/getPast with optional pet filter via array containment). `canCreateAppointment()` in permissions.ts (free tier: 2 active max, premium: unlimited). `freeAppointmentsMax` in constants.ts. 822 tests passing across 41 suites.
 - M5 Pet Appointments UI + reminders (D-103): `src/screens/AppointmentsListScreen.tsx` (upcoming/past segmented control, type icons, relative date formatting, pet name resolution, paywall gate on "+"). `src/screens/CreateAppointmentScreen.tsx` (form — 5 type chips, DateTimePicker via `@react-native-community/datetimepicker`, pet multi-select with active pet default, location/notes, reminder/recurring chip pickers, "Schedule" button). `src/screens/AppointmentDetailScreen.tsx` (edit all fields, "Save Changes" on dirty, "Mark Complete" with recurring auto-spawn, "Delete" with BlurView confirmation modal, completed badge for past). `src/services/appointmentNotificationScheduler.ts` (local one-shot reminders via expo-notifications DATE trigger — full resync approach matching feedingNotificationScheduler pattern; D-084/D-095 compliant copy; multi-pet name formatting; preference check via user_settings). Integrated into App.tsx (launch resync), create/edit/delete/complete flows. PetHubScreen "Appointments" settings row added. Navigation: 3 screens on MeStack, `appointment_limit` PaywallTrigger. 834 tests passing across 42 suites.
+- M5 Weekly/daily digest (D-130): `supabase/functions/weekly-digest/index.ts` (Deno Edge Function — single function handles both weekly and daily modes via POST body `{mode}`. Service role auth, batch queries all eligible users from user_settings + push_tokens. Gathers scan activity, pantry state, recalled items, upcoming appointments. Adaptive content: active users get scan counts, inactive get pantry summary, cold start gets CTA. Recall alerts always prioritized first. Multi-pet: first pet + "and N other pets". Under 200 chars, D-084/D-095 compliant. Tap routes to HomeScreen. Skips accounts < 3 days old. Dead token cleanup via Expo Push API). Migration 018 (two pg_cron schedules: weekly Sunday 9 AM UTC, daily 9 AM UTC).
+- M5 Treat battery wiring: `src/stores/useTreatBatteryStore.ts` (Zustand + AsyncStorage persist — per-pet daily kcal/count tracking, midnight auto-reset, `resolveTreatKcal()` fallback chain: kcal_per_unit → derive from ga_kcal_per_kg × unit_weight_g → null). `usePantryStore.logTreat()` (optimistic deduct 1 unit + resolve kcal + update battery, server revert on error). PantryCard "Gave a treat" button for treat items. PetHubScreen + ResultScreen wired to real consumed data. 20 new tests. 862 tests passing across 43 suites.
+- M5 Pet health records (D-163): `src/services/appointmentService.ts` extended with `getHealthRecords()` and `logHealthRecord()`. `src/types/appointment.ts` extended with `PetHealthRecord` type. PetHubScreen health records section with recent records list, HealthRecordLogSheet bottom sheet for manual entry.
+- M5 Notification preferences: `src/screens/NotificationPreferencesScreen.tsx` (global kill switch + per-category toggles for feeding/low_stock/empty/recall/appointment + digest frequency selector Weekly/Daily/Off). Reads/writes user_settings table. On feeding toggle: rescheduleAllFeeding(). On appointment toggle: rescheduleAllAppointments(). On global disable: cancel all local notifications. Recall disable requires confirmation dialog with pet name. PetHubScreen settings row "Notifications" navigates to screen. 862 tests passing across 43 suites.
+- M5 HomeScreen updates: Recall siren banner (active recalled pantry items with navigation to RecallDetailScreen), upcoming appointment card (next appointment with relative date + navigate to detail), recent scan history section.
 
 ---
 
@@ -606,11 +611,11 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Historical recall log per product
 
 ### Weekly Digest Push Notification (D-130)
-- [ ] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
-- [ ] Expo push notification integration
-- [ ] Adaptive content: activity summary if active, re-engagement nudge if inactive
-- [ ] User preference: weekly (default) or daily frequency
-- [ ] Free for all users (retention → conversion funnel)
+- [x] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
+- [x] Expo push notification integration
+- [x] Adaptive content: activity summary if active, re-engagement nudge if inactive
+- [x] User preference: weekly (default) or daily frequency
+- [x] Free for all users (retention → conversion funnel)
 
 ---
 

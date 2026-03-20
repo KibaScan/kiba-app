@@ -43,6 +43,7 @@ import { getAgeMonths } from '../components/PortionCard';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
+import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { getHealthRecords } from '../services/appointmentService';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
@@ -129,6 +130,13 @@ export default function PetHubScreen({ navigation }: Props) {
   const removePet = useActivePetStore((s) => s.removePet);
   const activePet = pets.find((p) => p.id === activePetId) ?? pets[0] ?? null;
   const hubShareRef = useRef<View>(null);
+  const treatBatteryReset = useTreatBatteryStore((s) => s.resetIfNewDay);
+  const consumedTreatKcal = useTreatBatteryStore((s) =>
+    activePet ? (s.consumedByPet[activePet.id]?.kcal ?? 0) : 0,
+  );
+  const treatCount = useTreatBatteryStore((s) =>
+    activePet ? (s.consumedByPet[activePet.id]?.count ?? 0) : 0,
+  );
 
   // ─── Health data (screen-scoped, reloaded on focus) ─────
   const [conditions, setConditions] = useState<PetCondition[]>([]);
@@ -151,6 +159,7 @@ export default function PetHubScreen({ navigation }: Props) {
   // ─── Load conditions/allergens on focus or active pet change ──
   useFocusEffect(
     useCallback(() => {
+      treatBatteryReset();
       if (!activePet) return;
       let cancelled = false;
       setHealthLoading(true);
@@ -512,8 +521,9 @@ export default function PetHubScreen({ navigation }: Props) {
             <>
               <TreatBatteryGauge
                 treatBudgetKcal={calculateTreatBudget(der)}
-                consumedKcal={0}
+                consumedKcal={consumedTreatKcal}
                 petName={activePet.name}
+                treatCount={treatCount}
               />
               <TouchableOpacity
                 style={styles.logTreatButton}
@@ -669,7 +679,7 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <SettingsRow icon="calendar-outline" label="Appointments" onPress={() => navigation.navigate('Appointments')} />
-          <SettingsRow icon="notifications-outline" label="Recall Alerts" />
+          <SettingsRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('NotificationPreferences')} />
           <SettingsRow icon="shield-checkmark-outline" label="Subscription" />
           <SettingsRow icon="information-circle-outline" label="About Kiba" isLast />
         </View>

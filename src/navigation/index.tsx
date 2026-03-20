@@ -23,6 +23,7 @@ import HealthConditionsScreen from '../screens/HealthConditionsScreen';
 import AppointmentsListScreen from '../screens/AppointmentsListScreen';
 import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
+import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
 import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PaywallScreen from '../screens/PaywallScreen';
@@ -51,6 +52,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Result" component={ResultScreen} />
       <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -104,6 +106,7 @@ function MeStackScreen() {
       <MeStack.Screen name="Appointments" component={AppointmentsListScreen} />
       <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
       <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+      <MeStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
     </MeStack.Navigator>
   );
 }

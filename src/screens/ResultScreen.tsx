@@ -68,6 +68,7 @@ import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalc
 import { resolveCalories } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
 import { usePantryStore } from '../stores/usePantryStore';
+import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
@@ -89,6 +90,9 @@ export default function ResultScreen() {
   const pet: PetProfile | null = petId
     ? pets.find((p) => p.id === petId) ?? null
     : null;
+  const consumedTreatKcal = useTreatBatteryStore((s) =>
+    petId ? (s.consumedByPet[petId]?.kcal ?? 0) : 0,
+  );
 
   // DER computation for portion/treat advisory (D-106: display-only)
   const petDer = useMemo(() => {
@@ -1141,7 +1145,7 @@ export default function ResultScreen() {
             <CollapsibleSection title="Treat Battery">
               <TreatBatteryGauge
                 treatBudgetKcal={treatBudget}
-                consumedKcal={0}
+                consumedKcal={consumedTreatKcal}
                 petName={displayName}
                 calorieSource={calorieSource}
               />
