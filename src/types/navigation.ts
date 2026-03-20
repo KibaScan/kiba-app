@@ -6,6 +6,7 @@
 export type ScanStackParamList = {
   ScanMain: undefined;
   Result: { productId: string; petId: string | null };
+  RecallDetail: { productId: string };
   CommunityContribution: { scannedUpc: string };
   ProductConfirm: {
     scannedUpc: string;
@@ -23,17 +24,20 @@ export type ScanStackParamList = {
 export type HomeStackParamList = {
   HomeMain: undefined;
   Result: { productId: string; petId: string | null };
+  RecallDetail: { productId: string };
 };
 
 export type SearchStackParamList = {
   SearchMain: undefined;
   Result: { productId: string; petId: string | null };
+  RecallDetail: { productId: string };
 };
 
 export type PantryStackParamList = {
   PantryMain: undefined;
   EditPantryItem: { itemId: string };
   Result: { productId: string; petId: string | null };
+  RecallDetail: { productId: string };
 };
 
 export type MeStackParamList = {

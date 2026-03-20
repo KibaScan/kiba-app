@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -66,6 +67,7 @@ import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBa
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 import { resolveCalories } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
+import { usePantryStore } from '../stores/usePantryStore';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
@@ -642,6 +644,171 @@ export default function ResultScreen() {
           <IngredientDetailModal
             ingredient={selectedIngredient}
             species={product.target_species === 'cat' ? 'cat' : 'dog'}
+            onClose={() => setSelectedIngredient(null)}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  // ─── D-158: Recalled product bypass — no score, warning + ingredients ──
+  const isRecalled = scoredResult?.bypass === 'recalled';
+
+  // Pantry check for recalled product removal
+  const recalledPantryItem = isRecalled
+    ? usePantryStore.getState().items.find(
+        (item) => item.product_id === productId && item.is_active,
+      )
+    : null;
+
+  if (isRecalled && scoredResult && product) {
+    const fd = detectFlavorDeception(product.name, hydratedIngredients);
+    const flavorAnnotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
+      ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
+      : null;
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.productBrand} numberOfLines={1}>
+              {product.brand}
+            </Text>
+            <Text style={styles.productName} numberOfLines={2}>
+              {stripBrandFromName(product.brand, product.name)}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Product image */}
+          {product.image_url && (
+            <View style={styles.productImageContainer}>
+              <Image
+                source={{ uri: product.image_url }}
+                style={styles.productImage}
+                resizeMode="contain"
+              />
+              <LinearGradient
+                colors={['transparent', Colors.background]}
+                style={styles.imageGradientBottom}
+              />
+              <LinearGradient
+                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.imageGradientSides}
+              />
+            </View>
+          )}
+
+          {/* Recall badge — larger/more prominent than vet diet (D-158) */}
+          <View style={styles.recallBypassContainer}>
+            <View style={styles.recallBypassBadge}>
+              <Ionicons name="alert-circle" size={28} color="#FFFFFF" />
+              <Text style={styles.recallBypassBadgeText}>Recall Alert</Text>
+            </View>
+            <Text style={styles.recallBypassCopy}>
+              This product has been recalled by the FDA.
+              Tap below for recall details.
+            </Text>
+          </View>
+
+          {/* View Recall Details button */}
+          <TouchableOpacity
+            style={styles.recallDetailButton}
+            onPress={() => navigation.navigate('RecallDetail', { productId })}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="document-text-outline" size={20} color={Colors.severityRed} />
+            <Text style={styles.recallDetailButtonText}>View Recall Details</Text>
+          </TouchableOpacity>
+
+          {/* Allergen warnings — always shown for safety (D-135 pattern) */}
+          {scoredResult.layer3.allergenWarnings.length > 0 && (
+            <View style={styles.recallBanner}>
+              <Ionicons name="alert-circle-outline" size={20} color={Colors.severityAmber} />
+              <Text style={styles.recallText}>
+                Contains potential allergens for {displayName}
+              </Text>
+            </View>
+          )}
+
+          {/* Breed Contraindication Cards — safety-critical, always render */}
+          <BreedContraindicationCard
+            contraindications={scoredResult.layer3.personalizations.filter(
+              (p) => p.type === 'breed_contraindication',
+            )}
+          />
+
+          {/* Severity Badge Strip */}
+          {hydratedIngredients.length > 0 && (
+            <SeverityBadgeStrip
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+            />
+          )}
+
+          {/* Full Ingredient List */}
+          {hydratedIngredients.length > 0 && (
+            <IngredientList
+              ingredients={hydratedIngredients}
+              species={species}
+              onIngredientPress={setSelectedIngredient}
+              flavorAnnotation={flavorAnnotation}
+            />
+          )}
+
+          {/* Splitting Detection */}
+          {hydratedIngredients.length > 0 && (
+            <SplittingDetectionCard
+              clusters={buildSplittingClusters(hydratedIngredients)}
+            />
+          )}
+
+          {/* Flavor Deception Card */}
+          {fd?.detected && fd.namedProtein && fd.actualPrimaryProtein && (
+            <FlavorDeceptionCard
+              namedProtein={fd.namedProtein}
+              actualPrimaryProtein={fd.actualPrimaryProtein}
+              actualPrimaryPosition={fd.actualPrimaryPosition}
+              namedProteinPosition={fd.namedProteinPosition}
+              variant={fd.variant}
+            />
+          )}
+
+          {/* Remove from Pantry — if recalled product is in active pantry */}
+          {recalledPantryItem && (
+            <TouchableOpacity
+              style={styles.removeFromPantryButton}
+              onPress={async () => {
+                await usePantryStore.getState().removeItem(recalledPantryItem.id);
+                navigation.goBack();
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={20} color={Colors.severityRed} />
+              <Text style={styles.removeFromPantryText}>Remove from Pantry</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        {/* Ingredient Detail Modal */}
+        {selectedIngredient && (
+          <IngredientDetailModal
+            ingredient={selectedIngredient}
+            species={species}
             onClose={() => setSelectedIngredient(null)}
           />
         )}
@@ -1454,6 +1621,68 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: Spacing.md,
+  },
+
+  // ─── D-158 Recall Bypass
+  recallBypassContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  recallBypassBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.severityRed,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginBottom: 12,
+  },
+  recallBypassBadgeText: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  recallBypassCopy: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.md,
+  },
+  recallDetailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: Spacing.md,
+    gap: 8,
+  },
+  recallDetailButtonText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.severityRed,
+  },
+  removeFromPantryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: Spacing.md,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  removeFromPantryText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.severityRed,
   },
 
   // ─── Variety Pack Bypass

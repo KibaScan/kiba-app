@@ -98,6 +98,13 @@ export async function removePantryItem(
       if (deactErr) throw new Error(`Failed to deactivate item: ${deactErr.message}`);
     }
   } else {
+    // Delete all assignments first, then soft-delete the item
+    const { error: delAssignErr } = await supabase
+      .from('pantry_pet_assignments')
+      .delete()
+      .eq('pantry_item_id', itemId);
+    if (delAssignErr) throw new Error(`Failed to remove assignments: ${delAssignErr.message}`);
+
     const { error } = await supabase
       .from('pantry_items')
       .update({ is_active: false })
@@ -234,12 +241,15 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
       .from('pantry_items')
       .select('*, products(*), pantry_pet_assignments(*)')
       .in('id', itemIds)
-      .or('is_active.eq.true,quantity_remaining.eq.0');
+      .eq('is_active', true);
     if (itemErr || !items) return [];
 
     const typedPet = pet as Pet;
 
-    const cards: PantryCardData[] = (items as Record<string, unknown>[]).map((item) => {
+    // Filter out items with null product (deleted product, broken FK)
+    const validItems = (items as Record<string, unknown>[]).filter(item => item.products != null);
+
+    const cards: PantryCardData[] = validItems.map((item) => {
       const allAssignments: PantryPetAssignment[] =
         (item.pantry_pet_assignments as PantryPetAssignment[]) ?? [];
       const product = item.products as PantryCardData['product'];

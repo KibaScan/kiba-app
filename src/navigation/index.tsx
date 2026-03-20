@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, GestureResponderEvent } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator, BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import PantryScreen from '../screens/PantryScreen';
 import EditPantryItemScreen from '../screens/EditPantryItemScreen';
 import PetHubScreen from '../screens/PetHubScreen';
 import ResultScreen from '../screens/ResultScreen';
+import RecallDetailScreen from '../screens/RecallDetailScreen';
 import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
 import CreatePetScreen from '../screens/CreatePetScreen';
 import EditPetScreen from '../screens/EditPetScreen';
@@ -36,6 +37,8 @@ import {
   TabParamList,
 } from '../types/navigation';
 
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
 // ─── Stack Navigators ───────────────────────────────────
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -44,6 +47,7 @@ function HomeStackScreen() {
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Result" component={ResultScreen} />
+      <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -54,6 +58,7 @@ function SearchStackScreen() {
     <SearchStack.Navigator screenOptions={{ headerShown: false }}>
       <SearchStack.Screen name="SearchMain" component={SearchScreen} />
       <SearchStack.Screen name="Result" component={ResultScreen} />
+      <SearchStack.Screen name="RecallDetail" component={RecallDetailScreen} />
     </SearchStack.Navigator>
   );
 }
@@ -64,6 +69,7 @@ function ScanStackScreen() {
     <ScanStack.Navigator screenOptions={{ headerShown: false }}>
       <ScanStack.Screen name="ScanMain" component={ScanScreen} />
       <ScanStack.Screen name="Result" component={ResultScreen} />
+      <ScanStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <ScanStack.Screen name="CommunityContribution" component={CommunityContributionScreen} />
       <ScanStack.Screen name="ProductConfirm" component={ProductConfirmScreen} />
       <ScanStack.Screen name="IngredientCapture" component={IngredientCaptureScreen} />
@@ -78,6 +84,7 @@ function PantryStackScreen() {
       <PantryStack.Screen name="PantryMain" component={PantryScreen} />
       <PantryStack.Screen name="EditPantryItem" component={EditPantryItemScreen} />
       <PantryStack.Screen name="Result" component={ResultScreen} />
+      <PantryStack.Screen name="RecallDetail" component={RecallDetailScreen} />
     </PantryStack.Navigator>
   );
 }
@@ -212,7 +219,7 @@ export default function Navigation() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
 
   return (
-    <NavigationContainer theme={KibaDarkTheme}>
+    <NavigationContainer ref={navigationRef} theme={KibaDarkTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {!hasAcceptedTos ? (
           <RootStack.Screen name="Terms" component={TermsScreen} />

@@ -39,6 +39,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
 }));
 jest.mock('expo-blur', () => ({ BlurView: 'BlurView' }));
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn(),
+  cancelScheduledNotificationAsync: jest.fn(),
+  SchedulableTriggerInputTypes: { DAILY: 'daily' },
+}));
 jest.mock('expo-linear-gradient', () => ({ LinearGradient: 'LinearGradient' }));
 jest.mock('../../src/services/supabase', () => ({
   supabase: { from: jest.fn() },

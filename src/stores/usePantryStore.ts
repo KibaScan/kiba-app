@@ -15,6 +15,7 @@ import {
   evaluateDietCompleteness,
 } from '../services/pantryService';
 import { useActivePetStore } from './useActivePetStore';
+import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 
 interface PantryState {
   items: PantryCardData[];
@@ -68,6 +69,7 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
       set({ items, dietStatus, loading: false });
+      rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] addItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to add item.', loading: false });
@@ -84,6 +86,7 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
       set({ items, dietStatus, loading: false });
+      rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] removeItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to remove item.', loading: false });
@@ -132,6 +135,7 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
       set({ items, dietStatus, loading: false });
+      rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] shareItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to share item.', loading: false });

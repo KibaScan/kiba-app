@@ -28,6 +28,7 @@ import type { PantryCardData, UnitLabel, FeedingFrequency } from '../types/pantr
 import type { Product } from '../types';
 import { PantryOfflineError } from '../types/pantry';
 import { usePantryStore } from '../stores/usePantryStore';
+import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
   updatePantryItem,
@@ -223,11 +224,13 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       setNotificationsOn(false);
       saveAssignmentField({ feeding_frequency: freq, notifications_on: false });
     }
+    rescheduleAllFeeding().catch(() => {});
   }, [saveAssignmentField]);
 
   const handleNotificationsToggle = useCallback((val: boolean) => {
     setNotificationsOn(val);
     saveAssignmentField({ notifications_on: val });
+    rescheduleAllFeeding().catch(() => {});
   }, [saveAssignmentField]);
 
   const handleAddTime = useCallback((time: string) => {
@@ -236,12 +239,14 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     const next = [...feedingTimes, time].sort();
     setFeedingTimes(next);
     saveAssignmentField({ feeding_times: next });
+    rescheduleAllFeeding().catch(() => {});
   }, [feedingTimes, saveAssignmentField]);
 
   const handleRemoveTime = useCallback((time: string) => {
     const next = feedingTimes.filter(t => t !== time);
     setFeedingTimes(next);
     saveAssignmentField({ feeding_times: next.length > 0 ? next : null });
+    rescheduleAllFeeding().catch(() => {});
   }, [feedingTimes, saveAssignmentField]);
 
   // ── Action handlers ──

@@ -153,6 +153,7 @@ export default function PantryScreen({ navigation }: Props) {
   const filteredItems = useMemo(() => filterItems(items, activeFilter), [items, activeFilter]);
   const displayItems = useMemo(() => sortItems(filteredItems, activeSort), [filteredItems, activeSort]);
   const bannerConfig = useMemo(() => getDietBannerConfig(dietStatus), [dietStatus]);
+  const recalledItems = useMemo(() => items.filter(i => i.product?.is_recalled), [items]);
   const hasMultiplePets = pets.length > 1;
 
   // ── Lifecycle ──
@@ -174,8 +175,13 @@ export default function PantryScreen({ navigation }: Props) {
   }, [activePetId, loadPantry]);
 
   const handleTap = useCallback((itemId: string) => {
-    navigation.navigate('EditPantryItem', { itemId });
-  }, [navigation]);
+    const item = items.find(i => i.id === itemId);
+    if (item?.product?.is_recalled) {
+      navigation.navigate('RecallDetail', { productId: item.product_id });
+    } else {
+      navigation.navigate('EditPantryItem', { itemId });
+    }
+  }, [navigation, items]);
 
   const checkD157Nudge = useCallback((removedItem: PantryCardData) => {
     const remaining = items.filter(i => i.id !== removedItem.id);
@@ -347,6 +353,20 @@ export default function PantryScreen({ navigation }: Props) {
             );
           })}
         </ScrollView>
+      )}
+
+      {/* Recall alert banner — D-125: always free, top priority */}
+      {recalledItems.length > 0 && (
+        <TouchableOpacity
+          style={styles.recallBanner}
+          onPress={() => setActiveFilter('recalled')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="warning-outline" size={16} color={Colors.severityRed} />
+          <Text style={styles.recallBannerText}>
+            Recall Alert: {recalledItems.length} product{recalledItems.length > 1 ? 's' : ''} in {activePet.name}'s pantry {recalledItems.length > 1 ? 'have' : 'has'} been recalled. Tap to review.
+          </Text>
+        </TouchableOpacity>
       )}
 
       {/* Diet completeness banner */}
@@ -642,6 +662,26 @@ const styles = StyleSheet.create({
   },
   carouselNameInactive: {
     opacity: 0.5,
+  },
+
+  // Recall banner
+  recallBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.severityRed,
+    backgroundColor: `${Colors.severityRed}15`,
+  },
+  recallBannerText: {
+    flex: 1,
+    fontSize: FontSizes.sm,
+    color: Colors.severityRed,
+    lineHeight: 18,
   },
 
   // Diet banner

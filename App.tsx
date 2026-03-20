@@ -8,6 +8,10 @@ import { ensureAuth } from './src/services/auth';
 import { useActivePetStore } from './src/stores/useActivePetStore';
 import { configureRevenueCat } from './src/utils/permissions';
 import { Colors } from './src/utils/constants';
+import { registerForPushNotificationsAsync, setupNotificationHandlers, cleanupNotificationHandlers } from './src/utils/notifications';
+import { registerPushToken } from './src/services/pushService';
+import { rescheduleAllFeeding } from './src/services/feedingNotificationScheduler';
+import { navigationRef } from './src/navigation';
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
@@ -17,8 +21,29 @@ export default function App() {
       await ensureAuth();
       await configureRevenueCat();
       await useActivePetStore.getState().loadPets();
+
+      // Push notification registration (after auth so we have a user_id)
+      const token = await registerForPushNotificationsAsync();
+      if (token) await registerPushToken(token);
+
+      // Re-sync local feeding notifications on launch
+      rescheduleAllFeeding().catch(() => {});
     }
     init().finally(() => setAuthReady(true));
+  }, []);
+
+  useEffect(() => {
+    const navigate = (tab: string) => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('Main' as never);
+        // Small delay to ensure Main is mounted before tab switch
+        setTimeout(() => {
+          navigationRef.navigate(tab as never);
+        }, 100);
+      }
+    };
+    setupNotificationHandlers(navigate);
+    return () => cleanupNotificationHandlers();
   }, []);
 
   if (!authReady) {
