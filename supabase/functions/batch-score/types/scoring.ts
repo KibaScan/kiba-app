@@ -1,0 +1,212 @@
+// Kiba — Scoring Engine Types
+// Type-safe contracts between all scoring layers.
+// Zero `any` types. All layers independently testable.
+
+// ─── Shared Types ───────────────────────────────────────
+
+/** Severity levels matching DB CHECK constraint — 4 levels, not the 5-level Severity enum */
+export type IngredientSeverity = 'danger' | 'caution' | 'neutral' | 'good';
+
+/** Hydrated ingredient — input to all scoring layers that handle ingredients.
+ *  Built by joining product_ingredients + ingredients_dict at scan time. */
+export interface ProductIngredient {
+  position: number;
+  canonical_name: string;
+  dog_base_severity: IngredientSeverity;
+  cat_base_severity: IngredientSeverity;
+  is_unnamed_species: boolean;
+  is_legume: boolean;
+  is_pulse: boolean;                     // D-137 DCM pulse detection
+  is_pulse_protein: boolean;             // D-137 Rule 3 (pulse protein isolates)
+  position_reduction_eligible: boolean;
+  cluster_id: string | null;
+  cat_carb_flag: boolean;
+  allergen_group: string | null;           // D-098 cross-reactivity
+  allergen_group_possible: string[];       // D-098 unnamed terms
+  is_protein_fat_source: boolean;          // Layer 1c protein naming denominator
+  display_name?: string | null;            // D-105 consumer-facing name (UI only, not used in scoring)
+  definition?: string | null;              // D-105 one-sentence definition
+  tldr?: string | null;                    // D-105 2-3 sentence engaging summary
+  detail_body?: string | null;             // D-105 full explanation (1-2 paragraphs)
+  citations_display?: string | null;       // D-105 source strings for UI footer
+}
+
+// ─── DCM Pulse Detection (D-137) ────────────────────────
+
+export type DcmRuleName = 'heavyweight' | 'density' | 'substitution';
+
+/** D-137: DCM positional pulse load evaluation result */
+export interface DcmResult {
+  fires: boolean;
+  triggeredRules: DcmRuleName[];
+  hasMitigation: boolean;
+  pulseIngredients: { name: string; position: number; isPulseProtein: boolean }[];
+}
+
+// ─── Breed & Modifier Types ─────────────────────────────
+
+export type BreedSize = 'small' | 'medium' | 'large' | 'giant';
+
+/** A scoring modifier applied by life stage or breed logic */
+export interface Modifier {
+  name: string;
+  points: number;
+  target: 'protein' | 'fat' | 'fiber' | 'carbs' | 'bucket';
+  reason: string;
+  citationSource: string;
+}
+
+// ─── Layer Output Contracts ─────────────────────────────
+
+/** Individual penalty applied to an ingredient */
+export interface Penalty {
+  ingredientName: string;
+  reason: string;
+  rawPenalty: number;
+  positionAdjustedPenalty: number;
+  position: number;
+  citationSource: string;
+}
+
+/** Per-ingredient grouped penalty result (for waterfall UI) */
+export interface IngredientPenaltyResult {
+  ingredientName: string;           // display name (human-readable)
+  canonicalName: string;            // database key
+  severity: IngredientSeverity;
+  position: number;
+  reasons: Array<{
+    reason: string;                 // short description for sub-reason display
+    rawPoints: number;              // before position weighting
+    weightedPoints: number;         // after position weighting
+    citationSource: string;
+  }>;
+  totalWeightedPoints: number;      // sum of all weightedPoints
+}
+
+/** Layer 1a — Ingredient Quality bucket output */
+export interface IngredientScoreResult {
+  ingredientScore: number;        // 0-100
+  penalties: Penalty[];
+  groupedPenalties: IngredientPenaltyResult[];
+  flags: string[];                // non-scoring signals (e.g. 'ingredient_splitting_detected')
+  unnamedSpeciesCount: number;
+}
+
+/** Layer 1b — Nutritional Profile bucket output */
+export interface NutritionScoreResult {
+  bucketScore: number;                  // 0-100
+  subScores: {
+    protein: number;
+    fat: number;
+    fiber: number;
+    carbs: number;
+  };
+  modifiersApplied: Modifier[];
+  dataQuality: 'full' | 'partial' | 'missing';
+  missingFields: string[];
+  llmExtracted: boolean;
+}
+
+/** Layer 1c — Formulation Completeness bucket output */
+export interface FormulationScoreResult {
+  formulationScore: number;      // 0-100 weighted composite
+  breakdown: {
+    aafcoScore: number;          // 0-100
+    preservativeScore: number;   // 0-100
+    proteinNamingScore: number;  // 0-100
+  };
+  flags: string[];
+}
+
+/** A species rule that was evaluated */
+export interface AppliedRule {
+  ruleId: string;
+  label: string;
+  adjustment: number;
+  fired: boolean;
+  citation?: string;
+}
+
+/** Layer 2 — Species Rules output */
+export interface SpeciesRuleResult {
+  adjustedScore: number;
+  rules: AppliedRule[];
+}
+
+/** A single personalization adjustment or flag */
+export interface PersonalizationDetail {
+  type: 'allergen' | 'life_stage' | 'breed' | 'condition' | 'breed_contraindication';
+  label: string;
+  adjustment: number;
+  petName: string;
+  severity?: 'direct_match' | 'possible_match';
+}
+
+/** Layer 3 — Personalization output */
+export interface PersonalizationResult {
+  finalScore: number;
+  personalizations: PersonalizationDetail[];
+}
+
+/** Carb estimation for D-104 display — does NOT re-enter scoring */
+export interface CarbEstimate {
+  valueDmb: number | null;
+  confidence: 'exact' | 'estimated' | 'unknown';
+  qualitativeLabel: string | null;  // 'Low' | 'Moderate' | 'High'
+  species: 'dog' | 'cat';
+  ashUsedPct: number | null;        // as-fed ash % used in formula (display only)
+}
+
+/** Pipeline bypass reasons — scoring engine not run */
+export type BypassReason = 'vet_diet_bypass' | 'species_mismatch' | 'variety_pack';
+
+/** Orchestrator final output — composite of all layers */
+export interface ScoredResult {
+  // Core score
+  finalScore: number;               // 0-100, clamped
+  displayScore: number;             // same as finalScore — for D-094 "[X]% match" rendering
+  petName: string | null;           // null if no petProfile
+
+  // Pipeline bypass — when set, scoring engine was not run
+  bypass?: BypassReason;
+  bypassReason?: string;
+
+  // Layer breakdowns (for waterfall UI per D-094)
+  layer1: {
+    ingredientQuality: number;
+    nutritionalProfile: number;     // 0 if treat or missing GA
+    formulation: number;            // 0 if treat
+    weightedComposite: number;      // after 55/30/15 or 100/0/0 or 78/22
+  };
+  layer2: {
+    speciesAdjustment: number;
+    appliedRules: AppliedRule[];
+  };
+  layer3: {
+    personalizations: PersonalizationDetail[];
+    allergenWarnings: PersonalizationDetail[];
+  };
+
+  // Ingredient penalties (pass-through from Layer 1a for waterfall detail)
+  ingredientPenalties: Penalty[];
+
+  // Per-ingredient grouped penalties (for waterfall UI)
+  ingredientResults: IngredientPenaltyResult[];
+
+  // Flags for UI (merged from all layers)
+  flags: string[];
+
+  // Data quality signals
+  isPartialScore: boolean;
+  isRecalled: boolean;
+  llmExtracted: boolean;
+
+  // D-129: allergen severity override delta (weighted, for waterfall display)
+  allergenDelta: number;
+
+  // Carb estimation (D-104 — display only)
+  carbEstimate: CarbEstimate | null;
+
+  // Category
+  category: 'daily_food' | 'treat';
+}
