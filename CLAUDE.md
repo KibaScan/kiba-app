@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 19, 2026 — M5 in progress, 746 tests/37 suites.
+> Last updated: March 19, 2026 — M5 in progress, 752 tests/38 suites.
 
 ---
 
@@ -13,7 +13,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
 **Current phase:** M5 Pantry + Recall Siren
 
-**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (746 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo`
+**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (752 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo`
 
 ## Spec Files — Read Before Changing
 
@@ -30,7 +30,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` (pantry CRUD + offline guards), `src/utils/pantryHelpers.ts` (depletion math, calorie context, pure functions), `src/types/pantry.ts` (all pantry types + PantryOfflineError), `src/components/pantry/PantryCard.tsx` (pantry list item card), `src/components/pantry/AddToPantrySheet.tsx` (add-to-pantry bottom sheet), `src/components/pantry/SharePantrySheet.tsx` (share item with other same-species pets), `src/stores/usePantryStore.ts` (Zustand pantry state), `src/screens/PantryScreen.tsx` (pantry tab screen — filter/sort, diet banner, pet carousel, remove/restock flows), `src/screens/EditPantryItemScreen.tsx` (edit pantry item — quantity, feeding, schedule, auto-save, recalled/empty states), `supabase/migrations/` (001–011)
+**Key code paths:** `src/services/scoring/` (engine.ts orchestrator), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` (pantry CRUD + offline guards), `src/utils/pantryHelpers.ts` (depletion math, calorie context, pure functions), `src/types/pantry.ts` (all pantry types + PantryOfflineError), `src/components/pantry/PantryCard.tsx` (pantry list item card), `src/components/pantry/AddToPantrySheet.tsx` (add-to-pantry bottom sheet), `src/components/pantry/SharePantrySheet.tsx` (share item with other same-species pets), `src/stores/usePantryStore.ts` (Zustand pantry state), `src/screens/PantryScreen.tsx` (pantry tab screen — filter/sort, diet banner, pet carousel, remove/restock flows), `src/screens/EditPantryItemScreen.tsx` (edit pantry item — quantity, feeding, schedule, auto-save, recalled/empty states), `src/services/topMatches.ts` (Top Matches cache freshness, query, batch trigger), `supabase/functions/batch-score/` (Deno Edge Function — bulk scores all products for a pet, upserts into pet_product_scores; `scoring/` subfolder is verified engine copy), `supabase/migrations/` (001–012)
 
 ## Score Framing (D-094)
 
