@@ -43,7 +43,10 @@ import { getAgeMonths } from '../components/PortionCard';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
+import { getHealthRecords } from '../services/appointmentService';
+import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
+import type { PetHealthRecord } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
@@ -132,6 +135,10 @@ export default function PetHubScreen({ navigation }: Props) {
   const [allergens, setAllergens] = useState<PetAllergen[]>([]);
   const [healthLoading, setHealthLoading] = useState(false);
 
+  // ─── Health records (D-163) ────────────────────────────
+  const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
+  const [manualRecordVisible, setManualRecordVisible] = useState(false);
+
   // ─── Delete modal ───────────────────────────────────────
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
@@ -151,11 +158,13 @@ export default function PetHubScreen({ navigation }: Props) {
       Promise.all([
         getPetConditions(activePet.id),
         getPetAllergens(activePet.id),
+        getHealthRecords(activePet.id),
       ])
-        .then(([conds, allergs]) => {
+        .then(([conds, allergs, records]) => {
           if (!cancelled) {
             setConditions(conds);
             setAllergens(allergs);
+            setHealthRecords(records);
           }
         })
         .catch(() => {
@@ -585,6 +594,65 @@ export default function PetHubScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
+        {/* Health Records — Vaccines (D-163) */}
+        <View style={styles.healthRecordCard}>
+          <Text style={styles.healthRecordTitle}>Vaccines</Text>
+          {healthRecords.filter((r) => r.record_type === 'vaccination').length === 0 ? (
+            <Text style={styles.healthRecordEmpty}>No vaccines logged yet.</Text>
+          ) : (
+            healthRecords
+              .filter((r) => r.record_type === 'vaccination')
+              .map((r) => (
+                <View key={r.id} style={styles.healthRecordRow}>
+                  <View style={styles.healthRecordInfo}>
+                    <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
+                    <Text style={styles.healthRecordDate}>
+                      {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                    </Text>
+                    {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
+                  </View>
+                </View>
+              ))
+          )}
+        </View>
+
+        {/* Health Records — Dewormings (D-163) */}
+        <View style={styles.healthRecordCard}>
+          <Text style={styles.healthRecordTitle}>Dewormings</Text>
+          {healthRecords.filter((r) => r.record_type === 'deworming').length === 0 ? (
+            <Text style={styles.healthRecordEmpty}>No dewormings logged yet.</Text>
+          ) : (
+            healthRecords
+              .filter((r) => r.record_type === 'deworming')
+              .map((r) => (
+                <View key={r.id} style={styles.healthRecordRow}>
+                  <View style={styles.healthRecordInfo}>
+                    <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
+                    <Text style={styles.healthRecordDate}>
+                      {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                    </Text>
+                    {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
+                  </View>
+                </View>
+              ))
+          )}
+        </View>
+
+        {/* Add Record button + disclaimer (D-163) */}
+        <TouchableOpacity
+          style={styles.addRecordButton}
+          onPress={() => setManualRecordVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={Colors.accent} />
+          <Text style={styles.addRecordText}>Add Record</Text>
+        </TouchableOpacity>
+        <Text style={styles.healthDisclaimer}>
+          Health records are for your reference. Consult your veterinarian for your pet's care schedule.
+        </Text>
+
         {/* (g) Recent scans placeholder */}
         <View style={styles.scansCard}>
           <Ionicons
@@ -600,6 +668,7 @@ export default function PetHubScreen({ navigation }: Props) {
         {/* (h) Settings */}
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Settings</Text>
+          <SettingsRow icon="calendar-outline" label="Appointments" onPress={() => navigation.navigate('Appointments')} />
           <SettingsRow icon="notifications-outline" label="Recall Alerts" />
           <SettingsRow icon="shield-checkmark-outline" label="Subscription" />
           <SettingsRow icon="information-circle-outline" label="About Kiba" isLast />
@@ -658,6 +727,20 @@ export default function PetHubScreen({ navigation }: Props) {
           species={activePet.species}
         />
       </View>
+
+      {/* Manual health record sheet (D-163) */}
+      <HealthRecordLogSheet
+        visible={manualRecordVisible}
+        appointment={null}
+        petNames={new Map(pets.map((p) => [p.id, p.name]))}
+        onComplete={() => {
+          setManualRecordVisible(false);
+          // Reload health records
+          if (activePet) {
+            getHealthRecords(activePet.id).then(setHealthRecords).catch(() => {});
+          }
+        }}
+      />
 
       {/* Delete confirmation modal */}
       <Modal
@@ -726,9 +809,9 @@ export default function PetHubScreen({ navigation }: Props) {
 
 // ─── Settings Row (preserved from MeScreen) ──────────────
 
-function SettingsRow({ icon, label, isLast }: { icon: string; label: string; isLast?: boolean }) {
+function SettingsRow({ icon, label, isLast, onPress }: { icon: string; label: string; isLast?: boolean; onPress?: () => void }) {
   return (
-    <TouchableOpacity style={[styles.settingsRow, isLast && styles.settingsRowLast]} activeOpacity={0.6}>
+    <TouchableOpacity style={[styles.settingsRow, isLast && styles.settingsRowLast]} activeOpacity={0.6} onPress={onPress}>
       <Ionicons
         name={icon as keyof typeof Ionicons.glyphMap}
         size={22}
@@ -1064,6 +1147,66 @@ const styles = StyleSheet.create({
   },
 
   // ─── Recent Scans ─────────────────────────────────────
+  // Health records (D-163)
+  healthRecordCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    marginBottom: Spacing.md,
+  },
+  healthRecordTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  healthRecordEmpty: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+  },
+  healthRecordRow: {
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
+  },
+  healthRecordInfo: {
+    gap: 2,
+  },
+  healthRecordName: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  healthRecordDate: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  healthRecordVet: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+  },
+  addRecordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  addRecordText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  healthDisclaimer: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+  },
   scansCard: {
     backgroundColor: Colors.card,
     borderRadius: 16,

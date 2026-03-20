@@ -45,6 +45,8 @@
 - M5 Push infra: Migration 013 (`push_tokens` table — per-device Expo push tokens with UNIQUE user_id+device_id, RLS), Migration 014 (`user_settings` table — per-user notification prefs with global kill switch + per-category toggles, RLS). `src/services/pushService.ts` (registerPushToken upserts both tables, getNotificationPreferences reads user_settings). `src/utils/notifications.ts` (registerForPushNotificationsAsync, setupNotificationHandlers with tap routing by NotificationType). 761 tests passing across 38 suites.
 - M5 Feeding notification scheduler: `src/services/feedingNotificationScheduler.ts` (client-side local notifications via expo-notifications — full-resync approach: rescheduleAllFeeding() cancels all + rebuilds; multi-pet grouping same-time feedings into single notification; meal labels from time of day; unicode fraction serving display; D-084/D-095 compliant copy). Integrated into usePantryStore (add/remove/share), EditPantryItemScreen (frequency/toggle/time changes), App.tsx (launch resync). 771 tests passing across 39 suites.
 - M5 Auto-deplete cron: `supabase/functions/auto-deplete/index.ts` (Deno Edge Function — service role auth, daily-total deduction across all users, unit conversion cups->kg->quantity_unit with calorie-based or 0.1134 fallback, idempotency via last_deducted_at guard, state transition detection for low stock/empty, push notifications via Expo Push API with dead token cleanup). Migration 015 (pg_cron + pg_net schedule, vault secrets for auth). 771 tests passing across 39 suites.
+- M5 Pet Appointments backend (D-103): Migration 017 (`pet_appointments` table — UUID[] pet_ids, 5 appointment types, reminder/recurring options, partial index on upcoming, GIN index on pet_ids, RLS). `src/types/appointment.ts` (Appointment, CreateAppointmentInput, UpdateAppointmentInput types). `src/services/appointmentService.ts` (6 CRUD functions with offline guards — create, update, hard delete, complete with auto-recurring spawn, getUpcoming/getPast with optional pet filter via array containment). `canCreateAppointment()` in permissions.ts (free tier: 2 active max, premium: unlimited). `freeAppointmentsMax` in constants.ts. 822 tests passing across 41 suites.
+- M5 Pet Appointments UI + reminders (D-103): `src/screens/AppointmentsListScreen.tsx` (upcoming/past segmented control, type icons, relative date formatting, pet name resolution, paywall gate on "+"). `src/screens/CreateAppointmentScreen.tsx` (form — 5 type chips, DateTimePicker via `@react-native-community/datetimepicker`, pet multi-select with active pet default, location/notes, reminder/recurring chip pickers, "Schedule" button). `src/screens/AppointmentDetailScreen.tsx` (edit all fields, "Save Changes" on dirty, "Mark Complete" with recurring auto-spawn, "Delete" with BlurView confirmation modal, completed badge for past). `src/services/appointmentNotificationScheduler.ts` (local one-shot reminders via expo-notifications DATE trigger — full resync approach matching feedingNotificationScheduler pattern; D-084/D-095 compliant copy; multi-pet name formatting; preference check via user_settings). Integrated into App.tsx (launch resync), create/edit/delete/complete flows. PetHubScreen "Appointments" settings row added. Navigation: 3 screens on MeStack, `appointment_limit` PaywallTrigger. 834 tests passing across 42 suites.
 
 ---
 
@@ -587,12 +589,12 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
 
 ### Pet Appointments (D-103)
-- [ ] Schedule vet, grooming, medication, vaccination, and custom appointments
-- [ ] Per-pet or multi-pet assignment
-- [ ] Optional reminders (1hr / 1 day / 3 days / 1 week before)
-- [ ] Recurring appointments (monthly, quarterly, 6-month, yearly) for flea meds, checkups
-- [ ] Upcoming appointments visible on pet profile and home screen
-- [ ] Past appointments archived for future vet report integration
+- [x] Schedule vet, grooming, medication, vaccination, and custom appointments
+- [x] Per-pet or multi-pet assignment
+- [x] Optional reminders (1hr / 1 day / 3 days / 1 week before)
+- [x] Recurring appointments (monthly, quarterly, 6-month, yearly) for flea meds, checkups
+- [x] Upcoming appointments visible on pet profile and home screen
+- [x] Past appointments archived for future vet report integration
 
 ### Recall Siren (Free Tier — D-125)
 - [ ] FDA recall RSS feed monitoring (automated, not manual checking)

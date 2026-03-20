@@ -55,12 +55,18 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
 }));
 jest.mock('../../src/services/supabase', () => ({
-  supabase: { from: jest.fn() },
+  supabase: { from: jest.fn(), auth: { getSession: jest.fn().mockResolvedValue({ data: { session: null } }) } },
+}));
+jest.mock('../../src/utils/network', () => ({
+  isOnline: jest.fn().mockResolvedValue(true),
 }));
 jest.mock('../../src/services/petService', () => ({
   getPetConditions: jest.fn(),
   getPetAllergens: jest.fn(),
   deletePet: jest.fn(),
+}));
+jest.mock('../../src/services/appointmentService', () => ({
+  getHealthRecords: jest.fn().mockResolvedValue([]),
 }));
 
 import {

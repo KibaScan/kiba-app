@@ -20,6 +20,9 @@ import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
 import CreatePetScreen from '../screens/CreatePetScreen';
 import EditPetScreen from '../screens/EditPetScreen';
 import HealthConditionsScreen from '../screens/HealthConditionsScreen';
+import AppointmentsListScreen from '../screens/AppointmentsListScreen';
+import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
+import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PaywallScreen from '../screens/PaywallScreen';
@@ -98,6 +101,9 @@ function MeStackScreen() {
       <MeStack.Screen name="CreatePet" component={CreatePetScreen} />
       <MeStack.Screen name="EditPet" component={EditPetScreen} />
       <MeStack.Screen name="HealthConditions" component={HealthConditionsScreen} />
+      <MeStack.Screen name="Appointments" component={AppointmentsListScreen} />
+      <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
+      <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
     </MeStack.Navigator>
   );
 }

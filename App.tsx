@@ -11,6 +11,8 @@ import { Colors } from './src/utils/constants';
 import { registerForPushNotificationsAsync, setupNotificationHandlers, cleanupNotificationHandlers } from './src/utils/notifications';
 import { registerPushToken } from './src/services/pushService';
 import { rescheduleAllFeeding } from './src/services/feedingNotificationScheduler';
+import { rescheduleAllAppointments } from './src/services/appointmentNotificationScheduler';
+import { supabase } from './src/services/supabase';
 import { navigationRef } from './src/navigation';
 
 export default function App() {
@@ -26,8 +28,12 @@ export default function App() {
       const token = await registerForPushNotificationsAsync();
       if (token) await registerPushToken(token);
 
-      // Re-sync local feeding notifications on launch
+      // Re-sync local notifications on launch
       rescheduleAllFeeding().catch(() => {});
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        rescheduleAllAppointments(session.user.id).catch(() => {});
+      }
     }
     init().finally(() => setAuthReady(true));
   }, []);

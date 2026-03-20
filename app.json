@@ -53,7 +53,8 @@
           "photosPermission": "Kiba needs photo access to set your pet's profile picture"
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

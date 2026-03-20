@@ -47,6 +47,9 @@ export type MeStackParamList = {
   CreatePet: { species: 'dog' | 'cat' };
   EditPet: { petId: string };
   HealthConditions: { petId: string; fromCreate?: boolean };
+  Appointments: undefined;
+  CreateAppointment: undefined;
+  AppointmentDetail: { appointmentId: string };
 };
 
 // ─── Paywall Trigger ─────────────────────────────────
@@ -58,7 +61,8 @@ export type PaywallTrigger =
   | 'search'
   | 'compare'
   | 'vet_report'
-  | 'elimination_diet';
+  | 'elimination_diet'
+  | 'appointment_limit';
 
 // ─── Root & Tab Navigators ─────────────────────────────
 

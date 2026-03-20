@@ -144,6 +144,13 @@ export function canStartEliminationDiet(): boolean {
   return isPremium();
 }
 
+// ─── Appointment Gate (D-103) ────────────────────────────
+
+export function canCreateAppointment(activeCount: number): boolean {
+  if (isPremium()) return true;
+  return activeCount < Limits.freeAppointmentsMax;
+}
+
 // FREE for all users (D-125): scanning (up to limit), basic score, 1 pet, Recall Siren
 export function canSetRecallAlerts(): boolean {
   return true;

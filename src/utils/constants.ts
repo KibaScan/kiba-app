@@ -119,6 +119,7 @@ export const Limits = {
   freeScansPerWeek: 5,
   freePetsMax: 1,
   premiumPetsMax: 10,
+  freeAppointmentsMax: 2,
 } as const;
 
 // ─── AAFCO Statement Status (standardized copy) ────────
