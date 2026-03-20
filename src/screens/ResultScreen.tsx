@@ -60,7 +60,7 @@ import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
-import { checkDuplicateUpc } from '../services/pantryService';
+import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import type { PantryItem } from '../types/pantry';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
@@ -146,14 +146,24 @@ export default function ResultScreen() {
       return;
     }
 
-    const isDupe = await checkDuplicateUpc(product.id, pet.id);
-    if (isDupe) {
+    const dupeItemId = await checkDuplicateUpc(product.id, pet.id);
+    if (dupeItemId) {
       Alert.alert(
         'Already in Pantry',
         'This product is already in the pantry. Restock instead?',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'OK' },
+          {
+            text: 'Restock',
+            onPress: async () => {
+              try {
+                await restockPantryItem(dupeItemId);
+                Alert.alert('Restocked', `${product.name} has been restocked.`);
+              } catch {
+                Alert.alert('Error', 'Failed to restock. Please try again.');
+              }
+            },
+          },
         ],
       );
       return;

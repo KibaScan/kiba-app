@@ -94,8 +94,7 @@ export async function fetchTopMatches(
     .from('pet_product_scores')
     .select('product_id, final_score, is_partial_score, is_supplemental, category, products(name, brand, image_url, product_form)')
     .eq('pet_id', petId)
-    .order('final_score', { ascending: false })
-    .limit(25);
+    .order('final_score', { ascending: false });
 
   if (filters?.category) {
     query = query.eq('category', filters.category);

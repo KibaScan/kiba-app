@@ -301,16 +301,18 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
 export async function checkDuplicateUpc(
   productId: string,
   petId: string,
-): Promise<boolean> {
+): Promise<string | null> {
   const { data, error } = await supabase
     .from('pantry_items')
     .select('id, pantry_pet_assignments!inner(pet_id)')
     .eq('product_id', productId)
     .eq('is_active', true)
-    .eq('pantry_pet_assignments.pet_id', petId);
+    .eq('pantry_pet_assignments.pet_id', petId)
+    .limit(1)
+    .maybeSingle();
 
-  if (error) return false;
-  return (data?.length ?? 0) > 0;
+  if (error || !data) return null;
+  return data.id as string;
 }
 
 export async function evaluateDietCompleteness(
@@ -351,7 +353,10 @@ export async function evaluateDietCompleteness(
 
   const nonTreatItems = typedItems.filter(i => i.products?.category !== 'treat');
   if (nonTreatItems.length === 0) {
-    return { status: 'empty', message: null };
+    return {
+      status: 'red_warning',
+      message: `No meals found in ${petName}'s pantry. Treats don't provide complete nutrition on their own.`,
+    };
   }
 
   const supplementalCount = typedItems.filter(

@@ -18,6 +18,8 @@ import {
   calculateGoalWeightPortion,
 } from '../services/portionCalculator';
 import { isPremium } from '../utils/permissions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resolveCalories } from '../utils/calorieEstimation';
 import * as haptics from '../utils/haptics';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 
@@ -72,6 +74,50 @@ function shortenProductName(name: string, maxLen = 40): string {
   return short.substring(0, maxLen - 1).trim() + '\u2026';
 }
 
+const PORTION_UNIT_KEY = 'portionUnit';
+
+/** Compute grams per cup from calorie density: (kcal_per_cup / kcal_per_kg) × 1000 */
+export function computeGramsPerCup(kcalPerCup: number, kcalPerKg: number): number {
+  return (kcalPerCup / kcalPerKg) * 1000;
+}
+
+/** Whether the product has sufficient calorie data for cups↔grams toggle. */
+export function canShowPortionToggle(product: Product | null): {
+  canToggle: boolean;
+  gramsPerCup: number | null;
+  isEstimated: boolean;
+} {
+  if (!product || product.ga_kcal_per_cup == null || product.ga_kcal_per_cup <= 0) {
+    return { canToggle: false, gramsPerCup: null, isEstimated: false };
+  }
+
+  // Label kcal_per_kg — best source
+  if (product.ga_kcal_per_kg != null && product.ga_kcal_per_kg > 0) {
+    return {
+      canToggle: true,
+      gramsPerCup: computeGramsPerCup(product.ga_kcal_per_cup, product.ga_kcal_per_kg),
+      isEstimated: false,
+    };
+  }
+
+  // Atwater fallback — resolveCalories short-circuits at priority 2 when cups
+  // exist, so null them to isolate the Atwater path (D-149)
+  const atwater = resolveCalories({
+    ...product,
+    ga_kcal_per_cup: null,
+    ga_kcal_per_kg: null,
+  } as Product);
+  if (atwater && atwater.kcalPerKg > 0) {
+    return {
+      canToggle: true,
+      gramsPerCup: computeGramsPerCup(product.ga_kcal_per_cup, atwater.kcalPerKg),
+      isEstimated: true,
+    };
+  }
+
+  return { canToggle: false, gramsPerCup: null, isEstimated: false };
+}
+
 /** Whether to show goal weight section. Premium-gated per permissions.ts. */
 export function shouldShowGoalWeight(
   weightGoalLbs: number | null,
@@ -91,6 +137,18 @@ export function shouldShowGoalWeight(
 
 export default function PortionCard({ pet, product, conditions, isSupplemental }: PortionCardProps) {
   const [showInfo, setShowInfo] = useState(false);
+  const [portionUnit, setPortionUnit] = useState<'cups' | 'grams'>('cups');
+
+  useEffect(() => {
+    AsyncStorage.getItem(PORTION_UNIT_KEY).then((val) => {
+      if (val === 'cups' || val === 'grams') setPortionUnit(val);
+    });
+  }, []);
+
+  const handleToggleUnit = (unit: 'cups' | 'grams') => {
+    setPortionUnit(unit);
+    AsyncStorage.setItem(PORTION_UNIT_KEY, unit);
+  };
 
   const portionData = useMemo(() => {
     if (pet.weight_current_lbs == null) return null;
@@ -146,6 +204,8 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
     return { der, multiplierResult, dailyPortion, showGoal, goalResult, goalPortion };
   }, [pet, product, conditions]);
 
+  const toggleData = useMemo(() => canShowPortionToggle(product), [product]);
+
   // Fire hepatic warning haptic when warning becomes visible
   useEffect(() => {
     if (portionData?.goalResult?.hepaticWarning) {
@@ -197,14 +257,38 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
         <Text style={styles.derUnit}> kcal/day for {pet.name}</Text>
       </Text>
 
-      {/* Quick cups conversion when kcal_per_cup available */}
+      {/* Cups ↔ Grams toggle */}
+      {toggleData.canToggle && (
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleSegment, portionUnit === 'cups' && styles.toggleSegmentActive]}
+            onPress={() => handleToggleUnit('cups')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleLabel, portionUnit === 'cups' && styles.toggleLabelActive]}>Cups</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleSegment, portionUnit === 'grams' && styles.toggleSegmentActive]}
+            onPress={() => handleToggleUnit('grams')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleLabel, portionUnit === 'grams' && styles.toggleLabelActive]}>Grams</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Quick portion conversion when kcal_per_cup available */}
       {product?.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 && (() => {
         const cups = der / product.ga_kcal_per_cup;
         const isVerySmall = pet.species === 'cat' ? cups < 0.25 : cups < 0.33;
+        const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
         return (
           <>
             <Text style={styles.cupsLine}>
-              {'\u2248'} {formatCups(cups)} cups/day
+              {'\u2248'} {useGrams
+                ? `${formatGrams(cups * toggleData.gramsPerCup!)} g/day`
+                : `${formatCups(cups)} cups/day`}
+              {toggleData.isEstimated && <Text style={styles.estimatedTag}> (estimated)</Text>}
             </Text>
             {isVerySmall && (
               <Text style={styles.cupsNote}>
@@ -231,14 +315,19 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
       )}
 
       {/* Product portions: cups preferred, grams fallback */}
-      {dailyPortion?.cups != null && product && (
-        <Text style={styles.portionLine} numberOfLines={1}>
-          ~{formatCups(dailyPortion.cups)} cups/day of {shortenProductName(product.name)}
-        </Text>
-      )}
+      {dailyPortion?.cups != null && product && (() => {
+        const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
+        return (
+          <Text style={styles.portionLine} numberOfLines={1}>
+            ~{useGrams
+              ? `${formatGrams(dailyPortion.cups * toggleData.gramsPerCup!)} g/day`
+              : `${formatCups(dailyPortion.cups)} cups/day`} of {shortenProductName(product.name)}
+          </Text>
+        );
+      })()}
       {dailyPortion?.cups == null && dailyPortion?.grams != null && product && (
         <Text style={styles.portionLine} numberOfLines={1}>
-          ~{formatGrams(dailyPortion.grams)}g/day of {shortenProductName(product.name)}
+          ~{formatGrams(dailyPortion.grams)} g/day of {shortenProductName(product.name)}
         </Text>
       )}
 
@@ -250,14 +339,19 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
             <Text style={styles.derValue}>{formatCalories(goalResult.derKcal)}</Text>
             <Text style={styles.derUnit}> kcal/day</Text>
           </Text>
-          {goalPortion?.cups != null && (
-            <Text style={styles.goalPortion}>
-              ~{formatCups(goalPortion.cups)} cups/day
-            </Text>
-          )}
+          {goalPortion?.cups != null && (() => {
+            const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
+            return (
+              <Text style={styles.goalPortion}>
+                ~{useGrams
+                  ? `${formatGrams(goalPortion.cups * toggleData.gramsPerCup!)} g/day`
+                  : `${formatCups(goalPortion.cups)} cups/day`}
+              </Text>
+            );
+          })()}
           {goalPortion?.cups == null && goalPortion?.grams != null && (
             <Text style={styles.goalPortion}>
-              ~{formatGrams(goalPortion.grams)}g/day
+              ~{formatGrams(goalPortion.grams)} g/day
             </Text>
           )}
         </View>
@@ -367,6 +461,35 @@ const styles = StyleSheet.create({
   goalPortion: {
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    padding: 2,
+    alignSelf: 'flex-start',
+  },
+  toggleSegment: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  toggleSegmentActive: {
+    backgroundColor: Colors.accent,
+  },
+  toggleLabel: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  toggleLabelActive: {
+    color: Colors.textPrimary,
+    fontWeight: '600',
+  },
+  estimatedTag: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
   },
   hepaticCard: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
