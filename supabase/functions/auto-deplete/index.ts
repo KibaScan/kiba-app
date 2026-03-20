@@ -296,7 +296,8 @@ Deno.serve(async (req: Request) => {
         'products(name, brand, ga_kcal_per_cup, ga_kcal_per_kg)), ' +
         'pets(name)',
     )
-    .eq('feeding_frequency', 'daily');
+    .eq('feeding_frequency', 'daily')
+    .eq('pantry_items.is_active', true);
 
   if (queryError) {
     console.error('[auto-deplete] Query failed:', queryError);

@@ -436,7 +436,7 @@ Deno.serve(async (req: Request) => {
         to: token,
         title: truncate(title, 65),
         body,
-        data: { type: 'digest', screen: 'Home' },
+        data: { type: 'weekly_digest', screen: 'Home' },
         sound: 'default',
         priority: 'default',
       });

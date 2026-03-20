@@ -241,7 +241,16 @@ export async function logHealthRecord(
   }
 
   // Complete the appointment
-  await completeAppointment(appointmentId);
+  if (recordData.next_due_at) {
+    // Follow-up already created — mark completed without recurring auto-creation
+    const now = new Date().toISOString();
+    await supabase
+      .from('pet_appointments')
+      .update({ is_completed: true, completed_at: now, updated_at: now })
+      .eq('id', appointmentId);
+  } else {
+    await completeAppointment(appointmentId);
+  }
 
   return (data ?? []) as PetHealthRecord[];
 }

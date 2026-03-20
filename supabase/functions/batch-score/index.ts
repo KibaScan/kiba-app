@@ -20,6 +20,7 @@ const CORS_HEADERS = {
 };
 
 const UPSERT_CHUNK = 500;
+const QUERY_PAGE = 1000;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 
 function jsonResponse(
@@ -119,35 +120,57 @@ Deno.serve(async (req: Request) => {
     (r: { condition_tag: string }) => r.condition_tag,
   );
 
-  // ── 4. Bulk product query ──
+  // ── 4. Bulk product query (paginated) ──
 
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('*')
-    .eq('target_species', petProfile.species)
-    .eq('is_vet_diet', false)
-    .eq('is_recalled', false);
+  const products: Product[] = [];
+  let productFrom = 0;
+  while (true) {
+    const { data: page, error: pageErr } = await supabase
+      .from('products')
+      .select('*')
+      .eq('target_species', petProfile.species)
+      .eq('is_vet_diet', false)
+      .eq('is_recalled', false)
+      .range(productFrom, productFrom + QUERY_PAGE - 1);
 
-  if (productsError || !products || products.length === 0) {
+    if (pageErr) {
+      return jsonResponse({ error: 'Failed to fetch products' }, 500);
+    }
+    if (!page || page.length === 0) break;
+    products.push(...(page as Product[]));
+    if (page.length < QUERY_PAGE) break;
+    productFrom += QUERY_PAGE;
+  }
+
+  if (products.length === 0) {
     return jsonResponse({ scored: 0, duration_ms: Date.now() - startTime });
   }
 
-  // ── 5. Bulk ingredient query (single join for all products) ──
+  // ── 5. Bulk ingredient query (chunked + paginated) ──
 
-  const productIds = (products as Product[]).map((p) => p.id);
+  const productIds = products.map((p) => p.id);
+  const ingredientRows: Array<Record<string, unknown>> = [];
 
-  const { data: ingredientRows, error: ingredientsError } = await supabase
-    .from('product_ingredients')
-    .select('product_id, position, ingredient_id, ingredients_dict(*)')
-    .in('product_id', productIds)
-    .order('position');
+  for (let c = 0; c < productIds.length; c += UPSERT_CHUNK) {
+    const idChunk = productIds.slice(c, c + UPSERT_CHUNK);
+    let ingFrom = 0;
+    while (true) {
+      const { data: page, error: pageErr } = await supabase
+        .from('product_ingredients')
+        .select('product_id, position, ingredient_id, ingredients_dict(*)')
+        .in('product_id', idChunk)
+        .order('position')
+        .range(ingFrom, ingFrom + QUERY_PAGE - 1);
 
-  if (ingredientsError) {
-    console.error(
-      '[batch-score] Ingredients query failed:',
-      ingredientsError,
-    );
-    return jsonResponse({ error: 'Failed to fetch ingredients' }, 500);
+      if (pageErr) {
+        console.error('[batch-score] Ingredients query failed:', pageErr);
+        return jsonResponse({ error: 'Failed to fetch ingredients' }, 500);
+      }
+      if (!page || page.length === 0) break;
+      ingredientRows.push(...page);
+      if (page.length < QUERY_PAGE) break;
+      ingFrom += QUERY_PAGE;
+    }
   }
 
   // ── 6. Group ingredients by product_id ──

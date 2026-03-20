@@ -18,6 +18,7 @@ const CORS_HEADERS = {
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const EXPO_PUSH_BATCH = 100;
+const QUERY_PAGE = 1000;
 
 // Default FDA animal/veterinary recall RSS feed
 const DEFAULT_FDA_RSS_URL =
@@ -535,17 +536,34 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ── 4. Load products for matching ──
+  // ── 4. Load products for matching (paginated) ──
 
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('id, brand, name')
-    .eq('is_recalled', false);
+  const products: ProductRow[] = [];
+  let productFrom = 0;
+  while (true) {
+    const { data: page, error: pageErr } = await supabase
+      .from('products')
+      .select('id, brand, name')
+      .eq('is_recalled', false)
+      .range(productFrom, productFrom + QUERY_PAGE - 1);
 
-  if (productsError || !products || products.length === 0) {
-    console.error('[recall-check] Products query failed:', productsError);
+    if (pageErr) {
+      console.error('[recall-check] Products query failed:', pageErr);
+      return jsonResponse({
+        error: 'Products query failed',
+        duration_ms: Date.now() - startTime,
+      }, 500);
+    }
+    if (!page || page.length === 0) break;
+    products.push(...(page as ProductRow[]));
+    if (page.length < QUERY_PAGE) break;
+    productFrom += QUERY_PAGE;
+  }
+
+  if (products.length === 0) {
+    console.error('[recall-check] No products found');
     return jsonResponse({
-      error: 'Products query failed',
+      error: 'No products found',
       duration_ms: Date.now() - startTime,
     }, 500);
   }
