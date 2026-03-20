@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 20, 2026 — M5 in progress, 862 tests/43 suites.
+> Last updated: March 20, 2026 — M5 complete, 862 tests/43 suites.
 
 ---
 
@@ -11,7 +11,7 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M5 Pantry + Recall Siren
+**Current phase:** M5 complete — M6 Alternatives Engine next
 
 **Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS + pg_cron) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (862 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo` | `@react-native-community/datetimepicker`
 
@@ -19,7 +19,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 162 decisions (D-001–D-162) — check before implementing. D-152: pantry depletion (user-set servings, not DER-computed). D-153: pantry paywall (goal-weight DER only). D-154: sharing rules (active pet default, same-species, premium). D-155: empty item (gray out, sink, restock/remove). D-156: score source (live read, not snapshot). D-157: mixed feeding removal (no auto-rebalance, contextual nudge). D-158: recalled product bypass (no score, warning + ingredients). D-160: weight goal slider replaces raw goal weight (D-061 superseded), 7 levels (-3 to +3), cat cap at -2. D-161: caloric accumulator estimates weight drift from feeding data, notify-and-confirm. D-162: BCS reference tool (educational only, not diagnostic, M6+). |
+| `DECISIONS.md` | 163 decisions (D-001–D-163) — check before implementing. D-152: pantry depletion (user-set servings, not DER-computed). D-153: pantry paywall (goal-weight DER only). D-154: sharing rules (active pet default, same-species, premium). D-155: empty item (gray out, sink, restock/remove). D-156: score source (pet_product_scores -> scan_history -> base_score -> null). D-157: mixed feeding removal (no auto-rebalance, contextual nudge). D-158: recalled product bypass (no score, warning + ingredients). D-160: weight goal slider replaces raw goal weight (D-061 superseded), 7 levels (-3 to +3), cat cap at -2. D-161: caloric accumulator estimates weight drift from feeding data, notify-and-confirm. D-162: BCS reference tool (educational only, not diagnostic, M6+). D-163: health record logging from appointments (vaccination/deworming records, follow-up scheduling). |
 | `ROADMAP.md` | Milestone plan, M5 scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
@@ -96,7 +96,7 @@ When executing plans, always proceed with implementation without presenting opti
 ## Commit Convention
 
 ```
-M5: pantry assignment with multi-pet sharing
+M6: compare flow with side-by-side scoring
 ```
 
 ## Self-Check

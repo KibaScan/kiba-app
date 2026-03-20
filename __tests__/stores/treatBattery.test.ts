@@ -219,6 +219,7 @@ function makeTreatItem(overrides: Partial<PantryCardData> = {}): PantryCardData 
     is_low_stock: false,
     is_empty: false,
     calorie_context: null,
+    resolved_score: null,
     ...overrides,
   };
 }

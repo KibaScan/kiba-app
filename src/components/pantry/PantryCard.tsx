@@ -187,7 +187,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           {/* RIGHT: Score + remaining */}
           <View style={styles.rightColumn}>
             <ScoreBadge
-              score={product.base_score}
+              score={item.resolved_score}
               isRecalled={isRecalled}
               isVetDiet={isVetDiet}
               isSupplemental={product.is_supplemental}

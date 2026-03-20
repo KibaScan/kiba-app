@@ -6,7 +6,7 @@
 
 ---
 
-## Current Status: M5 In Progress (M0–M4.5 + Polish Done)
+## Current Status: M5 Complete (M0–M5 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -368,7 +368,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] life_stage auto-derivation from age + species + breed size (D-064)
 - [x] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
 - [x] Active pet selector persists across sessions
-- [ ] Weight goal slider (D-160, premium-gated) — 7-level slider replacing raw goal weight (D-061 superseded). Cat cap at -2. Deferred to M5 polish or M6.
+- [ ] Weight goal slider (D-160, premium-gated) — 7-level slider replacing raw goal weight (D-061 superseded). Cat cap at -2. Moved to M6.
 - [x] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
 - [x] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
 - [x] Pet deletion: type name to confirm + 30-day soft-delete grace period
@@ -378,7 +378,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] RER calculation: `70 × (kg)^0.75`
 - [x] DER multiplier tables (species-specific, see D-060 through D-063)
 - [x] Daily portion display (cups/day or grams/day based on kcal/cup)
-- [ ] Weight goal level mode (D-160): adjusted DER = baseDER x multiplier from weight_goal_level. Premium only (D-153). Deferred to M5 polish or M6.
+- [ ] Weight goal level mode (D-160): adjusted DER = baseDER x multiplier from weight_goal_level. Premium only (D-153). Moved to M6.
 
 ### Treat Battery
 - [x] 10% of DER = daily treat budget in kcal
@@ -499,7 +499,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Loading terminal with step-by-step messages
 
 ### Actions
-- [ ] Pantry button (add to user's pantry)
+- [x] Pantry button (add to user's pantry)
 - ~~Compare button~~ → moved to M6
 - ~~Vet Report~~ → moved to M5-M6 (based on soft launch feedback)
 
@@ -568,30 +568,29 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: The killer retention feature. "Smoke alarm for recalled pet food."
 
 ### Pantry
-- [ ] Add scanned products to pantry
-- [ ] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
-- [ ] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
+- [x] Add scanned products to pantry
+- [x] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
+- [x] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
 - [x] Pantry card component (`PantryCard.tsx`) — product info, score/bypass badge, depletion bar, alerts, calorie context, treat mode, empty/low-stock/recalled states
 - [x] Pantry dashboard showing all products with scores
-- [ ] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (cans/pouches, fractional units per feeding)
-- [ ] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
-- [ ] User inputs bag size or pack quantity at add-to-pantry
-- [ ] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
-- [ ] Staleness badge for products unverified >90 days
+- [x] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (cans/pouches, fractional units per feeding)
+- [x] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
+- [x] User inputs bag size or pack quantity at add-to-pantry
+- [x] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
+- [ ] Staleness badge for products unverified >90 days (deferred — needs formula change detection infra from M3)
 - [x] Feeding schedule per pantry item: daily (1-3x/day with clock times) or as-needed (D-101)
 - [x] Push notifications on feeding schedule — grouped for multi-pet households
 - [x] Auto-depletion tied to feeding schedule — no manual logging for daily items (D-101)
-- [ ] Weight goal slider on PortionCard (D-160) — 7 detents, cat -3 hidden, live calorie context, premium-gated (M5 polish or M6)
-- [ ] Caloric accumulator in auto-deplete cron (D-161) — estimated weight tracking from feeding data, notify-and-confirm (M5 polish or M6)
+- Weight goal slider (D-160) and caloric accumulator (D-161) moved to M6 scope
 
 ### Pantry Diet Completeness (D-136 Part 5)
-- [ ] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
-- [ ] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
-- [ ] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "[Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
-- [ ] Only supplemental products in pantry, zero complete food → red diet health card: "No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
-- [ ] Warnings are per-pet (each pet's pantry evaluated independently)
-- [ ] All warning copy D-095 compliant — factual, no clinical language
-- [ ] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
+- [x] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
+- [x] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
+- [x] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "[Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
+- [x] Only supplemental products in pantry, zero complete food → red diet health card: "No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
+- [x] Warnings are per-pet (each pet's pantry evaluated independently)
+- [x] All warning copy D-095 compliant — factual, no clinical language
+- [x] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
 
 ### Pet Appointments (D-103)
 - [x] Schedule vet, grooming, medication, vaccination, and custom appointments
@@ -602,13 +601,13 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Past appointments archived for future vet report integration
 
 ### Recall Siren (Free Tier — D-125)
-- [ ] FDA recall RSS feed monitoring (automated, not manual checking)
-- [ ] Cross-reference recalled products against user pantry
-- [ ] Push notification to affected users — NOT premium-gated
-- [ ] Recalled product bypass — no score computed, bypass badge displayed (D-158, same pattern as vet diet D-135)
-- [ ] RecallDetailScreen with FDA link, allergen warnings, and "Remove from Pantry" action
-- [ ] Recalled pantry items pushed to top of list with red badge (D-158)
-- [ ] Historical recall log per product
+- [x] FDA recall RSS feed monitoring (automated, not manual checking)
+- [x] Cross-reference recalled products against user pantry
+- [x] Push notification to affected users — NOT premium-gated
+- [x] Recalled product bypass — no score computed, bypass badge displayed (D-158, same pattern as vet diet D-135)
+- [x] RecallDetailScreen with FDA link, allergen warnings, and "Remove from Pantry" action
+- [x] Recalled pantry items pushed to top of list with red badge (D-158)
+- [x] Historical recall log per product
 
 ### Weekly Digest Push Notification (D-130)
 - [x] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
@@ -626,6 +625,10 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ### Compare & Vet Report (moved from M4)
 - [ ] Compare button (side-by-side product comparison) — paywall gate already wired
 - [ ] Vet Report (shareable PDF summary for vet visits)
+
+### Weight Management (moved from M5)
+- [ ] Weight goal slider on PortionCard (D-160) — 7 detents, cat -3 hidden, live calorie context, premium-gated. Schema: `weight_goal_level SMALLINT` already on `pets` table.
+- [ ] Caloric accumulator in auto-deplete cron (D-161) — estimated weight tracking from feeding data, species-specific thresholds (dogs 3,150 kcal/lb, cats 3,000 kcal/lb), notify-and-confirm. Schema: `caloric_accumulator` + `accumulator_last_reset_at` columns needed on `pets` table.
 
 ### BCS Reference Tool (D-162)
 - [ ] Educational body condition score panel (9-point scale, species-specific)

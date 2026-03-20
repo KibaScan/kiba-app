@@ -215,6 +215,108 @@ export async function sharePantryItem(
   return data as PantryPetAssignment;
 }
 
+// ─── Score Resolution (D-156) ───────────────────────────
+
+/**
+ * D-156 cascade: pet_product_scores → scan_history → (caller falls back to base_score).
+ * Returns Map<product_id, score> for hits in steps 1-2 only.
+ */
+async function resolveScoresForPet(
+  petId: string,
+  productIds: string[],
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (productIds.length === 0) return map;
+
+  // Step 1: pet_product_scores (batch-scored, per-pet with allergen overrides)
+  const { data: pps } = await supabase
+    .from('pet_product_scores')
+    .select('product_id, final_score')
+    .eq('pet_id', petId)
+    .in('product_id', productIds);
+
+  if (pps) {
+    for (const row of pps as { product_id: string; final_score: number }[]) {
+      map.set(row.product_id, row.final_score);
+    }
+  }
+
+  // Step 2: scan_history fallback for products not in pet_product_scores
+  const missing = productIds.filter(id => !map.has(id));
+  if (missing.length > 0) {
+    const { data: scans } = await supabase
+      .from('scan_history')
+      .select('product_id, final_score, scanned_at')
+      .eq('pet_id', petId)
+      .in('product_id', missing)
+      .not('final_score', 'is', null)
+      .order('scanned_at', { ascending: false });
+
+    if (scans) {
+      for (const row of scans as { product_id: string; final_score: number }[]) {
+        // First hit per product_id is the most recent scan
+        if (!map.has(row.product_id)) {
+          map.set(row.product_id, row.final_score);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+/** Resolve scores for multiple pets + a single product (used by SharePantrySheet). */
+export async function resolveScoreForPets(
+  petIds: string[],
+  productId: string,
+  baseScore: number | null,
+): Promise<Map<string, number | null>> {
+  const result = new Map<string, number | null>();
+  if (petIds.length === 0) return result;
+
+  // Step 1: pet_product_scores
+  const { data: pps } = await supabase
+    .from('pet_product_scores')
+    .select('pet_id, final_score')
+    .in('pet_id', petIds)
+    .eq('product_id', productId);
+
+  if (pps) {
+    for (const row of pps as { pet_id: string; final_score: number }[]) {
+      result.set(row.pet_id, row.final_score);
+    }
+  }
+
+  // Step 2: scan_history fallback
+  const missing = petIds.filter(id => !result.has(id));
+  if (missing.length > 0) {
+    const { data: scans } = await supabase
+      .from('scan_history')
+      .select('pet_id, final_score, scanned_at')
+      .in('pet_id', missing)
+      .eq('product_id', productId)
+      .not('final_score', 'is', null)
+      .order('scanned_at', { ascending: false });
+
+    if (scans) {
+      for (const row of scans as { pet_id: string; final_score: number }[]) {
+        if (!result.has(row.pet_id)) {
+          result.set(row.pet_id, row.final_score);
+        }
+      }
+    }
+  }
+
+  // Step 3: fill remaining with base_score
+  for (const id of petIds) {
+    if (!result.has(id)) {
+      result.set(id, baseScore);
+    }
+  }
+
+  return result;
+}
+
 // ─── Read Functions ─────────────────────────────────────
 
 export async function getPantryForPet(petId: string): Promise<PantryCardData[]> {
@@ -249,6 +351,10 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
     // Filter out items with null product (deleted product, broken FK)
     const validItems = (items as Record<string, unknown>[]).filter(item => item.products != null);
 
+    // D-156: Resolve per-pet scores via cascade
+    const productIds = validItems.map(i => (i.products as { id?: string })?.id ?? i.product_id as string).filter(Boolean);
+    const scoreMap = await resolveScoresForPet(petId, productIds);
+
     const cards: PantryCardData[] = validItems.map((item) => {
       const allAssignments: PantryPetAssignment[] =
         (item.pantry_pet_assignments as PantryPetAssignment[]) ?? [];
@@ -280,6 +386,10 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
       // Strip Supabase relation keys, replace with our typed fields
       const { pantry_pet_assignments: _, products: __, ...itemFields } = item;
 
+      // D-156 cascade: pet_product_scores → scan_history → base_score → null
+      const productId = item.product_id as string;
+      const resolvedScore = scoreMap.get(productId) ?? product?.base_score ?? null;
+
       return {
         ...itemFields,
         product,
@@ -288,6 +398,7 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
         is_low_stock: isLowStock(daysRemaining, qtyRemaining, sMode as PantryItem['serving_mode']),
         is_empty: qtyRemaining <= 0,
         calorie_context: calorieCtx,
+        resolved_score: resolvedScore,
       } as PantryCardData;
     });
 

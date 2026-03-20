@@ -29,6 +29,7 @@ import {
   sharePantryItem,
   removePantryItem,
   updatePetAssignment,
+  resolveScoreForPets,
 } from '../../services/pantryService';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
 import { chipToggle } from '../../utils/haptics';
@@ -57,6 +58,8 @@ export function SharePantrySheet({
   // Local copy of assignments, synced on open
   const [localAssignments, setLocalAssignments] = useState<PantryPetAssignment[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  // D-156: per-pet resolved scores
+  const [petScores, setPetScores] = useState<Map<string, number | null>>(new Map());
 
   React.useEffect(() => {
     if (visible) setLocalAssignments([...item.assignments]);
@@ -69,6 +72,15 @@ export function SharePantrySheet({
     pets.filter(p => p.species === targetSpecies && p.id !== activePetId),
     [pets, targetSpecies, activePetId],
   );
+
+  // D-156: fetch per-pet scores when sheet opens
+  React.useEffect(() => {
+    if (!visible || eligiblePets.length === 0) return;
+    const petIds = eligiblePets.map(p => p.id);
+    resolveScoreForPets(petIds, item.product_id, item.product.base_score)
+      .then(setPetScores)
+      .catch(() => setPetScores(new Map()));
+  }, [visible, eligiblePets, item.product_id, item.product.base_score]);
 
   const getAssignment = useCallback(
     (petId: string) => localAssignments.find(a => a.pet_id === petId) ?? null,
@@ -143,8 +155,6 @@ export function SharePantrySheet({
     }
   }, [getAssignment]);
 
-  const score = item.product.base_score;
-
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -192,13 +202,16 @@ export function SharePantrySheet({
                           </View>
                           <View style={styles.petNameCol}>
                             <Text style={styles.petName}>{pet.name}</Text>
-                            {score != null ? (
-                              <Text style={[styles.petScore, { color: getScoreColor(score, item.product.is_supplemental) }]}>
-                                {score}% match
-                              </Text>
-                            ) : (
-                              <Text style={styles.petScoreMuted}>Not scored</Text>
-                            )}
+                            {(() => {
+                              const petScore = petScores.get(pet.id) ?? item.product.base_score;
+                              return petScore != null ? (
+                                <Text style={[styles.petScore, { color: getScoreColor(petScore, item.product.is_supplemental) }]}>
+                                  {petScore}% match
+                                </Text>
+                              ) : (
+                                <Text style={styles.petScoreMuted}>Not scored</Text>
+                              );
+                            })()}
                           </View>
                         </View>
                         {isBusy ? (

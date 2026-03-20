@@ -78,6 +78,8 @@ export interface PantryCardData extends PantryItemWithProduct {
   is_low_stock: boolean;
   is_empty: boolean;
   calorie_context: CalorieContext | null;
+  /** D-156 resolved score: pet_product_scores → scan_history → base_score → null */
+  resolved_score: number | null;
 }
 
 export interface DietCompletenessResult {

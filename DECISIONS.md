@@ -2675,51 +2675,49 @@ Rejected:
 Citation Key
 Short ReferenceFull SourceAAHA 2021American Animal Hospital Association — 2021 Nutrition and Weight Management Guidelines for Dogs and CatsWSAVAWorld Small Animal Veterinary Association — Global Nutrition Committee, Nutritional Assessment GuidelinesACVNAmerican College of Veterinary Nutrition — clinical reference standardsHand et al.Small Animal Clinical Nutrition, 5th Edition (Hand, Thatcher, Remillard, Roudebush, Novotny)German et al. 2011German AJ et al. — "Quality of life is reduced in obese dogs but improves after successful weight management." JVIM, 2011. (Also: German AJ — "The growing problem of obesity in dogs and cats." J Nutr, 2006.)Laflamme 1997Laflamme DP — "Development and validation of a body condition score system for dogs/cats." Canine Practice / JAVMA, 1997.JAVMAJournal of the American Veterinary Medical Association — peer-reviewed trials on gonadectomy, obesity, weight management
 Three decisions drafted. D-160 supersedes D-061. D-161 is new (caloric accumulator). D-162 is new (BCS reference). All clinical claims cite primary veterinary sources above.
-----
-D-163: Pet Health Records — Vaccinations & Dewormings via Appointment Completion
+---
 
-Append to DECISIONS.md after approval.
+### D-163: Pet Health Records via Appointment Completion
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Depends on:** D-103 (Pet Appointments), D-095 (UPVM compliance), D-052 (multi-pet premium gate)
+**Milestone:** M5 (Session 9 — bundled with appointments)
 
+**Problem:** Vaccination and deworming history are core pet health records that owners lose track of. Standalone logging is friction — users won't navigate to a separate screen to enter data after a vet visit. But they *will* tap "Complete" on an appointment they already scheduled.
 
-D-163: Pet Health Records via Appointment Completion
-Status: LOCKED
-Date: March 20, 2026
-Depends on: D-103 (Pet Appointments), D-095 (UPVM compliance), D-052 (multi-pet premium gate)
-Milestone: M5 (Session 9 — bundled with appointments)
-Problem: Vaccination and deworming history are core pet health records that owners lose track of. Standalone logging is friction — users won't navigate to a separate screen to enter data after a vet visit. But they will tap "Complete" on an appointment they already scheduled.
-Decision: When a user completes a vaccination or deworming appointment, present a health record logging sheet before finalizing. One tap to log, one tap to skip. If logged, auto-create a follow-up appointment based on the user's selected interval.
-Why one table, not two: Vaccinations and dewormings are structurally identical — name, date administered, next due date, vet, notes. A record_type column distinguishes them cleanly. This also extends naturally to future record types (flea treatments, heartworm, dental cleanings) without new tables or migrations.
-Completion flow (vaccination and deworming appointments only):
+**Decision:** When a user completes a `vaccination` or `deworming` appointment, present a health record logging sheet before finalizing. One tap to log, one tap to skip. If logged, auto-create a follow-up appointment based on the user's selected interval.
 
-User taps "Mark Complete" on a vaccination or deworming appointment
-Bottom sheet slides up with type-adaptive copy:
+**Why one table, not two:** Vaccinations and dewormings are structurally identical — name, date administered, next due date, vet, notes. A `record_type` column distinguishes them cleanly. This also extends naturally to future record types (flea treatments, heartworm, dental cleanings) without new tables or migrations.
 
-Vaccination: "Log this vaccine?"
-Deworming: "Log this deworming?"
+**Completion flow (vaccination and deworming appointments only):**
 
+1. User taps "Mark Complete" on a vaccination or deworming appointment
+2. Bottom sheet slides up with type-adaptive copy:
+   - Vaccination: "Log this vaccine?"
+   - Deworming: "Log this deworming?"
+3. Pre-populated fields:
+   - **Treatment name** — text input, pre-filled from appointment `notes` if available
+   - **Date administered** — date picker, default today
+   - **Next due** — optional picker with type-specific defaults:
 
-Pre-populated fields:
+     | Type | Options | Default |
+     |---|---|---|
+     | Vaccination | 1 year / 3 years / Custom / No follow-up needed | 1 year |
+     | Deworming | 3 months / 6 months / 1 year / Custom / No follow-up needed | 3 months |
 
-Treatment name — text input, pre-filled from appointment notes if available
-Date administered — date picker, default today
-Next due — optional picker with type-specific defaults:
-TypeOptionsDefaultVaccination1 year / 3 years / Custom / No follow-up needed1 yearDeworming3 months / 6 months / 1 year / Custom / No follow-up needed3 months
+   - **Vet / clinic** — text input, pre-filled from appointment `location`
+   - **Pet(s)** — read-only, from appointment `pet_ids`
+4. Two actions:
+   - **"Log [Vaccine/Deworming]"** → creates `pet_health_records` row(s) (one per pet in `pet_ids`) + if follow-up selected, auto-creates a new appointment at the due date
+   - **"Skip"** → appointment completes normally, no record created
+5. Appointment marked complete regardless of choice
 
-Vet / clinic — text input, pre-filled from appointment location
-Pet(s) — read-only, from appointment pet_ids
+**Non-qualifying appointments:** `vet_visit`, `grooming`, `medication`, `other` — no health record sheet. `completeAppointment()` behaves exactly as before.
 
+**Schema (included in migration 017 alongside pet_appointments):**
 
-Two actions:
-
-"Log [Vaccine/Deworming]" → creates pet_health_records row(s) (one per pet in pet_ids) + if follow-up selected, auto-creates a new appointment at the due date
-"Skip" → appointment completes normally, no record created
-
-
-Appointment marked complete regardless of choice
-
-Non-qualifying appointments: vet_visit, grooming, medication, other — no health record sheet. completeAppointment() behaves exactly as before.
-Schema (included in migration 017 alongside pet_appointments):
-sqlCREATE TABLE pet_health_records (
+```sql
+CREATE TABLE pet_health_records (
   id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   pet_id            UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
   user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -2736,46 +2734,49 @@ sqlCREATE TABLE pet_health_records (
 -- RLS: user_id = auth.uid()
 -- Index: idx_health_records_pet ON (pet_id)
 -- Index: idx_health_records_user_type ON (user_id, record_type)
-Appointment type CHECK update: Add 'deworming' to pet_appointments.type CHECK constraint. Full list becomes: 'vet_visit', 'grooming', 'medication', 'vaccination', 'deworming', 'other'.
-appointment_id is nullable: Users may log records manually (past vaccines from a previous vet, deworming history) without an associated appointment. The completion flow is the primary capture point, but a standalone "Add Record" action on the pet profile covers historical data entry.
-Follow-up auto-scheduling:
+```
 
-Inherits from original appointment: type, pet_ids, location, reminder = '1_week'
-notes = treatment name (for pre-population on next completion)
-recurring = 'none' — follow-up is a one-shot, not recurring. The chain is self-perpetuating through completion (complete → create next → complete → create next) without accumulating orphaned future appointments.
+**Appointment type CHECK update:** Add `'deworming'` to `pet_appointments.type` CHECK constraint. Full list becomes: `'vet_visit'`, `'grooming'`, `'medication'`, `'vaccination'`, `'deworming'`, `'other'`.
 
-Multi-pet: If the original appointment has 3 pets, creates 3 pet_health_records rows (one per pet) + 1 follow-up appointment with all 3 pet_ids.
-Pet profile display: Health records visible on PetHubScreen under two sections:
+**`appointment_id` is nullable:** Users may log records manually (past vaccines from a previous vet, deworming history) without an associated appointment. The completion flow is the primary capture point, but a standalone "Add Record" action on the pet profile covers historical data entry.
 
-"Vaccines" — filtered by record_type = 'vaccination'. Each row: vaccine name, date, next booster due (if set), vet name.
-"Dewormings" — filtered by record_type = 'deworming'. Each row: treatment name, date, next due (if set), vet name.
-Both sorted by administered_at DESC
-Empty state per section: "No [vaccines/dewormings] logged yet."
-"Add Record" button for manual entry (same fields, appointment_id = null, no pre-population)
-Disclaimer: "Health records are for your reference. Consult your veterinarian for your pet's care schedule."
+**Follow-up auto-scheduling:**
+- Inherits from original appointment: `type`, `pet_ids`, `location`, `reminder = '1_week'`
+- `notes` = treatment name (for pre-population on next completion)
+- `recurring = 'none'` — follow-up is a one-shot, not recurring. The chain is self-perpetuating through completion (complete → create next → complete → create next) without accumulating orphaned future appointments.
 
-Vet Report integration (M6): Vet Report PDF includes latest records from both types — most recent vaccination date + name, most recent deworming date + name. Query: SELECT * FROM pet_health_records WHERE pet_id = $1 ORDER BY administered_at DESC LIMIT 1 per record_type.
-Paywall: Same as appointments (D-103) — free users get 2 active appointments. Health records themselves are not paywalled. The gate is on creating appointments, not on the records they produce.
-D-095 compliance:
+**Multi-pet:** If the original appointment has 3 pets, creates 3 `pet_health_records` rows (one per pet) + 1 follow-up appointment with all 3 `pet_ids`.
 
-"Log this vaccine?" / "Log this deworming?" — not "Record immunization" or "Log antiparasitic treatment"
-Never use "immunize," "protect against," "prevent," "prescribe," or "treat" in UI copy
-Follow-up intervals are user-selected, not app-prescribed
-Disclaimer on health record lists
+**Pet profile display:** Health records visible on PetHubScreen under two sections:
 
-Future record_type expansion (not M5):
+- **"Vaccines"** — filtered by `record_type = 'vaccination'`. Each row: vaccine name, date, next booster due (if set), vet name.
+- **"Dewormings"** — filtered by `record_type = 'deworming'`. Each row: treatment name, date, next due (if set), vet name.
+- Both sorted by `administered_at` DESC
+- Empty state per section: "No [vaccines/dewormings] logged yet."
+- "Add Record" button for manual entry (same fields, `appointment_id = null`, no pre-population)
+- Disclaimer: "Health records are for your reference. Consult your veterinarian for your pet's care schedule."
 
-'flea_treatment' — same shape, default interval 1 month or 3 months
-'heartworm' — same shape, default interval 1 month or 6 months
-'dental_cleaning' — same shape, default interval 1 year
-Each new type: add to CHECK constraint, add to appointment type CHECK, add default intervals, add pet profile section. No schema migration needed beyond the CHECK update.
+**Vet Report integration (M6):** Vet Report PDF includes latest records from both types — most recent vaccination date + name, most recent deworming date + name. Query: `SELECT * FROM pet_health_records WHERE pet_id = $1 ORDER BY administered_at DESC LIMIT 1` per `record_type`.
 
-Rejected:
+**Paywall:** Same as appointments (D-103) — free users get 2 active appointments. Health records themselves are not paywalled. The gate is on creating appointments, not on the records they produce.
 
-❌ Separate tables per record type (pet_vaccinations, pet_dewormings) — identical schemas, unnecessary table proliferation. One table with record_type is cleaner and extensible.
-❌ Standalone health record logging screen — too much friction. The completion flow captures data at the natural moment.
-❌ Recurring appointments for follow-ups — creates infinite chain. Completion-triggered one-shots are self-perpetuating without orphans.
-❌ Pre-populated vaccine/deworming database — adds complexity. Free text covers the need. Searchable dropdown can be added later if usage data justifies it.
-❌ Health records paywalled — punishing users for completing appointments feels hostile. Gate is on appointment creation.
+**D-095 compliance:**
+- "Log this vaccine?" / "Log this deworming?" — not "Record immunization" or "Log antiparasitic treatment"
+- Never use "immunize," "protect against," "prevent," "prescribe," or "treat" in UI copy
+- Follow-up intervals are user-selected, not app-prescribed
+- Disclaimer on health record lists
+
+**Future `record_type` expansion (not M5):**
+- `'flea_treatment'` — same shape, default interval 1 month or 3 months
+- `'heartworm'` — same shape, default interval 1 month or 6 months
+- `'dental_cleaning'` — same shape, default interval 1 year
+- Each new type: add to CHECK constraint, add to appointment type CHECK, add default intervals, add pet profile section. No schema migration needed beyond the CHECK update.
+
+**Rejected:**
+- Separate tables per record type (`pet_vaccinations`, `pet_dewormings`) — identical schemas, unnecessary table proliferation. One table with `record_type` is cleaner and extensible.
+- Standalone health record logging screen — too much friction. The completion flow captures data at the natural moment.
+- Recurring appointments for follow-ups — creates infinite chain. Completion-triggered one-shots are self-perpetuating without orphans.
+- Pre-populated vaccine/deworming database — adds complexity. Free text covers the need. Searchable dropdown can be added later if usage data justifies it.
+- Health records paywalled — punishing users for completing appointments feels hostile. Gate is on appointment creation.
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
