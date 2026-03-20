@@ -32,6 +32,7 @@ export type SearchStackParamList = {
 
 export type PantryStackParamList = {
   PantryMain: undefined;
+  EditPantryItem: { itemId: string };
   Result: { productId: string; petId: string | null };
 };
 

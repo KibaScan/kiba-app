@@ -133,7 +133,7 @@ export async function restockPantryItem(itemId: string): Promise<PantryItem> {
 
 export async function updatePantryItem(
   itemId: string,
-  updates: Partial<Pick<PantryItem, 'quantity_remaining' | 'quantity_original' | 'quantity_unit' | 'serving_mode'>>,
+  updates: Partial<Pick<PantryItem, 'quantity_remaining' | 'quantity_original' | 'quantity_unit' | 'serving_mode' | 'unit_label'>>,
 ): Promise<PantryItem> {
   await requireOnline();
 

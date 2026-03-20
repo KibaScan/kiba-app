@@ -12,6 +12,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ScanScreen from '../screens/ScanScreen';
 import PantryScreen from '../screens/PantryScreen';
+import EditPantryItemScreen from '../screens/EditPantryItemScreen';
 import PetHubScreen from '../screens/PetHubScreen';
 import ResultScreen from '../screens/ResultScreen';
 import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
@@ -75,6 +76,7 @@ function PantryStackScreen() {
   return (
     <PantryStack.Navigator screenOptions={{ headerShown: false }}>
       <PantryStack.Screen name="PantryMain" component={PantryScreen} />
+      <PantryStack.Screen name="EditPantryItem" component={EditPantryItemScreen} />
       <PantryStack.Screen name="Result" component={ResultScreen} />
     </PantryStack.Navigator>
   );
