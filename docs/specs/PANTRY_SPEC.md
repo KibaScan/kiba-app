@@ -259,7 +259,7 @@ All notification copy: D-084 + D-095 compliant. Unit labels use `unit_label` col
 ### 5d. Infrastructure
 
 **Server-side (3 cron Edge Functions):**
-- `auto-deplete`: 30-min cron, deducts quantities + sends low stock / empty push notifications
+- `auto-deplete`: 30-min cron, deducts quantities + sends low stock / empty push notifications + runs caloric accumulator (D-161: daily_intake vs maintenance DER delta, species-specific thresholds, notify-and-confirm weight estimate)
 - `recall-check`: daily cron, FDA RSS + matching + pantry cross-reference push
 - `weekly-digest`: weekly cron, adaptive summary push
 
@@ -278,9 +278,9 @@ Per-item toggle (`notifications_on` on pantry_pet_assignments) + global toggles 
 
 ## 6. Calorie Context
 
-### 6a. System Recommendation (D-152)
+### 6a. System Recommendation (D-152, D-160)
 
-Free: current weight DER. Premium with goal weight: goal weight DER (D-153). Pre-fills serving. Fully editable.
+Free: current weight DER at maintenance (level 0). Premium: adjusted DER based on `weight_goal_level` (D-160 — 7 levels, -3 to +3). Cat profiles capped at -2 (no -3 option). Pre-fills serving. Fully editable.
 
 ### 6b. Depletion Breakdown (D-152)
 
@@ -296,11 +296,11 @@ Weight mode days: `total_cups = (bag_kg × kcal_per_kg) / kcal_per_cup`. Require
 
 ### 6c. Calorie Context Line on Card
 
-"~X kcal/day of [Pet Name]'s Y kcal target" + "(estimated)" if Atwater. Not shown for treats.
+"~X kcal/day of [Pet Name]'s Y kcal target" + "(estimated)" if Atwater. When weight_goal_level != 0 (D-160): append goal label, e.g., "~X kcal/day of [Pet Name]'s Y kcal target (moderate loss)". Not shown for treats.
 
 ### 6d. Paywall (D-153)
 
-Only gate: `canUseGoalWeight()` in `permissions.ts`. Everything else free.
+Only gate: `canUseGoalWeight()` in `permissions.ts` (gates non-zero weight_goal_level, D-160). Everything else free.
 
 ---
 
@@ -472,3 +472,5 @@ Cups ↔ grams on PortionCard. Math: `grams = cups × (kcal_per_cup / kcal_per_k
 | D-156 | Score source — live read, not snapshot | Locked |
 | D-157 | Mixed feeding removal — no auto-rebalance, contextual nudge | Locked |
 | D-158 | Recalled product bypass — no score, same pattern as vet diet | Locked |
+| D-160 | Weight goal slider — replaces raw goal weight (D-061), 7 levels, cat cap at -2, pantry DER integration | Locked |
+| D-161 | Caloric accumulator — estimated weight tracking via auto-deplete cron, notify-and-confirm | Locked |

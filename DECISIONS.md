@@ -2513,5 +2513,167 @@ vet diet (D-135) → species mismatch (D-144) → recalled (D-158) → variety p
 **Threshold note:** The 51/65 split is preliminary. If real-world score distribution shows 80% of products land between 55-75, the thresholds may shift. Will monitor post-launch and adjust via a D-159 revision if needed.
 
 ---
+D-160: Weight Goal Slider — Replaces Raw Goal Weight (D-061)
 
+Status: LOCKED
+Date: March 20, 2026
+Supersedes: D-061 (raw goal weight input)
+Depends on: D-062 (feline hepatic lipidosis guard), D-095 (UPVM compliance), D-153 (goal weight is premium-only)
+Milestone: M5 polish or M6
+Problem: D-061 lets users type any goal weight. A 90 lb dog could be targeted to 50 lbs — the app computes a starvation-level DER without guardrails. The hepatic lipidosis guard (D-062) catches the worst cat cases after the fact, but the fundamental design is wrong: unbounded user input for a clinically sensitive calculation.
+Decision: Replace the raw weight_goal_lbs field with a bounded weight goal level slider. Seven positions representing percentage adjustments to maintenance DER:
+LevelLabelDER AdjustmentDogsCats-3Aggressive loss-20% (× 0.80)AllowedBlocked-2Moderate loss-10% (× 0.90)AllowedMax allowed-1Conservative loss-5% (× 0.95)AllowedAllowed0MaintenanceStandard DER (× 1.00)DefaultDefault+1Conservative gain+5% (× 1.05)AllowedAllowed+2Moderate gain+10% (× 1.10)AllowedAllowed+3Aggressive gain+20% (× 1.20)AllowedAllowed
+Cat cap at -2 (D-062 replacement): Cats cannot select -3. The feline liver is uniquely susceptible to hepatic lipidosis during rapid caloric restriction — a 20% deficit risks overwhelming hepatic lipid transport [AAHA 2021 Nutrition & Weight Management Guidelines; Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27 — Hepatic Lipidosis]. By making -3 structurally unavailable for cats, D-062's safety guard becomes architectural rather than a runtime check. The UI simply doesn't render the -3 option for cat profiles.
+DER math: adjustedDER = baseDER × multiplier where multiplier is looked up from the level. baseDER uses calculateDER(pet) with current weight (free) or current weight at the adjusted level (premium). No change to the allometric RER formula (70 × kg^0.75) [AAHA 2021; WSAVA Global Nutrition Committee — Nutritional Assessment Guidelines].
+Schema change:
+
+Remove: pets.weight_goal_lbs (deprecated)
+Add: pets.weight_goal_level SMALLINT DEFAULT 0 CHECK (weight_goal_level BETWEEN -3 AND 3)
+Migration: any existing weight_goal_lbs rows → map to nearest level based on the implied deficit percentage, then drop column. If mapping is ambiguous, default to 0.
+
+UI — PortionCard:
+
+Slider with 7 detents, labeled at each position
+Cat profiles: -3 detent not rendered, slider range is -2 to +3
+Below slider: "Moderate weight loss: ~[X] kcal/day ([Y]% below maintenance)"
+D-095 compliant: "estimated daily intake" not "prescribed diet." Volume reduction of maintenance food without reformulation risks clinical malnutrition [Small Animal Clinical Nutrition 5th Ed., Ch. 27 — purpose-formulated therapeutic diets required for significant restriction].
+Calorie context updates live as slider moves
+
+Pantry integration:
+
+getSystemRecommendation() uses adjusted DER based on weight_goal_level
+Pantry depletion countdown reflects adjusted intake
+Calorie context line on pantry cards: "~X kcal/day of [Pet Name]'s Y kcal target (moderate loss)"
+
+Paywall: Premium only (D-153 unchanged). Free users see the slider locked at 0 with a "Premium" badge. Tapping any non-zero position triggers paywall.
+Clinical backing:
+
+Weight loss protocol DER: dogs = 1.0 × RER at ideal BW, cats = 0.8 × RER at ideal BW [AAHA 2021 Nutrition & Weight Management Guidelines, Table 3 — MER Multipliers]
+Empirical DER range during weight loss: dogs 0.73–1.47 × RER, cats 0.67–1.55 × RER [JAVMA peer-reviewed trials, cited in AAHA 2021]
+Safe weight loss rates: dogs 1–2% BW/week, cats 0.5–1% BW/week; exceeding 2%/week risks sarcopenia (dogs) or hepatic lipidosis (cats) [AAHA 2021; WSAVA Global Nutrition Committee]
+The -20% cap for dogs stays within the 1.0 × RER floor for typical neutered adults (MER 1.4–1.6 × RER → 20% reduction ≈ 1.12–1.28 × RER, well above minimum) [AAHA 2021, Table 3]
+The -10% cat cap stays above the 0.8 × RER floor for typical neutered adult cats (MER 1.2–1.4 × RER → 10% reduction ≈ 1.08–1.26 × RER) [AAHA 2021, Table 3]
+Flat kcal deficits are lethal for small animals — a 10 lb cat's entire daily requirement may be ~200 kcal; a 500 kcal/day cut exceeds total intake [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 5 — Energy]
+
+Rejected:
+
+❌ Raw goal weight input (D-061) — unbounded, dangerous, requires after-the-fact guards
+❌ Flat kcal deficit (e.g., -500 kcal/day) — lethal for small animals. A 10 lb cat's entire daily requirement might be 200 kcal [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 5 — Energy]
+❌ Continuous percentage slider (0–30%) — too much precision implies clinical accuracy we can't deliver. Seven fixed levels are honest about the granularity.
+❌ BCS-derived goal weight as primary input — requires clinical assessment skills most owners don't have. Owners consistently underestimate BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges]. BCS is a reference tool (D-162), not the input mechanism.
+
+---
+D-161: Estimated Weight Tracking — Caloric Accumulator
+Status: LOCKED
+Date: March 20, 2026
+Depends on: D-160 (weight goal slider), D-101 (auto-depletion cron), D-117 (stale weight guard)
+Milestone: M5 polish or M6
+Problem: Pet weight goes stale. D-117 nags users after 6 months, but the app has feeding data flowing through the auto-depletion cron — it knows what the pet is eating every day. That data can estimate weight drift, replacing the nag with an intelligent prompt.
+Decision: Track cumulative caloric delta between actual daily intake and maintenance DER. When the accumulator crosses a species-specific threshold (≈1 lb of mixed-tissue weight change), notify the user with an estimated weight update.
+Species-specific thresholds (from clinical mixed-tissue data):
+SpeciesPure AdiposeMixed-Tissue RangeKiba ThresholdCitationDog~3,500 kcal/lb2,900 – 3,400 kcal/lb3,150 kcal/lbSmall Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; JVIM German et al. 2011Cat~3,500 kcal/lb2,800 – 3,300 kcal/lb3,000 kcal/lbSmall Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; ACVN clinical reference
+Kiba thresholds are the midpoints of the mixed-tissue ranges. These are estimates — real weight change involves adaptive thermogenesis [JVIM, German et al. 2011 — canine REE drops 10–20% below predicted values during caloric restriction], variable lean/fat ratios [Small Animal Clinical Nutrition 5th Ed., Ch. 27 — one pound lean muscle = 600–800 kcal vs one pound adipose = ~3,500 kcal], water retention, and unmeasured food sources (treats, table scraps). The threshold is a reasonable heuristic, not a clinical measurement.
+Why mixed-tissue, not pure adipose: Weight lost during caloric restriction is heterogeneous — a mix of fat and lean body mass. Cats trend lower because their obligate carnivore metabolism has a fixed, high rate of hepatic gluconeogenesis — they cannot down-regulate protein catabolism during restriction [Small Animal Clinical Nutrition 5th Ed., Ch. 20 — Feline Protein Requirements]. Without heavily fortified protein intake, cats aggressively catabolize skeletal muscle, dropping the energy density of weight lost toward the bottom of the range [ACVN; JAVMA peer-reviewed trials]. Using 3,500 (pure fat) would systematically underestimate weight change in both species.
+Accumulator logic (runs inside auto-deplete cron):
+daily_intake_kcal = SUM(serving_size × feedings_per_day × kcal_per_serving)
+                    across all active daily pantry assignments for this pet
+maintenance_kcal  = calculateDER(pet) at weight_goal_level = 0
+daily_delta       = daily_intake_kcal - maintenance_kcal
+accumulator      += daily_delta
+
+IF accumulator >= +threshold (species-specific):
+  estimated_weight = current_weight + 1 lb
+  send notification, reset accumulator
+
+IF accumulator <= -threshold (species-specific):
+  estimated_weight = current_weight - 1 lb
+  send notification, reset accumulator
+Schema:
+
+Add to pets table: caloric_accumulator DECIMAL(10,2) DEFAULT 0
+Add to pets table: accumulator_last_reset_at TIMESTAMPTZ
+
+Notification (user confirms, never auto-updates):
+"Based on [Pet Name]'s feeding data, estimated weight is now ~[X] lbs (was [Y] lbs). Update?"
+Three actions:
+
+"Looks right" → updates weight_current_lbs, resets accumulator, refreshes weight_updated_at, clears D-117 stale warning. DER recalculates, pantry cascades.
+"I weighed them" → opens weight input field. User enters actual weight. Resets accumulator. More accurate than estimate.
+"Dismiss" → accumulator continues running. Notification won't re-fire until the next threshold crossing (+1 more lb). Prevents nagging.
+
+Why notify-and-confirm, never auto-update:
+
+Treat calories may not be fully tracked (Treat Battery integration is Phase 2). Average owners provide up to 20% of daily calories through unmeasured treats [AAHA 2021; ACVN — 10% treat guideline, empirical data showing 2× overshoot].
+Pets may not finish meals — auto-depletion assumes they did
+Table scraps, dental chews, stolen food exist outside the system
+Adaptive thermogenesis means static deficit models drift — canine REE drops 10–20% below mathematically predicted values during prolonged caloric restriction [JVIM, German et al. 2011]. An animal rarely loses a full pound of fat for every 3,500 kcal withheld over a prolonged period [Small Animal Clinical Nutrition 5th Ed., Ch. 27].
+Framing as "estimated" with user confirmation is D-095 compliant. Auto-updating would be a health claim.
+
+Edge cases:
+
+No pantry items → accumulator stays at 0 (no feeding data to track)
+Only treats in pantry → skip (treat calories alone don't represent total intake)
+Missing calorie data on products → skip those products in the sum, note inaccuracy
+Pet deleted → accumulator deleted (CASCADE)
+Weight manually updated by user → reset accumulator to 0
+Goal level changed → no accumulator reset (the delta math uses maintenance DER regardless of goal level)
+
+D-095 compliance: "Estimated weight" not "actual weight." "Based on feeding data" not "clinically measured." Always offer the "I weighed them" option to ground-truth.
+Clinical backing:
+
+Mixed-tissue caloric equivalents: dogs 2,900–3,400 kcal/lb, cats 2,800–3,300 kcal/lb [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; JVIM German et al. 2011]
+Pure adipose = ~3,500 kcal/lb, pure lean muscle = 600–800 kcal/lb (dogs), 450–600 kcal/lb (cats) [Small Animal Clinical Nutrition 5th Ed., Ch. 27]
+Cats cannot down-regulate protein catabolism during restriction (obligate carnivore hepatic gluconeogenesis) — explains lower mixed-tissue threshold [Small Animal Clinical Nutrition 5th Ed., Ch. 20; ACVN clinical reference]
+Adaptive thermogenesis: canine REE drops 10–20% below predicted during restriction, causing weight-loss plateaus [JVIM, German et al. 2011]
+Neutering reduces feline resting metabolic rate by 20–25% — accumulator must use correct DER multiplier for intact vs neutered [AAHA 2021, Table 3; JAVMA peer-reviewed trials on gonadectomy metabolic impact]
+----
+D-162: BCS Reference Tool — Educational, Not Diagnostic
+Status: LOCKED
+Date: March 20, 2026
+Depends on: D-095 (UPVM compliance), D-160 (weight goal slider)
+Milestone: M6+
+Problem: Pet owners don't know if their pet is overweight. Vets use the 9-point Body Condition Score (BCS) validated by DEXA scan correlation. Kiba can surface this as a reference tool to help owners understand body condition — but must not cross into diagnostic territory.
+Decision: Add a BCS reference panel accessible from the weight management section of pet profiles. Educational only — Kiba does not assess, diagnose, or score body condition.
+Content (species-specific, separate panels for dogs and cats):
+BCS ScoreCategoryDescriptionEstimated Excess WeightCitation1–3UnderweightRibs, vertebrae, pelvic bones easily visible. Severe abdominal tuck, muscle wasting.N/A (deficit)WSAVA BCS Chart; AAHA 20214–5IdealRibs palpable with slight fat covering. Visible waist from above. Clear abdominal tuck. ~15–20% body fat.0%WSAVA BCS Chart; validated against DEXA [Laflamme 1997, JAVMA]6OverweightRibs palpable with slight excess fat. Waist barely visible.~10–15%AAHA 2021 — each point above 5 ≈ 10–15% excess BW7ObeseRibs difficult to feel. No visible waist. Abdomen rounded.~20–30%AAHA 20218–9Severely obeseRibs buried under heavy fat. Back broadened. Abdomen distended.~30–45%+AAHA 2021
+Ideal weight formula (displayed as reference, user does not input BCS):
+Ideal Weight = Current Weight ÷ (1 + excess fraction)
+Example shown: "A 40 lb dog at BCS 7 is ~20% over ideal → 40 ÷ 1.20 = ~33 lbs"
+[AAHA Weight Management Guidelines — ideal weight derivation from BCS]
+Cat-specific note: Primordial pouch (hanging belly skin flap) is normal feline anatomy and should not be confused with obesity. Include visual callout. [WSAVA Global Nutrition Committee — feline BCS assessment notes]
+What this is:
+
+A reference chart with illustrations per BCS score
+An educational tool that helps owners understand body condition categories
+A link to the goal slider (D-160): "If your pet's body condition suggests they need to lose or gain weight, use the weight goal slider to adjust their feeding plan."
+
+What this is NOT:
+
+NOT an assessment — Kiba does not ask "what's your pet's BCS?" and derive a recommendation
+NOT diagnostic — no "your pet is obese" language
+NOT an input to scoring or DER calculation — BCS is informational only
+NOT a substitute for veterinary evaluation — panel includes: "Body condition is best assessed by your veterinarian during a physical exam."
+
+D-095 compliance: No prohibited terms. No "diagnose," "prescribe," "treat." Factual descriptions of what each score looks like. Citations to AAHA/WSAVA. User makes their own assessment — Kiba provides the framework.
+Visual assets needed: Illustrations or silhouettes for each BCS category (dog and cat separately). Either commissioned illustrations or WSAVA's published BCS chart images (check licensing — WSAVA publishes these freely for educational use).
+Clinical backing:
+
+BCS 9-point scale validated against DEXA scans for both dogs and cats [Laflamme 1997, JAVMA — original validation study; WSAVA Global Nutrition Committee — adopted as global standard]
+10–15% excess body weight per BCS point above ideal [AAHA 2021 Weight Management Guidelines, §2 — Body Condition Assessment]
+Optimal BCS 4–5 corresponds to ~15–20% body fat [WSAVA Global Nutrition Committee — Nutritional Assessment Guidelines]
+Primordial pouch is normal feline anatomy, frequently mistaken for obesity by owners [WSAVA feline BCS assessment notes; Small Animal Clinical Nutrition 5th Ed., Ch. 5]
+Owner BCS accuracy: owners consistently underestimate their pet's BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges; multiple JAVMA survey studies]
+
+Rejected:
+
+❌ Interactive BCS questionnaire ("Can you feel your pet's ribs?") — crosses into assessment/diagnostic territory. D-095 risk.
+❌ BCS as input to DER calculation — would require clinical validation of owner-reported BCS accuracy, which doesn't exist. Owners consistently underestimate their pet's BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges].
+❌ Photo-based BCS estimation via AI — liability nightmare. Computer vision for body condition scoring is active research, not production-ready.
+
+
+
+Citation Key
+Short ReferenceFull SourceAAHA 2021American Animal Hospital Association — 2021 Nutrition and Weight Management Guidelines for Dogs and CatsWSAVAWorld Small Animal Veterinary Association — Global Nutrition Committee, Nutritional Assessment GuidelinesACVNAmerican College of Veterinary Nutrition — clinical reference standardsHand et al.Small Animal Clinical Nutrition, 5th Edition (Hand, Thatcher, Remillard, Roudebush, Novotny)German et al. 2011German AJ et al. — "Quality of life is reduced in obese dogs but improves after successful weight management." JVIM, 2011. (Also: German AJ — "The growing problem of obesity in dogs and cats." J Nutr, 2006.)Laflamme 1997Laflamme DP — "Development and validation of a body condition score system for dogs/cats." Canine Practice / JAVMA, 1997.JAVMAJournal of the American Veterinary Medical Association — peer-reviewed trials on gonadectomy, obesity, weight management
+Three decisions drafted. D-160 supersedes D-061. D-161 is new (caloric accumulator). D-162 is new (BCS reference). All clinical claims cite primary veterinary sources above.
+----
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

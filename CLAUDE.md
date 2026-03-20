@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 19, 2026 — M5 in progress, 752 tests/38 suites.
+> Last updated: March 20, 2026 — M5 in progress, 761 tests/38 suites.
 
 ---
 
@@ -13,13 +13,13 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
 **Current phase:** M5 Pantry + Recall Siren
 
-**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (752 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo`
+**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (761 tests) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo`
 
 ## Spec Files — Read Before Changing
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 159 decisions (D-001–D-159) — check before implementing. D-152: pantry depletion (user-set servings, not DER-computed). D-153: pantry paywall (goal-weight DER only). D-154: sharing rules (active pet default, same-species, premium). D-155: empty item (gray out, sink, restock/remove). D-156: score source (live read, not snapshot). D-157: mixed feeding removal (no auto-rebalance, contextual nudge). D-158: recalled product bypass (no score, warning + ingredients). |
+| `DECISIONS.md` | 162 decisions (D-001–D-162) — check before implementing. D-152: pantry depletion (user-set servings, not DER-computed). D-153: pantry paywall (goal-weight DER only). D-154: sharing rules (active pet default, same-species, premium). D-155: empty item (gray out, sink, restock/remove). D-156: score source (live read, not snapshot). D-157: mixed feeding removal (no auto-rebalance, contextual nudge). D-158: recalled product bypass (no score, warning + ingredients). D-160: weight goal slider replaces raw goal weight (D-061 superseded), 7 levels (-3 to +3), cat cap at -2. D-161: caloric accumulator estimates weight drift from feeding data, notify-and-confirm. D-162: BCS reference tool (educational only, not diagnostic, M6+). |
 | `ROADMAP.md` | Milestone plan, M5 scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
@@ -50,7 +50,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 
 ## Schema Traps
 
-- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited)
+- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). D-160: `weight_goal_lbs` → `weight_goal_level SMALLINT` (-3 to +3, default 0), cat cap at -2. D-161: `caloric_accumulator` + `accumulator_last_reset_at` (estimated weight tracking).
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
 - `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring)
@@ -82,6 +82,8 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
 - Compare flow (M6), Vet Report PDF (M6), variety pack scoring (D-145)
 - Score recalled products (D-158 — bypass pattern, not score=0)
+- BCS questionnaire/diagnostic tool, photo-based BCS estimation (D-162 — educational reference only)
+- Raw goal weight input (D-160 supersedes D-061 — use weight goal level slider)
 
 ## Workflow
 
