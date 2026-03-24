@@ -59,7 +59,7 @@ export function sortItems(items: PantryCardData[], sort: SortOption): PantryCard
     case 'name':
       return sorted.sort((a, b) => a.product.name.localeCompare(b.product.name));
     case 'score':
-      return sorted.sort((a, b) => (b.product.base_score ?? -1) - (a.product.base_score ?? -1));
+      return sorted.sort((a, b) => (b.resolved_score ?? -1) - (a.resolved_score ?? -1));
     case 'days_remaining':
       return sorted.sort((a, b) => (a.days_remaining ?? Infinity) - (b.days_remaining ?? Infinity));
   }

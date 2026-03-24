@@ -117,6 +117,7 @@ function makeItem(overrides: Record<string, unknown> = {}): PantryCardData {
     is_low_stock: false,
     is_empty: false,
     calorie_context: null,
+    resolved_score: null,
     ...rest,
   } as PantryCardData;
 }
@@ -186,9 +187,9 @@ describe('filterItems', () => {
 // ─── sortItems ──────────────────────────────────────────
 
 describe('sortItems', () => {
-  const itemA = makeItem({ id: 'a', product: { name: 'Alpha', base_score: 80 }, days_remaining: 10 });
-  const itemB = makeItem({ id: 'b', product: { name: 'Bravo', base_score: 50 }, days_remaining: 3 });
-  const itemC = makeItem({ id: 'c', product: { name: 'Charlie', base_score: null }, days_remaining: null });
+  const itemA = makeItem({ id: 'a', product: { name: 'Alpha', base_score: 80 }, resolved_score: 80, days_remaining: 10 });
+  const itemB = makeItem({ id: 'b', product: { name: 'Bravo', base_score: 50 }, resolved_score: 50, days_remaining: 3 });
+  const itemC = makeItem({ id: 'c', product: { name: 'Charlie', base_score: null }, resolved_score: null, days_remaining: null });
 
   test('"default" preserves original order', () => {
     const input = [itemB, itemA, itemC];
@@ -228,8 +229,8 @@ describe('sortItems', () => {
   });
 
   test('equal scores maintain relative order', () => {
-    const x = makeItem({ id: 'x', product: { name: 'X', base_score: 70 } });
-    const y = makeItem({ id: 'y', product: { name: 'Y', base_score: 70 } });
+    const x = makeItem({ id: 'x', product: { name: 'X', base_score: 70 }, resolved_score: 70 });
+    const y = makeItem({ id: 'y', product: { name: 'Y', base_score: 70 }, resolved_score: 70 });
     const result = sortItems([x, y], 'score');
     expect(result.map(i => i.id)).toEqual(['x', 'y']);
   });
