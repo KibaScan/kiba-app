@@ -9,7 +9,7 @@ import { Limits } from './constants';
 // Sync reads use cached value. Refresh via refreshSubscriptionStatus().
 
 let _cachedPremium = false;
-let _devOverride: boolean | null = null; // __DEV__ only
+let _devOverride: boolean | null = __DEV__ ? true : null;
 
 // ─── RevenueCat Init ───────────────────────────────────────
 

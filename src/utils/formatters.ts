@@ -87,3 +87,35 @@ export function stripBrandFromName(brandName: string, productName: string): stri
   if (remainder.length < 10) return productName;
   return remainder;
 }
+
+// ─── Relative Time ────────────────────────────────────────
+
+const SHORT_MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/**
+ * Format an ISO date string as a past-focused relative time.
+ * "Just now" / "5m ago" / "2h ago" / "Yesterday" / "3d ago" / "Mar 15"
+ */
+export function formatRelativeTime(isoDate: string): string {
+  const date = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs < 60_000) return 'Just now';
+
+  // Calendar-day comparison — check before hours so "yesterday at 11pm" isn't "1h ago"
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDiff = Math.round((today.getTime() - target.getTime()) / 86_400_000);
+
+  if (dayDiff === 0) {
+    if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)}m ago`;
+    return `${Math.floor(diffMs / 3_600_000)}h ago`;
+  }
+  if (dayDiff === 1) return 'Yesterday';
+  if (dayDiff >= 2 && dayDiff <= 6) return `${dayDiff}d ago`;
+  return `${SHORT_MONTHS[date.getMonth()]} ${date.getDate()}`;
+}

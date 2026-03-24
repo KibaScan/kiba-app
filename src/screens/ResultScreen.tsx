@@ -226,6 +226,30 @@ export default function ResultScreen() {
         const { scoredResult: result, ingredients } = await scoreProduct(product, pet, petAllergens, petConditions);
         setScoredResult(result);
         setHydratedIngredients(ingredients);
+
+        // Persist to scan_history for D-156 pantry score cascade (fire-and-forget)
+        if (pet?.id && !result.bypass) {
+          supabase.auth.getUser().then(({ data: userData }) => {
+            if (!userData?.user?.id) return;
+            supabase.from('scan_history').insert({
+              user_id: userData.user.id,
+              pet_id: pet.id,
+              product_id: product.id,
+              final_score: result.finalScore,
+              score_breakdown: {
+                layer1: result.layer1,
+                layer2: result.layer2,
+                layer3: result.layer3,
+                category: result.category,
+                isPartialScore: result.isPartialScore,
+              },
+            }).then(({ error: insertErr }) => {
+              if (insertErr) {
+                console.warn('[ResultScreen] scan_history insert failed:', insertErr.message);
+              }
+            });
+          });
+        }
       } catch (err) {
         console.error('[ResultScreen] Scoring failed:', err);
         setError('Scoring failed. Please try again.');

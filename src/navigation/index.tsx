@@ -107,6 +107,8 @@ function MeStackScreen() {
       <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
       <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
       <MeStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <MeStack.Screen name="Result" component={ResultScreen} />
+      <MeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
     </MeStack.Navigator>
   );
 }

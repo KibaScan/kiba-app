@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import type { PantryCardData } from '../../types/pantry';
 import type { Pet } from '../../types/pet';
@@ -98,8 +97,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
-  const isTreat = product.category === 'treat'
-    || item.assignments.every(a => a.feeding_frequency === 'as_needed');
+  const isTreat = product.category === 'treat';
 
   const myAssignment = item.assignments.find(a => a.pet_id === activePet.id)
     ?? item.assignments[0];
@@ -119,7 +117,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
     feedingSummary = 'As needed';
   } else {
     const unit = myAssignment.serving_size_unit === 'units'
-      ? (item.unit_label ?? 'units')
+      ? (product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 ? 'cups' : (item.unit_label ?? 'units'))
       : myAssignment.serving_size_unit;
     feedingSummary = `${myAssignment.feedings_per_day}x daily \u00B7 ${myAssignment.serving_size} ${unit}`;
   }
@@ -145,19 +143,11 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           {/* LEFT: Product image */}
           <View style={styles.imageContainer}>
             {product.image_url ? (
-              <>
-                <Image
-                  source={{ uri: product.image_url }}
-                  style={styles.productImage}
-                  resizeMode="contain"
-                />
-                <LinearGradient
-                  colors={[Colors.card, 'transparent', 'transparent', Colors.card]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.imageSideFade}
-                />
-              </>
+              <Image
+                source={{ uri: product.image_url }}
+                style={styles.productImage}
+                resizeMode="contain"
+              />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="cube-outline" size={24} color={Colors.textTertiary} />
@@ -192,9 +182,18 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
               isVetDiet={isVetDiet}
               isSupplemental={product.is_supplemental}
             />
-            <Text style={[styles.remainingText, { color: remaining.color }]}>
-              {remaining.text}
-            </Text>
+            {!isTreat && item.days_remaining != null && !item.is_empty ? (
+              <View style={styles.remainingRow}>
+                <Ionicons name="time-outline" size={12} color={remaining.color} />
+                <Text style={[styles.remainingText, { color: remaining.color }]}>
+                  {remaining.text}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.remainingText, { color: remaining.color }]}>
+                {remaining.text}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
   // Main row
   mainRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
 
   // Image
@@ -357,13 +356,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: '100%',
-  },
-  imageSideFade: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   imagePlaceholder: {
     width: '100%',
@@ -438,6 +430,11 @@ const styles = StyleSheet.create({
   bypassBadgeText: {
     fontSize: FontSizes.xs,
     fontWeight: '600',
+  },
+  remainingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   remainingText: {
     fontSize: FontSizes.sm,

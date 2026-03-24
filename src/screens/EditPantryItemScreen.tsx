@@ -3,7 +3,7 @@
 // D-155: Empty item states. D-158: Recalled item states. D-157: Remove nudge.
 // D-084: Zero emoji. D-094: Score framing. D-095: UPVM compliant.
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,11 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { PantryStackParamList } from '../types/navigation';
-import type { PantryCardData, UnitLabel, FeedingFrequency } from '../types/pantry';
+import type { PantryCardData, FeedingFrequency } from '../types/pantry';
 import type { Product } from '../types';
 import { PantryOfflineError } from '../types/pantry';
 import { usePantryStore } from '../stores/usePantryStore';
@@ -34,10 +35,17 @@ import {
   updatePantryItem,
   updatePetAssignment,
 } from '../services/pantryService';
-import { calculateDepletionBreakdown } from '../utils/pantryHelpers';
+import {
+  calculateDepletionBreakdown,
+  computePetDer,
+  computeExistingPantryKcal,
+  computeAutoServingSize,
+} from '../utils/pantryHelpers';
+import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName } from '../utils/formatters';
 import { shouldShowD157Nudge } from './PantryScreen';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chipToggle } from '../utils/haptics';
 import {
   Colors,
@@ -60,19 +68,7 @@ export function formatTime(time24: string): string {
   return `${displayH}:${mStr} ${period}`;
 }
 
-export function buildPresetTimes(): { value: string; label: string }[] {
-  const times: { value: string; label: string }[] = [];
-  for (let h = 5; h <= 21; h++) {
-    for (const m of [0, 30]) {
-      const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      times.push({ value, label: formatTime(value) });
-    }
-  }
-  return times;
-}
-
-const PRESET_TIMES = buildPresetTimes();
-const UNIT_LABELS: UnitLabel[] = ['cans', 'pouches'];
+// D-164: unit label is always 'servings' — picker removed
 
 // ─── Component ──────────────────────────────────────────
 
@@ -97,7 +93,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   // ── Item fields (local state) ──
   const [qtyRemaining, setQtyRemaining] = useState(() => String(item?.quantity_remaining ?? 0));
   const [qtyOriginal, setQtyOriginal] = useState(() => String(item?.quantity_original ?? 0));
-  const [unitLabel, setUnitLabel] = useState<UnitLabel>(() => item?.unit_label ?? 'cans');
+  // D-164: unitLabel always 'servings'
 
   // ── Assignment fields (local state) ──
   const [servingSize, setServingSize] = useState(() => String(myAssignment?.serving_size ?? 1));
@@ -112,37 +108,40 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     () => myAssignment?.notifications_on ?? false,
   );
 
+  // ── Auto/Manual serving (D-165 parity) ──
+  // Persisted per-assignment via AsyncStorage so manual choice is remembered.
+  const manualKey = myAssignment ? `kiba-manual-serving-${myAssignment.id}` : null;
+  const [autoMode, setAutoMode] = useState(true);
+  const autoModeLoaded = useRef(false);
+
+  useEffect(() => {
+    if (!manualKey || autoModeLoaded.current) return;
+    autoModeLoaded.current = true;
+    AsyncStorage.getItem(manualKey).then(val => {
+      if (val === 'true') setAutoMode(false);
+    }).catch(() => {});
+  }, [manualKey]);
+
   // ── Modals ──
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
+  const [pickerTime, setPickerTime] = useState(() => {
+    const d = new Date();
+    d.setHours(7, 0, 0, 0);
+    return d;
+  });
 
-  // ── Not found guard ──
-  if (!item || !myAssignment) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Item not found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const { product } = item;
-  const isRecalled = product.is_recalled;
-  const isEmpty = item.is_empty;
-  const isUnitMode = item.serving_mode === 'unit';
-  const displayName = stripBrandFromName(product.brand, product.name);
-  const isShared = item.assignments.length > 1;
+  const product = item?.product ?? null;
+  const isRecalled = product?.is_recalled ?? false;
+  const isEmpty = item?.is_empty ?? false;
+  const isUnitMode = item?.serving_mode === 'unit';
+  const displayName = product ? stripBrandFromName(product.brand, product.name) : '';
+  const isShared = (item?.assignments?.length ?? 0) > 1;
 
   // ── Derived: depletion ──
   const depletion = useMemo(() => {
-    if (isRecalled || product.category === 'treat') return null;
+    if (!item || !myAssignment || !product || isRecalled || product.category === 'treat') return null;
     const qty = parseFloat(qtyRemaining);
     const srv = parseFloat(servingSize);
     if (isNaN(qty) || qty < 0 || isNaN(srv) || srv <= 0) return null;
@@ -152,10 +151,46 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       feedingsPerDay,
       qty,
       isUnitMode ? 'units' : item.quantity_unit,
-      isUnitMode ? unitLabel : null,
+      isUnitMode ? 'servings' : null,
       product as unknown as Product,
     );
-  }, [isRecalled, product, qtyRemaining, servingSize, isUnitMode, myAssignment.serving_size_unit, feedingsPerDay, item.quantity_unit, unitLabel]);
+  }, [item, myAssignment, product, isRecalled, qtyRemaining, servingSize, isUnitMode, feedingsPerDay]);
+
+  // ── Auto-serving (D-165 parity) ──
+  const isTreat = product?.category === 'treat';
+
+  const petDer = useMemo(() => {
+    if (!activePet || isTreat) return null;
+    return computePetDer(activePet, canUseGoalWeight());
+  }, [activePet, isTreat]);
+
+  const existingKcal = useMemo(() => {
+    if (!activePet) return 0;
+    return computeExistingPantryKcal(items, activePet.id, itemId);
+  }, [items, activePet, itemId]);
+
+  const remainingBudget = petDer != null ? Math.max(0, petDer - existingKcal) : null;
+
+  const autoServing = useMemo(() => {
+    if (!product || isTreat || remainingBudget == null) return null;
+    return computeAutoServingSize(remainingBudget, feedingsPerDay, product as Product);
+  }, [product, isTreat, remainingBudget, feedingsPerDay]);
+
+  const canAutoCalc = autoServing != null;
+  const effectiveAutoMode = autoMode && canAutoCalc;
+
+  // Auto-sync serving size when auto mode is active
+  useEffect(() => {
+    if (!effectiveAutoMode || !autoServing || !myAssignment) return;
+    const rounded = Math.round(autoServing.amount * 100) / 100;
+    setServingSize(String(rounded));
+    updatePetAssignment(myAssignment.id, {
+      serving_size: rounded,
+      serving_size_unit: autoServing.unit,
+    } as Parameters<typeof updatePetAssignment>[1]).catch((e) => {
+      if (e instanceof PantryOfflineError) Alert.alert('Offline', e.message);
+    });
+  }, [effectiveAutoMode, autoServing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Card opacity helpers ──
   const feedingOpacity = isRecalled ? 0.4 : isEmpty ? 0.6 : 1;
@@ -167,7 +202,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
 
   const saveError = () => Alert.alert('Error', 'Failed to save. Check your connection.');
 
-  const saveItemField = useCallback(async (field: 'quantity_remaining' | 'quantity_original' | 'unit_label', value: number | UnitLabel) => {
+  const saveItemField = useCallback(async (field: 'quantity_remaining' | 'quantity_original', value: number) => {
     try {
       await updatePantryItem(itemId, { [field]: value } as Record<string, unknown>);
     } catch (e) {
@@ -177,15 +212,28 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   }, [itemId]);
 
   const saveAssignmentField = useCallback(async (updates: Record<string, unknown>) => {
+    if (!myAssignment) return;
     try {
       await updatePetAssignment(myAssignment.id, updates as Parameters<typeof updatePetAssignment>[1]);
     } catch (e) {
       if (e instanceof PantryOfflineError) Alert.alert('Offline', e.message);
       else saveError();
     }
-  }, [myAssignment.id]);
+  }, [myAssignment]);
 
   // ── Field handlers ──
+
+  const handleAutoManualToggle = useCallback((isAuto: boolean) => {
+    chipToggle();
+    setAutoMode(isAuto);
+    if (manualKey) {
+      if (isAuto) AsyncStorage.removeItem(manualKey).catch(() => {});
+      else AsyncStorage.setItem(manualKey, 'true').catch(() => {});
+    }
+    if (!isAuto && autoServing) {
+      setServingSize(String(Math.round(autoServing.amount * 100) / 100));
+    }
+  }, [autoServing, manualKey]);
 
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
@@ -197,11 +245,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     if (!isNaN(val) && val > 0) saveItemField('quantity_original', val);
   }, [qtyOriginal, saveItemField]);
 
-  const handleUnitLabelChange = useCallback((label: UnitLabel) => {
-    chipToggle();
-    setUnitLabel(label);
-    saveItemField('unit_label', label);
-  }, [saveItemField]);
+  // D-164: handleUnitLabelChange removed — unit label is always 'servings'
 
   const handleServingSizeBlur = useCallback(() => {
     const val = parseFloat(servingSize);
@@ -209,12 +253,20 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   }, [servingSize, saveAssignmentField]);
 
   const handleFeedingsChange = useCallback((delta: number) => {
-    const next = Math.max(1, Math.min(3, feedingsPerDay + delta));
+    const next = Math.max(1, Math.min(5, feedingsPerDay + delta));
     if (next === feedingsPerDay) return;
     chipToggle();
     setFeedingsPerDay(next);
-    saveAssignmentField({ feedings_per_day: next });
-  }, [feedingsPerDay, saveAssignmentField]);
+    // Trim excess feeding times when decreasing
+    if (feedingTimes.length > next) {
+      const trimmed = feedingTimes.slice(0, next);
+      setFeedingTimes(trimmed);
+      saveAssignmentField({ feedings_per_day: next, feeding_times: trimmed });
+      rescheduleAllFeeding().catch(() => {});
+    } else {
+      saveAssignmentField({ feedings_per_day: next });
+    }
+  }, [feedingsPerDay, feedingTimes, saveAssignmentField]);
 
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
@@ -242,6 +294,16 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     rescheduleAllFeeding().catch(() => {});
   }, [feedingTimes, saveAssignmentField]);
 
+  const handlePickerChange = useCallback((_: DateTimePickerEvent, date?: Date) => {
+    if (date) setPickerTime(date);
+  }, []);
+
+  const handlePickerConfirm = useCallback(() => {
+    const h = String(pickerTime.getHours()).padStart(2, '0');
+    const m = String(pickerTime.getMinutes()).padStart(2, '0');
+    handleAddTime(`${h}:${m}`);
+  }, [pickerTime, handleAddTime]);
+
   const handleRemoveTime = useCallback((time: string) => {
     const next = feedingTimes.filter(t => t !== time);
     setFeedingTimes(next);
@@ -252,6 +314,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   // ── Action handlers ──
 
   const handleRestock = useCallback(async () => {
+    if (!item || !product) return;
     try {
       await restockItem(itemId);
       setQtyRemaining(String(item.quantity_original));
@@ -259,9 +322,10 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     } catch {
       saveError();
     }
-  }, [itemId, restockItem, item.quantity_original, product.name]);
+  }, [item, product, itemId, restockItem]);
 
   const handleRemoveSingle = useCallback(() => {
+    if (!product || !item) return;
     Alert.alert(
       'Remove Item',
       `Remove ${product.name} from your pantry?`,
@@ -279,9 +343,10 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
         },
       ],
     );
-  }, [product.name, items, itemId, removeItem, activePetId, activePet, item, navigation]);
+  }, [product, item, items, itemId, removeItem, activePetId, activePet, navigation]);
 
   const handleRemoveSharedAll = useCallback(async () => {
+    if (!item) return;
     setRemoveModalVisible(false);
     const remaining = items.filter(i => i.id !== itemId);
     await removeItem(itemId);
@@ -289,9 +354,10 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       Alert.alert('Intake Changed', `${activePet?.name ?? 'Your pet'}'s daily intake from pantry items has changed.`);
     }
     navigation.goBack();
-  }, [items, itemId, removeItem, activePetId, activePet, item, navigation]);
+  }, [item, items, itemId, removeItem, activePetId, activePet, navigation]);
 
   const handleRemoveSharedPetOnly = useCallback(async () => {
+    if (!item) return;
     setRemoveModalVisible(false);
     const remaining = items.filter(i => i.id !== itemId);
     await removeItem(itemId, activePetId!);
@@ -299,7 +365,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       Alert.alert('Intake Changed', `${activePet?.name ?? 'Your pet'}'s daily intake from pantry items has changed.`);
     }
     navigation.goBack();
-  }, [items, itemId, removeItem, activePetId, activePet, item, navigation]);
+  }, [item, items, itemId, removeItem, activePetId, activePet, navigation]);
 
   const handleRemovePress = useCallback(() => {
     if (isShared) {
@@ -320,6 +386,22 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     if (isEmpty) return `${base} \u00B7 Empty`;
     return depletion.daysText ? `${base} \u00B7 ${depletion.daysText}` : base;
   }, [depletion, isEmpty]);
+
+  // ── Not found guard (after all hooks) ──
+  if (!item || !myAssignment || !product) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundText}>Item not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // ── Render ──
   return (
@@ -352,13 +434,13 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             <View style={styles.inputRow}>
               <TextInput
                 style={styles.numberInput}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={qtyRemaining}
                 onChangeText={setQtyRemaining}
                 onBlur={handleQtyRemainingBlur}
               />
               <Text style={styles.unitSuffix}>
-                {isUnitMode ? (unitLabel ?? 'units') : item.quantity_unit}
+                {isUnitMode ? 'servings' : item.quantity_unit}
               </Text>
             </View>
 
@@ -366,54 +448,91 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             <View style={styles.inputRow}>
               <TextInput
                 style={styles.numberInput}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={qtyOriginal}
                 onChangeText={setQtyOriginal}
                 onBlur={handleQtyOriginalBlur}
               />
               <Text style={styles.unitSuffix}>
-                {isUnitMode ? (unitLabel ?? 'units') : item.quantity_unit}
+                {isUnitMode ? 'servings' : item.quantity_unit}
               </Text>
             </View>
 
-            {isUnitMode && (
-              <>
-                <Text style={styles.label}>Unit type</Text>
-                <View style={styles.chipRow}>
-                  {UNIT_LABELS.map(l => (
-                    <TouchableOpacity
-                      key={l}
-                      style={[styles.chip, unitLabel === l && styles.chipSelected]}
-                      onPress={() => handleUnitLabelChange(l)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.chipText, unitLabel === l && styles.chipTextSelected]}>
-                        {l}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
+            {/* D-164: Unit type picker removed — always 'servings' */}
           </View>
 
           {/* ── Feeding Card ── */}
           <View style={[styles.card, { opacity: feedingOpacity }]} pointerEvents={feedingDisabled ? 'none' : 'auto'}>
             <Text style={styles.cardTitle}>Feeding</Text>
 
-            <Text style={styles.label}>Amount per feeding</Text>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.numberInput}
-                keyboardType="numeric"
-                value={servingSize}
-                onChangeText={setServingSize}
-                onBlur={handleServingSizeBlur}
-              />
-              <Text style={styles.unitSuffix}>
-                {isUnitMode ? (unitLabel ?? 'units') : myAssignment.serving_size_unit}
-              </Text>
-            </View>
+            {/* Auto/Manual toggle (D-165 parity) */}
+            {canAutoCalc && !isTreat && (
+              <>
+                <Text style={styles.label}>Serving calculation</Text>
+                <View style={styles.toggleRow}>
+                  <TouchableOpacity
+                    style={[styles.toggleBtn, autoMode && styles.toggleBtnActive]}
+                    onPress={() => handleAutoManualToggle(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.toggleText, autoMode && styles.toggleTextActive]}>
+                      Auto
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.toggleBtn, !autoMode && styles.toggleBtnActive]}
+                    onPress={() => handleAutoManualToggle(false)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.toggleText, !autoMode && styles.toggleTextActive]}>
+                      Manual
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {/* Auto mode: read-only display */}
+            {effectiveAutoMode && autoServing && (
+              <>
+                <Text style={styles.label}>Amount per feeding</Text>
+                <View style={styles.autoServingDisplay}>
+                  <Text style={styles.autoServingValue}>
+                    {Math.round(autoServing.amount * 100) / 100}
+                  </Text>
+                  <Text style={styles.autoServingUnit}>
+                    {autoServing.unit} per feeding
+                  </Text>
+                </View>
+                {remainingBudget != null && petDer != null && (
+                  <Text style={styles.autoServingMath}>
+                    {existingKcal > 0
+                      ? `${remainingBudget} kcal remaining of ${petDer} kcal budget`
+                      : `${petDer} kcal daily budget`}
+                    {` \u00F7 ${feedingsPerDay} feeding${feedingsPerDay > 1 ? 's' : ''}`}
+                  </Text>
+                )}
+              </>
+            )}
+
+            {/* Manual mode: editable input (existing behavior) */}
+            {!effectiveAutoMode && (
+              <>
+                <Text style={styles.label}>Amount per feeding</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={styles.numberInput}
+                    keyboardType="decimal-pad"
+                    value={servingSize}
+                    onChangeText={setServingSize}
+                    onBlur={handleServingSizeBlur}
+                  />
+                  <Text style={styles.unitSuffix}>
+                    {isUnitMode ? 'servings' : myAssignment.serving_size_unit}
+                  </Text>
+                </View>
+              </>
+            )}
 
             <Text style={styles.label}>Feedings per day</Text>
             <View style={styles.stepperRow}>
@@ -429,10 +548,10 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               <TouchableOpacity
                 style={styles.stepperBtn}
                 onPress={() => handleFeedingsChange(1)}
-                disabled={feedingsPerDay >= 3}
+                disabled={feedingsPerDay >= 5}
                 activeOpacity={0.7}
               >
-                <Ionicons name="add" size={20} color={feedingsPerDay >= 3 ? Colors.textTertiary : Colors.textPrimary} />
+                <Ionicons name="add" size={20} color={feedingsPerDay >= 5 ? Colors.textTertiary : Colors.textPrimary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -487,14 +606,16 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
                           </TouchableOpacity>
                         </View>
                       ))}
-                      <TouchableOpacity
-                        style={styles.addTimeBtn}
-                        onPress={() => setTimePickerVisible(true)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="add" size={16} color={Colors.accent} />
-                        <Text style={styles.addTimeText}>Add time</Text>
-                      </TouchableOpacity>
+                      {feedingTimes.length < feedingsPerDay && (
+                        <TouchableOpacity
+                          style={styles.addTimeBtn}
+                          onPress={() => setTimePickerVisible(true)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="add" size={16} color={Colors.accent} />
+                          <Text style={styles.addTimeText}>Add time</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </>
                 )}
@@ -578,24 +699,21 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
         <Pressable style={styles.modalOverlay} onPress={() => setTimePickerVisible(false)} />
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>Select Time</Text>
-          <View style={styles.timeGrid}>
-            {PRESET_TIMES.map(t => {
-              const alreadyAdded = feedingTimes.includes(t.value);
-              return (
-                <TouchableOpacity
-                  key={t.value}
-                  style={[styles.timeChip, alreadyAdded && styles.timeChipDisabled]}
-                  onPress={() => !alreadyAdded && handleAddTime(t.value)}
-                  activeOpacity={0.7}
-                  disabled={alreadyAdded}
-                >
-                  <Text style={[styles.timeChipText, alreadyAdded && styles.timeChipTextDisabled]}>
-                    {t.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <DateTimePicker
+            value={pickerTime}
+            mode="time"
+            display="spinner"
+            onChange={handlePickerChange}
+            themeVariant="dark"
+            minuteInterval={5}
+          />
+          <TouchableOpacity
+            style={styles.pickerConfirmBtn}
+            onPress={handlePickerConfirm}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.pickerConfirmText}>Add Time</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -743,6 +861,28 @@ const styles = StyleSheet.create({
   unitSuffix: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
+  },
+
+  // Auto serving display (D-165 parity)
+  autoServingDisplay: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  autoServingValue: {
+    fontSize: FontSizes.xxl,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  autoServingUnit: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+  autoServingMath: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    marginTop: 2,
   },
 
   // Chips
@@ -1000,30 +1140,18 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
 
-  // Time picker grid
-  timeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: Spacing.md,
+  // Time picker confirm
+  pickerConfirmBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
   },
-  timeChip: {
-    backgroundColor: Colors.background,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  timeChipDisabled: {
-    opacity: 0.3,
-  },
-  timeChipText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textPrimary,
-  },
-  timeChipTextDisabled: {
-    color: Colors.textTertiary,
+  pickerConfirmText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   bottomSpacer: { height: 88 },

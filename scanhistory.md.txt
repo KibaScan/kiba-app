@@ -1,0 +1,98 @@
+Scan History — Recent scans on HomeScreen + PetHubScreen
+Read these files before starting:
+
+src/screens/HomeScreen.tsx
+src/screens/PetHubScreen.tsx
+src/types/ (find the scans-related types, or check the scans table schema)
+src/services/ (check if a scan query service already exists)
+
+Overview: The scans table already receives data from ResultScreen after scoring. Two screens have placeholder spots for recent scans. Wire them up.
+
+1. Create scan history service
+File: src/services/scanHistoryService.ts
+typescriptexport interface ScanHistoryItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  product_brand: string;
+  product_image_url: string | null;
+  product_form: string;
+  product_category: string;
+  final_score: number | null;
+  is_supplemental: boolean;
+  is_recalled: boolean;
+  is_vet_diet: boolean;
+  bypass_reason: string | null;
+  scanned_at: string;
+}
+
+export async function getRecentScans(
+  petId: string,
+  limit?: number,
+): Promise<ScanHistoryItem[]>
+Query: scans joined with products on product_id, filtered by pet_id, ordered by scanned_at DESC, limited to limit (default 10). Select only the fields needed for the card — don't pull full product data.
+If the same product was scanned multiple times, only show the most recent scan (deduplicate by product_id, keep latest scanned_at). Users don't need to see "Blue Buffalo" three times.
+2. Create ScanHistoryCard component
+File: src/components/ScanHistoryCard.tsx
+A compact card for each recent scan. Reuse patterns from PantryCard:
+
+Product image (40×40, rounded, placeholder if no image)
+Brand (muted, small) + product name (semibold, 1-line clamp)
+Score badge: getScoreColor(score, isSupplemental) → "73% match" in color. For bypasses: show the bypass badge (Recalled / Vet Diet / etc.) same as PantryCard's ScoreBadge.
+Relative time: "2h ago", "Yesterday", "3 days ago", "Mar 15" (use a simple helper — no moment.js)
+Tap → navigate to ResultScreen with the product (or to RecallDetail if recalled)
+
+Style: Same card background as PantryCard (Colors.card), compact height (~64px), horizontal layout. D-094 compliant — score shows as "X% match", not naked number.
+3. Wire into PetHubScreen
+Replace the placeholder at lines 668-677 ("No scans yet — try scanning a product!").
+typescript// State
+const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
+
+// In the existing useFocusEffect (add to the Promise.all):
+getRecentScans(activePet.id, 5)
+Render:
+
+Section title: "Recent Scans" with a "See All" link if count > 3
+Show up to 3 scan cards
+"See All" navigates to a full scan history list (or just show 5 for now — full list screen can be a follow-up)
+Empty state: keep the existing "No scans yet" placeholder with the scan icon platter
+
+4. Wire into HomeScreen
+This depends on what HomeScreen currently looks like. Based on CLAUDE.md, it's "currently just a giant scan button" and M5_POLISH says it needs dashboard cards. For now, add a "Recent Scans" section below whatever exists:
+
+Same pattern as PetHubScreen: title + 3 cards + empty state
+Uses the active pet from useActivePetStore
+Loads on focus via useFocusEffect
+Tap a card → navigate to the Scan tab's ResultScreen (cross-tab navigation)
+
+5. Relative time helper
+File: src/utils/formatters.ts (add to existing file)
+typescriptexport function formatRelativeTime(isoDate: string): string
+Logic:
+
+< 1 hour: "Just now"
+< 24 hours: "Xh ago"
+< 48 hours: "Yesterday"
+< 7 days: "X days ago"
+Otherwise: "Mar 15" (short month + day)
+
+No external dependency. Pure function, testable.
+6. Tests
+File: __tests__/utils/formatters.test.ts — add tests for formatRelativeTime (just now, hours, yesterday, days, older)
+File: __tests__/services/scanHistoryService.test.ts — mock Supabase, verify query shape, verify deduplication by product_id
+Do NOT change:
+
+ResultScreen's scan write logic (it already works)
+The scans table schema
+Scoring engine or any service
+Navigation structure (no new screens — just sections on existing screens)
+
+Verify:
+
+Scan a product → go to HomeScreen → scan appears in recent scans with correct score and time
+Switch pets → scan list updates to the new pet's scans
+Tap a scan card → navigates to ResultScreen for that product
+Recalled product scan → shows red "Recalled" badge, taps to RecallDetail
+Empty state renders when pet has no scans
+Score uses getScoreColor with correct product type (daily food = green family, supplemental = teal)
+

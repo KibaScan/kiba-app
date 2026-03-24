@@ -14,6 +14,14 @@ import { PantryOfflineError } from '../../src/types/pantry';
 
 // ─── Mocks ──────────────────────────────────────────────
 
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn().mockResolvedValue(null),
+    setItem: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn(),
 }));

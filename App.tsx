@@ -9,7 +9,7 @@ import { useActivePetStore } from './src/stores/useActivePetStore';
 import { configureRevenueCat } from './src/utils/permissions';
 import { Colors } from './src/utils/constants';
 import { registerForPushNotificationsAsync, setupNotificationHandlers, cleanupNotificationHandlers } from './src/utils/notifications';
-import { registerPushToken } from './src/services/pushService';
+import { registerPushToken, ensureUserSettings } from './src/services/pushService';
 import { rescheduleAllFeeding } from './src/services/feedingNotificationScheduler';
 import { rescheduleAllAppointments } from './src/services/appointmentNotificationScheduler';
 import { supabase } from './src/services/supabase';
@@ -24,7 +24,10 @@ export default function App() {
       await configureRevenueCat();
       await useActivePetStore.getState().loadPets();
 
-      // Push notification registration (after auth so we have a user_id)
+      // Ensure user_settings row exists (local notification schedulers depend on it)
+      await ensureUserSettings();
+
+      // Push notification registration (may return null on simulator — that's fine)
       const token = await registerForPushNotificationsAsync();
       if (token) await registerPushToken(token);
 

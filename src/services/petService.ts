@@ -240,7 +240,16 @@ export async function updatePet(
 }
 
 export async function deletePet(petId: string): Promise<void> {
-  // Cascade: remove related rows first (hard delete — D-110 soft delete is M3+)
+  // Step 1: Capture pantry item IDs before CASCADE removes assignments
+  const { data: pantryAssignments } = await supabase
+    .from('pantry_pet_assignments')
+    .select('pantry_item_id')
+    .eq('pet_id', petId);
+  const affectedItemIds = [
+    ...new Set((pantryAssignments ?? []).map((a: { pantry_item_id: string }) => a.pantry_item_id)),
+  ];
+
+  // Step 2: Cascade — remove related rows then delete pet
   const { error: allergenErr } = await supabase
     .from('pet_allergens')
     .delete()
@@ -255,6 +264,28 @@ export async function deletePet(petId: string): Promise<void> {
 
   const { error } = await supabase.from('pets').delete().eq('id', petId);
   if (error) throw new Error(`Failed to delete pet: ${error.message}`);
+
+  // Step 3: Soft-delete orphaned pantry items (no remaining assignments)
+  try {
+    if (affectedItemIds.length > 0) {
+      const { data: stillAssigned } = await supabase
+        .from('pantry_pet_assignments')
+        .select('pantry_item_id')
+        .in('pantry_item_id', affectedItemIds);
+      const stillAssignedIds = new Set(
+        (stillAssigned ?? []).map((a: { pantry_item_id: string }) => a.pantry_item_id),
+      );
+      const orphanIds = affectedItemIds.filter(id => !stillAssignedIds.has(id));
+      if (orphanIds.length > 0) {
+        await supabase
+          .from('pantry_items')
+          .update({ is_active: false })
+          .in('id', orphanIds);
+      }
+    }
+  } catch {
+    // Best-effort cleanup — pet is already deleted
+  }
 
   useActivePetStore.getState().removePet(petId);
 }

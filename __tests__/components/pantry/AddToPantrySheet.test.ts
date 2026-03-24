@@ -158,7 +158,6 @@ describe('buildAddToPantryInput', () => {
       quantityValue: '25',
       quantityUnit: 'lbs',
       servingMode: 'weight',
-      unitLabel: 'cans',
       servingSize: 1.5,
       servingSizeUnit: 'cups',
       feedingsPerDay: 2,
@@ -179,13 +178,12 @@ describe('buildAddToPantryInput', () => {
     expect(input).not.toHaveProperty('unit_label');
   });
 
-  test('unit mode with cans', () => {
+  test('unit mode — always uses servings (D-164)', () => {
     const input = buildAddToPantryInput({
       productId: 'prod-2',
       quantityValue: '24',
       quantityUnit: 'units',
       servingMode: 'unit',
-      unitLabel: 'cans',
       servingSize: 0.5,
       servingSizeUnit: 'units',
       feedingsPerDay: 2,
@@ -197,28 +195,12 @@ describe('buildAddToPantryInput', () => {
       quantity_original: 24,
       quantity_unit: 'units',
       serving_mode: 'unit',
-      unit_label: 'cans',
+      unit_label: 'servings',
       serving_size: 0.5,
       serving_size_unit: 'units',
       feedings_per_day: 2,
       feeding_frequency: 'daily',
     });
-  });
-
-  test('unit mode with pouches', () => {
-    const input = buildAddToPantryInput({
-      productId: 'prod-3',
-      quantityValue: '12',
-      quantityUnit: 'units',
-      servingMode: 'unit',
-      unitLabel: 'pouches',
-      servingSize: 1,
-      servingSizeUnit: 'units',
-      feedingsPerDay: 2,
-      feedingFrequency: 'daily',
-    });
-
-    expect(input.unit_label).toBe('pouches');
   });
 
   test('treats set as_needed frequency', () => {
@@ -227,7 +209,6 @@ describe('buildAddToPantryInput', () => {
       quantityValue: '30',
       quantityUnit: 'units',
       servingMode: 'unit',
-      unitLabel: 'units',
       servingSize: 1,
       servingSizeUnit: 'units',
       feedingsPerDay: 1,
@@ -244,7 +225,6 @@ describe('buildAddToPantryInput', () => {
       quantityValue: '4.5',
       quantityUnit: 'kg',
       servingMode: 'weight',
-      unitLabel: 'cans',
       servingSize: 2,
       servingSizeUnit: 'cups',
       feedingsPerDay: 2,

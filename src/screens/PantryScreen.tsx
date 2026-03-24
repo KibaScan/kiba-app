@@ -14,7 +14,6 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
   ScrollView,
@@ -22,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
@@ -129,6 +129,8 @@ const FILTER_LABEL_MAP: Record<FilterChip, string> = {
 // ─── Component ──────────────────────────────────────────
 
 export default function PantryScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   // ── Stores ──
   const pets = useActivePetStore(s => s.pets);
   const activePetId = useActivePetStore(s => s.activePetId);
@@ -253,12 +255,14 @@ export default function PantryScreen({ navigation }: Props) {
   // ── No pet empty state ──
   if (!activePet) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Pantry</Text>
         </View>
         <View style={styles.emptyCenter}>
-          <Ionicons name="paw-outline" size={48} color={Colors.textTertiary} />
+          <View style={styles.emptyIconPlatter}>
+            <Ionicons name="paw-outline" size={40} color={Colors.accent} />
+          </View>
           <Text style={styles.emptyTitle}>No pet profile yet</Text>
           <Text style={styles.emptySubtitle}>
             Create a pet profile to start{'\n'}building their pantry
@@ -274,45 +278,47 @@ export default function PantryScreen({ navigation }: Props) {
             <Text style={styles.ctaText}>Add Your Pet</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // ── Loading (first load, no cached items) ──
   if (loading && items.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Pantry</Text>
         </View>
         <View style={styles.emptyCenter}>
           <ActivityIndicator size="large" color={Colors.accent} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // ── Main screen ──
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Pantry</Text>
-          <View style={styles.headerPet}>
-            <View style={styles.headerAvatar}>
-              {activePet.photo_url ? (
-                <Image source={{ uri: activePet.photo_url }} style={styles.headerPhoto} />
-              ) : (
-                <Ionicons name="paw-outline" size={16} color={Colors.accent} />
-              )}
+          {!hasMultiplePets && (
+            <View style={styles.headerPet}>
+              <View style={styles.headerAvatar}>
+                {activePet.photo_url ? (
+                  <Image source={{ uri: activePet.photo_url }} style={styles.headerPhoto} />
+                ) : (
+                  <Ionicons name="paw-outline" size={16} color={Colors.accent} />
+                )}
+              </View>
+              <Text style={styles.headerPetName} numberOfLines={1}>{activePet.name}</Text>
             </View>
-            <Text style={styles.headerPetName} numberOfLines={1}>{activePet.name}</Text>
-          </View>
+          )}
         </View>
       </View>
 
-      {/* Pet carousel */}
+      {/* Pet switcher */}
       {hasMultiplePets && (
         <ScrollView
           horizontal
@@ -344,7 +350,7 @@ export default function PantryScreen({ navigation }: Props) {
                   ) : (
                     <Ionicons
                       name="paw-outline"
-                      size={isActive ? 22 : 16}
+                      size={isActive ? 20 : 16}
                       color={Colors.accent}
                     />
                   )}
@@ -368,7 +374,9 @@ export default function PantryScreen({ navigation }: Props) {
           onPress={() => setActiveFilter('recalled')}
           activeOpacity={0.7}
         >
-          <Ionicons name="warning-outline" size={16} color={Colors.severityRed} />
+          <View style={{ marginTop: 2 }}>
+            <Ionicons name="warning-outline" size={16} color={Colors.severityRed} />
+          </View>
           <Text style={styles.recallBannerText}>
             Recall Alert: {recalledItems.length} product{recalledItems.length > 1 ? 's' : ''} in {activePet.name}'s pantry {recalledItems.length > 1 ? 'have' : 'has'} been recalled. Tap to review.
           </Text>
@@ -381,7 +389,9 @@ export default function PantryScreen({ navigation }: Props) {
           styles.banner,
           { backgroundColor: `${bannerConfig.color}15`, borderLeftColor: bannerConfig.color },
         ]}>
-          <Ionicons name="warning-outline" size={16} color={bannerConfig.color} />
+          <View style={{ marginTop: 2 }}>
+            <Ionicons name="warning-outline" size={16} color={bannerConfig.color} />
+          </View>
           <Text style={[styles.bannerText, { color: bannerConfig.color }]}>
             {bannerConfig.message}
           </Text>
@@ -405,8 +415,8 @@ export default function PantryScreen({ navigation }: Props) {
                 style={[
                   styles.chip,
                   selected
-                    ? { backgroundColor: accentColor, borderColor: accentColor }
-                    : { borderColor: Colors.cardBorder },
+                    ? { backgroundColor: accentColor }
+                    : { backgroundColor: Colors.cardBorder },
                 ]}
                 onPress={() => setActiveFilter(chip.key)}
                 activeOpacity={0.7}
@@ -440,6 +450,8 @@ export default function PantryScreen({ navigation }: Props) {
       <FlatList
         data={displayItems}
         keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
         renderItem={({ item }) => (
           <PantryCard
             item={item}
@@ -464,7 +476,9 @@ export default function PantryScreen({ navigation }: Props) {
         ListEmptyComponent={
           items.length === 0 ? (
             <View style={styles.emptyCenter}>
-              <Ionicons name="scan-outline" size={64} color={Colors.textTertiary} />
+              <View style={styles.emptyIconPlatter}>
+                <Ionicons name="scan-outline" size={40} color={Colors.accent} />
+              </View>
               <Text style={styles.emptyTitle}>Pantry is empty</Text>
               <Text style={styles.emptySubtitle}>
                 Scan a product to add it to{'\n'}{activePet.name}'s pantry
@@ -474,13 +488,15 @@ export default function PantryScreen({ navigation }: Props) {
                 onPress={() => (navigation.getParent() as any)?.navigate('Scan')}
                 activeOpacity={0.7}
               >
-                <Ionicons name="scan-outline" size={18} color="#FFFFFF" />
+                <Ionicons name="scan-outline" size={18} color={Colors.accent} />
                 <Text style={styles.ctaText}>Scan a Product</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.emptyFilter}>
-              <Ionicons name="filter-outline" size={32} color={Colors.textTertiary} />
+              <View style={styles.emptyIconPlatter}>
+                <Ionicons name="filter-outline" size={40} color={Colors.accent} />
+              </View>
               <Text style={styles.emptyFilterText}>
                 No {FILTER_LABEL_MAP[activeFilter]} items in pantry
               </Text>
@@ -500,6 +516,7 @@ export default function PantryScreen({ navigation }: Props) {
           <BlurView intensity={30} style={StyleSheet.absoluteFill} />
         </Pressable>
         <View style={styles.modalSheet}>
+          <View style={styles.dragHandle} />
           <Text style={styles.modalTitle}>Sort By</Text>
           {SORT_OPTIONS.map(option => (
             <TouchableOpacity
@@ -533,6 +550,7 @@ export default function PantryScreen({ navigation }: Props) {
           <BlurView intensity={30} style={StyleSheet.absoluteFill} />
         </Pressable>
         <View style={styles.modalSheet}>
+          <View style={styles.dragHandle} />
           <Text style={styles.modalTitle}>Remove Item</Text>
           <Text style={styles.modalSubtitle}>
             {removeSheetItem?.product.name} is shared with multiple pets.
@@ -564,7 +582,7 @@ export default function PantryScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -579,8 +597,8 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
+    paddingTop: 0,
+    paddingBottom: 2,
   },
   headerRow: {
     flexDirection: 'row',
@@ -591,6 +609,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xxl,
     fontWeight: '800',
     color: Colors.textPrimary,
+    lineHeight: 30,
   },
   headerPet: {
     flexDirection: 'row',
@@ -617,54 +636,60 @@ const styles = StyleSheet.create({
     maxWidth: 100,
   },
 
-  // Carousel (matches PetHubScreen pattern)
+  // Pet carousel
   carousel: {
-    marginBottom: Spacing.sm,
+    flexGrow: 0,
+    marginTop: 0,
+    marginBottom: 0,
   },
   carouselContent: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.md,
+    paddingTop: 0,
+    paddingBottom: 2,
+    gap: 10,
+    alignItems: 'center',
   },
   carouselItem: {
     alignItems: 'center',
-    width: 56,
+    width: 52,
   },
   carouselAvatar: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#00B4D815',
+    backgroundColor: Colors.card,
+    overflow: 'hidden',
   },
   carouselAvatarActive: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: Colors.accent,
+    backgroundColor: Colors.background,
   },
   carouselAvatarInactive: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    opacity: 0.5,
+    opacity: 0.6,
   },
   carouselPhoto: {
-    borderRadius: 24,
-  },
-  carouselPhotoActive: {
-    width: 44,
-    height: 44,
     borderRadius: 22,
   },
+  carouselPhotoActive: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
   carouselPhotoInactive: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   carouselName: {
-    fontSize: FontSizes.xs,
+    fontSize: 10,
     color: Colors.textPrimary,
-    marginTop: 4,
+    marginTop: 2,
     textAlign: 'center',
   },
   carouselNameInactive: {
@@ -674,11 +699,13 @@ const styles = StyleSheet.create({
   // Recall banner
   recallBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.sm,
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    padding: Spacing.md,
+    marginTop: 4,
+    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
     borderRadius: 12,
     borderLeftWidth: 3,
     borderLeftColor: Colors.severityRed,
@@ -694,11 +721,13 @@ const styles = StyleSheet.create({
   // Diet banner
   banner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.sm,
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    padding: Spacing.md,
+    marginTop: 4,
+    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
     borderRadius: 12,
     borderLeftWidth: 3,
   },
@@ -712,7 +741,8 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginTop: 0,
+    marginBottom: 2,
   },
   filterChips: {
     flex: 1,
@@ -725,7 +755,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderWidth: 1,
   },
   chipText: {
     fontSize: FontSizes.sm,
@@ -734,6 +763,9 @@ const styles = StyleSheet.create({
   sortButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: Colors.cardBorder,
   },
 
   // List
@@ -743,7 +775,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   listContentEmpty: {
-    flex: 1,
+    flexGrow: 1,
   },
 
   // Empty states
@@ -751,11 +783,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100,
+    paddingBottom: 40,
     gap: Spacing.sm,
   },
   emptyTitle: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.lg,
     fontWeight: '700',
     color: Colors.textPrimary,
     marginTop: Spacing.md,
@@ -770,7 +802,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Colors.accent,
+    backgroundColor: `${Colors.accent}15`,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: Spacing.lg,
@@ -779,18 +811,27 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.accent,
   },
   emptyFilter: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100,
+    paddingBottom: 40,
     gap: Spacing.sm,
   },
   emptyFilterText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
+  },
+  emptyIconPlatter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: `${Colors.accent}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
 
   // Modal (sort + shared remove)
@@ -804,11 +845,20 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: Colors.card,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xxl,
+  },
+  dragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.textTertiary,
+    opacity: 0.3,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
   },
   modalTitle: {
     fontSize: FontSizes.lg,

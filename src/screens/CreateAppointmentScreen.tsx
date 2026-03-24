@@ -504,7 +504,8 @@ const styles = StyleSheet.create({
   bottomSpacer: { height: 24 },
   footer: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: 96,
     borderTopColor: Colors.cardBorder,
     borderTopWidth: 1,
   },

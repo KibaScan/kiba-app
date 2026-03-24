@@ -31,8 +31,26 @@ async function getDeviceId(): Promise<string> {
 // ─── Write Functions ─────────────────────────────────────
 
 /**
+ * Ensures a user_settings row exists for the current user (defaults applied by DB).
+ * Called unconditionally on app launch — local notification schedulers depend on this row.
+ * Separate from push token registration so it runs even on simulator / permission denied.
+ */
+export async function ensureUserSettings(): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+
+    await supabase.from('user_settings').upsert(
+      { user_id: session.user.id },
+      { onConflict: 'user_id', ignoreDuplicates: true },
+    );
+  } catch (err) {
+    console.warn('[Kiba Push] user_settings ensure failed:', err);
+  }
+}
+
+/**
  * Upserts the Expo push token for the current user + device.
- * Also ensures a user_settings row exists (insert-if-missing).
  * Called on app launch after auth — skips silently if offline.
  */
 export async function registerPushToken(expoPushToken: string): Promise<void> {
@@ -56,12 +74,6 @@ export async function registerPushToken(expoPushToken: string): Promise<void> {
         is_active: true,
       },
       { onConflict: 'user_id,device_id' },
-    );
-
-    // Ensure user_settings row exists (defaults applied by DB)
-    await supabase.from('user_settings').upsert(
-      { user_id: userId },
-      { onConflict: 'user_id', ignoreDuplicates: true },
     );
   } catch (err) {
     console.warn('[Kiba Push] Token registration failed:', err);

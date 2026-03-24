@@ -39,12 +39,17 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
 }));
 jest.mock('expo-blur', () => ({ BlurView: 'BlurView' }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  SafeAreaProvider: 'SafeAreaProvider',
+}));
 jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(),
   cancelScheduledNotificationAsync: jest.fn(),
   SchedulableTriggerInputTypes: { DAILY: 'daily' },
 }));
 jest.mock('expo-linear-gradient', () => ({ LinearGradient: 'LinearGradient' }));
+jest.mock('@react-native-community/datetimepicker', () => 'DateTimePicker');
 jest.mock('../../src/services/supabase', () => ({
   supabase: { from: jest.fn() },
 }));
@@ -52,7 +57,7 @@ jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn().mockResolvedValue(true),
 }));
 
-import { formatTime, buildPresetTimes } from '../../src/screens/EditPantryItemScreen';
+import { formatTime } from '../../src/screens/EditPantryItemScreen';
 
 // ─── formatTime ────────────────────────────────────────
 
@@ -90,38 +95,3 @@ describe('formatTime', () => {
   });
 });
 
-// ─── buildPresetTimes ──────────────────────────────────
-
-describe('buildPresetTimes', () => {
-  const presets = buildPresetTimes();
-
-  test('starts at 5:00 AM', () => {
-    expect(presets[0]).toEqual({ value: '05:00', label: '5:00 AM' });
-  });
-
-  test('ends at 9:30 PM', () => {
-    expect(presets[presets.length - 1]).toEqual({ value: '21:30', label: '9:30 PM' });
-  });
-
-  test('generates 30-minute intervals', () => {
-    // 5:00 to 21:30 = 17 hours * 2 slots = 34
-    expect(presets).toHaveLength(34);
-  });
-
-  test('noon is 12:00 PM', () => {
-    const noon = presets.find(t => t.value === '12:00');
-    expect(noon).toEqual({ value: '12:00', label: '12:00 PM' });
-  });
-
-  test('all values are HH:MM format', () => {
-    presets.forEach(t => {
-      expect(t.value).toMatch(/^\d{2}:\d{2}$/);
-    });
-  });
-
-  test('all labels include AM or PM', () => {
-    presets.forEach(t => {
-      expect(t.label).toMatch(/(AM|PM)$/);
-    });
-  });
-});

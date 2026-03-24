@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 19, 2026 (159 decisions: D-001 through D-159. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line.)
+> Updated: March 21, 2026 (166 decisions: D-001 through D-166. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
 
 ---
 
@@ -1478,16 +1478,24 @@ Fix activity level in CreatePetScreen.tsx and EditPetScreen.tsx per D-123:
 @PET_PROFILE_SPEC.md §11 for the spec. Run full test suite after.
 
 ---
-### D-124: Treat Logging Entry Points
+### D-124 (Revised): Treat Logging — Quick Picker Default, Scanner Fallback
 **Status:** LOCKED
-**Date:** 2026-02-22
-**Decision:** Three entry points for treat consumption logging:
-1. **Me tab "Log a Treat" scan button** under Treat Battery — auto-deducts kcal from daily treat budget immediately
-2. **Scan Result "Track this food" CTA** — adds product to pantry, no kcal deduction (tracking, not consumption)
-3. **Pantry quick-add (M5)** — one-tap deduction from treat battery for pantry items already saved
-**Central scan button behavior:** Deferred to M5+. The raised center scan tab always opens the camera for barcode scanning — it does not context-switch to treat logging.
-**Milestone:** M5 (Pantry) for implementation. M2 for design spec.
-**Rationale:** Multiple entry points match different user contexts: standing in kitchen (Me tab), just scanned something (Result screen), reviewing what's in stock (Pantry). Each has a different intent — logging vs. tracking vs. quick-add — so the action differs per entry point. Central scan button stays pure to avoid confusing the core interaction.
+**Date:** 2026-03-21
+**Supersedes:** D-124 original (scanner-first treat logging)
+**Depends on:** D-163 (health records pattern), Treat Battery (Phase 2)
+**Milestone:** M5 polish
+**Decision:** "Log a Treat" on PetHubScreen opens a **quick picker sheet** listing the pet's existing pantry treats. One tap to log. Scanner is a fallback at the bottom.
+**Quick picker flow:**
+1. User taps "Log a Treat" on PetHubScreen (below TreatBatteryGauge)
+2. Bottom sheet slides up: "Log a Treat for [Pet Name]"
+3. List of active pantry treats for this pet — tap → immediately calls `logTreat(pantryItemId)`: deducts 1 from `quantity_remaining`, deducts `kcal_per_unit` from Treat Battery daily budget, toast, sheet closes. One tap, no confirmation.
+4. At bottom: "Scan a new treat" link → ScanScreen with `{ treatMode: true }`
+5. Empty state: "No treats in [Pet Name]'s pantry yet." + "Scan a Treat" button
+**ScanScreen treat mode:** After scan, if treat → AddToPantrySheet with treat defaults → return to PetHubScreen. If not treat → normal ResultScreen flow.
+**PantryCard "Gave a treat" button:** Unchanged — same `logTreat()`, alternate entry from pantry screen.
+**Multi-pet:** Quick picker shows treats for **active pet** only.
+**Component:** `src/components/treats/TreatQuickPickerSheet.tsx`
+**Rationale:** 90% of treat logs are for products already in pantry. Camera is friction for repeat actions. Scanner stays available as fallback for new treats.
 ---
 
 ## D-125: Recall Siren → Free Tier
@@ -2778,5 +2786,170 @@ CREATE TABLE pet_health_records (
 - Recurring appointments for follow-ups — creates infinite chain. Completion-triggered one-shots are self-perpetuating without orphans.
 - Pre-populated vaccine/deworming database — adds complexity. Free text covers the need. Searchable dropdown can be added later if usage data justifies it.
 - Health records paywalled — punishing users for completing appointments feels hostile. Gate is on appointment creation.
+---
+
+### D-164: Unit Label Simplification — "Servings" Replaces Cans/Pouches/Units
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Depends on:** D-152 (pantry depletion model)
+**Milestone:** M5 bugfix
+
+**Problem:** The add-to-pantry sheet asks users to choose between "cans" and "pouches" for unit-mode items. This picker adds friction without adding value — the depletion math counts units in and units out regardless of container type. Users don't care whether the system calls it a "can" or a "pouch." They care how many are left.
+
+**Decision:** Replace all unit labels with a single universal term: "servings."
+
+**Schema change:**
+```sql
+-- Migration 019: update CHECK constraint + backfill
+ALTER TABLE pantry_items DROP CONSTRAINT pantry_items_unit_label_check;
+ALTER TABLE pantry_items ADD CONSTRAINT pantry_items_unit_label_check
+  CHECK (unit_label IN ('servings'));
+UPDATE pantry_items SET unit_label = 'servings'
+  WHERE unit_label IN ('cans', 'pouches', 'units');
+ALTER TABLE pantry_items ALTER COLUMN unit_label SET DEFAULT 'servings';
+```
+
+**UI changes:**
+- Remove unit picker (cans/pouches toggle) from AddToPantrySheet — no longer needed
+- Unit-mode label is always "servings" everywhere:
+  - Add sheet: "Total servings" input
+  - Depletion breakdown: "1/2 serving x 2 feedings = 1 serving/day . ~24 days"
+  - Pantry card: "18 servings left"
+  - Notifications: "Running low — 3 servings of [Product] remaining"
+  - Empty notification: "[Pet Name]'s [Product] is empty"
+
+**Code changes:**
+- `pantry_items.unit_label` always set to `'servings'` on insert — hardcode, no user selection
+- Collapse `UnitLabel` type union to single value `'servings'`
+- `calculateDepletionBreakdown()`: replace dynamic unitLabel parameter with static `'serving'`/`'servings'` (singular/plural based on count)
+- Notification copy: pluralization only — "1 serving" vs "3 servings"
+
+**What this does NOT change:**
+- `quantity_unit` (lbs/oz/kg/g/units) — unchanged, this is for bag/pack weight
+- `serving_size_unit` (cups/scoops/units) — unchanged, this is for per-feeding measurement
+- Depletion math — unchanged, still counts units in and units out
+- Weight-mode items — unaffected, they use cups/lbs
+
+**Rejected:**
+- Keep cans/pouches picker — added friction, zero value. Users never referenced container type in the app after setting it.
+- Auto-detect container type from product data — unreliable, and the distinction doesn't matter for depletion math.
+- Free-text unit label — introduces display inconsistency and pluralization nightmares.
+
+---
+
+### D-165: Calorie-Budget-Aware Serving Recommendations
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Supersedes:** D-152 system recommendation behavior (D-152 depletion model unchanged — this revises only the recommendation logic and serving input UX)
+**Depends on:** D-152 (depletion model), D-153 (goal weight DER premium gate), D-160 (weight goal slider, when implemented), D-149 (Atwater calorie estimation)
+**Milestone:** M5 bugfix
+
+**Problem:** The current `getSystemRecommendation()` computes a serving size from the pet's full DER, ignoring what's already in the pantry. A pet eating 500 kcal/day from Food A gets a recommendation for Food B that also covers the full 1000 kcal DER — doubling the pet's intake. Additionally, changing feedings per day multiplies the serving instead of dividing the budget, and the cup input doesn't accept decimals.
+
+**Three problems, one system:**
+1. Recommendation ignores pantry — suggests full DER regardless of existing foods
+2. Feedings multiply instead of divide — 2 feedings x 4.3 cups = 8.6 cups instead of 4.3 / 2 = 2.15 cups per feeding
+3. No decimal input — can't enter 2.15 cups
+
+**Decision:**
+
+**1. Budget-Aware Recommendation (Auto mode — default)**
+
+The system recommendation works backwards from the remaining calorie budget, not the full DER.
+
+```
+total_der = calculateDER(pet)
+pantry_kcal = SUM(serving_size x feedings_per_day x kcal_per_serving)
+             across all ACTIVE daily pantry items for this pet
+remaining_budget = MAX(0, total_der - pantry_kcal)
+recommended_per_feeding = remaining_budget / feedings_per_day / kcal_per_serving_unit
+```
+
+When feedings change in Auto mode, per-feeding amount recalculates from the same remaining budget. Changing from 1 to 2 feedings halves the per-feeding amount.
+
+When pantry is empty (first food): `remaining_budget = total_der`. Recommends full DER worth of this food.
+
+**2. Auto/Manual Toggle**
+
+- Auto (default): Feedings per day stepper is the only user input. Serving size is calculated read-only.
+- Manual: Serving size input appears (decimal-pad keyboard). Auto-calculated value shown as reference.
+
+**3. Calorie Budget Warnings (manual mode)**
+
+Warning ceiling anchored to maintenance DER (slider level 0), not adjusted DER.
+
+- `>120% maintenance` — amber banner: exceeds safe limits
+- `>100% maintenance` — inline amber text: above maintenance target
+- `<80% adjusted` — muted info: covers ~X% of calorie needs
+- Not blocking. D-095 compliant — informational, not prescriptive.
+- No warnings for treats.
+
+**4. Smart Default Feedings Per Day**
+
+Check if active pet has any active daily food in pantry: if yes, default 1 feeding (second food scenario). If no, default 2 feedings. Per-pet check, not household-level. Treats always 1.
+
+**5. Decimal Input Fix**
+
+All serving/quantity TextInput keyboardType changed from `'numeric'` to `'decimal-pad'`.
+
+**6. Product Size Pre-fill**
+
+Regex extraction from product name: "15 lb" -> pre-fill 15 lbs, "24 Pack" -> pre-fill 24 units. Best-effort, user can override.
+
+**Implementation:** `computePetDer()`, `computeExistingPantryKcal()`, `computeAutoServingSize()`, `computeBudgetWarning()`, `getSmartDefaultFeedingsPerDay()`, `parseProductSize()` in `pantryHelpers.ts`. AddToPantrySheet reads pantry store for existing items.
+
+**What this does NOT change:** D-152 depletion model, scoring, Treat Battery, diet completeness.
+
+**Rejected:**
+- Hard-block over-budget entries — some pets legitimately need more. D-095 non-compliant.
+- Auto-rebalance existing items — overrides user-set amounts (D-157).
+- Per-product unit labels (cans/pouches) — already simplified by D-164.
+
+### D-166: AddToPantrySheet — Weight Unit Auto-Conversion + Cups/Servings Context
+**Status:** LOCKED
+**Date:** March 21, 2026
+**Milestone:** M5 (polish)
+**Depends on:** D-152 (depletion model), D-164 (servings label), D-165 (budget-aware recommendations)
+
+**Problem:** The add-to-pantry sheet's bag size input was unintuitive:
+1. Switching between lbs/oz/kg/g did not convert the number — user had to re-type.
+2. No way to understand bag size in cups or servings, even though feedings are measured in cups.
+3. The depletion estimate was confusing because the weight-to-cups conversion via calorie density was invisible.
+
+**Decision — 3 changes to AddToPantrySheet:**
+
+**1. Auto-convert weight units on tap**
+
+Tapping a weight unit chip (lbs/oz/kg/g) converts the current value in the input box. Example: 15 lbs → tap "oz" → 240 oz → tap "kg" → 6.8 kg → tap "g" → 6804 g.
+
+Rounding rules: grams round to whole numbers, kg to 2 decimals, lbs and oz to 1 decimal. Conversions go through kg as the intermediate unit.
+
+**2. Cups + servings helper text (NOT a chip)**
+
+Below the bag size input, muted helper text shows the cup equivalent and DER-aware total servings:
+`≈ 61 cups · ~42 servings at 1.46 cups each`
+
+Only visible when the product has both `ga_kcal_per_kg` and `ga_kcal_per_cup` data. Servings count visible when serving size is known (auto or manual mode). The serving size in auto mode comes from `computeAutoServingSize()` which is DER-based — so servings count updates dynamically when feedings_per_day changes or DER changes.
+
+Formula: `cups = (weightKg × kcalPerKg) / kcalPerCup`, `servings = cups / cupsPerFeeding`.
+
+**3. "Enter as servings instead" action link**
+
+Below the helper text, a small accent-colored tappable link. On tap:
+- Switches to Unit serving mode
+- Sets `quantity_original` = calculated total servings (rounded)
+- Sets `quantity_unit` = 'units', `unit_label` = 'servings'
+- Depletion math now uses servings in / servings out — simpler mental model
+
+This is optional — user can stay in weight mode if they prefer.
+
+**Rejected:**
+- Cups as inline chip next to lbs/oz/kg/g — cups is a derived value, not a unit of bag measurement. Looked like a unit selector, not a conversion action.
+- Auto-switch to servings mode — too aggressive. User entered weight because that's on the bag label.
+
+**Implementation:** `convertToKg()` (exported), `convertFromKg()`, `convertWeightToCups()`, `convertWeightToServings()` in `pantryHelpers.ts`. AddToPantrySheet uses these for auto-convert, helper text, and servings link.
+
+**What this does NOT change:** Serving mode toggle behavior, auto/manual calculation, D-165 budget logic, D-164 unit labels, depletion math, database schema.
+
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

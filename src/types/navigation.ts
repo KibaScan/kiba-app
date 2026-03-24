@@ -52,6 +52,8 @@ export type MeStackParamList = {
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };
   NotificationPreferences: undefined;
+  Result: { productId: string; petId: string | null };
+  RecallDetail: { productId: string };
 };
 
 // ─── Paywall Trigger ─────────────────────────────────

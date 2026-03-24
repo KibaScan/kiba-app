@@ -19,8 +19,11 @@ import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { getUpcomingAppointments } from '../services/appointmentService';
+import { getRecentScans } from '../services/scanHistoryService';
+import { ScanHistoryCard } from '../components/ScanHistoryCard';
 import { supabase } from '../services/supabase';
 import type { Appointment, AppointmentType } from '../types/appointment';
+import type { ScanHistoryItem } from '../types/scanHistory';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
@@ -77,6 +80,7 @@ export default function HomeScreen() {
 
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
   const [appointmentLoading, setAppointmentLoading] = useState(false);
+  const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
 
   const recalledItems = useMemo(
     () => pantryItems.filter((i) => i.product?.is_recalled),
@@ -106,8 +110,19 @@ export default function HomeScreen() {
             data: { session },
           } = await supabase.auth.getSession();
           if (!session?.user?.id || cancelled) return;
-          const upcoming = await getUpcomingAppointments(session.user.id);
-          if (!cancelled) setNextAppointment(upcoming[0] ?? null);
+
+          const [appointmentResult, scansResult] = await Promise.allSettled([
+            getUpcomingAppointments(session.user.id),
+            getRecentScans(activePetId, 3),
+          ]);
+          if (!cancelled) {
+            setNextAppointment(
+              appointmentResult.status === 'fulfilled' ? appointmentResult.value[0] ?? null : null,
+            );
+            setRecentScans(
+              scansResult.status === 'fulfilled' ? scansResult.value : [],
+            );
+          }
         } catch {
           // Non-critical — skip silently
         } finally {
@@ -272,7 +287,29 @@ export default function HomeScreen() {
           <Text style={styles.weeklyLabel}>Scans this week</Text>
         </View>
 
+        {/* 4b. Recent Scans */}
+        {recentScans.length > 0 && activePet && (
+          <View style={styles.recentScansSection}>
+            <Text style={styles.recentScansTitle}>Recent Scans</Text>
+            {recentScans.map((scan) => (
+              <ScanHistoryCard
+                key={scan.id}
+                item={scan}
+                petName={activePet.name}
+                onPress={(productId) => {
+                  if (scan.product.is_recalled) {
+                    navigation.navigate('RecallDetail', { productId });
+                  } else {
+                    navigation.navigate('Result', { productId, petId: activePetId });
+                  }
+                }}
+              />
+            ))}
+          </View>
+        )}
+
         {/* 5. Empty state CTA */}
+        {recentScans.length === 0 && (
         <View style={styles.emptyState}>
           <Ionicons
             name="camera-outline"
@@ -286,6 +323,7 @@ export default function HomeScreen() {
             supplement.
           </Text>
         </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -451,6 +489,20 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: Spacing.xs,
+  },
+
+  // Recent scans
+  recentScansSection: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  recentScansTitle: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
   },
 
   // Empty state

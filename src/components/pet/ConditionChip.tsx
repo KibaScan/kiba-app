@@ -65,7 +65,7 @@ export default function ConditionChip({
           style={styles.chipIcon}
         />
       )}
-      <Text style={textStyle} numberOfLines={1}>
+      <Text style={textStyle}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -74,14 +74,11 @@ export default function ConditionChip({
 
 const styles = StyleSheet.create({
   chip: {
-    flexBasis: '48%',
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
     borderRadius: 10,
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.cardBorder,
     paddingHorizontal: Spacing.sm + 2, // 10px
     gap: 6,
   },

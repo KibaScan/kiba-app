@@ -12,7 +12,7 @@
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (162 decisions, D-001 through D-162)
+- Decision log established (165 decisions, D-001 through D-165)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -52,6 +52,12 @@
 - M5 Pet health records (D-163): `src/services/appointmentService.ts` extended with `getHealthRecords()` and `logHealthRecord()`. `src/types/appointment.ts` extended with `PetHealthRecord` type. PetHubScreen health records section with recent records list, HealthRecordLogSheet bottom sheet for manual entry.
 - M5 Notification preferences: `src/screens/NotificationPreferencesScreen.tsx` (global kill switch + per-category toggles for feeding/low_stock/empty/recall/appointment + digest frequency selector Weekly/Daily/Off). Reads/writes user_settings table. On feeding toggle: rescheduleAllFeeding(). On appointment toggle: rescheduleAllAppointments(). On global disable: cancel all local notifications. Recall disable requires confirmation dialog with pet name. PetHubScreen settings row "Notifications" navigates to screen. 862 tests passing across 43 suites.
 - M5 HomeScreen updates: Recall siren banner (active recalled pantry items with navigation to RecallDetailScreen), upcoming appointment card (next appointment with relative date + navigate to detail), recent scan history section.
+- M5 bugfix D-164: Unit label simplification — collapsed cans/pouches/units to single 'servings' value. Migration 019, removed unit picker from AddToPantrySheet and EditPantryItemScreen.
+- M5 bugfix D-165: Calorie-budget-aware serving recommendations — AddToPantrySheet rewritten with Auto/Manual toggle (auto default). Auto mode computes remaining calorie budget from existing pantry items and divides by feedings per day. Smart default feedings (1 if pet already has daily food, 2 otherwise). Product size pre-fill from name regex. Decimal-pad keyboard fix. Budget warnings (>120% amber banner, >100% inline, <80% muted). New pure helpers: `computePetDer()`, `computeExistingPantryKcal()`, `computeAutoServingSize()`, `computeBudgetWarning()`, `getSmartDefaultFeedingsPerDay()`, `parseProductSize()`. 895 tests passing across 43 suites.
+- M5 bugfix: Applied migrations 011-019 to production database (tables + cron jobs were never pushed). Combined SQL script for pantry, scores, push tokens, settings, recalls, appointments, health records.
+- M5 bugfix: EditPantryItemScreen crash on delete — early return guard was between hooks (React rules violation). Moved guard after all hooks, added null safety to hook bodies.
+- M5 bugfix: "Log a Treat" navigation from PetHub opened stale Result screen instead of camera. Fixed by navigating to `Scan` → `ScanMain` to reset the stack.
+- M5 bugfix: AddToPantrySheet error messages — surface actual Supabase error instead of generic "Failed to add to pantry" string.
 
 ---
 
@@ -573,14 +579,15 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
 - [x] Pantry card component (`PantryCard.tsx`) — product info, score/bypass badge, depletion bar, alerts, calorie context, treat mode, empty/low-stock/recalled states
 - [x] Pantry dashboard showing all products with scores
-- [x] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (cans/pouches, fractional units per feeding)
+- [x] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (servings per feeding, D-164)
 - [x] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
-- [x] User inputs bag size or pack quantity at add-to-pantry
+- [x] User inputs bag size or pack quantity at add-to-pantry (D-165: product size pre-fill from name, budget-aware auto-calc serving)
 - [x] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
 - [ ] Staleness badge for products unverified >90 days (deferred — needs formula change detection infra from M3)
 - [x] Feeding schedule per pantry item: daily (1-3x/day with clock times) or as-needed (D-101)
 - [x] Push notifications on feeding schedule — grouped for multi-pet households
 - [x] Auto-depletion tied to feeding schedule — no manual logging for daily items (D-101)
+- [x] Budget-aware serving recommendations (D-165) — auto/manual toggle, remaining calorie budget from pantry, smart default feedings, decimal-pad input, budget warnings
 - Weight goal slider (D-160) and caloric accumulator (D-161) moved to M6 scope
 
 ### Pantry Diet Completeness (D-136 Part 5)

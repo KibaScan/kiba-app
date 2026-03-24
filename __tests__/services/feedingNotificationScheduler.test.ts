@@ -61,7 +61,7 @@ function makeUnitAssignmentRow(overrides: Record<string, unknown> = {}) {
     feeding_times: ['07:00'],
     pantry_items: {
       serving_mode: 'unit',
-      unit_label: 'cans',
+      unit_label: 'servings',
       is_active: true,
       quantity_remaining: 6,
       products: { name: 'Fancy Feast Classic Pate', brand: 'Fancy Feast' },
@@ -180,14 +180,14 @@ describe('rescheduleAllFeeding', () => {
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it('uses unit_label for display — shows "can" not "units"', async () => {
+  it('uses unit_label for display — shows "serving" not "units" (D-164)', async () => {
     setupDefaultMocks([makeUnitAssignmentRow()]);
 
     await rescheduleAllFeeding();
 
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
     const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
-    expect(call.content.body).toContain('\u00BD can'); // ½ can
+    expect(call.content.body).toContain('\u00BD serving'); // ½ serving
     expect(call.content.body).not.toContain('units');
   });
 

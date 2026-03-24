@@ -178,7 +178,7 @@ function makeTreatItem(overrides: Partial<PantryCardData> = {}): PantryCardData 
     quantity_remaining: 10,
     quantity_unit: 'units',
     serving_mode: 'unit',
-    unit_label: 'units',
+    unit_label: 'servings',
     added_at: '2026-01-01',
     is_active: true,
     last_deducted_at: null,

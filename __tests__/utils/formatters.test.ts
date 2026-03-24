@@ -1,6 +1,6 @@
-// Formatter utility tests — toDisplayName + stripBrandFromName + resolveLifeStageLabel
+// Formatter utility tests — toDisplayName + stripBrandFromName + resolveLifeStageLabel + formatRelativeTime
 
-import { toDisplayName, stripBrandFromName, resolveLifeStageLabel } from '../../src/utils/formatters';
+import { toDisplayName, stripBrandFromName, resolveLifeStageLabel, formatRelativeTime } from '../../src/utils/formatters';
 
 // ─── toDisplayName ────────────────────────────────────────
 
@@ -115,5 +115,48 @@ describe('resolveLifeStageLabel', () => {
     const result = resolveLifeStageLabel(long, 'dog');
     expect(result.length).toBeLessThanOrEqual(21); // 20 + ellipsis char
     expect(result.endsWith('\u2026')).toBe(true);
+  });
+});
+
+// ─── formatRelativeTime ─────────────────────────────────
+
+describe('formatRelativeTime', () => {
+  const NOW = new Date('2026-03-23T12:00:00Z');
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('less than 1 minute ago → Just now', () => {
+    expect(formatRelativeTime('2026-03-23T11:59:30Z')).toBe('Just now');
+  });
+
+  test('minutes ago', () => {
+    expect(formatRelativeTime('2026-03-23T11:55:00Z')).toBe('5m ago');
+  });
+
+  test('hours ago', () => {
+    expect(formatRelativeTime('2026-03-23T10:00:00Z')).toBe('2h ago');
+  });
+
+  test('yesterday (calendar day)', () => {
+    expect(formatRelativeTime('2026-03-22T20:00:00Z')).toBe('Yesterday');
+  });
+
+  test('days ago (2-6)', () => {
+    expect(formatRelativeTime('2026-03-20T12:00:00Z')).toBe('3d ago');
+  });
+
+  test('older than 6 days → short date', () => {
+    expect(formatRelativeTime('2026-03-15T10:00:00Z')).toBe('Mar 15');
+  });
+
+  test('much older date', () => {
+    expect(formatRelativeTime('2026-01-05T08:00:00Z')).toBe('Jan 5');
   });
 });

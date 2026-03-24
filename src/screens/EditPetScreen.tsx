@@ -3,7 +3,7 @@
 // Save Changes + Delete with typed name confirmation.
 // See PET_PROFILE_SPEC.md §11 for edit screen differences.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -21,24 +21,28 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
 import { synthesizeDob, formatLocalDate, parseDateString } from '../utils/lifeStage';
-import { updatePet, deletePet } from '../services/petService';
+import { updatePet, deletePet, getPetConditions, getPetAllergens } from '../services/petService';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
+import { convertToKg, convertFromKg, getWeightUnitPref, setWeightUnitPref } from '../utils/pantryHelpers';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import PetPhotoSelector from '../components/pet/PetPhotoSelector';
 import BreedSelector from '../components/pet/BreedSelector';
+import WheelPicker, {
+  SHORT_MONTHS,
+  CURRENT_YEAR,
+  YEAR_ITEMS,
+  APPROX_YEARS,
+  APPROX_MONTHS_ITEMS,
+} from '../components/pet/WheelPicker';
 import type { MeStackParamList } from '../types/navigation';
 import type { ActivityLevel, Sex } from '../types/pet';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'EditPet'>;
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 // D-123: Species-specific activity labels. DB values unchanged.
 const DOG_ACTIVITY_LEVELS: { value: ActivityLevel; label: string }[] = [
@@ -50,7 +54,7 @@ const DOG_ACTIVITY_LEVELS: { value: ActivityLevel; label: string }[] = [
 
 const CAT_ACTIVITY_LEVELS: { value: ActivityLevel; label: string }[] = [
   { value: 'low', label: 'Indoor' },
-  { value: 'moderate', label: 'Indoor/Outdoor' },
+  { value: 'moderate', label: 'Mixed' },
   { value: 'high', label: 'Outdoor' },
 ];
 
@@ -73,13 +77,53 @@ export default function EditPetScreen({ navigation, route }: Props) {
   const [isNeutered, setIsNeutered] = useState(true);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [breedSelectorVisible, setBreedSelectorVisible] = useState(false);
+  const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<PetFormErrors>({});
+
+  // ─── Health counts ────────────────────────────────────────
+  const [conditionCount, setConditionCount] = useState(0);
+  const [allergenCount, setAllergenCount] = useState(0);
 
   // ─── Delete Modal State ──────────────────────────────────
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // ─── Hide tab bar (#5) ───────────────────────────────────
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
+    return () => {
+      parent?.setOptions({
+        tabBarStyle: {
+          position: 'absolute' as const,
+          backgroundColor: 'transparent',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          borderTopWidth: 1,
+          height: 88,
+          paddingBottom: 28,
+          paddingTop: 8,
+        },
+      });
+    };
+  }, [navigation]);
+
+  // ─── Fetch health counts (#7) ────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          const [conds, allergens] = await Promise.all([
+            getPetConditions(petId),
+            getPetAllergens(petId),
+          ]);
+          setConditionCount(conds.length);
+          setAllergenCount(allergens.length);
+        } catch {}
+      })();
+    }, [petId])
+  );
 
   // ─── Pre-populate from existing pet ──────────────────────
   useEffect(() => {
@@ -93,7 +137,14 @@ export default function EditPetScreen({ navigation, route }: Props) {
     setPhotoUri(pet.photo_url);
 
     if (pet.weight_current_lbs != null) {
-      setWeight(String(pet.weight_current_lbs));
+      getWeightUnitPref().then((pref) => {
+        setWeightUnit(pref);
+        if (pref === 'kg') {
+          setWeight((pet.weight_current_lbs! / 2.205).toFixed(1));
+        } else {
+          setWeight(String(pet.weight_current_lbs));
+        }
+      });
     }
 
     if (pet.date_of_birth) {
@@ -145,40 +196,21 @@ export default function EditPetScreen({ navigation, route }: Props) {
     setActivityLevel(value);
   }
 
-  function adjustStepper(
-    setter: (fn: (prev: number) => number) => void,
-    delta: number,
-    min: number,
-    max: number,
-  ) {
+  function handleWeightUnitChange(newUnit: 'lbs' | 'kg') {
+    if (newUnit === weightUnit) return;
     chipToggle();
-    setDobSet(true);
-    setter((prev) => Math.min(max, Math.max(min, prev + delta)));
-  }
-
-  function adjustDobMonth(delta: number) {
-    setDobSet(true);
-    const now = new Date();
-    setDobMonth((prev) => {
-      const next = prev + delta;
-      if (next < 0) return 0;
-      if (next > 11) return 11;
-      if (dobYear === now.getFullYear() && next > now.getMonth()) {
-        return now.getMonth();
+    if (weight) {
+      const val = parseFloat(weight);
+      if (!isNaN(val) && val > 0) {
+        const converted =
+          newUnit === 'kg'
+            ? convertToKg(val, 'lbs')
+            : convertFromKg(val, 'lbs');
+        setWeight(converted.toFixed(1));
       }
-      return next;
-    });
-  }
-
-  function adjustDobYear(delta: number) {
-    setDobSet(true);
-    const now = new Date();
-    setDobYear((prev) => {
-      const next = prev + delta;
-      if (next > now.getFullYear()) return now.getFullYear();
-      if (next < now.getFullYear() - 30) return now.getFullYear() - 30;
-      return next;
-    });
+    }
+    setWeightUnit(newUnit);
+    setWeightUnitPref(newUnit);
   }
 
   async function handleSave() {
@@ -212,11 +244,15 @@ export default function EditPetScreen({ navigation, route }: Props) {
       }
 
       const weightNum = weight ? parseFloat(weight) : null;
+      const weightLbs =
+        weightNum && weightUnit === 'kg'
+          ? parseFloat((weightNum * 2.205).toFixed(1))
+          : weightNum;
 
       const updatedPet = await updatePet(petId, {
         name: trimmedName,
         breed,
-        weight_current_lbs: weightNum,
+        weight_current_lbs: weightLbs,
         date_of_birth: dateOfBirth,
         dob_is_approximate: dobIsApproximate,
         activity_level: activityLevel,
@@ -410,7 +446,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
                     dobMode === 'approximate' && styles.segmentTextActive,
                   ]}
                 >
-                  Approximate Age
+                  Estimate
                 </Text>
               </TouchableOpacity>
             </View>
@@ -419,86 +455,57 @@ export default function EditPetScreen({ navigation, route }: Props) {
               <View style={styles.dobRow}>
                 <View style={styles.dobPickerGroup}>
                   <Text style={styles.dobPickerLabel}>Month</Text>
-                  <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() => adjustDobMonth(-1)}
-                    >
-                      <Ionicons name="remove" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperValue}>{MONTHS[dobMonth]}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() => adjustDobMonth(1)}
-                    >
-                      <Ionicons name="add" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                  </View>
+                  <WheelPicker
+                    items={SHORT_MONTHS}
+                    selectedIndex={dobMonth}
+                    onSelect={(i) => {
+                      setDobSet(true);
+                      const now = new Date();
+                      if (dobYear === now.getFullYear() && i > now.getMonth()) return;
+                      setDobMonth(i);
+                    }}
+                  />
                 </View>
                 <View style={styles.dobPickerGroup}>
                   <Text style={styles.dobPickerLabel}>Year</Text>
-                  <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() => adjustDobYear(-1)}
-                    >
-                      <Ionicons name="remove" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperValue}>{dobYear}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() => adjustDobYear(1)}
-                    >
-                      <Ionicons name="add" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                  </View>
+                  <WheelPicker
+                    items={YEAR_ITEMS}
+                    selectedIndex={dobYear - (CURRENT_YEAR - 30)}
+                    onSelect={(i) => {
+                      setDobSet(true);
+                      const yr = CURRENT_YEAR - 30 + i;
+                      setDobYear(yr);
+                      const now = new Date();
+                      if (yr === now.getFullYear() && dobMonth > now.getMonth()) {
+                        setDobMonth(now.getMonth());
+                      }
+                    }}
+                  />
                 </View>
               </View>
             ) : (
               <View style={styles.dobRow}>
                 <View style={styles.dobPickerGroup}>
                   <Text style={styles.dobPickerLabel}>Years</Text>
-                  <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() =>
-                        adjustStepper(setApproxYears, -1, 0, 30)
-                      }
-                    >
-                      <Ionicons name="remove" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperValue}>{approxYears}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() =>
-                        adjustStepper(setApproxYears, 1, 0, 30)
-                      }
-                    >
-                      <Ionicons name="add" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                  </View>
+                  <WheelPicker
+                    items={APPROX_YEARS}
+                    selectedIndex={approxYears}
+                    onSelect={(i) => {
+                      setDobSet(true);
+                      setApproxYears(i);
+                    }}
+                  />
                 </View>
                 <View style={styles.dobPickerGroup}>
                   <Text style={styles.dobPickerLabel}>Months</Text>
-                  <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() =>
-                        adjustStepper(setApproxMonths, -1, 0, 11)
-                      }
-                    >
-                      <Ionicons name="remove" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperValue}>{approxMonths}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperButton}
-                      onPress={() =>
-                        adjustStepper(setApproxMonths, 1, 0, 11)
-                      }
-                    >
-                      <Ionicons name="add" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                  </View>
+                  <WheelPicker
+                    items={APPROX_MONTHS_ITEMS}
+                    selectedIndex={approxMonths}
+                    onSelect={(i) => {
+                      setDobSet(true);
+                      setApproxMonths(i);
+                    }}
+                  />
                 </View>
               </View>
             )}
@@ -520,7 +527,19 @@ export default function EditPetScreen({ navigation, route }: Props) {
                 keyboardType="decimal-pad"
                 returnKeyType="done"
               />
-              <Text style={styles.weightSuffix}>lbs</Text>
+              <View style={styles.weightChipRow}>
+                {(['lbs', 'kg'] as const).map((u) => (
+                  <TouchableOpacity
+                    key={u}
+                    style={[styles.weightChip, weightUnit === u && styles.weightChipSelected]}
+                    onPress={() => handleWeightUnitChange(u)}
+                  >
+                    <Text style={[styles.weightChipText, weightUnit === u && styles.weightChipTextSelected]}>
+                      {u}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
           </View>
@@ -576,7 +595,24 @@ export default function EditPetScreen({ navigation, route }: Props) {
               size={22}
               color={Colors.textSecondary}
             />
-            <Text style={styles.linkText}>Health & Diet</Text>
+            <View style={styles.linkContent}>
+              <Text style={styles.linkText}>Health & Diet</Text>
+              <Text
+                style={[
+                  styles.linkSubtext,
+                  pet.health_reviewed_at === null && styles.linkSubtextMuted,
+                ]}
+              >
+                {pet.health_reviewed_at === null
+                  ? 'Not set'
+                  : [
+                      conditionCount > 0 &&
+                        `${conditionCount} condition${conditionCount !== 1 ? 's' : ''}`,
+                      allergenCount > 0 &&
+                        `${allergenCount} allergen${allergenCount !== 1 ? 's' : ''}`,
+                    ].filter(Boolean).join(' \u00B7 ') || 'No conditions'}
+              </Text>
+            </View>
             <Ionicons
               name="chevron-forward"
               size={18}
@@ -755,11 +791,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 10,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.cardBorder,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
   segmentButtonSmall: {
     paddingHorizontal: Spacing.xs,
@@ -767,6 +801,7 @@ const styles = StyleSheet.create({
   segmentButtonActive: {
     backgroundColor: '#00B4D820',
     borderColor: Colors.accent,
+    borderWidth: 1,
   },
   segmentText: {
     fontSize: FontSizes.md,
@@ -816,29 +851,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
     textAlign: 'center',
   },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    height: 44,
-  },
-  stepperButton: {
-    width: 36,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepperValue: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
 
   // ── Weight ──
   weightRow: {
@@ -849,10 +861,29 @@ const styles = StyleSheet.create({
   weightInput: {
     flex: 1,
   },
-  weightSuffix: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
+  weightChipRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  weightChip: {
+    backgroundColor: Colors.cardBorder,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  weightChipSelected: {
+    backgroundColor: '#00B4D820',
+    borderWidth: 1,
+    borderColor: Colors.accent,
+  },
+  weightChipText: {
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  weightChipTextSelected: {
+    color: Colors.accent,
+    fontWeight: '600',
   },
 
   // ── Switch ──
@@ -880,10 +911,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
     gap: Spacing.md,
   },
-  linkText: {
+  linkContent: {
     flex: 1,
+  },
+  linkText: {
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
+  },
+  linkSubtext: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  linkSubtextMuted: {
+    color: Colors.textTertiary,
   },
 
   // ── Buttons ──

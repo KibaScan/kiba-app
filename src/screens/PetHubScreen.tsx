@@ -39,12 +39,17 @@ import {
   getDerMultiplier,
   lbsToKg,
 } from '../services/portionCalculator';
+import { getWeightUnitPref } from '../utils/pantryHelpers';
 import { getAgeMonths } from '../components/PortionCard';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
+import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerSheet';
 import { getHealthRecords } from '../services/appointmentService';
+import { getRecentScans } from '../services/scanHistoryService';
+import { ScanHistoryCard } from '../components/ScanHistoryCard';
+import type { ScanHistoryItem } from '../types/scanHistory';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
 import type { PetHealthRecord } from '../types/appointment';
@@ -127,7 +132,6 @@ export default function PetHubScreen({ navigation }: Props) {
   const pets = useActivePetStore((s) => s.pets);
   const activePetId = useActivePetStore((s) => s.activePetId);
   const setActivePet = useActivePetStore((s) => s.setActivePet);
-  const removePet = useActivePetStore((s) => s.removePet);
   const activePet = pets.find((p) => p.id === activePetId) ?? pets[0] ?? null;
   const hubShareRef = useRef<View>(null);
   const treatBatteryReset = useTreatBatteryStore((s) => s.resetIfNewDay);
@@ -147,10 +151,17 @@ export default function PetHubScreen({ navigation }: Props) {
   const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
   const [manualRecordVisible, setManualRecordVisible] = useState(false);
 
+  // ─── Recent scans ────────────────────────────────────
+  const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
+
   // ─── Delete modal ───────────────────────────────────────
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // ─── Treat quick picker (D-124 revised) ────────────────
+  const [treatPickerVisible, setTreatPickerVisible] = useState(false);
+  const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
 
   // ─── Dev menu (tap version 5 times) ────────────────────
   const [devMenuVisible, setDevMenuVisible] = useState(false);
@@ -160,6 +171,7 @@ export default function PetHubScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       treatBatteryReset();
+      getWeightUnitPref().then(setWeightUnit);
       if (!activePet) return;
       let cancelled = false;
       setHealthLoading(true);
@@ -168,12 +180,14 @@ export default function PetHubScreen({ navigation }: Props) {
         getPetConditions(activePet.id),
         getPetAllergens(activePet.id),
         getHealthRecords(activePet.id),
+        getRecentScans(activePet.id, 5),
       ])
-        .then(([conds, allergs, records]) => {
+        .then(([conds, allergs, records, scans]) => {
           if (!cancelled) {
             setConditions(conds);
             setAllergens(allergs);
             setHealthRecords(records);
+            setRecentScans(scans);
           }
         })
         .catch(() => {
@@ -258,7 +272,6 @@ export default function PetHubScreen({ navigation }: Props) {
     setDeleting(true);
     try {
       await deletePet(activePet.id);
-      removePet(activePet.id);
       deleteConfirm();
       setDeleteModalVisible(false);
       setDeleteInput('');
@@ -268,7 +281,7 @@ export default function PetHubScreen({ navigation }: Props) {
       if (remaining.length === 0) {
         navigation.navigate('SpeciesSelect');
       }
-      // Otherwise stay on hub — removePet auto-switches active pet
+      // Otherwise stay on hub — deletePet internally calls removePet
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
     } finally {
@@ -508,7 +521,9 @@ export default function PetHubScreen({ navigation }: Props) {
             />
             <Text style={styles.statValue}>
               {activePet.weight_current_lbs != null
-                ? `${activePet.weight_current_lbs} lbs`
+                ? weightUnit === 'kg'
+                  ? `${(activePet.weight_current_lbs / 2.205).toFixed(1)} kg`
+                  : `${activePet.weight_current_lbs} lbs`
                 : 'Not set'}
             </Text>
           </View>
@@ -528,10 +543,7 @@ export default function PetHubScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.logTreatButton}
                 activeOpacity={0.7}
-                onPress={() => {
-                  useScanStore.getState().setTreatLogging(true);
-                  (navigation.getParent() as any)?.navigate('Scan');
-                }}
+                onPress={() => setTreatPickerVisible(true)}
               >
                 <Ionicons name="nutrition-outline" size={18} color={Colors.accent} />
                 <Text style={styles.logTreatButtonText}>Log a Treat</Text>
@@ -577,7 +589,7 @@ export default function PetHubScreen({ navigation }: Props) {
                 size={16}
                 color={Colors.severityGreen}
               />
-              <Text style={styles.healthyText}>Perfectly Healthy</Text>
+              <Text style={styles.healthyText}>No known conditions</Text>
             </View>
           ) : (
             <View>
@@ -663,16 +675,39 @@ export default function PetHubScreen({ navigation }: Props) {
           Health records are for your reference. Consult your veterinarian for your pet's care schedule.
         </Text>
 
-        {/* (g) Recent scans placeholder */}
+        {/* (g) Recent Scans */}
         <View style={styles.scansCard}>
-          <Ionicons
-            name="scan-outline"
-            size={32}
-            color={Colors.textTertiary}
-          />
-          <Text style={styles.scansText}>
-            No scans yet {'\u2014'} try scanning a product!
-          </Text>
+          <View style={styles.scansSectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Scans</Text>
+            {recentScans.length > 3 && (
+              <Text style={styles.seeAllText}>See All</Text>
+            )}
+          </View>
+          {recentScans.length === 0 ? (
+            <View style={styles.scansEmptyState}>
+              <Ionicons name="scan-outline" size={32} color={Colors.textTertiary} />
+              <Text style={styles.scansText}>
+                No scans yet {'\u2014'} try scanning a product!
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: Spacing.sm }}>
+              {recentScans.slice(0, 3).map((scan) => (
+                <ScanHistoryCard
+                  key={scan.id}
+                  item={scan}
+                  petName={activePet.name}
+                  onPress={(productId) => {
+                    if (scan.product.is_recalled) {
+                      navigation.navigate('RecallDetail', { productId });
+                    } else {
+                      navigation.navigate('Result', { productId, petId: activePet.id });
+                    }
+                  }}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* (h) Settings */}
@@ -737,6 +772,18 @@ export default function PetHubScreen({ navigation }: Props) {
           species={activePet.species}
         />
       </View>
+
+      {/* Treat quick picker (D-124 revised) */}
+      <TreatQuickPickerSheet
+        visible={treatPickerVisible}
+        petId={activePet.id}
+        petName={activePet.name}
+        onClose={() => setTreatPickerVisible(false)}
+        onScanNew={() => {
+          useScanStore.getState().setTreatLogging(true);
+          (navigation.getParent() as any)?.navigate('Scan', { screen: 'ScanMain' });
+        }}
+      />
 
       {/* Manual health record sheet (D-163) */}
       <HealthRecordLogSheet
@@ -1224,8 +1271,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  scansSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  scansEmptyState: {
     alignItems: 'center',
     gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+  },
+  seeAllText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
   scansText: {
     fontSize: FontSizes.sm,

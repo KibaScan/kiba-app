@@ -68,6 +68,12 @@ jest.mock('../../src/services/petService', () => ({
 jest.mock('../../src/services/appointmentService', () => ({
   getHealthRecords: jest.fn().mockResolvedValue([]),
 }));
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn(),
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+}));
 
 import {
   calculateScoreAccuracy,

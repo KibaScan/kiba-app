@@ -6,7 +6,7 @@ export type ServingMode = 'weight' | 'unit';
 export type QuantityUnit = 'lbs' | 'oz' | 'kg' | 'g' | 'units';
 export type ServingSizeUnit = 'cups' | 'scoops' | 'units';
 export type FeedingFrequency = 'daily' | 'as_needed';
-export type UnitLabel = 'cans' | 'pouches' | 'units';
+export type UnitLabel = 'servings';
 
 // ─── DB Interfaces ──────────────────────────────────────
 
@@ -103,6 +103,12 @@ export interface AddToPantryInput {
 export interface DepletionBreakdown {
   rateText: string;
   daysText: string | null;
+}
+
+export interface BudgetWarning {
+  level: 'over' | 'significantly_over' | 'under';
+  message: string;
+  pct: number;
 }
 
 // ─── Error Class ────────────────────────────────────────

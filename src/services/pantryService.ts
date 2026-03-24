@@ -45,7 +45,7 @@ export async function addToPantry(
       quantity_remaining: input.quantity_original,
       quantity_unit: input.quantity_unit,
       serving_mode: input.serving_mode,
-      unit_label: input.unit_label ?? 'units',
+      unit_label: 'servings',
     })
     .select()
     .single();
@@ -414,7 +414,8 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
     });
 
     return cards;
-  } catch {
+  } catch (e) {
+    console.error('[getPantryForPet] FAILED:', e);
     return [];
   }
 }

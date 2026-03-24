@@ -32,6 +32,8 @@ import {
   resolveScoreForPets,
 } from '../../services/pantryService';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
+import { computePetDer, computeAutoServingSize } from '../../utils/pantryHelpers';
+import { canUseGoalWeight } from '../../utils/permissions';
 import { chipToggle } from '../../utils/haptics';
 
 // ─── Props ──────────────────────────────────────────────
@@ -100,10 +102,25 @@ export function SharePantrySheet({
       } else {
         const source = localAssignments.find(a => a.pet_id === activePetId)
           ?? localAssignments[0];
+        const feedingsPerDay = source?.feedings_per_day ?? 2;
+
+        // Calculate DER-based serving for the TARGET pet
+        let servingSize = source?.serving_size ?? 1;
+        let servingSizeUnit = source?.serving_size_unit ?? 'cups';
+
+        const petDer = computePetDer(pet, canUseGoalWeight());
+        if (petDer != null) {
+          const auto = computeAutoServingSize(petDer, feedingsPerDay, item.product);
+          if (auto) {
+            servingSize = Math.round(auto.amount * 100) / 100;
+            servingSizeUnit = auto.unit;
+          }
+        }
+
         const newAssign = await sharePantryItem(item.id, pet.id, {
-          serving_size: source?.serving_size ?? 1,
-          serving_size_unit: source?.serving_size_unit ?? 'cups',
-          feedings_per_day: source?.feedings_per_day ?? 2,
+          serving_size: servingSize,
+          serving_size_unit: servingSizeUnit,
+          feedings_per_day: feedingsPerDay,
           feeding_frequency: source?.feeding_frequency ?? 'daily',
         });
         setLocalAssignments(prev => [...prev, newAssign]);
@@ -140,20 +157,42 @@ export function SharePantrySheet({
   const handleFeedingsChange = useCallback(async (petId: string, delta: number) => {
     const assign = getAssignment(petId);
     if (!assign) return;
-    const next = Math.max(1, Math.min(3, assign.feedings_per_day + delta));
+    const next = Math.max(1, Math.min(5, assign.feedings_per_day + delta));
     if (next === assign.feedings_per_day) return;
 
     chipToggle();
+
+    // Recalculate serving size from pet's DER with new feedings count
+    const pet = pets.find(p => p.id === petId);
+    let newServing = assign.serving_size;
+    let newUnit = assign.serving_size_unit;
+    if (pet) {
+      const petDer = computePetDer(pet, canUseGoalWeight());
+      if (petDer != null) {
+        const auto = computeAutoServingSize(petDer, next, item.product);
+        if (auto) {
+          newServing = Math.round(auto.amount * 100) / 100;
+          newUnit = auto.unit;
+        }
+      }
+    }
+
     setLocalAssignments(prev =>
-      prev.map(a => a.pet_id === petId ? { ...a, feedings_per_day: next } : a),
+      prev.map(a => a.pet_id === petId
+        ? { ...a, feedings_per_day: next, serving_size: newServing, serving_size_unit: newUnit }
+        : a),
     );
 
     try {
-      await updatePetAssignment(assign.id, { feedings_per_day: next });
+      await updatePetAssignment(assign.id, {
+        feedings_per_day: next,
+        serving_size: newServing,
+        serving_size_unit: newUnit,
+      });
     } catch {
       Alert.alert('Error', 'Failed to update feedings.');
     }
-  }, [getAssignment]);
+  }, [getAssignment, pets, item.product]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -217,8 +256,13 @@ export function SharePantrySheet({
                         {isBusy ? (
                           <ActivityIndicator size="small" color={Colors.accent} />
                         ) : (
-                          <View style={[styles.checkbox, assigned && styles.checkboxChecked]}>
-                            {assigned && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                          <View style={styles.toggleRow}>
+                            <Text style={assigned ? styles.toggleLabelActive : styles.toggleLabelInactive}>
+                              {assigned ? 'Sharing' : 'Share'}
+                            </Text>
+                            <View style={[styles.checkbox, assigned && styles.checkboxChecked]}>
+                              {assigned && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+                            </View>
                           </View>
                         )}
                       </TouchableOpacity>
@@ -232,7 +276,7 @@ export function SharePantrySheet({
                               <TextInput
                                 style={styles.servingInput}
                                 keyboardType="numeric"
-                                defaultValue={String(assign.serving_size)}
+                                defaultValue={String(Math.round(assign.serving_size * 100) / 100)}
                                 onEndEditing={(e) => handleServingSizeBlur(pet.id, e.nativeEvent.text)}
                               />
                               <Text style={styles.servingUnit}>{assign.serving_size_unit}</Text>
@@ -252,9 +296,9 @@ export function SharePantrySheet({
                               <TouchableOpacity
                                 style={styles.stepperBtn}
                                 onPress={() => handleFeedingsChange(pet.id, 1)}
-                                disabled={assign.feedings_per_day >= 3}
+                                disabled={assign.feedings_per_day >= 5}
                               >
-                                <Ionicons name="add" size={16} color={assign.feedings_per_day >= 3 ? Colors.textTertiary : Colors.textPrimary} />
+                                <Ionicons name="add" size={16} color={assign.feedings_per_day >= 5 ? Colors.textTertiary : Colors.textPrimary} />
                               </TouchableOpacity>
                             </View>
                           </View>
@@ -363,6 +407,20 @@ const styles = StyleSheet.create({
   },
   petScoreMuted: {
     fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toggleLabelActive: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  toggleLabelInactive: {
+    fontSize: FontSizes.xs,
     color: Colors.textTertiary,
   },
   checkbox: {
