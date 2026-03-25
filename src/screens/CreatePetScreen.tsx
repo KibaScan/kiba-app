@@ -111,6 +111,16 @@ export default function CreatePetScreen({ navigation, route }: Props) {
   function handleDobModeToggle(mode: 'exact' | 'approximate') {
     if (mode === dobMode) return;
     chipToggle();
+    if (mode === 'approximate') {
+      const now = new Date();
+      const totalMonths = (now.getFullYear() - dobYear) * 12 + (now.getMonth() - dobMonth);
+      setApproxYears(Math.max(0, Math.floor(totalMonths / 12)));
+      setApproxMonths(Math.max(0, totalMonths % 12));
+    } else {
+      const dob = synthesizeDob(approxYears, approxMonths);
+      setDobMonth(dob.getMonth());
+      setDobYear(dob.getFullYear());
+    }
     setDobMode(mode);
     setDobSet(true);
   }

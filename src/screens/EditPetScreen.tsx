@@ -150,20 +150,17 @@ export default function EditPetScreen({ navigation, route }: Props) {
     if (pet.date_of_birth) {
       setDobSet(true);
       const { year, month } = parseDateString(pet.date_of_birth);
-      if (pet.dob_is_approximate) {
-        setDobMode('approximate');
-        // Reverse-calculate approximate years/months from stored DOB
-        const now = new Date();
-        const totalMonths =
-          (now.getFullYear() - year) * 12 +
-          (now.getMonth() - month);
-        setApproxYears(Math.floor(totalMonths / 12));
-        setApproxMonths(totalMonths % 12);
-      } else {
-        setDobMode('exact');
-        setDobMonth(month);
-        setDobYear(year);
-      }
+
+      // Always populate both representations so mode switching preserves values
+      setDobMonth(month);
+      setDobYear(year);
+
+      const now = new Date();
+      const totalMonths = (now.getFullYear() - year) * 12 + (now.getMonth() - month);
+      setApproxYears(Math.max(0, Math.floor(totalMonths / 12)));
+      setApproxMonths(Math.max(0, totalMonths % 12));
+
+      setDobMode(pet.dob_is_approximate ? 'approximate' : 'exact');
     }
   }, [pet]);
 
@@ -187,6 +184,16 @@ export default function EditPetScreen({ navigation, route }: Props) {
   function handleDobModeToggle(mode: 'exact' | 'approximate') {
     if (mode === dobMode) return;
     chipToggle();
+    if (mode === 'approximate') {
+      const now = new Date();
+      const totalMonths = (now.getFullYear() - dobYear) * 12 + (now.getMonth() - dobMonth);
+      setApproxYears(Math.max(0, Math.floor(totalMonths / 12)));
+      setApproxMonths(Math.max(0, totalMonths % 12));
+    } else {
+      const dob = synthesizeDob(approxYears, approxMonths);
+      setDobMonth(dob.getMonth());
+      setDobYear(dob.getFullYear());
+    }
     setDobMode(mode);
     setDobSet(true);
   }
