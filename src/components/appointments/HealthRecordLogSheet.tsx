@@ -37,6 +37,7 @@ interface FollowUpOption {
 interface Props {
   visible: boolean;
   appointment: Appointment | null; // null = manual mode
+  defaultRecordType?: HealthRecordType;
   petNames: Map<string, string>;
   onComplete: () => void;
 }
@@ -83,13 +84,13 @@ function addDays(date: Date, days: number): Date {
 
 // ─── Component ──────────────────────────────────────────
 
-export default function HealthRecordLogSheet({ visible, appointment, petNames, onComplete }: Props) {
+export default function HealthRecordLogSheet({ visible, appointment, defaultRecordType, petNames, onComplete }: Props) {
   const isManual = appointment === null;
   const activePetId = useActivePetStore((s) => s.activePetId);
 
   // Record type (only selectable in manual mode)
   const [recordType, setRecordType] = useState<HealthRecordType>(
-    appointment?.type === 'deworming' ? 'deworming' : 'vaccination',
+    isManual ? (defaultRecordType ?? 'vaccination') : (appointment?.type === 'deworming' ? 'deworming' : 'vaccination'),
   );
 
   // Form fields
@@ -114,7 +115,9 @@ export default function HealthRecordLogSheet({ visible, appointment, petNames, o
   // Reset state when sheet opens
   React.useEffect(() => {
     if (visible) {
-      const type: HealthRecordType = appointment?.type === 'deworming' ? 'deworming' : 'vaccination';
+      const type: HealthRecordType = isManual
+        ? (defaultRecordType ?? 'vaccination')
+        : (appointment?.type === 'deworming' ? 'deworming' : 'vaccination');
       setRecordType(type);
       setTreatmentName(isManual ? '' : (appointment?.notes ?? ''));
       setAdministeredAt(new Date());
@@ -124,7 +127,7 @@ export default function HealthRecordLogSheet({ visible, appointment, petNames, o
       setCustomDate(addDays(new Date(), 365));
       setSaving(false);
     }
-  }, [visible, appointment, isManual]);
+  }, [visible, appointment, isManual, defaultRecordType]);
 
   // Update follow-up options when record type changes in manual mode
   React.useEffect(() => {

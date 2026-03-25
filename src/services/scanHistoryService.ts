@@ -22,6 +22,7 @@ export async function getRecentScans(
     .order('scanned_at', { ascending: false })
     .limit(20);
 
+  console.log('[getRecentScans] query result:', { error, rowCount: data?.length ?? 0, data });
   if (error || !data) return [];
 
   // Map + deduplicate by product_id (first occurrence = most recent)

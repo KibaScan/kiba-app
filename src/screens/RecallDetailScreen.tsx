@@ -20,14 +20,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import type { ScanStackParamList, HomeStackParamList, PantryStackParamList, SearchStackParamList } from '../types/navigation';
+import type { ScanStackParamList, HomeStackParamList, PantryStackParamList, CommunityStackParamList } from '../types/navigation';
 import { supabase } from '../services/supabase';
 import { usePantryStore } from '../stores/usePantryStore';
 import type { RecallEntry } from '../types/recall';
 
 // ─── Navigation Types ────────────────────────────────────
 
-type AnyRecallStack = ScanStackParamList | HomeStackParamList | PantryStackParamList | SearchStackParamList;
+type AnyRecallStack = ScanStackParamList | HomeStackParamList | PantryStackParamList | CommunityStackParamList;
 type ScreenRoute = RouteProp<AnyRecallStack, 'RecallDetail'>;
 type ScreenNav = NativeStackNavigationProp<AnyRecallStack, 'RecallDetail'>;
 
@@ -104,7 +104,7 @@ export default function RecallDetailScreen() {
     // Navigate to Search tab
     const parent = navigation.getParent();
     if (parent) {
-      parent.navigate('Search');
+      parent.navigate('Community');
     }
   };
 

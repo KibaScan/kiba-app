@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/constants';
 
 import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
+import CommunityScreen from '../screens/CommunityScreen';
 import ScanScreen from '../screens/ScanScreen';
 import PantryScreen from '../screens/PantryScreen';
 import EditPantryItemScreen from '../screens/EditPantryItemScreen';
@@ -24,6 +24,7 @@ import AppointmentsListScreen from '../screens/AppointmentsListScreen';
 import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PaywallScreen from '../screens/PaywallScreen';
@@ -33,7 +34,7 @@ import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
-  SearchStackParamList,
+  CommunityStackParamList,
   ScanStackParamList,
   PantryStackParamList,
   MeStackParamList,
@@ -57,14 +58,14 @@ function HomeStackScreen() {
   );
 }
 
-const SearchStack = createNativeStackNavigator<SearchStackParamList>();
-function SearchStackScreen() {
+const CommunityStack = createNativeStackNavigator<CommunityStackParamList>();
+function CommunityStackScreen() {
   return (
-    <SearchStack.Navigator screenOptions={{ headerShown: false }}>
-      <SearchStack.Screen name="SearchMain" component={SearchScreen} />
-      <SearchStack.Screen name="Result" component={ResultScreen} />
-      <SearchStack.Screen name="RecallDetail" component={RecallDetailScreen} />
-    </SearchStack.Navigator>
+    <CommunityStack.Navigator screenOptions={{ headerShown: false }}>
+      <CommunityStack.Screen name="CommunityMain" component={CommunityScreen} />
+      <CommunityStack.Screen name="Result" component={ResultScreen} />
+      <CommunityStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+    </CommunityStack.Navigator>
   );
 }
 
@@ -107,6 +108,7 @@ function MeStackScreen() {
       <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
       <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
       <MeStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <MeStack.Screen name="Settings" component={SettingsScreen} />
       <MeStack.Screen name="Result" component={ResultScreen} />
       <MeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
     </MeStack.Navigator>
@@ -182,11 +184,11 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Search"
-        component={SearchStackScreen}
+        name="Community"
+        component={CommunityStackScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
       />

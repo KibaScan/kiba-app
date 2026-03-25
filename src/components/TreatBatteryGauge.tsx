@@ -4,7 +4,8 @@
 // D-060: Treat budget = 10% of DER.
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { InfoTooltip } from './ui/InfoTooltip';
 import type { CalorieSource } from '../utils/calorieEstimation';
@@ -15,8 +16,10 @@ interface TreatBatteryGaugeProps {
   treatBudgetKcal: number;
   consumedKcal: number;
   petName: string;
+  title?: string;
   calorieSource?: CalorieSource;
   treatCount?: number;
+  onLogTreat?: () => void;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -46,8 +49,10 @@ export default function TreatBatteryGauge({
   treatBudgetKcal,
   consumedKcal,
   petName,
+  title,
   calorieSource,
   treatCount,
+  onLogTreat,
 }: TreatBatteryGaugeProps) {
   // calorieSource === null means product has no calorie data AND Atwater can't estimate.
   // undefined means not passed (e.g. PetHubScreen general view) — show normally.
@@ -62,7 +67,7 @@ export default function TreatBatteryGauge({
     <View style={styles.card}>
       {/* Title */}
       <Text style={styles.title}>
-        {petName}'s Treat Budget
+        {title ?? `${petName}'s Treat Budget`}
       </Text>
 
       {noCalorieData ? (
@@ -78,7 +83,7 @@ export default function TreatBatteryGauge({
       ) : (
         <>
           {/* Budget label */}
-          <Text style={styles.budgetLabel}>
+          <Text style={[styles.budgetLabel, { color: consumedKcal > 0 ? Colors.severityGreen : Colors.textTertiary }]}>
             {Math.round(consumedKcal)}/{Math.round(treatBudgetKcal)} kcal
           </Text>
 
@@ -93,16 +98,7 @@ export default function TreatBatteryGauge({
                 },
               ]}
             />
-            {/* Percentage text overlaid on bar */}
-            <Text style={styles.barText}>
-              {Math.round(percent)}%
-            </Text>
           </View>
-
-          {/* Status label */}
-          <Text style={[styles.statusLabel, { color: barColor }]}>
-            {getStatusLabel(percent)}
-          </Text>
 
           {/* Treat count */}
           {treatCount != null && treatCount > 0 && (
@@ -121,6 +117,20 @@ export default function TreatBatteryGauge({
               />
             </View>
           )}
+        </>
+      )}
+
+      {onLogTreat && (
+        <>
+          <View style={styles.logTreatSeparator} />
+          <TouchableOpacity
+            style={styles.logTreatRow}
+            activeOpacity={0.7}
+            onPress={onLogTreat}
+          >
+            <Ionicons name="restaurant-outline" size={16} color={Colors.accent} />
+            <Text style={styles.logTreatText}>Log a Treat</Text>
+          </TouchableOpacity>
         </>
       )}
     </View>
@@ -190,5 +200,21 @@ const styles = StyleSheet.create({
   unavailableHint: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
+  },
+  logTreatSeparator: {
+    height: 1,
+    backgroundColor: Colors.cardBorder,
+  },
+  logTreatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: Spacing.xs,
+  },
+  logTreatText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 });

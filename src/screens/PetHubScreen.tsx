@@ -10,30 +10,23 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  Modal,
-  TextInput,
   Alert,
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { isPremium, canAddPet } from '../utils/permissions';
-import { deleteConfirm } from '../utils/haptics';
-import DevMenu from '../components/ui/DevMenu';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import {
   getPetConditions,
   getPetAllergens,
-  deletePet,
 } from '../services/petService';
 import { getConditionsForSpecies } from '../data/conditions';
-import { canDeletePet } from '../utils/petFormValidation';
 import {
   calculateRER,
   getDerMultiplier,
@@ -46,13 +39,11 @@ import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerSheet';
-import { getHealthRecords } from '../services/appointmentService';
-import { getRecentScans } from '../services/scanHistoryService';
-import { ScanHistoryCard } from '../components/ScanHistoryCard';
-import type { ScanHistoryItem } from '../types/scanHistory';
+import { getHealthRecords, getUpcomingAppointments } from '../services/appointmentService';
+import { supabase } from '../services/supabase';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import type { Pet, PetCondition, PetAllergen } from '../types/pet';
-import type { PetHealthRecord } from '../types/appointment';
+import type { Appointment, PetHealthRecord, HealthRecordType } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
@@ -150,22 +141,12 @@ export default function PetHubScreen({ navigation }: Props) {
   // ─── Health records (D-163) ────────────────────────────
   const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
   const [manualRecordVisible, setManualRecordVisible] = useState(false);
-
-  // ─── Recent scans ────────────────────────────────────
-  const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
-
-  // ─── Delete modal ───────────────────────────────────────
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteInput, setDeleteInput] = useState('');
-  const [deleting, setDeleting] = useState(false);
+  const [defaultRecordType, setDefaultRecordType] = useState<HealthRecordType>('vaccination');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // ─── Treat quick picker (D-124 revised) ────────────────
   const [treatPickerVisible, setTreatPickerVisible] = useState(false);
   const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
-
-  // ─── Dev menu (tap version 5 times) ────────────────────
-  const [devMenuVisible, setDevMenuVisible] = useState(false);
-  const [devTapCount, setDevTapCount] = useState(0);
 
   // ─── Load conditions/allergens on focus or active pet change ──
   useFocusEffect(
@@ -180,14 +161,12 @@ export default function PetHubScreen({ navigation }: Props) {
         getPetConditions(activePet.id),
         getPetAllergens(activePet.id),
         getHealthRecords(activePet.id),
-        getRecentScans(activePet.id, 5),
       ])
-        .then(([conds, allergs, records, scans]) => {
+        .then(([conds, allergs, records]) => {
           if (!cancelled) {
             setConditions(conds);
             setAllergens(allergs);
             setHealthRecords(records);
-            setRecentScans(scans);
           }
         })
         .catch(() => {
@@ -196,6 +175,15 @@ export default function PetHubScreen({ navigation }: Props) {
         .finally(() => {
           if (!cancelled) setHealthLoading(false);
         });
+
+      // Fetch upcoming appointments (needs userId)
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user && !cancelled) {
+          getUpcomingAppointments(data.user.id, activePet.id).then((appts) => {
+            if (!cancelled) setAppointments(appts);
+          });
+        }
+      });
 
       return () => {
         cancelled = true;
@@ -264,28 +252,6 @@ export default function PetHubScreen({ navigation }: Props) {
         'Premium Feature',
         'Multi-pet households need Premium. Add all your pets!',
       );
-    }
-  }
-
-  async function handleDelete() {
-    if (!activePet) return;
-    setDeleting(true);
-    try {
-      await deletePet(activePet.id);
-      deleteConfirm();
-      setDeleteModalVisible(false);
-      setDeleteInput('');
-
-      // If no pets remain, go to SpeciesSelect
-      const remaining = pets.filter((p) => p.id !== activePet.id);
-      if (remaining.length === 0) {
-        navigation.navigate('SpeciesSelect');
-      }
-      // Otherwise stay on hub — deletePet internally calls removePet
-    } catch (err) {
-      Alert.alert('Error', (err as Error).message);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -451,18 +417,16 @@ export default function PetHubScreen({ navigation }: Props) {
               </Text>
             )}
           </View>
-        </TouchableOpacity>
 
-        {/* Share pet card button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          activeOpacity={0.7}
-          onPress={() => captureAndShare(hubShareRef, activePet.name, 0)}
-        >
-          <Ionicons name="share-outline" size={18} color={Colors.accent} />
-          <Text style={styles.shareButtonText}>
-            Share {activePet.name}'s Card
-          </Text>
+          {/* Share profile link */}
+          <TouchableOpacity
+            style={styles.shareLink}
+            activeOpacity={0.7}
+            onPress={() => captureAndShare(hubShareRef, activePet.name, 0)}
+          >
+            <Ionicons name="share-outline" size={16} color={Colors.accent} />
+            <Text style={styles.shareLinkText}>Share Profile</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
 
         {/* (d) Stale weight indicator (D-117) */}
@@ -531,24 +495,16 @@ export default function PetHubScreen({ navigation }: Props) {
 
         {/* Portion card — daily calorie summary */}
         <View style={styles.portionSection}>
-          <PortionCard pet={activePet} product={null} conditions={conditionTags} />
+          <PortionCard pet={activePet} product={null} conditions={conditionTags} showPetName={false} />
           {der != null && (
-            <>
-              <TreatBatteryGauge
-                treatBudgetKcal={calculateTreatBudget(der)}
-                consumedKcal={consumedTreatKcal}
-                petName={activePet.name}
-                treatCount={treatCount}
-              />
-              <TouchableOpacity
-                style={styles.logTreatButton}
-                activeOpacity={0.7}
-                onPress={() => setTreatPickerVisible(true)}
-              >
-                <Ionicons name="nutrition-outline" size={18} color={Colors.accent} />
-                <Text style={styles.logTreatButtonText}>Log a Treat</Text>
-              </TouchableOpacity>
-            </>
+            <TreatBatteryGauge
+              treatBudgetKcal={calculateTreatBudget(der)}
+              consumedKcal={consumedTreatKcal}
+              petName={activePet.name}
+              title="Daily Treat Budget"
+              treatCount={treatCount}
+              onLogTreat={() => setTreatPickerVisible(true)}
+            />
           )}
         </View>
 
@@ -620,7 +576,14 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.healthRecordCard}>
           <Text style={styles.healthRecordTitle}>Vaccines</Text>
           {healthRecords.filter((r) => r.record_type === 'vaccination').length === 0 ? (
-            <Text style={styles.healthRecordEmpty}>No vaccines logged yet.</Text>
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() => { setDefaultRecordType('vaccination'); setManualRecordVisible(true); }}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Add a vaccine</Text>
+            </TouchableOpacity>
           ) : (
             healthRecords
               .filter((r) => r.record_type === 'vaccination')
@@ -643,7 +606,14 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.healthRecordCard}>
           <Text style={styles.healthRecordTitle}>Dewormings</Text>
           {healthRecords.filter((r) => r.record_type === 'deworming').length === 0 ? (
-            <Text style={styles.healthRecordEmpty}>No dewormings logged yet.</Text>
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() => { setDefaultRecordType('deworming'); setManualRecordVisible(true); }}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Add a deworming record</Text>
+            </TouchableOpacity>
           ) : (
             healthRecords
               .filter((r) => r.record_type === 'deworming')
@@ -662,106 +632,66 @@ export default function PetHubScreen({ navigation }: Props) {
           )}
         </View>
 
-        {/* Add Record button + disclaimer (D-163) */}
-        <TouchableOpacity
-          style={styles.addRecordButton}
-          onPress={() => setManualRecordVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="add-circle-outline" size={18} color={Colors.accent} />
-          <Text style={styles.addRecordText}>Add Record</Text>
-        </TouchableOpacity>
+        {/* Appointments */}
+        <View style={styles.healthRecordCard}>
+          <View style={styles.healthRecordHeader}>
+            <Text style={styles.healthRecordTitle}>Appointments</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Appointments')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
+          {appointments.length === 0 ? (
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('CreateAppointment')}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
+            </TouchableOpacity>
+          ) : (
+            appointments.slice(0, 3).map((appt) => (
+              <TouchableOpacity
+                key={appt.id}
+                style={styles.healthRecordRow}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
+              >
+                <View style={styles.healthRecordInfo}>
+                  <Text style={styles.healthRecordName}>
+                    {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </Text>
+                  <Text style={styles.healthRecordDate}>
+                    {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </Text>
+                  {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        {/* Health disclaimer (D-163) */}
         <Text style={styles.healthDisclaimer}>
           Health records are for your reference. Consult your veterinarian for your pet's care schedule.
         </Text>
 
-        {/* (g) Recent Scans */}
-        <View style={styles.scansCard}>
-          <View style={styles.scansSectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Scans</Text>
-            {recentScans.length > 3 && (
-              <Text style={styles.seeAllText}>See All</Text>
-            )}
-          </View>
-          {recentScans.length === 0 ? (
-            <View style={styles.scansEmptyState}>
-              <Ionicons name="scan-outline" size={32} color={Colors.textTertiary} />
-              <Text style={styles.scansText}>
-                No scans yet {'\u2014'} try scanning a product!
-              </Text>
-            </View>
-          ) : (
-            <View style={{ gap: Spacing.sm }}>
-              {recentScans.slice(0, 3).map((scan) => (
-                <ScanHistoryCard
-                  key={scan.id}
-                  item={scan}
-                  petName={activePet.name}
-                  onPress={(productId) => {
-                    if (scan.product.is_recalled) {
-                      navigation.navigate('RecallDetail', { productId });
-                    } else {
-                      navigation.navigate('Result', { productId, petId: activePet.id });
-                    }
-                  }}
-                />
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* (h) Settings */}
-        <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <SettingsRow icon="calendar-outline" label="Appointments" onPress={() => navigation.navigate('Appointments')} />
-          <SettingsRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('NotificationPreferences')} />
-          <SettingsRow icon="shield-checkmark-outline" label="Subscription" />
-          <SettingsRow icon="information-circle-outline" label="About Kiba" isLast />
-        </View>
-
-        {/* (i) Delete pet */}
+        {/* Settings */}
         <TouchableOpacity
-          onPress={() => {
-            setDeleteInput('');
-            setDeleteModalVisible(true);
-          }}
-          style={styles.deleteButton}
-          activeOpacity={0.6}
+          style={styles.settingsNavRow}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.deleteButtonText}>
-            Delete {activePet.name}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Version footer — tap 5 times for dev menu */}
-        <TouchableOpacity
-          style={styles.versionFooter}
-          activeOpacity={0.6}
-          onPress={() => {
-            if (!__DEV__) return;
-            const next = devTapCount + 1;
-            if (next >= 5) {
-              setDevMenuVisible(true);
-              setDevTapCount(0);
-            } else {
-              setDevTapCount(next);
-              setTimeout(() => setDevTapCount(0), 2000);
-            }
-          }}
-        >
-          <Text style={styles.versionText}>Kiba v1.0.0</Text>
+          <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
+          <Text style={styles.settingsNavLabel}>Settings</Text>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
         </TouchableOpacity>
 
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
-
-      {/* Dev menu (__DEV__ only) */}
-      {__DEV__ && (
-        <DevMenu
-          visible={devMenuVisible}
-          onClose={() => setDevMenuVisible(false)}
-        />
-      )}
 
       {/* Off-screen hub share card for capture */}
       <View style={styles.offScreen} pointerEvents="none">
@@ -789,6 +719,7 @@ export default function PetHubScreen({ navigation }: Props) {
       <HealthRecordLogSheet
         visible={manualRecordVisible}
         appointment={null}
+        defaultRecordType={defaultRecordType}
         petNames={new Map(pets.map((p) => [p.id, p.name]))}
         onComplete={() => {
           setManualRecordVisible(false);
@@ -799,84 +730,7 @@ export default function PetHubScreen({ navigation }: Props) {
         }}
       />
 
-      {/* Delete confirmation modal */}
-      <Modal
-        visible={deleteModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Delete {activePet.name}?
-            </Text>
-            <Text style={styles.modalBody}>
-              This will permanently remove {activePet.name}'s profile, health
-              conditions, and allergens. This cannot be undone.
-            </Text>
-            <Text style={styles.modalInstruction}>
-              Type{' '}
-              <Text style={styles.modalPetName}>{activePet.name}</Text> to
-              confirm
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              value={deleteInput}
-              onChangeText={setDeleteInput}
-              placeholder={activePet.name}
-              placeholderTextColor={Colors.textTertiary}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancel}
-                onPress={() => setDeleteModalVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirm,
-                  !canDeletePet(deleteInput, activePet.name) &&
-                    styles.modalConfirmDisabled,
-                ]}
-                onPress={handleDelete}
-                disabled={
-                  !canDeletePet(deleteInput, activePet.name) || deleting
-                }
-                activeOpacity={0.7}
-              >
-                {deleting ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.modalConfirmText}>Delete</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
-  );
-}
-
-// ─── Settings Row (preserved from MeScreen) ──────────────
-
-function SettingsRow({ icon, label, isLast, onPress }: { icon: string; label: string; isLast?: boolean; onPress?: () => void }) {
-  return (
-    <TouchableOpacity style={[styles.settingsRow, isLast && styles.settingsRowLast]} activeOpacity={0.6} onPress={onPress}>
-      <Ionicons
-        name={icon as keyof typeof Ionicons.glyphMap}
-        size={22}
-        color={Colors.textSecondary}
-      />
-      <Text style={styles.settingsLabel}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-    </TouchableOpacity>
   );
 }
 
@@ -1116,8 +970,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
   statValue: {
     fontSize: FontSizes.sm,
@@ -1129,23 +981,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  logTreatButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    paddingVertical: 12,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  logTreatButtonText: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.accent,
-  },
-
   // ─── Health Card ───────────────────────────────────────
   healthCard: {
     backgroundColor: Colors.card,
@@ -1203,8 +1038,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
 
-  // ─── Recent Scans ─────────────────────────────────────
-  // Health records (D-163)
+  // ─── Health Records (D-163) ──────────────────────────────
   healthRecordCard: {
     backgroundColor: Colors.card,
     borderRadius: 16,
@@ -1213,15 +1047,26 @@ const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
     marginBottom: Spacing.md,
   },
+  healthRecordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   healthRecordTitle: {
     fontSize: FontSizes.md,
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
-  healthRecordEmpty: {
+  addRecordLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  addRecordLinkText: {
     fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
+    fontWeight: '600',
+    color: Colors.accent,
   },
   healthRecordRow: {
     paddingVertical: Spacing.sm,
@@ -1244,19 +1089,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
   },
-  addRecordButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-  addRecordText: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.accent,
-  },
   healthDisclaimer: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
@@ -1264,75 +1096,32 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     paddingHorizontal: Spacing.md,
   },
-  scansCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  scansSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  scansEmptyState: {
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-  },
-  seeAllText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.accent,
-  },
-  scansText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-
-  // ─── Settings ──────────────────────────────────────────
-  settingsSection: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  sectionTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: Spacing.md,
-  },
-  settingsRow: {
+  // ─── Settings Nav Row ────────────────────────────────────
+  settingsNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
     gap: Spacing.md,
+    marginTop: Spacing.md,
   },
-  settingsRowLast: {
-    borderBottomWidth: 0,
-  },
-  settingsLabel: {
+  settingsNavLabel: {
     flex: 1,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
   },
 
-  // ─── Share Button ──────────────────────────────────────
-  shareButton: {
+  // ─── Share Link (inside summary card) ──────────────────
+  shareLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginBottom: Spacing.md,
+    marginTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
+    paddingTop: Spacing.md,
   },
-  shareButtonText: {
+  shareLinkText: {
     fontSize: FontSizes.sm,
     fontWeight: '600',
     color: Colors.accent,
@@ -1343,97 +1132,4 @@ const styles = StyleSheet.create({
     top: 0,
   },
 
-  // ─── Version Footer ──────────────────────────────────────
-  versionFooter: {
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  versionText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-  },
-
-  // ─── Delete ────────────────────────────────────────────
-  deleteButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-  },
-  deleteButtonText: {
-    fontSize: FontSizes.md,
-    color: Colors.severityRed,
-  },
-
-  // ─── Delete Modal ──────────────────────────────────────
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-  },
-  modalContent: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  modalBody: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
-    lineHeight: 20,
-  },
-  modalInstruction: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
-  },
-  modalPetName: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  modalInput: {
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    marginBottom: Spacing.md,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  modalCancel: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: Colors.background,
-  },
-  modalCancelText: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  modalConfirm: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: Colors.severityRed,
-  },
-  modalConfirmDisabled: {
-    opacity: 0.5,
-  },
-  modalConfirmText: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
 });

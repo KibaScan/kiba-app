@@ -151,10 +151,7 @@ export async function searchProducts(
   filters?: { category?: 'daily_food' | 'treat' },
 ): Promise<ProductSearchResult[]> {
   const trimmed = query.trim();
-  if (!trimmed) return [];
-
-  // Escape SQL wildcards
-  const escaped = trimmed.replace(/%/g, '\\%').replace(/_/g, '\\_');
+  if (!trimmed && !filters?.category) return [];
 
   let q = supabase
     .from('products')
@@ -162,10 +159,14 @@ export async function searchProducts(
     .eq('target_species', species)
     .eq('is_vet_diet', false)
     .eq('is_recalled', false)
-    .neq('category', 'supplement')
-    .or(`name.ilike.%${escaped}%,brand.ilike.%${escaped}%`)
-    .order('name', { ascending: true })
-    .limit(50);
+    .neq('category', 'supplement');
+
+  if (trimmed) {
+    const escaped = trimmed.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    q = q.or(`name.ilike.%${escaped}%,brand.ilike.%${escaped}%`);
+  }
+
+  q = q.order('name', { ascending: true }).limit(50);
 
   if (filters?.category) {
     q = q.eq('category', filters.category);

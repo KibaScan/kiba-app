@@ -230,6 +230,7 @@ export default function ResultScreen() {
         // Persist to scan_history for D-156 pantry score cascade (fire-and-forget)
         if (pet?.id && !result.bypass) {
           supabase.auth.getUser().then(({ data: userData }) => {
+            console.log('[ResultScreen] scan_history insert: userId=', userData?.user?.id, 'petId=', pet.id, 'productId=', product.id);
             if (!userData?.user?.id) return;
             supabase.from('scan_history').insert({
               user_id: userData.user.id,
@@ -1018,6 +1019,20 @@ export default function ResultScreen() {
         {isSupplemental && (
           <Text style={styles.supplementalRingLine}>
             Best paired with a complete meal
+          </Text>
+        )}
+
+        {/* Low-score feeding context (D-159) */}
+        {score !== null && score <= 64 && (
+          <Text style={{
+            fontSize: FontSizes.sm,
+            color: Colors.textSecondary,
+            textAlign: 'center',
+            marginTop: Spacing.xs,
+          }}>
+            {score <= 50
+              ? `Explore higher-scoring alternatives for ${displayName}`
+              : 'Consider for occasional use'}
           </Text>
         )}
 

@@ -30,6 +30,7 @@ interface PortionCardProps {
   product: Product | null;
   conditions: string[];
   isSupplemental?: boolean;
+  showPetName?: boolean;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -135,7 +136,7 @@ export function shouldShowGoalWeight(
 
 // ─── Component ───────────────────────────────────────────
 
-export default function PortionCard({ pet, product, conditions, isSupplemental }: PortionCardProps) {
+export default function PortionCard({ pet, product, conditions, isSupplemental, showPetName = true }: PortionCardProps) {
   const [showInfo, setShowInfo] = useState(false);
   const [portionUnit, setPortionUnit] = useState<'cups' | 'grams'>('cups');
 
@@ -254,7 +255,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
       {/* DER display */}
       <Text style={styles.derLine}>
         <Text style={styles.derValue}>{formatCalories(der)}</Text>
-        <Text style={styles.derUnit}> kcal/day for {pet.name}</Text>
+        <Text style={styles.derUnit}> kcal/day{showPetName ? ` for ${pet.name}` : ''}</Text>
       </Text>
 
       {/* Cups ↔ Grams toggle */}

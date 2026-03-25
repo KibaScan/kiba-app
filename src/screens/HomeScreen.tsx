@@ -1,27 +1,32 @@
-// Kiba — Home Dashboard
-// Surfaces recall alerts, pantry summary, upcoming appointments, and scan activity.
-import React, { useState, useCallback, useMemo } from 'react';
+// Kiba — Home Dashboard v2
+// Search bar, browse categories, recall alerts, slim pantry row, scan activity.
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   ScrollView,
   Image,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, FontSizes, Spacing, Limits, SEVERITY_COLORS, getScoreColor } from '../utils/constants';
+import { stripBrandFromName } from '../utils/formatters';
+import { canSearch, isPremium, getScanWindowInfo } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
-import { useScanStore } from '../stores/useScanStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { getUpcomingAppointments } from '../services/appointmentService';
 import { getRecentScans } from '../services/scanHistoryService';
-import { ScanHistoryCard } from '../components/ScanHistoryCard';
+import { searchProducts } from '../services/topMatches';
 import { supabase } from '../services/supabase';
+import { InfoTooltip } from '../components/ui/InfoTooltip';
+import type { ProductSearchResult } from '../services/topMatches';
 import type { Appointment, AppointmentType } from '../types/appointment';
 import type { ScanHistoryItem } from '../types/scanHistory';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
@@ -29,7 +34,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
-// ─── Appointment Helpers ─────────────────────────────────
+// ─── Constants ──────────────────────────────────────────
 
 const APPT_TYPE_ICONS: Record<AppointmentType, keyof typeof Ionicons.glyphMap> = {
   vet_visit: 'medical-outline',
@@ -52,6 +57,18 @@ const APPT_TYPE_LABELS: Record<AppointmentType, string> = {
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const BROWSE_CATEGORIES: readonly {
+  key: 'daily_food' | 'treat';
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  tint: string;
+}[] = [
+  { key: 'daily_food', label: 'Daily Food', icon: 'nutrition-outline', tint: Colors.accent },
+  { key: 'treat', label: 'Treats', icon: 'fish-outline', tint: Colors.severityAmber },
+] as const;
+
+// ─── Helpers ────────────────────────────────────────────
+
 function formatRelativeDay(isoStr: string): string {
   const date = new Date(isoStr);
   const now = new Date();
@@ -65,35 +82,91 @@ function formatRelativeDay(isoStr: string): string {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
-// ─── Component ───────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
+  const rootNav = useNavigation();
   const activePetId = useActivePetStore((s) => s.activePetId);
   const pets = useActivePetStore((s) => s.pets);
-  const weeklyCount = useScanStore((s) => s.weeklyCount);
   const activePet = pets.find((p) => p.id === activePetId);
 
   const pantryItems = usePantryStore((s) => s.items);
-  const pantryLoading = usePantryStore((s) => s.loading);
   const loadPantry = usePantryStore((s) => s.loadPantry);
 
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
   const [appointmentLoading, setAppointmentLoading] = useState(false);
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
 
+  // ── Search state (local to HomeScreen) ──
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ProductSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSearchActive = searchQuery.trim().length > 0 || isSearchFocused;
+
+  // ── Scan counter state (free users) ──
+  const [scanWindowInfo, setScanWindowInfo] = useState<{
+    count: number;
+    remaining: number;
+    oldestScanAt: string | null;
+  } | null>(null);
+  const premium = isPremium();
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  // ── Derived values ──
+
+  const weeklyCount = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return recentScans.filter((s) => new Date(s.scanned_at).getTime() >= weekAgo).length;
+  }, [recentScans]);
+
   const recalledItems = useMemo(
     () => pantryItems.filter((i) => i.product?.is_recalled),
     [pantryItems],
   );
 
-  const pantryStats = useMemo(() => {
-    const lowStock = pantryItems.filter((i) => i.is_low_stock && !i.is_empty).length;
-    const empty = pantryItems.filter((i) => i.is_empty).length;
-    return { total: pantryItems.length, lowStock, empty };
+  const pantryCategories = useMemo(() => {
+    const foods = pantryItems.filter((i) => i.product?.category !== 'treat').length;
+    const treats = pantryItems.filter((i) => i.product?.category === 'treat').length;
+    return { foods, treats };
   }, [pantryItems]);
 
-  // Load data on focus
+  const scanTooltipText = useMemo(() => {
+    if (!scanWindowInfo || premium) return '';
+    const { remaining, oldestScanAt } = scanWindowInfo;
+    if (remaining > 0) {
+      return `Scans refresh on a rolling 7-day window. You have ${remaining} scan${remaining !== 1 ? 's' : ''} remaining.`;
+    }
+    if (oldestScanAt) {
+      const unlockAt = new Date(new Date(oldestScanAt).getTime() + 7 * 24 * 60 * 60 * 1000);
+      const diffMs = unlockAt.getTime() - Date.now();
+      const hours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+      const relativeTime = hours >= 24
+        ? `${Math.ceil(hours / 24)} day${Math.ceil(hours / 24) !== 1 ? 's' : ''}`
+        : `${hours} hour${hours !== 1 ? 's' : ''}`;
+      return `Scans refresh on a rolling 7-day window. Your next scan unlocks in ~${relativeTime}.`;
+    }
+    return 'Scans refresh on a rolling 7-day window.';
+  }, [scanWindowInfo, premium]);
+
+  const scanCounterColor = useMemo(() => {
+    if (!scanWindowInfo) return Colors.severityGreen;
+    const { remaining } = scanWindowInfo;
+    if (remaining >= 3) return Colors.severityGreen;
+    if (remaining >= 1) return Colors.severityAmber;
+    return Colors.severityRed;
+  }, [scanWindowInfo]);
+
+  // ── Data loading ──
+
   useFocusEffect(
     useCallback(() => {
       if (!activePetId) return;
@@ -113,7 +186,7 @@ export default function HomeScreen() {
 
           const [appointmentResult, scansResult] = await Promise.allSettled([
             getUpcomingAppointments(session.user.id),
-            getRecentScans(activePetId, 3),
+            getRecentScans(activePetId, 5),
           ]);
           if (!cancelled) {
             setNextAppointment(
@@ -122,6 +195,16 @@ export default function HomeScreen() {
             setRecentScans(
               scansResult.status === 'fulfilled' ? scansResult.value : [],
             );
+          }
+
+          // Load scan window info for free users
+          if (!isPremium()) {
+            try {
+              const info = await getScanWindowInfo();
+              if (!cancelled) setScanWindowInfo(info);
+            } catch {
+              // Non-critical
+            }
           }
         } catch {
           // Non-critical — skip silently
@@ -132,6 +215,7 @@ export default function HomeScreen() {
 
       return () => {
         cancelled = true;
+        setIsSearchFocused(false);
       };
     }, [activePetId, loadPantry]),
   );
@@ -142,11 +226,78 @@ export default function HomeScreen() {
     return pet?.name ?? activePet?.name ?? '';
   }, [nextAppointment, pets, activePet]);
 
+  // ── Handlers ──
+
   const navigateToPantry = useCallback(() => {
     navigation
       .getParent<BottomTabNavigationProp<TabParamList>>()
       ?.navigate('Pantry');
   }, [navigation]);
+
+  const handleSearchBarPress = useCallback(() => {
+    if (!canSearch()) {
+      (rootNav as any).navigate('Paywall', { trigger: 'search' });
+    }
+  }, [rootNav]);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!text.trim()) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    if (!canSearch()) return;
+    setSearchLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      if (!activePet) return;
+      try {
+        const results = await searchProducts(text, activePet.species);
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }, [activePet]);
+
+  const handleCategoryTap = useCallback((category: 'daily_food' | 'treat') => {
+    if (!canSearch()) {
+      (rootNav as any).navigate('Paywall', { trigger: 'search' });
+      return;
+    }
+    if (!activePet) return;
+    setIsSearchFocused(true);
+    setSearchLoading(true);
+    (async () => {
+      try {
+        const results = await searchProducts('', activePet.species, { category });
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    })();
+  }, [activePet, rootNav]);
+
+  const handleSearchResultTap = useCallback((item: ProductSearchResult) => {
+    Keyboard.dismiss();
+    navigation.navigate('Result', { productId: item.product_id, petId: activePetId });
+  }, [navigation, activePetId]);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setIsSearchFocused(false);
+    Keyboard.dismiss();
+  }, []);
+
+  // ── Render ──
+
+  const hasContent = recentScans.length > 0 || pantryItems.length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,172 +315,307 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
-        {/* 1. Recall alert cards — top priority, D-125: always free */}
-        {recalledItems.map((item) => (
+        {/* 1. Recall alert — highest priority, always first (D-125: free) */}
+        {recalledItems.length > 0 && activePet && (
           <TouchableOpacity
-            key={item.id}
             style={styles.recallCard}
-            onPress={() =>
-              navigation.navigate('RecallDetail', {
-                productId: item.product_id,
-              })
-            }
+            onPress={navigateToPantry}
             activeOpacity={0.7}
           >
             <Ionicons
               name="warning-outline"
               size={20}
-              color={Colors.severityRed}
+              color={SEVERITY_COLORS.danger}
             />
-            <View style={styles.recallCardContent}>
-              <Text style={styles.recallCardTitle}>Recall Alert</Text>
-              <Text style={styles.recallCardBody} numberOfLines={2}>
-                {item.product.name} has been recalled.
-                {activePet ? ` ${activePet.name} may be affected.` : ''}
-              </Text>
-            </View>
+            <Text style={styles.recallCardBody} numberOfLines={2}>
+              {recalledItems.length} recalled product
+              {recalledItems.length !== 1 ? 's' : ''} in{' '}
+              {activePet.name}&apos;s pantry
+            </Text>
             <Ionicons
               name="chevron-forward"
               size={16}
               color={Colors.textTertiary}
             />
-          </TouchableOpacity>
-        ))}
-
-        {/* 2. Pantry summary card */}
-        {activePet && (
-          <TouchableOpacity
-            style={styles.pantryCard}
-            onPress={navigateToPantry}
-            activeOpacity={0.7}
-          >
-            {pantryLoading ? (
-              <View style={styles.pantryLoadingRow}>
-                <ActivityIndicator size="small" color={Colors.textTertiary} />
-              </View>
-            ) : (
-              <>
-                <View style={styles.pantryCardHeader}>
-                  <View style={styles.pantryPetAvatar}>
-                    {activePet.photo_url ? (
-                      <Image
-                        source={{ uri: activePet.photo_url }}
-                        style={styles.pantryPetPhoto}
-                      />
-                    ) : (
-                      <Ionicons
-                        name="paw-outline"
-                        size={16}
-                        color={Colors.accent}
-                      />
-                    )}
-                  </View>
-                  <Text style={styles.pantryCardTitle} numberOfLines={1}>
-                    {activePet.name}&apos;s Pantry
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={Colors.textTertiary}
-                  />
-                </View>
-                <Text style={styles.pantryCardBody}>
-                  {pantryStats.total > 0
-                    ? `${pantryStats.total} item${pantryStats.total !== 1 ? 's' : ''} tracked` +
-                      (pantryStats.lowStock > 0
-                        ? ` · ${pantryStats.lowStock} running low`
-                        : '') +
-                      (pantryStats.empty > 0
-                        ? ` · ${pantryStats.empty} empty`
-                        : '')
-                    : `Start tracking ${activePet.name}'s food and treats.`}
-                </Text>
-              </>
-            )}
           </TouchableOpacity>
         )}
 
-        {/* 3. Upcoming appointment (soonest only) */}
-        {!appointmentLoading && nextAppointment && appointmentPetName ? (
-          <TouchableOpacity
-            style={styles.appointmentRow}
-            onPress={() =>
-              navigation.navigate('AppointmentDetail', {
-                appointmentId: nextAppointment.id,
-              })
-            }
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={APPT_TYPE_ICONS[nextAppointment.type]}
-              size={20}
-              color={Colors.accent}
-            />
-            <Text style={styles.appointmentText} numberOfLines={1}>
-              {appointmentPetName}&apos;s{' '}
-              {APPT_TYPE_LABELS[nextAppointment.type]}
-            </Text>
-            <Text style={styles.appointmentDate}>
-              {formatRelativeDay(nextAppointment.scheduled_at)}
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={Colors.textTertiary}
-            />
-          </TouchableOpacity>
-        ) : null}
-
-        {/* 4. Scan counter */}
-        <View style={styles.weeklyCard}>
-          <Text style={styles.weeklyCount}>{weeklyCount}</Text>
-          <Text style={styles.weeklyLabel}>Scans this week</Text>
+        {/* 2. Search bar — premium: real input; free: tappable facade → paywall */}
+        <View style={styles.searchBarContainer}>
+          {canSearch() ? (
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search pet food products..."
+                placeholderTextColor={Colors.textTertiary}
+                value={searchQuery}
+                onChangeText={handleSearchChange}
+                onFocus={() => setIsSearchFocused(true)}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              {searchLoading && <ActivityIndicator size="small" color={Colors.accent} />}
+              {searchQuery.length > 0 && !searchLoading && (
+                <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={Colors.textTertiary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.searchBar}
+              onPress={handleSearchBarPress}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
+              <Text style={styles.searchPlaceholder}>Search pet food products...</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* 4b. Recent Scans */}
-        {recentScans.length > 0 && activePet && (
-          <View style={styles.recentScansSection}>
-            <Text style={styles.recentScansTitle}>Recent Scans</Text>
-            {recentScans.map((scan) => (
-              <ScanHistoryCard
-                key={scan.id}
-                item={scan}
-                petName={activePet.name}
-                onPress={(productId) => {
-                  if (scan.product.is_recalled) {
-                    navigation.navigate('RecallDetail', { productId });
-                  } else {
-                    navigation.navigate('Result', { productId, petId: activePetId });
-                  }
-                }}
-              />
+        {/* 3. Browse categories — hidden when search active */}
+        {!isSearchActive && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScrollContent}
+            style={styles.categoryScroll}
+          >
+            {BROWSE_CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat.key}
+                style={styles.categoryCard}
+                onPress={() => handleCategoryTap(cat.key)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={cat.icon} size={28} color={cat.tint} />
+                <Text style={styles.categoryLabel}>{cat.label}</Text>
+              </TouchableOpacity>
             ))}
+          </ScrollView>
+        )}
+
+        {/* 4. Search results — shown when search active */}
+        {isSearchActive && (
+          <View style={styles.searchResultsContainer}>
+            {searchResults.length > 0 ? (
+              searchResults.map((item) => (
+                <TouchableOpacity
+                  key={item.product_id}
+                  style={styles.searchResultRow}
+                  onPress={() => handleSearchResultTap(item)}
+                  activeOpacity={0.7}
+                >
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.searchResultImage} />
+                  ) : (
+                    <View style={[styles.searchResultImage, styles.searchResultImagePlaceholder]}>
+                      <Ionicons name="cube-outline" size={18} color={Colors.textTertiary} />
+                    </View>
+                  )}
+                  <View style={styles.searchResultInfo}>
+                    <Text style={styles.searchResultBrand} numberOfLines={1}>
+                      {item.brand}
+                    </Text>
+                    <Text style={styles.searchResultName} numberOfLines={1}>
+                      {stripBrandFromName(item.brand, item.product_name)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                </TouchableOpacity>
+              ))
+            ) : searchLoading ? (
+              <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: Spacing.xl }} />
+            ) : searchQuery.trim() ? (
+              <View style={styles.searchEmptyState}>
+                <Text style={styles.searchEmptyText}>
+                  No products found for &quot;{searchQuery}&quot;
+                </Text>
+              </View>
+            ) : null}
           </View>
         )}
 
-        {/* 5. Empty state CTA */}
-        {recentScans.length === 0 && (
-        <View style={styles.emptyState}>
-          <Ionicons
-            name="camera-outline"
-            size={56}
-            color={Colors.textTertiary}
-            style={{ marginBottom: Spacing.lg }}
-          />
-          <Text style={styles.emptyTitle}>Scan your first product</Text>
-          <Text style={styles.emptySubtitle}>
-            Tap the scan button below to check{'\n'}a pet food, treat, or
-            supplement.
-          </Text>
-        </View>
+        {/* ── Normal content (hidden when search active) ── */}
+        {!isSearchActive && (
+          <>
+            {/* 5. Upcoming appointment */}
+            {!appointmentLoading && nextAppointment && appointmentPetName ? (
+              <TouchableOpacity
+                style={styles.appointmentRow}
+                onPress={() =>
+                  navigation.navigate('AppointmentDetail', {
+                    appointmentId: nextAppointment.id,
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={APPT_TYPE_ICONS[nextAppointment.type]}
+                  size={20}
+                  color={Colors.accent}
+                />
+                <Text style={styles.appointmentText} numberOfLines={1}>
+                  {appointmentPetName}&apos;s{' '}
+                  {APPT_TYPE_LABELS[nextAppointment.type]}
+                </Text>
+                <Text style={styles.appointmentDate}>
+                  {formatRelativeDay(nextAppointment.scheduled_at)}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={Colors.textTertiary}
+                />
+              </TouchableOpacity>
+            ) : null}
+
+            {/* 6. Pantry nav row (slim) */}
+            {activePet && (
+              <TouchableOpacity
+                style={styles.pantryRow}
+                onPress={navigateToPantry}
+                activeOpacity={0.7}
+              >
+                <View style={styles.pantryRowAvatar}>
+                  {activePet.photo_url ? (
+                    <Image source={{ uri: activePet.photo_url }} style={styles.pantryRowPhoto} />
+                  ) : (
+                    <Ionicons name="paw-outline" size={12} color={Colors.accent} />
+                  )}
+                </View>
+                <Text style={styles.pantryRowTitle} numberOfLines={1}>
+                  {activePet.name}&apos;s Pantry
+                </Text>
+                {pantryItems.length > 0 ? (
+                  <Text style={styles.pantryRowSubtitle}>
+                    {pantryCategories.foods} food{pantryCategories.foods !== 1 ? 's' : ''} ·{' '}
+                    {pantryCategories.treats} treat{pantryCategories.treats !== 1 ? 's' : ''}
+                  </Text>
+                ) : (
+                  <Text style={styles.pantryRowSubtitle}>Start tracking</Text>
+                )}
+                <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+
+            {/* 7. Recent Scans — redesigned counter */}
+            {recentScans.length > 0 && activePet && (
+              <View style={styles.recentScansSection}>
+                <View style={styles.recentScansHeader}>
+                  <Text style={styles.recentScansTitle}>Recent Scans</Text>
+                  {!premium && scanWindowInfo ? (
+                    <View style={styles.scanCounterRow}>
+                      <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
+                        <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
+                          {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
+                        </Text>
+                      </View>
+                      <InfoTooltip text={scanTooltipText} size={14} />
+                    </View>
+                  ) : (
+                    <Text style={styles.recentScansWeekly}>
+                      {weeklyCount} this week
+                    </Text>
+                  )}
+                </View>
+                {recentScans.map((scan) => {
+                  const scoreColor =
+                    scan.final_score != null
+                      ? getScoreColor(scan.final_score, scan.product.is_supplemental)
+                      : null;
+
+                  return (
+                    <TouchableOpacity
+                      key={scan.id}
+                      style={styles.scanRow}
+                      onPress={() => {
+                        if (scan.product.is_recalled) {
+                          navigation.navigate('RecallDetail', {
+                            productId: scan.product_id,
+                          });
+                        } else {
+                          navigation.navigate('Result', {
+                            productId: scan.product_id,
+                            petId: activePetId,
+                          });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {scan.product.image_url ? (
+                        <Image
+                          source={{ uri: scan.product.image_url }}
+                          style={styles.scanRowImage}
+                        />
+                      ) : (
+                        <View style={styles.scanRowImagePlaceholder}>
+                          <Ionicons
+                            name="cube-outline"
+                            size={18}
+                            color={Colors.textTertiary}
+                          />
+                        </View>
+                      )}
+                      <View style={styles.scanRowInfo}>
+                        <Text style={styles.scanRowBrand} numberOfLines={1}>
+                          {scan.product.brand}
+                        </Text>
+                        <Text style={styles.scanRowName} numberOfLines={1}>
+                          {stripBrandFromName(scan.product.brand, scan.product.name)}
+                        </Text>
+                      </View>
+                      {scoreColor ? (
+                        <View
+                          style={[
+                            styles.scorePill,
+                            { backgroundColor: `${scoreColor}33` },
+                          ]}
+                        >
+                          <Text style={[styles.scorePillText, { color: scoreColor }]}>
+                            {scan.final_score}%
+                          </Text>
+                        </View>
+                      ) : (
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color={Colors.textTertiary}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* 8. Empty state */}
+            {!hasContent && (
+              <View style={styles.emptyState}>
+                <Ionicons
+                  name="camera-outline"
+                  size={48}
+                  color={Colors.textTertiary}
+                  style={{ marginBottom: Spacing.md }}
+                />
+                <Text style={styles.emptyTitle}>Scan your first product</Text>
+                <Text style={styles.emptySubtitle}>
+                  Tap the scan button below to check{'\n'}a pet food, treat, or
+                  supplement.
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────
+// ─── Styles ─────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -378,72 +664,114 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: `${Colors.severityRed}15`,
+    backgroundColor: `${SEVERITY_COLORS.danger}15`,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.severityRed,
-    borderRadius: 12,
+    borderLeftColor: SEVERITY_COLORS.danger,
+    borderRadius: 16,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
-  recallCardContent: {
-    flex: 1,
-  },
-  recallCardTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
-    color: Colors.severityRed,
-    marginBottom: 2,
-  },
   recallCardBody: {
+    flex: 1,
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    fontWeight: '600',
+    color: SEVERITY_COLORS.danger,
     lineHeight: 18,
   },
 
-  // Pantry card
-  pantryCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+  // Search bar
+  searchBarContainer: {
     marginBottom: Spacing.md,
   },
-  pantryLoadingRow: {
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-  },
-  pantryCardHeader: {
+  searchBar: {
+    height: 44,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    paddingHorizontal: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
-  pantryPetAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#00B4D815',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  pantryPetPhoto: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  pantryCardTitle: {
+  searchInput: {
     flex: 1,
     fontSize: FontSizes.md,
-    fontWeight: '700',
+    color: Colors.textPrimary,
+    padding: 0,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: FontSizes.md,
+    color: Colors.textTertiary,
+  },
+
+  // Browse categories
+  categoryScroll: {
+    marginBottom: Spacing.md,
+    marginHorizontal: -Spacing.lg,
+  },
+  categoryScrollContent: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  categoryCard: {
+    width: 120,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    gap: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  categoryLabel: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
-  pantryCardBody: {
-    fontSize: FontSizes.sm,
+
+  // Search results
+  searchResultsContainer: {
+    gap: Spacing.xs,
+  },
+  searchResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  searchResultImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  searchResultImagePlaceholder: {
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchResultInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  searchResultBrand: {
+    fontSize: 12,
     color: Colors.textSecondary,
-    marginLeft: 40,
-    lineHeight: 18,
+  },
+  searchResultName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  searchEmptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+  },
+  searchEmptyText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 
   // Appointment row
@@ -452,7 +780,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: Colors.card,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
@@ -470,39 +798,115 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Weekly scan card
-  weeklyCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: Spacing.lg,
+  // Pantry slim row
+  pantryRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    marginBottom: Spacing.lg,
+    gap: 8,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
-  weeklyCount: {
-    fontSize: 48,
-    fontWeight: '800',
+  pantryRowAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#00B4D815',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  pantryRowPhoto: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  pantryRowTitle: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
-  weeklyLabel: {
+  pantryRowSubtitle: {
+    flex: 1,
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    textAlign: 'right',
+  },
+
+  // Scan counter
+  scanCounterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  scanCounterPill: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  scanCounterText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
   },
 
   // Recent scans
   recentScansSection: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  recentScansHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
   recentScansTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  recentScansWeekly: {
     fontSize: FontSizes.sm,
+    color: Colors.accent,
+  },
+  scanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  scanRowImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  scanRowImagePlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: Colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanRowInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  scanRowBrand: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  scanRowName: {
+    fontSize: 14,
     fontWeight: '600',
-    color: Colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: Spacing.xs,
+    color: Colors.textPrimary,
+  },
+  scorePill: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  scorePillText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '700',
   },
 
   // Empty state

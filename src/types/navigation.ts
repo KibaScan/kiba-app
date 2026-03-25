@@ -28,8 +28,8 @@ export type HomeStackParamList = {
   AppointmentDetail: { appointmentId: string };
 };
 
-export type SearchStackParamList = {
-  SearchMain: undefined;
+export type CommunityStackParamList = {
+  CommunityMain: undefined;
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
 };
@@ -52,6 +52,7 @@ export type MeStackParamList = {
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };
   NotificationPreferences: undefined;
+  Settings: undefined;
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
 };
@@ -79,7 +80,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
-  Search: undefined;
+  Community: undefined;
   Scan: undefined;
   Pantry: undefined;
   Me: undefined;
