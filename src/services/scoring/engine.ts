@@ -56,6 +56,23 @@ function hasGaData(product: Product): boolean {
   );
 }
 
+/**
+ * Infer moisture from product_form when ga_moisture_pct is null.
+ * Without this, wet food with missing moisture defaults to 10% (dry),
+ * making DMB conversion a no-op and producing false AAFCO penalties.
+ */
+function inferMoisture(product: Product): number | null {
+  if (product.ga_moisture_pct !== null) return product.ga_moisture_pct;
+  switch (product.product_form) {
+    case 'wet': return 78;
+    case 'raw': return 70;
+    case 'freeze_dried': return 7;
+    case 'dehydrated': return 8;
+    case 'dry': return 10;
+    default: return null;
+  }
+}
+
 // ─── D-104: Carb Estimation (display only) ───────────
 
 function estimateCarbDisplay(
@@ -164,7 +181,7 @@ export function computeScore(
       gaProteinPct: product.ga_protein_pct,
       gaFatPct: product.ga_fat_pct,
       gaFiberPct: product.ga_fiber_pct,
-      gaMoisturePct: product.ga_moisture_pct,
+      gaMoisturePct: inferMoisture(product),
       gaCalciumPct: product.ga_calcium_pct,
       gaPhosphorusPct: product.ga_phosphorus_pct,
       gaOmega3Pct: product.ga_omega3_pct,

@@ -130,6 +130,61 @@ export async function fetchTopMatches(
   return rows;
 }
 
+// ─── Direct Product Search ──────────────────────────────
+
+export interface ProductSearchResult {
+  product_id: string;
+  product_name: string;
+  brand: string;
+  image_url: string | null;
+  product_form: string | null;
+  category: string;
+}
+
+/**
+ * Search products table directly by name/brand.
+ * Independent of batch-score cache — works even when pet_product_scores is empty.
+ */
+export async function searchProducts(
+  query: string,
+  species: 'dog' | 'cat',
+  filters?: { category?: 'daily_food' | 'treat' },
+): Promise<ProductSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  // Escape SQL wildcards
+  const escaped = trimmed.replace(/%/g, '\\%').replace(/_/g, '\\_');
+
+  let q = supabase
+    .from('products')
+    .select('id, name, brand, image_url, product_form, category')
+    .eq('target_species', species)
+    .eq('is_vet_diet', false)
+    .eq('is_recalled', false)
+    .neq('category', 'supplement')
+    .or(`name.ilike.%${escaped}%,brand.ilike.%${escaped}%`)
+    .order('name', { ascending: true })
+    .limit(50);
+
+  if (filters?.category) {
+    q = q.eq('category', filters.category);
+  }
+
+  const { data, error } = await q;
+
+  if (error || !data) return [];
+
+  return (data as Record<string, unknown>[]).map((row) => ({
+    product_id: row.id as string,
+    product_name: row.name as string,
+    brand: row.brand as string,
+    image_url: (row.image_url as string) ?? null,
+    product_form: (row.product_form as string) ?? null,
+    category: row.category as string,
+  }));
+}
+
 // ─── Trigger Batch Score ────────────────────────────────
 
 /**

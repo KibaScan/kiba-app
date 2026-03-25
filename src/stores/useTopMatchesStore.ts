@@ -2,10 +2,11 @@
 // No persistence — data fetched from Supabase on each screen focus.
 
 import { create } from 'zustand';
-import type { CachedScore } from '../services/topMatches';
+import type { CachedScore, ProductSearchResult } from '../services/topMatches';
 import {
   checkCacheFreshness,
   fetchTopMatches,
+  searchProducts,
   triggerBatchScore,
 } from '../services/topMatches';
 import { useActivePetStore } from './useActivePetStore';
@@ -19,11 +20,14 @@ interface TopMatchesState {
   error: string | null;
   categoryFilter: CategoryFilter;
   searchQuery: string;
+  searchResults: ProductSearchResult[];
+  searchLoading: boolean;
 
   loadTopMatches: (petId: string) => Promise<void>;
   refreshScores: (petId: string) => Promise<void>;
   setFilter: (category: CategoryFilter) => void;
   setSearch: (query: string) => void;
+  executeSearch: (query: string, species: 'dog' | 'cat') => Promise<void>;
 }
 
 function getPet(petId: string) {
@@ -37,6 +41,8 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
   error: null,
   categoryFilter: 'daily_food',
   searchQuery: '',
+  searchResults: [],
+  searchLoading: false,
 
   loadTopMatches: async (petId) => {
     set({ loading: true, error: null });
@@ -44,10 +50,15 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
       const pet = getPet(petId);
       if (!pet) throw new Error('Pet not found');
 
-      const fresh = await checkCacheFreshness(pet);
-      if (!fresh) {
-        set({ refreshing: true });
-        await triggerBatchScore(petId, pet);
+      try {
+        const fresh = await checkCacheFreshness(pet);
+        if (!fresh) {
+          set({ refreshing: true });
+          await triggerBatchScore(petId, pet);
+          set({ refreshing: false });
+        }
+      } catch (e) {
+        console.warn('[useTopMatchesStore] batch scoring failed, using cached scores:', e);
         set({ refreshing: false });
       }
 
@@ -72,7 +83,11 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
       const pet = getPet(petId);
       if (!pet) throw new Error('Pet not found');
 
-      await triggerBatchScore(petId, pet);
+      try {
+        await triggerBatchScore(petId, pet);
+      } catch (e) {
+        console.warn('[useTopMatchesStore] batch scoring failed during refresh:', e);
+      }
 
       const category = get().categoryFilter;
       const scores = await fetchTopMatches(petId, {
@@ -89,11 +104,22 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
   },
 
   setFilter: (category) => {
-    const petId = useActivePetStore.getState().activePetId;
-    set({ categoryFilter: category, searchQuery: '' });
-    if (petId) {
-      // Re-fetch from cache with new filter
-      fetchTopMatches(petId, {
+    const { activePetId } = useActivePetStore.getState();
+    const query = get().searchQuery;
+    set({ categoryFilter: category });
+
+    if (!activePetId) return;
+
+    if (query.trim()) {
+      // In search mode — re-search with new category
+      const pet = getPet(activePetId);
+      if (pet) {
+        get().executeSearch(query, pet.species);
+      }
+    } else {
+      // Top Matches mode — re-fetch from cache
+      set({ searchQuery: '' });
+      fetchTopMatches(activePetId, {
         category: category === 'all' ? undefined : category,
       })
         .then(scores => set({ scores }))
@@ -103,5 +129,31 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
 
   setSearch: (query) => {
     set({ searchQuery: query });
+    if (!query.trim()) {
+      set({ searchResults: [], searchLoading: false });
+    }
+  },
+
+  executeSearch: async (query, species) => {
+    if (!query.trim()) {
+      set({ searchResults: [], searchLoading: false });
+      return;
+    }
+    set({ searchLoading: true });
+    try {
+      const category = get().categoryFilter;
+      const results = await searchProducts(query, species, {
+        category: category === 'all' ? undefined : category,
+      });
+      // Staleness guard — only apply if query hasn't changed
+      if (get().searchQuery === query) {
+        set({ searchResults: results, searchLoading: false });
+      }
+    } catch (e) {
+      console.warn('[useTopMatchesStore] executeSearch failed:', e);
+      if (get().searchQuery === query) {
+        set({ searchResults: [], searchLoading: false });
+      }
+    }
   },
 }));

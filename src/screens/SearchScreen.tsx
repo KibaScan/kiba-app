@@ -2,7 +2,7 @@
 // Premium: scored product rankings per pet. Free: paywall placeholder.
 // D-084: Zero emoji — Ionicons only. D-094: Score framing. D-095: UPVM compliant.
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import { Colors, FontSizes, Spacing, getScoreColor } from '../utils/constants';
 import { canSearch } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useTopMatchesStore } from '../stores/useTopMatchesStore';
-import type { CachedScore } from '../services/topMatches';
+import type { CachedScore, ProductSearchResult } from '../services/topMatches';
 import type { SearchStackParamList } from '../types/navigation';
 
 // ─── Types ──────────────────────────────────────────────
@@ -60,21 +60,25 @@ export default function SearchScreen({ navigation }: Props) {
   const error = useTopMatchesStore(s => s.error);
   const categoryFilter = useTopMatchesStore(s => s.categoryFilter);
   const searchQuery = useTopMatchesStore(s => s.searchQuery);
+  const searchResults = useTopMatchesStore(s => s.searchResults);
+  const searchLoading = useTopMatchesStore(s => s.searchLoading);
   const loadTopMatches = useTopMatchesStore(s => s.loadTopMatches);
   const setFilter = useTopMatchesStore(s => s.setFilter);
   const setSearch = useTopMatchesStore(s => s.setSearch);
+  const executeSearch = useTopMatchesStore(s => s.executeSearch);
 
   // ── Local state ──
   const [isPremium] = useState(() => canSearch());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
 
   // ── Derived data ──
-  const filteredScores = useMemo(() => {
-    if (!searchQuery) return scores;
-    const q = searchQuery.toLowerCase();
-    return scores.filter(
-      s => s.product_name.toLowerCase().includes(q) || s.brand.toLowerCase().includes(q),
-    );
-  }, [scores, searchQuery]);
+  const isSearchMode = searchQuery.trim().length > 0;
+  const displayData: (CachedScore | ProductSearchResult)[] = isSearchMode ? searchResults : scores;
 
   const hasMultiplePets = pets.length > 1;
 
@@ -94,9 +98,18 @@ export default function SearchScreen({ navigation }: Props) {
     setFilter('daily_food');
   }, [setActivePet, setFilter]);
 
-  const handleProductTap = useCallback((item: CachedScore) => {
+  const handleProductTap = useCallback((item: { product_id: string }) => {
     navigation.navigate('Result', { productId: item.product_id, petId: activePetId });
   }, [navigation, activePetId]);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearch(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!text.trim()) return;
+    debounceRef.current = setTimeout(() => {
+      if (activePet) executeSearch(text, activePet.species);
+    }, 300);
+  }, [setSearch, executeSearch, activePet]);
 
   const handlePaywall = useCallback(() => {
     (rootNav as any).navigate('Paywall', { trigger: 'search' });
@@ -310,15 +323,18 @@ export default function SearchScreen({ navigation }: Props) {
           <Ionicons name="search-outline" size={16} color={Colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Filter by brand or name..."
+            placeholder="Search by brand or name..."
             placeholderTextColor={Colors.textTertiary}
             value={searchQuery}
-            onChangeText={setSearch}
+            onChangeText={handleSearchChange}
             returnKeyType="search"
             autoCorrect={false}
           />
+          {searchLoading && (
+            <ActivityIndicator size="small" color={Colors.accent} style={{ marginRight: 4 }} />
+          )}
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+            <TouchableOpacity onPress={() => handleSearchChange('')} hitSlop={8}>
               <Ionicons name="close-circle" size={16} color={Colors.textTertiary} />
             </TouchableOpacity>
           )}
@@ -335,59 +351,66 @@ export default function SearchScreen({ navigation }: Props) {
 
       {/* Product list */}
       <FlatList
-        data={filteredScores}
+        data={displayData}
         keyExtractor={item => item.product_id}
         initialNumToRender={25}
         maxToRenderPerBatch={25}
         contentContainerStyle={[
           styles.listContent,
-          filteredScores.length === 0 && styles.listContentEmpty,
+          displayData.length === 0 && styles.listContentEmpty,
         ]}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.productRow}
-            onPress={() => handleProductTap(item)}
-            activeOpacity={0.7}
-          >
-            {/* Product image */}
-            <View style={styles.productImageWrap}>
-              {item.image_url ? (
-                <Image source={{ uri: item.image_url }} style={styles.productImage} />
-              ) : (
-                <Ionicons name="nutrition-outline" size={24} color={Colors.textTertiary} />
-              )}
-            </View>
+        renderItem={({ item }) => {
+          const isScored = 'final_score' in item;
+          return (
+            <TouchableOpacity
+              style={styles.productRow}
+              onPress={() => handleProductTap(item)}
+              activeOpacity={0.7}
+            >
+              {/* Product image */}
+              <View style={styles.productImageWrap}>
+                {item.image_url ? (
+                  <Image source={{ uri: item.image_url }} style={styles.productImage} />
+                ) : (
+                  <Ionicons name="nutrition-outline" size={24} color={Colors.textTertiary} />
+                )}
+              </View>
 
-            {/* Brand + Name */}
-            <View style={styles.productInfo}>
-              <Text style={styles.productBrand} numberOfLines={1}>{item.brand}</Text>
-              <Text style={styles.productName} numberOfLines={2}>{item.product_name}</Text>
-              {item.is_partial_score && (
-                <View style={styles.partialBadge}>
-                  <Text style={styles.partialText}>Partial</Text>
+              {/* Brand + Name */}
+              <View style={styles.productInfo}>
+                <Text style={styles.productBrand} numberOfLines={1}>{item.brand}</Text>
+                <Text style={styles.productName} numberOfLines={2}>{item.product_name}</Text>
+                {isScored && (item as CachedScore).is_partial_score && (
+                  <View style={styles.partialBadge}>
+                    <Text style={styles.partialText}>Partial</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Score badge or chevron */}
+              {isScored ? (
+                <View style={styles.scoreBadge}>
+                  <Text style={[
+                    styles.scoreNumber,
+                    { color: getScoreColor((item as CachedScore).final_score, (item as CachedScore).is_supplemental) },
+                  ]}>
+                    {(item as CachedScore).final_score}
+                  </Text>
+                  <Text style={styles.scoreLabel}>% match</Text>
                 </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
               )}
-            </View>
-
-            {/* Score badge */}
-            <View style={styles.scoreBadge}>
-              <Text style={[
-                styles.scoreNumber,
-                { color: getScoreColor(item.final_score, item.is_supplemental) },
-              ]}>
-                {item.final_score}
-              </Text>
-              <Text style={styles.scoreLabel}>% match</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
-          !loading ? (
+          !loading && !searchLoading ? (
             <View style={styles.emptyFilter}>
               <Ionicons name="search-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyFilterText}>
-                {searchQuery
-                  ? `No results for "${searchQuery}"`
+                {isSearchMode
+                  ? `No products found for "${searchQuery}"`
                   : `No ${CATEGORY_LABEL_MAP[categoryFilter]} matches found. Try a different filter.`}
               </Text>
             </View>
