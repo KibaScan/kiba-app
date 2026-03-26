@@ -70,5 +70,11 @@ __pycache__/
 # Claude Code local settings (may contain tokens)
 .claude/settings.local.json
 
+# Large datasets (imported via pipeline, not tracked in git)
+*.json.zip
+dataset_kiba_v*.json
+scripts/import/dataset_kiba_v*.json
+data/
+
 # WSL zone transfer metadata
 *:Zone.Identifier
