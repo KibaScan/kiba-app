@@ -78,7 +78,7 @@ import {
   calculateScoreAccuracy,
   getStaleWeightMonths,
   formatStaleWeightMessage,
-} from '../../src/screens/PetHubScreen';
+} from '../../src/screens/pethub/petHubHelpers';
 import type { Pet } from '../../src/types/pet';
 
 // ─── Test Fixtures ──────────────────────────────────────
