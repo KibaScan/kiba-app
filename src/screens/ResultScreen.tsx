@@ -20,6 +20,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { styles } from './result/ResultScreenStyles';
+import {
+  ResultNoIngredientData,
+  ResultVetDietBypass,
+  ResultSpeciesMismatchBypass,
+  ResultRecalledBypass,
+  ResultVarietyPackBypass,
+} from './result/ResultBypassViews';
 import { canUseSafeSwaps, canCompare } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
@@ -65,7 +72,6 @@ import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBa
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 import { resolveCalories } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
-import { usePantryStore } from '../stores/usePantryStore';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
@@ -353,55 +359,11 @@ export default function ResultScreen() {
   // ─── No ingredient data — simplified view ─────────────
   if (hasNoIngredientData) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.productBrand} numberOfLines={1}>
-              {product!.brand}
-            </Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {product!.name}
-            </Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Recall warning (can still appear) */}
-          {scoredResult?.isRecalled && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
-              <Text style={styles.recallText}>
-                This product has been subject to a recall
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.noDataCard}>
-            <Ionicons name="document-text-outline" size={40} color={Colors.textTertiary} />
-            <Text style={styles.noDataTitle}>
-              We found this product but don't have ingredient data yet
-            </Text>
-            <Text style={styles.noDataSubtext}>
-              Ingredient data is being added to our database. Check back soon.
-            </Text>
-            <TouchableOpacity style={styles.contributeButton} disabled>
-              <Ionicons name="camera-outline" size={18} color={Colors.textTertiary} />
-              <Text style={styles.contributeText}>Contribute ingredient list</Text>
-              <Text style={styles.comingSoonBadge}>Coming soon</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      </SafeAreaView>
+      <ResultNoIngredientData
+        product={product!}
+        scoredResult={scoredResult!}
+        onGoBack={() => navigation.goBack()}
+      />
     );
   }
 
@@ -409,175 +371,21 @@ export default function ResultScreen() {
   const isVetDiet = product?.is_vet_diet === true;
 
   if (isVetDiet && scoredResult) {
-    const fd = product ? detectFlavorDeception(product.name, hydratedIngredients) : null;
-    const flavorAnnotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
-      ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
-      : null;
-
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.productBrand} numberOfLines={1}>
-              {product!.brand}
-            </Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {product!.name}
-            </Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Product image */}
-          {product!.image_url && (
-            <View style={styles.productImageContainer}>
-              <Image
-                source={{ uri: product!.image_url }}
-                style={styles.productImage}
-                resizeMode="contain"
-              />
-              <LinearGradient
-                colors={['transparent', Colors.background]}
-                style={styles.imageGradientBottom}
-              />
-              <LinearGradient
-                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.imageGradientSides}
-              />
-            </View>
-          )}
-
-          {/* Vet diet badge — replaces ScoreRing (D-135) */}
-          <View style={styles.vetDietBadgeContainer}>
-            <View style={styles.vetDietBadge}>
-              <Ionicons name="medkit-outline" size={24} color="#6366F1" />
-              <Text style={styles.vetDietBadgeTitle}>Veterinary Diet</Text>
-            </View>
-            <Text style={styles.vetDietCopy}>
-              This is a veterinary diet formulated for specific health needs.
-              Ingredient details are shown below — discuss suitability with your veterinarian.
-            </Text>
-          </View>
-
-          {/* Recall warning */}
-          {scoredResult.isRecalled && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
-              <Text style={styles.recallText}>
-                This product has been subject to a recall
-              </Text>
-            </View>
-          )}
-
-          {/* Allergen warnings — always shown for safety (D-135) */}
-          {scoredResult.layer3.allergenWarnings.length > 0 && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="alert-circle-outline" size={20} color={Colors.severityAmber} />
-              <Text style={styles.recallText}>
-                Contains potential allergens for {displayName}
-              </Text>
-            </View>
-          )}
-
-          {/* Breed Contraindication Cards (D-112) — safety-critical, always render */}
-          <BreedContraindicationCard
-            contraindications={scoredResult.layer3.personalizations.filter(
-              (p) => p.type === 'breed_contraindication',
-            )}
-          />
-
-          {/* Severity Badge Strip */}
-          {hydratedIngredients.length > 0 && (
-            <SeverityBadgeStrip
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-            />
-          )}
-
-          {/* Full Ingredient List */}
-          {hydratedIngredients.length > 0 && (
-            <IngredientList
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-              flavorAnnotation={flavorAnnotation}
-            />
-          )}
-
-          {/* Splitting Detection */}
-          {hydratedIngredients.length > 0 && (
-            <SplittingDetectionCard
-              clusters={buildSplittingClusters(hydratedIngredients)}
-            />
-          )}
-
-          {/* Flavor Deception Card */}
-          {fd?.detected && fd.namedProtein && fd.actualPrimaryProtein && (
-            <FlavorDeceptionCard
-              namedProtein={fd.namedProtein}
-              actualPrimaryProtein={fd.actualPrimaryProtein}
-              actualPrimaryPosition={fd.actualPrimaryPosition}
-              namedProteinPosition={fd.namedProteinPosition}
-              variant={fd.variant}
-            />
-          )}
-
-          {/* Formula Change Timeline */}
-          {product?.formula_change_log && product.formula_change_log.length > 0 && (
-            <FormulaChangeTimeline
-              changes={product.formula_change_log}
-              currentScore={0}
-            />
-          )}
-
-          {/* Add to Pantry — vet diets are purchasable, need inventory tracking */}
-          {product && pet && (
-            <TouchableOpacity
-              style={styles.trackButton}
-              onPress={handleTrackFood}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
-              <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-                Add to {displayName}'s Pantry
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-
-        {/* Ingredient Detail Modal */}
-        {selectedIngredient && (
-          <IngredientDetailModal
-            ingredient={selectedIngredient}
-            species={species}
-            onClose={() => setSelectedIngredient(null)}
-          />
-        )}
-
-        {/* Add to Pantry sheet (M5) */}
-        {product && pet && (
-          <AddToPantrySheet
-            product={product}
-            pet={pet}
-            visible={pantrySheetVisible}
-            onClose={() => setPantrySheetVisible(false)}
-            onAdded={() => setPantrySheetVisible(false)}
-          />
-        )}
-      </SafeAreaView>
+      <ResultVetDietBypass
+        product={product!}
+        pet={pet}
+        displayName={displayName}
+        species={species}
+        scoredResult={scoredResult}
+        hydratedIngredients={hydratedIngredients}
+        selectedIngredient={selectedIngredient}
+        setSelectedIngredient={setSelectedIngredient}
+        onGoBack={() => navigation.goBack()}
+        onTrackFood={handleTrackFood}
+        pantrySheetVisible={pantrySheetVisible}
+        onClosePantrySheet={() => setPantrySheetVisible(false)}
+      />
     );
   }
 
@@ -585,261 +393,37 @@ export default function ResultScreen() {
   const isSpeciesMismatch = scoredResult?.bypass === 'species_mismatch';
 
   if (isSpeciesMismatch && scoredResult && product) {
-    const targetSpeciesLabel = product.target_species === 'cat' ? 'cats' : 'dogs';
-
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.productBrand} numberOfLines={1}>
-              {product.brand}
-            </Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {stripBrandFromName(product.brand, product.name)}
-            </Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Product image */}
-          {product.image_url && (
-            <View style={styles.productImageContainer}>
-              <Image
-                source={{ uri: product.image_url }}
-                style={styles.productImage}
-                resizeMode="contain"
-              />
-              <LinearGradient
-                colors={['transparent', Colors.background]}
-                style={styles.imageGradientBottom}
-              />
-              <LinearGradient
-                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.imageGradientSides}
-              />
-            </View>
-          )}
-
-          {/* Species mismatch badge — red, replaces ScoreRing */}
-          <View style={styles.speciesMismatchContainer}>
-            <View style={styles.speciesMismatchBadge}>
-              <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
-              <Text style={styles.speciesMismatchBadgeText}>
-                For {targetSpeciesLabel} only
-              </Text>
-            </View>
-            <Text style={styles.speciesMismatchCopy}>
-              {product.name} is formulated for {targetSpeciesLabel}.
-              It is not recommended for {displayName}.
-            </Text>
-          </View>
-
-          {/* Recall warning */}
-          {scoredResult.isRecalled && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
-              <Text style={styles.recallText}>
-                This product has been subject to a recall
-              </Text>
-            </View>
-          )}
-
-          {/* Full Ingredient List — still useful for curious owners */}
-          {hydratedIngredients.length > 0 && (
-            <IngredientList
-              ingredients={hydratedIngredients}
-              species={product.target_species === 'cat' ? 'cat' : 'dog'}
-              onIngredientPress={setSelectedIngredient}
-            />
-          )}
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-
-        {/* Ingredient Detail Modal */}
-        {selectedIngredient && (
-          <IngredientDetailModal
-            ingredient={selectedIngredient}
-            species={product.target_species === 'cat' ? 'cat' : 'dog'}
-            onClose={() => setSelectedIngredient(null)}
-          />
-        )}
-      </SafeAreaView>
+      <ResultSpeciesMismatchBypass
+        product={product}
+        displayName={displayName}
+        species={species}
+        scoredResult={scoredResult}
+        hydratedIngredients={hydratedIngredients}
+        selectedIngredient={selectedIngredient}
+        setSelectedIngredient={setSelectedIngredient}
+        onGoBack={() => navigation.goBack()}
+      />
     );
   }
 
   // ─── D-158: Recalled product bypass — no score, warning + ingredients ──
   const isRecalled = scoredResult?.bypass === 'recalled';
 
-  // Pantry check for recalled product removal
-  const recalledPantryItem = isRecalled
-    ? usePantryStore.getState().items.find(
-        (item) => item.product_id === productId && item.is_active,
-      )
-    : null;
-
   if (isRecalled && scoredResult && product) {
-    const fd = detectFlavorDeception(product.name, hydratedIngredients);
-    const flavorAnnotation = fd?.detected && fd.actualPrimaryProtein && fd.namedProtein
-      ? { primaryProteinName: fd.actualPrimaryProtein, namedProtein: fd.namedProtein }
-      : null;
-
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.productBrand} numberOfLines={1}>
-              {product.brand}
-            </Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {stripBrandFromName(product.brand, product.name)}
-            </Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Product image */}
-          {product.image_url && (
-            <View style={styles.productImageContainer}>
-              <Image
-                source={{ uri: product.image_url }}
-                style={styles.productImage}
-                resizeMode="contain"
-              />
-              <LinearGradient
-                colors={['transparent', Colors.background]}
-                style={styles.imageGradientBottom}
-              />
-              <LinearGradient
-                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.imageGradientSides}
-              />
-            </View>
-          )}
-
-          {/* Recall badge — larger/more prominent than vet diet (D-158) */}
-          <View style={styles.recallBypassContainer}>
-            <View style={styles.recallBypassBadge}>
-              <Ionicons name="alert-circle" size={28} color="#FFFFFF" />
-              <Text style={styles.recallBypassBadgeText}>Recall Alert</Text>
-            </View>
-            <Text style={styles.recallBypassCopy}>
-              This product has been recalled by the FDA.
-              Tap below for recall details.
-            </Text>
-          </View>
-
-          {/* View Recall Details button */}
-          <TouchableOpacity
-            style={styles.recallDetailButton}
-            onPress={() => navigation.navigate('RecallDetail', { productId })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="document-text-outline" size={20} color={Colors.severityRed} />
-            <Text style={styles.recallDetailButtonText}>View Recall Details</Text>
-          </TouchableOpacity>
-
-          {/* Allergen warnings — always shown for safety (D-135 pattern) */}
-          {scoredResult.layer3.allergenWarnings.length > 0 && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="alert-circle-outline" size={20} color={Colors.severityAmber} />
-              <Text style={styles.recallText}>
-                Contains potential allergens for {displayName}
-              </Text>
-            </View>
-          )}
-
-          {/* Breed Contraindication Cards — safety-critical, always render */}
-          <BreedContraindicationCard
-            contraindications={scoredResult.layer3.personalizations.filter(
-              (p) => p.type === 'breed_contraindication',
-            )}
-          />
-
-          {/* Severity Badge Strip */}
-          {hydratedIngredients.length > 0 && (
-            <SeverityBadgeStrip
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-            />
-          )}
-
-          {/* Full Ingredient List */}
-          {hydratedIngredients.length > 0 && (
-            <IngredientList
-              ingredients={hydratedIngredients}
-              species={species}
-              onIngredientPress={setSelectedIngredient}
-              flavorAnnotation={flavorAnnotation}
-            />
-          )}
-
-          {/* Splitting Detection */}
-          {hydratedIngredients.length > 0 && (
-            <SplittingDetectionCard
-              clusters={buildSplittingClusters(hydratedIngredients)}
-            />
-          )}
-
-          {/* Flavor Deception Card */}
-          {fd?.detected && fd.namedProtein && fd.actualPrimaryProtein && (
-            <FlavorDeceptionCard
-              namedProtein={fd.namedProtein}
-              actualPrimaryProtein={fd.actualPrimaryProtein}
-              actualPrimaryPosition={fd.actualPrimaryPosition}
-              namedProteinPosition={fd.namedProteinPosition}
-              variant={fd.variant}
-            />
-          )}
-
-          {/* Remove from Pantry — if recalled product is in active pantry */}
-          {recalledPantryItem && (
-            <TouchableOpacity
-              style={styles.removeFromPantryButton}
-              onPress={async () => {
-                await usePantryStore.getState().removeItem(recalledPantryItem.id);
-                navigation.goBack();
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={20} color={Colors.severityRed} />
-              <Text style={styles.removeFromPantryText}>Remove from Pantry</Text>
-            </TouchableOpacity>
-          )}
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-
-        {/* Ingredient Detail Modal */}
-        {selectedIngredient && (
-          <IngredientDetailModal
-            ingredient={selectedIngredient}
-            species={species}
-            onClose={() => setSelectedIngredient(null)}
-          />
-        )}
-      </SafeAreaView>
+      <ResultRecalledBypass
+        product={product}
+        pet={pet}
+        displayName={displayName}
+        species={species}
+        scoredResult={scoredResult}
+        hydratedIngredients={hydratedIngredients}
+        selectedIngredient={selectedIngredient}
+        setSelectedIngredient={setSelectedIngredient}
+        onGoBack={() => navigation.goBack()}
+        onNavigateToRecallDetail={() => navigation.navigate('RecallDetail', { productId })}
+      />
     );
   }
 
@@ -848,98 +432,16 @@ export default function ResultScreen() {
 
   if (isVarietyPack && scoredResult && product) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.productBrand} numberOfLines={1}>
-              {product.brand}
-            </Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {stripBrandFromName(product.brand, product.name)}
-            </Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Product image */}
-          {product.image_url && (
-            <View style={styles.productImageContainer}>
-              <Image
-                source={{ uri: product.image_url }}
-                style={styles.productImage}
-                resizeMode="contain"
-              />
-              <LinearGradient
-                colors={['transparent', Colors.background]}
-                style={styles.imageGradientBottom}
-              />
-              <LinearGradient
-                colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.imageGradientSides}
-              />
-            </View>
-          )}
-
-          {/* Variety pack badge — amber, replaces ScoreRing */}
-          <View style={styles.varietyPackContainer}>
-            <View style={styles.varietyPackBadge}>
-              <Ionicons name="layers-outline" size={24} color="#FFFFFF" />
-              <Text style={styles.varietyPackBadgeText}>Variety Pack</Text>
-            </View>
-            <Text style={styles.varietyPackCopy}>
-              This product contains multiple recipes.
-              For accurate scoring, scan individual items from the pack.
-            </Text>
-          </View>
-
-          {/* Recall warning */}
-          {scoredResult.isRecalled && (
-            <View style={styles.recallBanner}>
-              <Ionicons name="warning-outline" size={20} color={Colors.severityRed} />
-              <Text style={styles.recallText}>
-                This product has been subject to a recall
-              </Text>
-            </View>
-          )}
-
-          {/* Add to Pantry — variety packs are purchasable, need inventory tracking */}
-          {pet && (
-            <TouchableOpacity
-              style={styles.trackButton}
-              onPress={handleTrackFood}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
-              <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-                Add to {displayName}'s Pantry
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-
-        {/* Add to Pantry sheet (M5) */}
-        {product && pet && (
-          <AddToPantrySheet
-            product={product}
-            pet={pet}
-            visible={pantrySheetVisible}
-            onClose={() => setPantrySheetVisible(false)}
-            onAdded={() => setPantrySheetVisible(false)}
-          />
-        )}
-      </SafeAreaView>
+      <ResultVarietyPackBypass
+        product={product}
+        pet={pet}
+        displayName={displayName}
+        scoredResult={scoredResult}
+        onGoBack={() => navigation.goBack()}
+        onTrackFood={handleTrackFood}
+        pantrySheetVisible={pantrySheetVisible}
+        onClosePantrySheet={() => setPantrySheetVisible(false)}
+      />
     );
   }
 
