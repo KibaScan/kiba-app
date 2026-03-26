@@ -3,7 +3,7 @@
 // Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
 // Wires LoadingTerminal + scoreProduct pipeline.
 
-import React, { useEffect, useRef, useState, useCallback, useMemo, createRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  Linking,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -62,7 +61,6 @@ import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
-import type { PantryItem } from '../types/pantry';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
 import { resolveCalories } from '../utils/calorieEstimation';
@@ -1023,7 +1021,7 @@ export default function ResultScreen() {
         )}
 
         {/* Low-score feeding context (D-159) */}
-        {score !== null && score <= 64 && (
+        {score <= 64 && (
           <Text style={{
             fontSize: FontSizes.sm,
             color: Colors.textSecondary,
