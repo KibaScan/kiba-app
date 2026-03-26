@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-03-14T19:34:05.473390+00:00",
+  "timestamp": "2026-03-25T23:39:57.276061+00:00",
   "validation_errors": [],
   "insert_errors": [],
   "upc_errors": [],
   "summary": {
-    "total_records": 9089,
-    "valid": 9089,
-    "products_inserted": 9089,
-    "upcs_inserted": 8366,
+    "total_records": 19058,
+    "valid": 19058,
+    "products_inserted": 19058,
+    "upcs_inserted": 14620,
     "validation_failures": 0,
     "insert_failures": 0,
     "upc_failures": 0
