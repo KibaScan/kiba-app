@@ -150,8 +150,10 @@ export function computeExistingPantryKcal(
 }
 
 /**
- * Compute per-feeding serving size from remaining calorie budget.
- * Returns null if product lacks calorie data.
+ * D-165: Budget-aware auto-serving calculation.
+ * Divides remaining calorie budget by feedings/day, then converts to
+ * the best available unit: cups (if kcal_per_cup), grams (if kcal_per_kg),
+ * or servings (if kcal_per_unit). Returns null if no calorie data exists.
  */
 export function computeAutoServingSize(
   remainingBudgetKcal: number,

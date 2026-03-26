@@ -69,11 +69,12 @@ export interface CalorieEstimate {
 }
 
 /**
- * Resolve calorie data with fallback chain:
- * 1. Label kcal_per_kg (scraped — most accurate)
- * 2. Label kcal_per_cup → convert to kcal_per_kg (approximate)
- * 3. Atwater estimate from GA data
+ * Resolves calorie data using a priority fallback chain:
+ * 1. Scraped kcal_per_kg (label) → derive kcal_per_unit from unit_weight_g
+ * 2. Scraped kcal_per_cup (label) → derive kcal_per_kg via density
+ * 3. Atwater estimation from GA macros (D-149) → source: 'estimated'
  * 4. null — no calorie data available
+ * CalorieSource in the return ('label' | 'estimated' | null) indicates which path was used.
  */
 export function resolveCalories(product: Product): CalorieEstimate | null {
   // Priority 1: scraped kcal_per_kg

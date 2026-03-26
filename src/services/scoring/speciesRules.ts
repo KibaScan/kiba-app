@@ -143,6 +143,13 @@ function applyCatRules(
 
 // ─── Main Function ─────────────────────────────────────
 
+/**
+ * Layer 2 — species-specific rules applied as percentage adjustments to baseScore.
+ * Dogs: DCM pulse load (D-137, uses is_pulse/is_pulse_protein — NEVER is_legume),
+ *   taurine mitigation, plus future breed-specific rules.
+ * Cats: carb overload penalty (>40% estimated carbs), UGT1A6 ingredient flag.
+ * Dog and cat rules never share logic (D-011).
+ */
 export function applySpeciesRules(
   product: Product,
   species: 'dog' | 'cat',

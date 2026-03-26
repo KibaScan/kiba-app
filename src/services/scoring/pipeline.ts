@@ -102,6 +102,17 @@ function makeEmptyResult(
 
 // ─── Main Pipeline ───────────────────────────────────────
 
+/**
+ * Bridge between Supabase and the pure scoring engine.
+ * Fetches product_ingredients with ingredients_dict join, hydrates them
+ * into ProductIngredient[], then delegates to computeScore().
+ *
+ * Bypass order (checked before scoring): vet diet → species mismatch →
+ * variety pack → recalled → supplemental → normal.
+ *
+ * Returns both the ScoredResult and the hydrated ingredients array
+ * (needed by ResultScreen for ingredient list, severity badges, etc.).
+ */
 export async function scoreProduct(
   product: Product,
   petProfile: PetProfile | null,

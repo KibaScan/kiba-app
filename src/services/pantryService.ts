@@ -420,6 +420,11 @@ export async function getPantryForPet(petId: string): Promise<PantryCardData[]> 
   }
 }
 
+/**
+ * Checks if a product is already in the user's active pantry for a given pet.
+ * Returns the existing pantry item ID if found (for restock flow), null otherwise.
+ * Queries via pantry_pet_assignments join — pantry items are user-owned, not pet-owned.
+ */
 export async function checkDuplicateUpc(
   productId: string,
   petId: string,

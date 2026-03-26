@@ -52,6 +52,16 @@ export async function refreshSubscriptionStatus(): Promise<void> {
 
 // ─── Core Check (sync — reads cache) ──────────────────────
 
+/**
+ * All permission functions below are sync and read from a cached premium
+ * flag (_cachedPremium) that is populated by the RevenueCat listener on
+ * app launch. They look sync but depend on an async subscription check
+ * that runs once at startup. If the listener hasn't fired yet,
+ * _cachedPremium defaults to false (free tier).
+ *
+ * canScan() is the exception — it's async because it also queries the
+ * rolling 7-day scan count from Supabase (`scans` table, not `scan_history`).
+ */
 export function isPremium(): boolean {
   if (_devOverride !== null) return _devOverride;
   return _cachedPremium;

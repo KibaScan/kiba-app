@@ -145,6 +145,16 @@ function estimateCarbDisplay(
 
 // ─── Main Orchestrator ────────────────────────────────
 
+/**
+ * Pure scoring orchestrator — no Supabase, no side effects.
+ * Wires Layer 1 (IQ + NP + FC) → Layer 2 (species rules) → Layer 3 (personalization).
+ *
+ * Weight rebalancing: when GA data is missing, NP weight shifts to IQ
+ * (daily: 85/0/15, supplemental: 100/0/0). Treats are always 100% IQ.
+ *
+ * D-129 allergen override: if pet has allergens, IQ is scored twice —
+ * baseIQ (for waterfall display) and overrideIQ (for actual composite).
+ */
 export function computeScore(
   product: Product,
   ingredients: ProductIngredient[],

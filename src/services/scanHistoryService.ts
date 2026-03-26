@@ -6,6 +6,8 @@ import type { ScanHistoryItem } from '../types/scanHistory';
 /**
  * Fetch recent scans for a pet, deduplicated by product_id (most recent kept).
  * Joins with products table for display data. Returns [] on error (graceful read).
+ * Only non-bypass scans exist in scan_history — bypassed products (vet diet,
+ * species mismatch, variety pack, recalled) are never inserted.
  */
 export async function getRecentScans(
   petId: string,
