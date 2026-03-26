@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 21, 2026 (166 decisions: D-001 through D-166. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
+> Updated: March 26, 2026 (128 decisions, D-001 through D-166, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
 
 ---
 
@@ -1101,7 +1101,7 @@ Badge is species-specific — if the user's pet is a cat, show cat severity. If 
 **Compliance:** D-095 (Clinical Copy Rule), D-019 (brand-blind), D-020 (affiliate-isolated — no product recommendations in ingredient modals).
 
 ---
-D-106: Weight Management — Advisories, Not Score Modifiers
+### D-106: Weight Management — Advisories, Not Score Modifiers
 Status: LOCKED
 Date: Feb 26, 2026
 Depends on: D-097 (Pet Health Conditions), D-060–D-063 (DER Multipliers), D-094 (Suitability Framing), D-095 (UPVM Compliance)
@@ -1498,7 +1498,7 @@ Fix activity level in CreatePetScreen.tsx and EditPetScreen.tsx per D-123:
 **Rationale:** 90% of treat logs are for products already in pantry. Camera is friction for repeat actions. Scanner stays available as fallback for new treats.
 ---
 
-## D-125: Recall Siren → Free Tier
+### D-125: Recall Siren → Free Tier
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** Recall Siren (recall alerts, FDA monitoring notifications) moves from premium
@@ -1507,7 +1507,7 @@ to basic/free tier.
 Removes "Recall alert signup" from D-052 paywall triggers.
 
 ---
-## D-126: Paywall Screen Psychology Patterns
+### D-126: Paywall Screen Psychology Patterns
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** Paywall screen implements four behavioral patterns:
@@ -1519,7 +1519,7 @@ Removes "Recall alert signup" from D-052 paywall triggers.
 **Rationale:** Behavioral psychology maximizes $24.99/yr conversion without dark patterns.
 
 ---
-## D-127: API Keys Server-Side Only
+### D-127: API Keys Server-Side Only
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** No external API keys (Anthropic, etc.) in the React Native app
@@ -1531,7 +1531,7 @@ API later without pushing an app update.
 Supabase Edge Functions provide secure key storage with row-level access control.
 
 ---
-## D-128: Haiku Product Classification on Database Miss
+### D-128: Haiku Product Classification on Database Miss
 **Status:** LOCKED
 **Date:** 2026-03-04
 **Decision:** When the parse-ingredients Edge Function processes OCR text from a database
@@ -1552,7 +1552,7 @@ and corrected values enables classification accuracy auditing.
 - grooming → store only, do NOT score (D-083), show "Grooming scoring coming soon"
 
 ---
-## D-129: Allergen Severity Override in Layer 3
+### D-129: Allergen Severity Override in Layer 3
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1574,7 +1574,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 
 **Depends on:** D-097 (allergen picker), D-098 (cross-reactivity), allergen_group mappings complete in ingredients_dict
 ---
-## D-130: Weekly Digest Push Notification
+### D-130: Weekly Digest Push Notification
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M5
@@ -1585,7 +1585,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 **Free tier:** Yes — digest is free for all users. Encourages re-engagement that drives scan limit hits (conversion funnel).
 
 ---
-## D-131: Widget + Watch App Platform Expansion
+### D-131: Widget + Watch App Platform Expansion
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** Widget = M13+ (post-launch). Watch = M16+.
@@ -1610,7 +1610,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 **Rationale:** Daily logging features (symptoms, feeding, elimination diet) have dramatically higher compliance when accessible from Watch/Widget vs requiring full app open. The 2-tap Watch logging path vs 6-tap phone path is the difference between 80% and 30% daily adherence.
 
 ---
-## D-132: Benchmark Bar Granularity
+### D-132: Benchmark Bar Granularity
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1623,7 +1623,7 @@ have very different score distributions. Brand-tier grouping deferred to M6+ (re
 more sophisticated taxonomy).
 
 ---
-## D-133: Flavor Deception Detection Logic
+### D-133: Flavor Deception Detection Logic
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1636,7 +1636,7 @@ AAFCO naming rule cited for context.
 **Canonical test case:** Temptations Classic Tuna — chicken at position 1, tuna buried deep.
 
 ---
-## D-134: Ingredient Content Generation via Haiku
+### D-134: Ingredient Content Generation via Haiku
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1689,7 +1689,7 @@ Ingredient waterfall, educational cards, and ingredient content (tldr, detail_bo
 
 ---
 
-# D-136: Supplemental Product Classification, Score Color System & Pantry Diet Completeness
+### D-136: Supplemental Product Classification, Score Color System & Pantry Diet Completeness
 
 **Status:** LOCKED
 **Date:** 2026-03-13
@@ -1841,7 +1841,7 @@ This is also a differentiator — no competitor does this.
 
 **Contextual line below score:** "Best paired with a complete meal" — single line, D-095 compliant (purely factual, restating what the manufacturer declared on the label).
 
-### D-095 Compliance Check
+**D-095 Compliance Check**
 
 - "Best paired with a complete meal" — ✅ No prescriptive language. No "should," "must," "we recommend." Objective restatement of the product's AAFCO-declared feeding purpose.
 - Prohibited terms check: no prescribe, treat, cure, prevent, diagnose.
@@ -1923,7 +1923,7 @@ This opens the door for cross-product nutritional analysis: "Does [Pet Name]'s t
 *This decision establishes the architectural foundation for supplemental product handling across classification, scoring, display, and pantry safety. The scoring engine remains deterministic, brand-blind, and citation-backed. Diet-level assessment lives in the pantry layer, not the product scoring layer.*
 ---
 
-## D-137: DCM Pulse Framework — Positional Pulse Load Detection
+### D-137: DCM Pulse Framework — Positional Pulse Load Detection
 
 **Status:** LOCKED
 **Date:** 2026-03-14
@@ -2521,7 +2521,7 @@ vet diet (D-135) → species mismatch (D-144) → recalled (D-158) → variety p
 **Threshold note:** The 51/65 split is preliminary. If real-world score distribution shows 80% of products land between 55-75, the thresholds may shift. Will monitor post-launch and adjust via a D-159 revision if needed.
 
 ---
-D-160: Weight Goal Slider — Replaces Raw Goal Weight (D-061)
+### D-160: Weight Goal Slider — Replaces Raw Goal Weight (D-061)
 
 Status: LOCKED
 Date: March 20, 2026
@@ -2571,7 +2571,7 @@ Rejected:
 ❌ BCS-derived goal weight as primary input — requires clinical assessment skills most owners don't have. Owners consistently underestimate BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges]. BCS is a reference tool (D-162), not the input mechanism.
 
 ---
-D-161: Estimated Weight Tracking — Caloric Accumulator
+### D-161: Estimated Weight Tracking — Caloric Accumulator
 Status: LOCKED
 Date: March 20, 2026
 Depends on: D-160 (weight goal slider), D-101 (auto-depletion cron), D-117 (stale weight guard)
@@ -2635,7 +2635,7 @@ Cats cannot down-regulate protein catabolism during restriction (obligate carniv
 Adaptive thermogenesis: canine REE drops 10–20% below predicted during restriction, causing weight-loss plateaus [JVIM, German et al. 2011]
 Neutering reduces feline resting metabolic rate by 20–25% — accumulator must use correct DER multiplier for intact vs neutered [AAHA 2021, Table 3; JAVMA peer-reviewed trials on gonadectomy metabolic impact]
 ----
-D-162: BCS Reference Tool — Educational, Not Diagnostic
+### D-162: BCS Reference Tool — Educational, Not Diagnostic
 Status: LOCKED
 Date: March 20, 2026
 Depends on: D-095 (UPVM compliance), D-160 (weight goal slider)

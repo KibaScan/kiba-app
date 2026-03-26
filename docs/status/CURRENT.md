@@ -24,7 +24,7 @@
 
 ## Numbers
 - **Tests:** 925 passing / 45 suites
-- **Decisions:** 166 (D-001 through D-166)
+- **Decisions:** 128 (D-001 through D-166, non-sequential)
 - **Migrations:** 20 (001–020)
 - **Products:** 19,058
 
@@ -54,6 +54,11 @@
   - Added targeted JSDoc to 8 non-obvious exported functions (scoring, permissions, pantry, calorie)
   - Removed 3 dead imports + 1 dead null check in ResultScreen
 - **Files changed:** `.claudeignore`, `CLAUDE.md`, `docs/status/CURRENT.md`, `docs/errors.md`, `src/services/scoring/CLAUDE.md`, `src/services/CLAUDE.md`, `src/components/CLAUDE.md`, `supabase/CLAUDE.md`, `src/screens/CLAUDE.md`, `.claude/commands/boot.md`, `.claude/commands/handoff.md`, `.claude/commands/check-numbers.md`, `src/screens/ResultScreen.tsx`, `src/screens/result/ResultScreenStyles.ts` (new), `src/screens/result/ResultBypassViews.tsx` (new), `src/screens/PetHubScreen.tsx`, `src/screens/pethub/PetHubStyles.ts` (new), `src/screens/pethub/petHubHelpers.ts` (new), `__tests__/screens/PetHubScreen.test.ts`, `src/components/pantry/AddToPantrySheet.tsx`, `src/components/pantry/AddToPantryStyles.ts` (new), `src/services/scoring/pipeline.ts`, `src/services/scoring/engine.ts`, `src/services/scoring/speciesRules.ts`, `src/utils/permissions.ts`, `src/utils/pantryHelpers.ts`, `src/utils/calorieEstimation.ts`, `src/services/pantryService.ts`, `src/services/scanHistoryService.ts`
-- **Not done yet:** Sections 2–14 of the optimization cheatsheet, then kiba-context-maintenance-guide. M6 features not started.
-- **Next session should:** Continue optimization cheatsheet from Section 2 (CLAUDE.md audit), or begin M6 scope
+- **Optimization cheatsheet progress:**
+  - Done: S1 (project structure), S3 (context window budgeting), S4 (CURRENT.md), S6 (slash commands)
+  - Partial: S2 (CLAUDE.md trimmed, not fully audited — missing environment/deps section), S8 (.claudeignore done, settings.json not audited), S10 (errors.md + JSDoc done, no snapshot/golden-file tests or testing pyramid guide), S12 (used git checkpoints, not formalized in boot.md)
+  - Skipped: S5 (decision supersession audit), S7 (new hooks — regression gate, CI mirror, post-test), S9 (plugin architecture — N/A), S11 (prompt chaining — usage pattern, no artifact), S13 (environment section in CLAUDE.md), S14 (meta-prompts — audit prompts, no artifact)
+  - Not started: kiba-context-maintenance-guide (reference file drift audits, /audit-context command)
+- **Not done yet:** Remaining optimization sections above. M6 features not started.
+- **Next session should:** Finish remaining optimization (S2 audit, S5 supersession, S7 hooks, S10 golden-file tests, S13 environment section), then kiba-context-maintenance-guide, then M6 scope
 - **Gotchas:** Pre-existing TS errors in SharePantrySheet.tsx (Product type mismatch) and feedingNotificationScheduler.ts (unit type overlap) — not introduced this session, existed before
