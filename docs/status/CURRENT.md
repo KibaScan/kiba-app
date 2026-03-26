@@ -24,7 +24,7 @@
 
 ## Numbers
 - **Tests:** 925 passing / 45 suites
-- **Decisions:** 113 entries (D-001 through D-166, gaps in numbering)
+- **Decisions:** 166 (D-001 through D-166)
 - **Migrations:** 20 (001–020)
 - **Products:** 19,058
 
@@ -42,6 +42,18 @@
 
 ## Last Session
 - **Branch:** m5-complete
-- **Accomplished:** v7 reimport (19,058 products), HomeScreen v2, Community tab, PetHub restructure, project root cleanup, context optimization setup
-- **Not done yet:** M6 features not started
-- **Next session should:** Begin M6 scope — start with compare flow or safe swaps
+- **Date:** 2026-03-26
+- **Accomplished:** Section 1 agent optimization (cheatsheet)
+  - Created `.claudeignore`, `docs/status/CURRENT.md`, `docs/errors.md` (15 bug-fix entries)
+  - Created 5 scoped CLAUDE.md files (scoring, services, components, supabase, screens)
+  - Created 3 slash commands (`/boot`, `/handoff`, `/check-numbers`)
+  - Trimmed root CLAUDE.md (replaced 30+ path inventory with pointers to scoped files)
+  - Modularized ResultScreen.tsx: 1917 → 924 lines (styles + 5 bypass views extracted)
+  - Modularized PetHubScreen.tsx: 1135 → 671 lines (styles + helpers extracted)
+  - Extracted AddToPantrySheet.tsx styles: 1029 → 746 lines
+  - Added targeted JSDoc to 8 non-obvious exported functions (scoring, permissions, pantry, calorie)
+  - Removed 3 dead imports + 1 dead null check in ResultScreen
+- **Files changed:** `.claudeignore`, `CLAUDE.md`, `docs/status/CURRENT.md`, `docs/errors.md`, `src/services/scoring/CLAUDE.md`, `src/services/CLAUDE.md`, `src/components/CLAUDE.md`, `supabase/CLAUDE.md`, `src/screens/CLAUDE.md`, `.claude/commands/boot.md`, `.claude/commands/handoff.md`, `.claude/commands/check-numbers.md`, `src/screens/ResultScreen.tsx`, `src/screens/result/ResultScreenStyles.ts` (new), `src/screens/result/ResultBypassViews.tsx` (new), `src/screens/PetHubScreen.tsx`, `src/screens/pethub/PetHubStyles.ts` (new), `src/screens/pethub/petHubHelpers.ts` (new), `__tests__/screens/PetHubScreen.test.ts`, `src/components/pantry/AddToPantrySheet.tsx`, `src/components/pantry/AddToPantryStyles.ts` (new), `src/services/scoring/pipeline.ts`, `src/services/scoring/engine.ts`, `src/services/scoring/speciesRules.ts`, `src/utils/permissions.ts`, `src/utils/pantryHelpers.ts`, `src/utils/calorieEstimation.ts`, `src/services/pantryService.ts`, `src/services/scanHistoryService.ts`
+- **Not done yet:** Sections 2–14 of the optimization cheatsheet, then kiba-context-maintenance-guide. M6 features not started.
+- **Next session should:** Continue optimization cheatsheet from Section 2 (CLAUDE.md audit), or begin M6 scope
+- **Gotchas:** Pre-existing TS errors in SharePantrySheet.tsx (Product type mismatch) and feedingNotificationScheduler.ts (unit type overlap) — not introduced this session, existed before
