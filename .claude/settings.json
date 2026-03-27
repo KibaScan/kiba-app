@@ -21,6 +21,19 @@
             "command": ".claude/hooks/protect-scoring.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/regression-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/quality-gate.sh"
+          }
+        ]
       }
     ],
     "SessionStart": [
