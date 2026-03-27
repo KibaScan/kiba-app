@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 26, 2026 — M5 complete + HomeScreen v2 (search, browse categories, scan counter) + Community tab replaces Search + PetHub restructure + v7 reimport (19,058 products, migration 020, DMB/AAFCO enrichment) + kcal data fix + project root cleanup, 925 tests/45 suites.
+> Last updated: March 26, 2026 — M5 complete. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -13,7 +13,9 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
 **Current phase:** M5 complete — M6 Alternatives Engine next
 
-**Tech Stack:** Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS + pg_cron) | React Navigation | `expo-camera` | RevenueCat | `expo-av` | Jest (925 tests / 45 suites) | `react-native-svg` | `expo-blur` | `@react-native-community/netinfo` | `@react-native-community/datetimepicker`
+**Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
+**Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
+**Infra:** Supabase (Postgres + Auth + Storage + RLS + pg_cron) | React Navigation | Jest via jest-expo
 
 ## Spec Files — Read Before Changing
 

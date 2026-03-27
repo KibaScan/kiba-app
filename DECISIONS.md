@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 26, 2026 (128 decisions, D-001 through D-166, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
+> Updated: March 26, 2026 (128 decisions, D-001 through D-166, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
 
 ---
 
@@ -319,7 +319,8 @@ All three layers must be independently testable. Species rules never share betwe
 **Source:** Merck Veterinary Manual / AAHA Nutritional Assessment Guidelines.
 
 ### D-061: Goal Weight Logic
-**Status:** LOCKED
+**Status:** SUPERSEDED by D-160
+**Superseded:** D-160 replaces raw goal weight input with weight goal level slider (-3 to +3).
 **Decision:** For weight loss, RER calculated using goal weight — not current weight. This creates the caloric deficit. Goal weight field activates automatically when `goal_weight < current_weight`. Premium-gated feature.
 
 ### D-062: Cat Weight Loss — Hepatic Lipidosis Guard
@@ -2110,10 +2111,11 @@ All copy D-095 compliant.
 
 ---
 
-### D-141: Supporting Screen Polish — LOCKED
+### D-141: Supporting Screen Polish — PARTIALLY SUPERSEDED by D-143
 
 **Date:** 2026-03-15
-**Status:** LOCKED
+**Status:** PARTIALLY SUPERSEDED by D-143
+**Superseded:** D-143 changed "Danger" display label to "Severe". Internal enum and all other D-141 scope unchanged.
 **Scope:** `IngredientList.tsx`, `IngredientDetailModal.tsx`, `AafcoProgressBars.tsx`, `BonusNutrientGrid.tsx`, `PositionMap.tsx`, `ResultScreen.tsx`
 
 - **Ingredient list:** grouped by severity tier with "DANGER · {count}" headers (11px uppercase), position order preserved within tiers. Two-line rows: primary name (14px semibold) + parenthetical (12px `#9CA3AF`). Position numbers demoted to 11px `#737373` on far left. Severity icons removed from rows (section headers establish context).
@@ -2313,6 +2315,7 @@ Eight display bug fixes — no scoring engine changes, all presentation-layer:
 
 ### D-152: Pantry Depletion Model — System-Recommended, User-Adjustable
 **Status:** LOCKED
+**Partially superseded:** D-165 revises recommendation logic and serving input UX. Depletion model defined here is unchanged.
 **Date:** March 19, 2026
 **Depends on:** D-065 (Bag Countdown), D-101 (Feeding Schedule), D-149 (Atwater Estimation)
 **Milestone:** M5 (Pantry)

@@ -1,3 +1,6 @@
+Before starting ANY work:
+- Run `git status`. If dirty, commit or stash first — this is your rollback point.
+
 Read these files in order before doing anything:
 1. CLAUDE.md
 2. DECISIONS.md (scan for any D-numbers referenced in current milestone)

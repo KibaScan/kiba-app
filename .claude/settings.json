@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "deny": [
+      "Edit(package-lock.json)",
+      "Edit(.expo/**)",
+      "Write(package-lock.json)",
+      "Write(.expo/**)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -6,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/pc/kiba-app/.claude/hooks/protect-scoring.sh"
+            "command": ".claude/hooks/protect-scoring.sh"
           }
         ]
       }
@@ -26,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "notify-send 'Claude Code' 'Waiting for your input' 2>/dev/null || powershell.exe -Command \"[console]::beep(800,200)\" 2>/dev/null || true"
+            "command": "osascript -e 'display notification \"Waiting for your input\" with title \"Claude Code\"' 2>/dev/null || true"
           }
         ]
       }
