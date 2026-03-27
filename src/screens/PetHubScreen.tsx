@@ -33,6 +33,7 @@ import { useScanStore } from '../stores/useScanStore';
 import {
   getPetConditions,
   getPetAllergens,
+  getMedications,
 } from '../services/petService';
 import { getConditionsForSpecies } from '../data/conditions';
 import { getWeightUnitPref } from '../utils/pantryHelpers';
@@ -44,7 +45,7 @@ import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerShee
 import { getHealthRecords, getUpcomingAppointments } from '../services/appointmentService';
 import { supabase } from '../services/supabase';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
-import type { Pet, PetCondition, PetAllergen } from '../types/pet';
+import type { Pet, PetCondition, PetAllergen, PetMedication } from '../types/pet';
 import type { Appointment, PetHealthRecord, HealthRecordType } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
@@ -73,6 +74,10 @@ export default function PetHubScreen({ navigation }: Props) {
   const [allergens, setAllergens] = useState<PetAllergen[]>([]);
   const [healthLoading, setHealthLoading] = useState(false);
 
+  // ─── Medications (M6) ─────────────────────────────────
+  const [medications, setMedications] = useState<PetMedication[]>([]);
+  const [showPastMeds, setShowPastMeds] = useState(false);
+
   // ─── Health records (D-163) ────────────────────────────
   const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
   const [manualRecordVisible, setManualRecordVisible] = useState(false);
@@ -96,12 +101,14 @@ export default function PetHubScreen({ navigation }: Props) {
         getPetConditions(activePet.id),
         getPetAllergens(activePet.id),
         getHealthRecords(activePet.id),
+        getMedications(activePet.id).catch(() => [] as PetMedication[]),
       ])
-        .then(([conds, allergs, records]) => {
+        .then(([conds, allergs, records, meds]) => {
           if (!cancelled) {
             setConditions(conds);
             setAllergens(allergs);
             setHealthRecords(records);
+            setMedications(meds);
           }
         })
         .catch(() => {
@@ -506,6 +513,134 @@ export default function PetHubScreen({ navigation }: Props) {
             </View>
           )}
         </TouchableOpacity>
+
+        {/* Medications (M6) — display-only, no scoring impact */}
+        <View style={styles.healthRecordCard}>
+          <View style={styles.healthRecordHeader}>
+            <Text style={styles.healthRecordTitle}>Medications</Text>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('MedicationForm', {
+                  petId: activePet.id,
+                  petName: activePet.name,
+                  conditions: conditionTags.filter((t) => t !== 'allergy'),
+                })
+              }
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+            </TouchableOpacity>
+          </View>
+
+          {medications.length === 0 ? (
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate('MedicationForm', {
+                  petId: activePet.id,
+                  petName: activePet.name,
+                  conditions: conditionTags.filter((t) => t !== 'allergy'),
+                })
+              }
+            >
+              <Text style={styles.addRecordLinkText}>No medications logged yet</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              {/* Current / As-needed medications */}
+              {medications
+                .filter((m) => m.status !== 'past')
+                .map((med) => (
+                  <TouchableOpacity
+                    key={med.id}
+                    style={styles.healthRecordRow}
+                    activeOpacity={0.7}
+                    onPress={() =>
+                      navigation.navigate('MedicationForm', {
+                        petId: activePet.id,
+                        petName: activePet.name,
+                        medication: med,
+                        conditions: conditionTags.filter((t) => t !== 'allergy'),
+                      })
+                    }
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor:
+                            med.status === 'current'
+                              ? Colors.severityGreen
+                              : Colors.severityAmber,
+                        }}
+                      />
+                      <View style={styles.healthRecordInfo}>
+                        <Text style={styles.healthRecordName}>{med.medication_name}</Text>
+                        {med.dosage ? (
+                          <Text style={styles.healthRecordDate}>{med.dosage}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+
+              {/* Past medications — collapsed by default */}
+              {medications.filter((m) => m.status === 'past').length > 0 && (
+                <>
+                  <TouchableOpacity
+                    style={{ marginTop: Spacing.sm }}
+                    onPress={() => setShowPastMeds((v) => !v)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.addRecordLinkText}>
+                      {showPastMeds ? 'Hide' : 'Show'} past medications ({medications.filter((m) => m.status === 'past').length})
+                    </Text>
+                  </TouchableOpacity>
+                  {showPastMeds &&
+                    medications
+                      .filter((m) => m.status === 'past')
+                      .map((med) => (
+                        <TouchableOpacity
+                          key={med.id}
+                          style={styles.healthRecordRow}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            navigation.navigate('MedicationForm', {
+                              petId: activePet.id,
+                              petName: activePet.name,
+                              medication: med,
+                              conditions: conditionTags.filter((t) => t !== 'allergy'),
+                            })
+                          }
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <View
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: Colors.textTertiary,
+                              }}
+                            />
+                            <View style={styles.healthRecordInfo}>
+                              <Text style={[styles.healthRecordName, { color: Colors.textSecondary }]}>
+                                {med.medication_name}
+                              </Text>
+                              {med.dosage ? (
+                                <Text style={styles.healthRecordDate}>{med.dosage}</Text>
+                              ) : null}
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                </>
+              )}
+            </>
+          )}
+        </View>
 
         {/* Health Records — Vaccines (D-163) */}
         <View style={styles.healthRecordCard}>

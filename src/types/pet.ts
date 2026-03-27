@@ -64,3 +64,29 @@ export interface PetAllergen {
   is_custom: boolean;
   created_at: string;
 }
+
+/** Structured condition detail — adds sub-type/severity on top of pet_conditions tag list. */
+export interface PetConditionDetail {
+  id: string;
+  pet_id: string;
+  condition: string;
+  sub_type: string | null;
+  severity: 'mild' | 'moderate' | 'severe';
+  diagnosed_at: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+/** Medication tracking — display-only, does NOT influence scoring. */
+export interface PetMedication {
+  id: string;
+  pet_id: string;
+  medication_name: string;
+  status: 'current' | 'past' | 'as_needed';
+  dosage: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  prescribed_for: string | null;
+  notes: string | null;
+  created_at: string;
+}

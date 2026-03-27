@@ -67,6 +67,7 @@ import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
+import { HealthConditionAdvisories } from '../components/result/HealthConditionAdvisories';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
@@ -139,6 +140,7 @@ export default function ResultScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<ProductIngredient | null>(null);
   const [pantrySheetVisible, setPantrySheetVisible] = useState(false);
+  const [petConditions, setPetConditions] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
 
   const phase: 'loading' | 'ready' =
@@ -227,6 +229,7 @@ export default function ResultScreen() {
           petAllergens = allergenRows.map((a) => a.allergen);
           petConditions = conditionRows.map((c) => c.condition_tag);
         }
+        setPetConditions(petConditions);
         const { scoredResult: result, ingredients } = await scoreProduct(product, pet, petAllergens, petConditions);
         setScoredResult(result);
         setHydratedIngredients(ingredients);
@@ -629,6 +632,19 @@ export default function ResultScreen() {
               />
             )}
           </CollapsibleSection>
+        )}
+
+        {/* Health Condition Advisories (M6) */}
+        {petConditions.length > 0 && scoredResult && !scoredResult.bypass && (
+          <HealthConditionAdvisories
+            conditions={petConditions}
+            species={species}
+            petName={displayName}
+            personalizations={scoredResult.layer3.personalizations.filter(
+              (p) => p.type === 'condition',
+            )}
+            finalScore={scoredResult.finalScore}
+          />
         )}
 
         {/* Safe Swap CTA (D-126: blur + lock for free users) */}

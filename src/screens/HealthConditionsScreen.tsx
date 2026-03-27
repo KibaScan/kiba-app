@@ -2,6 +2,7 @@
 // Reached from CreatePetScreen "Continue to Health" or EditPetScreen "Health & Diet".
 // D-097: Species-filtered conditions + allergens. D-119: "No known conditions" chip.
 // D-106: Obesity/underweight disabled-state mutual exclusion.
+// M6: hypothyroid/hyperthyroid mutual exclusion + species rarity toasts.
 // D-095: No prescriptive language — data-mapping framing only.
 
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
@@ -29,6 +30,9 @@ import {
   savePetConditions,
   savePetAllergens,
   updatePet,
+  getConditionDetails,
+  upsertConditionDetail,
+  deleteConditionDetail,
 } from '../services/petService';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
@@ -39,12 +43,14 @@ import {
 import {
   toggleCondition,
   isConditionDisabled,
+  getConditionToast,
   toggleAllergen,
   removeAllergen,
   conditionsToSavePayload,
   allergensToSavePayload,
   isProfileComplete,
 } from '../utils/conditionLogic';
+import type { PetConditionDetail } from '../types/pet';
 import type { SelectedAllergen } from '../utils/conditionLogic';
 import ConditionChip from '../components/pet/ConditionChip';
 import AllergenSelector from '../components/pet/AllergenSelector';
@@ -87,6 +93,11 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // M6: sub-type tracking for conditions that have sub-types (e.g., hyperthyroid)
+  const [conditionSubTypes, setConditionSubTypes] = useState<Record<string, string>>({});
+  // Track which conditions had details before this session (for delete sync)
+  const [existingDetailConditions, setExistingDetailConditions] = useState<Set<string>>(new Set());
+
   // ─── Data ────────────────────────────────────────────────
   const conditions = getConditionsForSpecies(species);
   const standardAllergens = getAllergensForSpecies(species);
@@ -95,9 +106,10 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const [existingConditions, existingAllergens] = await Promise.all([
+        const [existingConditions, existingAllergens, existingDetails] = await Promise.all([
           getPetConditions(petId),
           getPetAllergens(petId),
+          getConditionDetails(petId).catch(() => [] as PetConditionDetail[]),
         ]);
 
         if (existingConditions.length > 0) {
@@ -120,6 +132,18 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
             })),
           );
         }
+
+        // M6: Restore sub-types from condition details
+        if (existingDetails.length > 0) {
+          const subTypes: Record<string, string> = {};
+          const detailSet = new Set<string>();
+          for (const d of existingDetails) {
+            detailSet.add(d.condition);
+            if (d.sub_type) subTypes[d.condition] = d.sub_type;
+          }
+          setConditionSubTypes(subTypes);
+          setExistingDetailConditions(detailSet);
+        }
       } catch {
         // Silently fail — empty state is fine for fresh profiles
       } finally {
@@ -132,12 +156,55 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   // ─── Condition Handlers ────────────────────────────────
   const handleConditionToggle = useCallback(
     (tag: string) => {
-      chipToggle();
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      // M6: Check for toast (mutual exclusion or species rarity)
+      setSelectedConditions((prev) => {
+        const toast = getConditionToast(tag, species, prev, petName);
+        if (toast) {
+          Alert.alert('Health Conditions', toast);
+          return prev;
+        }
 
-      setSelectedConditions((prev) => toggleCondition(prev, tag));
+        chipToggle();
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+        const next = toggleCondition(prev, tag);
+
+        // M6: Hyperthyroid sub-type question for cats
+        const isAdding = next.includes(tag) && !prev.includes(tag);
+        if (isAdding && tag === 'hyperthyroid' && species === 'cat') {
+          Alert.alert(
+            `How is ${petName}'s hyperthyroidism being managed?`,
+            undefined,
+            [
+              {
+                text: 'Iodine-restricted diet (e.g., Hill\'s y/d)',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'iodine_restricted' })),
+              },
+              {
+                text: 'Medication (e.g., methimazole)',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'medication_managed' })),
+              },
+              {
+                text: 'Surgery / radioactive iodine',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'medication_managed' })),
+              },
+            ],
+          );
+        }
+
+        // Clean up sub-type if condition was removed
+        if (!next.includes(tag) && prev.includes(tag)) {
+          setConditionSubTypes((s) => {
+            const copy = { ...s };
+            delete copy[tag];
+            return copy;
+          });
+        }
+
+        return next;
+      });
     },
-    [],
+    [species, petName],
   );
 
   // ─── Allergen Handlers ─────────────────────────────────
@@ -181,6 +248,40 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
         await savePetAllergens(petId, allergensToSavePayload(selectedAllergens));
       } else {
         await savePetAllergens(petId, []);
+      }
+
+      // M6: Sync condition details — upsert for active conditions with sub-types,
+      // delete for conditions that were removed
+      const activeConditionSet = new Set(conditionTags);
+      const detailPromises: Promise<void>[] = [];
+
+      // Upsert details for conditions that have sub-types
+      for (const condition of conditionTags) {
+        if (conditionSubTypes[condition]) {
+          detailPromises.push(
+            upsertConditionDetail(petId, {
+              condition,
+              sub_type: conditionSubTypes[condition],
+              severity: 'moderate',
+              diagnosed_at: null,
+              notes: null,
+            }),
+          );
+        }
+      }
+
+      // Delete details for conditions that were removed
+      for (const condition of existingDetailConditions) {
+        if (!activeConditionSet.has(condition)) {
+          detailPromises.push(deleteConditionDetail(petId, condition));
+        }
+      }
+
+      // Fire-and-forget detail sync — don't block save on detail failures
+      if (detailPromises.length > 0) {
+        Promise.all(detailPromises).catch((err) =>
+          console.warn('[HealthConditions] Detail sync failed:', err),
+        );
       }
 
       // Mark health as reviewed (distinguishes "No known conditions" from "never visited")

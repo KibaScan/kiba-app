@@ -3,7 +3,8 @@
 // Photo upload to Supabase Storage 'pet-photos' bucket happens at save time.
 
 import { supabase } from './supabase';
-import type { Pet, PetCondition, PetAllergen, BreedSize } from '../types/pet';
+import type { Pet, PetCondition, PetAllergen, PetConditionDetail, PetMedication, BreedSize } from '../types/pet';
+import { isOnline } from '../utils/network';
 import { deriveLifeStage, deriveBreedSize } from '../utils/lifeStage';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { BREED_SIZE_MAP } from '../data/breeds';
@@ -361,4 +362,93 @@ export async function savePetAllergens(
       .insert(rows);
     if (insertErr) throw new Error(`Failed to save allergens: ${insertErr.message}`);
   }
+}
+
+// ─── Condition Details (structured sub-type/severity) ─────────
+
+async function requireOnline(): Promise<void> {
+  if (!(await isOnline())) throw new Error('Connect to the internet to manage pet data.');
+}
+
+export async function getConditionDetails(petId: string): Promise<PetConditionDetail[]> {
+  const { data, error } = await supabase
+    .from('pet_condition_details')
+    .select('*')
+    .eq('pet_id', petId);
+  if (error) throw new Error(`Failed to fetch condition details: ${error.message}`);
+  return (data ?? []) as PetConditionDetail[];
+}
+
+export async function upsertConditionDetail(
+  petId: string,
+  detail: Omit<PetConditionDetail, 'id' | 'pet_id' | 'created_at'>,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_condition_details')
+    .upsert(
+      { pet_id: petId, ...detail },
+      { onConflict: 'pet_id,condition' },
+    );
+  if (error) throw new Error(`Failed to save condition detail: ${error.message}`);
+}
+
+export async function deleteConditionDetail(
+  petId: string,
+  condition: string,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_condition_details')
+    .delete()
+    .eq('pet_id', petId)
+    .eq('condition', condition);
+  if (error) throw new Error(`Failed to delete condition detail: ${error.message}`);
+}
+
+// ─── Medications (display-only, no scoring impact) ────────────
+
+export async function getMedications(petId: string): Promise<PetMedication[]> {
+  const { data, error } = await supabase
+    .from('pet_medications')
+    .select('*')
+    .eq('pet_id', petId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`Failed to fetch medications: ${error.message}`);
+  return (data ?? []) as PetMedication[];
+}
+
+export async function createMedication(
+  petId: string,
+  med: Omit<PetMedication, 'id' | 'pet_id' | 'created_at'>,
+): Promise<PetMedication> {
+  await requireOnline();
+  const { data, error } = await supabase
+    .from('pet_medications')
+    .insert({ pet_id: petId, ...med })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create medication: ${error.message}`);
+  return data as PetMedication;
+}
+
+export async function updateMedication(
+  medId: string,
+  updates: Partial<Omit<PetMedication, 'id' | 'pet_id' | 'created_at'>>,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_medications')
+    .update(updates)
+    .eq('id', medId);
+  if (error) throw new Error(`Failed to update medication: ${error.message}`);
+}
+
+export async function deleteMedication(medId: string): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_medications')
+    .delete()
+    .eq('id', medId);
+  if (error) throw new Error(`Failed to delete medication: ${error.message}`);
 }

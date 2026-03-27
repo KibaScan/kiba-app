@@ -12,8 +12,8 @@ import {
 } from '../../src/data/conditions';
 
 describe('DOG_CONDITIONS', () => {
-  test('has 14 entries (13 conditions + No known conditions)', () => {
-    expect(DOG_CONDITIONS).toHaveLength(14);
+  test('has 15 entries (14 conditions + No known conditions)', () => {
+    expect(DOG_CONDITIONS).toHaveLength(15);
   });
 
   test('first entry is No known conditions with sentinel tag', () => {
@@ -21,10 +21,11 @@ describe('DOG_CONDITIONS', () => {
     expect(DOG_CONDITIONS[0].label).toBe('No known conditions');
   });
 
-  test('includes dog-only conditions: seizures, liver', () => {
+  test('includes dog-only conditions: seizures, liver, hypothyroid', () => {
     const tags = DOG_CONDITIONS.map((c) => c.tag);
     expect(tags).toContain('seizures');
     expect(tags).toContain('liver');
+    expect(tags).toContain('hypothyroid');
   });
 
   test('does NOT include cat-only condition: hyperthyroid', () => {

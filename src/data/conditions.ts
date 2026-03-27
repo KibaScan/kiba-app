@@ -39,9 +39,10 @@ const SHARED_CONDITIONS: ConditionDef[] = [
   { tag: 'skin', label: 'Skin & coat issues', icon: 'leaf-outline' },
 ];
 
-/** Dog-specific conditions (13 + No known conditions = 14 total). */
+/** Dog-specific conditions (14 + No known conditions = 15 total). */
 export const DOG_CONDITIONS: ConditionDef[] = [
   ...SHARED_CONDITIONS,
+  { tag: 'hypothyroid', label: 'Hypothyroidism', icon: 'thermometer-outline' },
   { tag: 'liver', label: 'Liver disease', icon: 'pulse-outline' },
   { tag: 'seizures', label: 'Seizures / Epilepsy', icon: 'flash-outline' },
 ];

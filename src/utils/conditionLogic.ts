@@ -52,17 +52,71 @@ export function toggleCondition(
 }
 
 /**
+ * Mutual exclusion pairs — selecting one disables the other.
+ * D-106: obesity ↔ underweight. M6: hypothyroid ↔ hyperthyroid.
+ */
+const MUTUAL_EXCLUSIONS: [string, string][] = [
+  ['obesity', 'underweight'],
+  ['hypothyroid', 'hyperthyroid'],
+];
+
+/**
  * Returns true if a condition tag should be disabled.
  * Obesity disables underweight and vice versa (D-106).
+ * Hypothyroid disables hyperthyroid and vice versa (M6).
  */
 export function isConditionDisabled(
   tag: string,
   selectedConditions: string[],
 ): boolean {
-  if (tag === 'underweight' && selectedConditions.includes('obesity')) return true;
-  if (tag === 'obesity' && selectedConditions.includes('underweight')) return true;
+  for (const [a, b] of MUTUAL_EXCLUSIONS) {
+    if (tag === a && selectedConditions.includes(b)) return true;
+    if (tag === b && selectedConditions.includes(a)) return true;
+  }
   return false;
 }
+
+/**
+ * Returns a user-facing toast message when a condition tap should be blocked,
+ * or null if the tap is allowed.
+ * Covers: mutual exclusion conflicts and species-rarity warnings.
+ */
+export function getConditionToast(
+  tag: string,
+  species: 'dog' | 'cat',
+  selectedConditions: string[],
+  petName: string,
+): string | null {
+  // Mutual exclusion — find the conflicting condition's display name
+  for (const [a, b] of MUTUAL_EXCLUSIONS) {
+    if (tag === a && selectedConditions.includes(b)) {
+      const otherLabel = EXCLUSION_LABELS[b];
+      return `Can't select both \u2014 ${petName} is already marked as ${otherLabel}.`;
+    }
+    if (tag === b && selectedConditions.includes(a)) {
+      const otherLabel = EXCLUSION_LABELS[a];
+      return `Can't select both \u2014 ${petName} is already marked as ${otherLabel}.`;
+    }
+  }
+
+  // Species-rarity warnings
+  if (tag === 'hypothyroid' && species === 'cat') {
+    return 'Hypothyroidism is extremely rare in cats. Did you mean Hyperthyroidism?';
+  }
+  if (tag === 'hyperthyroid' && species === 'dog') {
+    return 'Hyperthyroidism is extremely rare in dogs. Did you mean Hypothyroidism?';
+  }
+
+  return null;
+}
+
+/** Display labels for mutual exclusion toast messages. */
+const EXCLUSION_LABELS: Record<string, string> = {
+  obesity: 'Overweight',
+  underweight: 'Underweight',
+  hypothyroid: 'Hypothyroidism',
+  hyperthyroid: 'Hyperthyroidism',
+};
 
 /**
  * Returns true if the allergen section should be visible.

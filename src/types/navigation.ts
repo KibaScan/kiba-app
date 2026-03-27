@@ -48,6 +48,12 @@ export type MeStackParamList = {
   CreatePet: { species: 'dog' | 'cat' };
   EditPet: { petId: string };
   HealthConditions: { petId: string; fromCreate?: boolean };
+  MedicationForm: {
+    petId: string;
+    petName: string;
+    medication?: import('./pet').PetMedication;
+    conditions: string[];
+  };
   Appointments: undefined;
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };
