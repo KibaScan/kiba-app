@@ -64,3 +64,20 @@
 ## "Perfectly Healthy" chip shows stale data
 **Cause:** Stale closure in the chip's onPress handler — captured old pet state.
 **Fix:** Use fresh state reference in handler. (commit `1e599fa`)
+
+## Date picker loses a month (timezone drift)
+**Cause:** `.toISOString().split('T')[0]` converts to UTC before splitting, so a date like March 31 at 11pm CST becomes April 1 in UTC. Affects DOB picker, appointment scheduling, any date stored as `YYYY-MM-DD`.
+**Fix:** Use `formatLocalDate()` and `parseDateString()` helpers (in `src/utils/`) that format in local time without UTC conversion. Never use `.toISOString()` for date-only values. (commit `8fb4e6d`)
+
+## Scanner hangs on slow network — no timeout
+**Cause:** Supabase `product_upcs` lookup had no timeout. On slow connections or DB errors, scanner screen spun indefinitely with no error state.
+**Fix:** Wrap DB lookup in `Promise.race` with 5-second timeout. Also handle orphaned UPCs (product deleted from DB after UPC was cached) by falling back to `not_found` instead of crashing. (commit `e3ab8c5`)
+
+## Zustand state stale after async await (closure capture)
+**Cause:** Destructured Zustand state (e.g., `const { pets } = usePetStore()`) captured at render time becomes stale after an `await`. The handler reads pre-await values.
+**Pattern:** Affects any handler that reads store state, does an async operation, then reads state again. Common in pantry operations, pet updates, and onPress handlers.
+**Fix:** After any `await`, re-read state via `usePetStore.getState()` instead of relying on closure-captured values. (commits `cc8ada6`, `1e599fa`)
+
+## Carb estimate returns NaN — missing Ca/P columns
+**Cause:** `estimateCarbs()` subtracted calcium and phosphorus from 100% to estimate NFE, but some products have null `ga_calcium_pct` / `ga_phosphorus_pct`. Arithmetic with null produced NaN, which cascaded through the NP bucket.
+**Fix:** Default missing mineral columns to 0 before subtraction. Add strict null checks at the top of carb estimation. (commit `7810327`)

@@ -6,6 +6,27 @@
 
 ---
 
+## 0. Pipeline Bypasses — Scoring Engine Not Run (D-135, D-144, D-145, D-158)
+
+Products matching any of four early-exit conditions skip the scoring engine entirely. No composite score, no color zone, no BenchmarkBar, no Safe Swap recommendations. Ingredients are still hydrated and displayed.
+
+**Check order** (in `src/services/scoring/pipeline.ts`):
+
+| # | Bypass | Trigger | Decision | What still renders |
+|---|--------|---------|----------|--------------------|
+| 1 | Vet diet | `product.is_vet_diet = true` | D-135 | Ingredient waterfall, educational cards, allergen warnings, Kiba Index |
+| 2 | Species mismatch | `product.target_species ≠ pet.species` | D-144 | Warning banner, ingredient list |
+| 3 | Recalled product | `product.is_recalled = true` | D-158 | Recall siren, ingredient waterfall, allergen warnings |
+| 4 | Variety pack | Name/ingredient heuristic via `detectVarietyPack()` | D-145 | Info banner explaining why individual items can't be scored |
+
+**Why bypasses exist:** Scoring these products would produce misleading numbers. Vet diets would score low (implying "your vet is wrong"). Species mismatches compare against wrong AAFCO thresholds. Recalled products shouldn't show a safety score. Variety packs contain multiple distinct formulas.
+
+**Return type:** Each bypass returns a `BypassReason` (`'vet_diet_bypass' | 'species_mismatch' | 'recalled' | 'variety_pack'`) with hydrated ingredients. ResultScreen branches on this to render bypass-specific UI.
+
+**Important:** If none of these fire, pipeline proceeds to category routing (Treat → Supplemental → Daily Food) and then the three-layer engine below.
+
+---
+
 ## 1. Category-Adaptive Weighting (D-010, D-136)
 
 | Category | IQ | NP | FC | Trigger |

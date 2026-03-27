@@ -54,7 +54,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 
 ## Schema Traps
 
-- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). D-160: `weight_goal_lbs` → `weight_goal_level SMALLINT` (-3 to +3, default 0), cat cap at -2. D-161: `caloric_accumulator` + `accumulator_last_reset_at` (estimated weight tracking).
+- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). **M6-pending →** D-160: `weight_goal_lbs` → `weight_goal_level SMALLINT` (-3 to +3, default 0), cat cap at -2. D-161: `caloric_accumulator` + `accumulator_last_reset_at` (estimated weight tracking). *(These columns do NOT exist yet — code still uses `weight_goal_lbs`. Migration needed in M6.)*
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
 - `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring). v7 enrichment (migration 020): `ga_*_dmb_pct` (pre-computed DMB), `aafco_inference` (derivation audit trail), `chewy_sku`/`asin`/`walmart_id` (retailer dedup), `image_url`, `source_url`. 19,058 products from Chewy + Amazon + Walmart.
