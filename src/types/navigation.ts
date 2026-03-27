@@ -54,6 +54,7 @@ export type MeStackParamList = {
     medication?: import('./pet').PetMedication;
     conditions: string[];
   };
+  BCSReference: { petId: string };
   Appointments: undefined;
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };

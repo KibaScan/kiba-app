@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 20, 2026
+> Updated: March 27, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M5 Complete (M0–M5 Done)
+## Current Status: M6 In Progress (M0–M5 Done, M6 partial)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (165 decisions, D-001 through D-165)
+- Decision log established (128 decisions, D-001 through D-166, non-sequential)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -633,17 +633,18 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Compare button (side-by-side product comparison) — paywall gate already wired
 - [ ] Vet Report (shareable PDF summary for vet visits)
 
-### Weight Management (moved from M5)
-- [ ] Weight goal slider on PortionCard (D-160) — 7 detents, cat -3 hidden, live calorie context, premium-gated. Schema: `weight_goal_level SMALLINT` already on `pets` table.
-- [ ] Caloric accumulator in auto-deplete cron (D-161) — estimated weight tracking from feeding data, species-specific thresholds (dogs 3,150 kcal/lb, cats 3,000 kcal/lb), notify-and-confirm. Schema: `caloric_accumulator` + `accumulator_last_reset_at` columns needed on `pets` table.
+### Weight Management (moved from M5) — COMPLETE
+- [x] Weight goal slider on PortionCard (D-160) — 7 detents (-3 to +3), cat -3 hidden, swipeable pan gesture with haptic detents, live calorie context, premium-gated. Migration 022: `weight_goal_level SMALLINT` on `pets` table. All DER consumers wired. Proportional pantry serving scaling on slider change.
+- [x] Caloric accumulator in auto-deplete cron (D-161) — estimated weight tracking from feeding data, species-specific thresholds (dogs 3,150 kcal/lb, cats 3,000 kcal/lb), notify-and-confirm via WeightEstimateSheet (confirm/enter actual/dismiss). PetHubScreen banner. D-117 stale weight suppressed when accumulator active. Migration 022: `caloric_accumulator` + `accumulator_last_reset_at` + `accumulator_notification_sent` on `pets`.
+- [x] NotificationPreferencesScreen: weight_estimate_alerts_enabled toggle. Migration 022: `weight_estimate_alerts_enabled` on `user_settings`.
 
-### BCS Reference Tool (D-162)
-- [ ] Educational body condition score panel (9-point scale, species-specific)
-- [ ] Accessible from weight management section of pet profiles
-- [ ] Links to weight goal slider (D-160)
-- [ ] NOT diagnostic — no assessment, no input to scoring/DER
-- [ ] Primordial pouch callout for cats
-- [ ] Visual assets needed: BCS silhouettes per category (dog + cat)
+### BCS Reference Tool (D-162) — COMPLETE
+- [x] Educational body condition score panel (9-point scale, species-specific)
+- [x] Accessible from PortionCard, PetHubScreen, WeightEstimateSheet
+- [x] Links to weight goal slider (D-160)
+- [x] NOT diagnostic — no assessment, no input to scoring/DER
+- [x] Primordial pouch callout for cats
+- [ ] Visual assets needed: BCS silhouettes per category (dog + cat) — currently using numbered circles
 
 ### Safe Swap Recommendations
 - [ ] Query products in same category + species with score >threshold

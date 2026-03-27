@@ -152,7 +152,7 @@ export function AddToPantrySheet({
 
   // ─── D-165: Budget values (memoized) ─────────────────────
 
-  const petDer = useMemo(() => computePetDer(pet, canUseGoalWeight()), [pet]);
+  const petDer = useMemo(() => computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level), [pet]);
 
   const existingKcal = useMemo(() => {
     if (pantryPetId !== pet.id) return 0;

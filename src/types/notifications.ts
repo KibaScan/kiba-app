@@ -13,6 +13,7 @@ export type NotificationType =
   | 'empty'
   | 'recall'
   | 'appointment'
+  | 'weight_estimate'
   | 'weekly_digest';
 
 // ─── DB Interfaces ───────────────────────────────────────
@@ -29,7 +30,7 @@ export interface PushToken {
   updated_at: string;
 }
 
-/** Matches user_settings table exactly (11 columns). */
+/** Matches user_settings table exactly (12 columns after migration 022). */
 export interface UserSettings {
   id: string;
   user_id: string;
@@ -39,6 +40,7 @@ export interface UserSettings {
   empty_alerts_enabled: boolean;
   recall_alerts_enabled: boolean;
   appointment_reminders_enabled: boolean;
+  weight_estimate_alerts_enabled: boolean;
   digest_frequency: DigestFrequency;
   created_at: string;
   updated_at: string;

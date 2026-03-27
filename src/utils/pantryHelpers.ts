@@ -18,6 +18,7 @@ import type { Pet } from '../types/pet';
 import { Category } from '../types';
 import { resolveCalories } from './calorieEstimation';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
+import { getAdjustedDER as applyGoalLevel } from './weightGoal';
 
 // ─── Internal Helpers ───────────────────────────────────
 
@@ -104,8 +105,13 @@ function getAgeMonths(dateOfBirth: string | null): number | undefined {
 /**
  * Single source of DER for a pet. Extracts duplicated logic from
  * getSystemRecommendation and getCalorieContext.
+ * D-160: When weightGoalLevel is provided, applies the goal multiplier on top.
  */
-export function computePetDer(pet: Pet, isPremiumGoalWeight: boolean): number | null {
+export function computePetDer(
+  pet: Pet,
+  isPremiumGoalWeight: boolean,
+  weightGoalLevel?: number | null,
+): number | null {
   if (pet.weight_current_lbs == null) return null;
 
   const weightLbs = isPremiumGoalWeight && pet.weight_goal_lbs
@@ -122,7 +128,13 @@ export function computePetDer(pet: Pet, isPremiumGoalWeight: boolean): number | 
     activityLevel: pet.activity_level,
     ageMonths,
   });
-  return Math.round(rer * multiplier);
+  const baseDer = Math.round(rer * multiplier);
+
+  // D-160: Apply weight goal level adjustment
+  if (weightGoalLevel != null && weightGoalLevel !== 0) {
+    return applyGoalLevel(baseDer, weightGoalLevel);
+  }
+  return baseDer;
 }
 
 /**
@@ -351,17 +363,8 @@ export function getCalorieContext(
     return null;
   }
 
-  const weightKg = lbsToKg(pet.weight_current_lbs);
-  const rer = calculateRER(weightKg);
-  const ageMonths = getAgeMonths(pet.date_of_birth);
-  const { multiplier } = getDerMultiplier({
-    species: pet.species,
-    lifeStage: pet.life_stage,
-    isNeutered: pet.is_neutered,
-    activityLevel: pet.activity_level,
-    ageMonths,
-  });
-  const targetKcal = Math.round(rer * multiplier);
+  // D-160: Use computePetDer which respects weight_goal_level
+  const targetKcal = computePetDer(pet, false, pet.weight_goal_level) ?? 0;
 
   return {
     daily_kcal: Math.round(dailyKcal),

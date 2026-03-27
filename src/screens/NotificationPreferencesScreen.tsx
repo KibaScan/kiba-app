@@ -53,6 +53,7 @@ export default function NotificationPreferencesScreen() {
   const [emptyEnabled, setEmptyEnabled] = useState(true);
   const [recallEnabled, setRecallEnabled] = useState(true);
   const [appointmentEnabled, setAppointmentEnabled] = useState(true);
+  const [weightEstimateEnabled, setWeightEstimateEnabled] = useState(true);
   const [digestFrequency, setDigestFrequency] = useState<DigestFrequency>('weekly');
 
   // ─── Load Preferences ──────────────────────────────────
@@ -72,6 +73,7 @@ export default function NotificationPreferencesScreen() {
         setEmptyEnabled(prefs.empty_alerts_enabled);
         setRecallEnabled(prefs.recall_alerts_enabled);
         setAppointmentEnabled(prefs.appointment_reminders_enabled);
+        setWeightEstimateEnabled(prefs.weight_estimate_alerts_enabled ?? true);
         setDigestFrequency(prefs.digest_frequency);
         setLoading(false);
       })();
@@ -237,6 +239,23 @@ export default function NotificationPreferencesScreen() {
                 onValueChange={handleEmptyToggle}
                 disabled={saving}
               />
+            </View>
+
+            {/* Weight Section (D-161) */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Weight</Text>
+              <ToggleRow
+                label="Weight Estimates"
+                value={weightEstimateEnabled}
+                onValueChange={async (value) => {
+                  setWeightEstimateEnabled(value);
+                  await updatePref('weight_estimate_alerts_enabled', value);
+                }}
+                disabled={saving}
+              />
+              <Text style={styles.sectionHint}>
+                Get notified when feeding data suggests a weight change.
+              </Text>
             </View>
 
             {/* Recall Section */}

@@ -206,6 +206,65 @@ async function sendExpoPush(
   return deadTokens;
 }
 
+// ─── D-161: Weight Goal Multipliers (inline — can't import from src/) ──
+
+const WEIGHT_GOAL_MULTIPLIERS: Record<number, number> = {
+  [-3]: 0.80, [-2]: 0.90, [-1]: 0.95, [0]: 1.00,
+  [1]: 1.05, [2]: 1.10, [3]: 1.20,
+};
+
+const KCAL_PER_LB: Record<string, number> = { dog: 3150, cat: 3000 };
+
+/**
+ * Inline DER computation — mirrors pantryHelpers.ts:computePetDer().
+ * Deno Edge Functions can't import from src/.
+ */
+function computeInlineDER(pet: {
+  weight_current_lbs: number | null;
+  species: string;
+  is_neutered: boolean;
+  activity_level: string;
+  life_stage: string | null;
+  weight_goal_level: number | null;
+}): number | null {
+  if (pet.weight_current_lbs == null) return null;
+  const weightKg = pet.weight_current_lbs * 0.453592;
+  const rer = 70 * Math.pow(weightKg, 0.75);
+
+  // Simplified multiplier lookup (matches portionCalculator.ts tables)
+  let multiplier = 1.4; // default: neutered adult dog moderate
+  const stage = pet.life_stage ?? 'adult';
+  const activity = pet.activity_level ?? 'moderate';
+
+  if (pet.species === 'dog') {
+    if (stage === 'puppy' || stage === 'kitten') multiplier = 2.0;
+    else if (stage === 'senior' || stage === 'mature') multiplier = activity === 'high' || activity === 'working' ? 1.4 : 1.2;
+    else if (stage === 'geriatric') multiplier = 1.2;
+    else {
+      // adult/junior
+      if (activity === 'low') multiplier = pet.is_neutered ? 1.2 : 1.4;
+      else if (activity === 'moderate') multiplier = pet.is_neutered ? 1.4 : 1.6;
+      else if (activity === 'high') multiplier = pet.is_neutered ? 1.6 : 1.8;
+      else if (activity === 'working') multiplier = 3.0;
+    }
+  } else {
+    // cat
+    if (stage === 'kitten' || stage === 'puppy') multiplier = 2.5;
+    else if (stage === 'geriatric') multiplier = 1.5;
+    else if (stage === 'senior' || stage === 'mature') multiplier = 1.1;
+    else {
+      if (activity === 'low') multiplier = pet.is_neutered ? 1.0 : 1.2;
+      else if (activity === 'moderate') multiplier = pet.is_neutered ? 1.2 : 1.4;
+      else multiplier = 1.6; // high (cats can't be working)
+    }
+  }
+
+  const baseDer = Math.round(rer * multiplier);
+  const goalLevel = pet.weight_goal_level ?? 0;
+  const goalMultiplier = WEIGHT_GOAL_MULTIPLIERS[goalLevel] ?? 1.0;
+  return Math.round(baseDer * goalMultiplier);
+}
+
 // ─── Types ──────────────────────────────────────────────
 
 interface AssignmentRow {
@@ -231,6 +290,15 @@ interface AssignmentRow {
   };
   pets: {
     name: string;
+    species: string;
+    weight_current_lbs: number | null;
+    is_neutered: boolean;
+    activity_level: string;
+    life_stage: string | null;
+    date_of_birth: string | null;
+    weight_goal_level: number | null;
+    caloric_accumulator: number | null;
+    accumulator_notification_sent: boolean | null;
   };
 }
 
@@ -294,7 +362,8 @@ Deno.serve(async (req: Request) => {
       'pet_id, serving_size, serving_size_unit, feedings_per_day, notifications_on, ' +
         'pantry_items!inner(id, user_id, quantity_remaining, quantity_unit, serving_mode, unit_label, last_deducted_at, ' +
         'products(name, brand, ga_kcal_per_cup, ga_kcal_per_kg)), ' +
-        'pets(name)',
+        'pets(name, species, weight_current_lbs, is_neutered, activity_level, life_stage, date_of_birth, ' +
+        'weight_goal_level, caloric_accumulator, accumulator_notification_sent)',
     )
     .eq('feeding_frequency', 'daily')
     .eq('pantry_items.is_active', true);
@@ -315,6 +384,16 @@ Deno.serve(async (req: Request) => {
   // ── 3. Filter & group by pantry_item_id ──
 
   const itemGroups = new Map<string, ItemGroup>();
+
+  // D-161: Track per-pet daily kcal intake for accumulator
+  interface PetAccumData {
+    userId: string;
+    petName: string;
+    species: string;
+    dailyKcal: number;
+    pet: AssignmentRow['pets'];
+  }
+  const petIntake = new Map<string, PetAccumData>();
 
   for (const row of rows as unknown as AssignmentRow[]) {
     const item = row.pantry_items;
@@ -374,6 +453,36 @@ Deno.serve(async (req: Request) => {
       petName: row.pets?.name ?? 'Your pet',
       notificationsOn: row.notifications_on,
     });
+
+    // D-161: Accumulate this pet's daily kcal from this assignment
+    if (row.pets?.weight_current_lbs != null) {
+      const product = item.products;
+      let assignmentKcal = 0;
+      if (row.serving_size_unit === 'cups' || row.serving_size_unit === 'scoops') {
+        if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+          assignmentKcal = row.serving_size * row.feedings_per_day * product.ga_kcal_per_cup;
+        }
+      } else if (row.serving_size_unit === 'units') {
+        // For unit mode, approximate via kcal_per_kg if available
+        if (product.ga_kcal_per_kg && product.ga_kcal_per_kg > 0) {
+          // Rough: 1 unit ≈ 100g for wet food, 30g for treats — skip if no cup data
+        }
+      }
+      if (assignmentKcal > 0) {
+        const existing = petIntake.get(row.pet_id);
+        if (existing) {
+          existing.dailyKcal += assignmentKcal;
+        } else {
+          petIntake.set(row.pet_id, {
+            userId: item.user_id,
+            petName: row.pets.name,
+            species: row.pets.species,
+            dailyKcal: assignmentKcal,
+            pet: row.pets,
+          });
+        }
+      }
+    }
   }
 
   if (itemGroups.size === 0) {
@@ -495,13 +604,69 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // ── 4b. D-161: Caloric accumulator per pet ──
+
+  interface WeightTransition {
+    petId: string;
+    userId: string;
+    petName: string;
+    lbsChanged: number;
+    direction: 'gained' | 'lost';
+  }
+  const weightTransitions: WeightTransition[] = [];
+
+  for (const [petId, data] of petIntake) {
+    const pet = data.pet;
+    if (!pet || pet.weight_current_lbs == null) continue;
+
+    const adjustedDER = computeInlineDER(pet);
+    if (adjustedDER == null || adjustedDER <= 0) continue;
+
+    const dailyDelta = data.dailyKcal - adjustedDER;
+    const newAccumulator = (pet.caloric_accumulator ?? 0) + dailyDelta;
+    const threshold = KCAL_PER_LB[pet.species] ?? 3150;
+    const lbsChanged = Math.floor(Math.abs(newAccumulator) / threshold);
+
+    if (lbsChanged >= 1 && !pet.accumulator_notification_sent) {
+      const direction = newAccumulator > 0 ? 'gained' : 'lost';
+
+      weightTransitions.push({
+        petId,
+        userId: data.userId,
+        petName: data.petName,
+        lbsChanged,
+        direction,
+      });
+
+      // Update accumulator + set notification flag
+      await supabase
+        .from('pets')
+        .update({
+          caloric_accumulator: newAccumulator,
+          accumulator_notification_sent: true,
+        })
+        .eq('id', petId);
+    } else {
+      // Update accumulator only
+      await supabase
+        .from('pets')
+        .update({ caloric_accumulator: newAccumulator })
+        .eq('id', petId);
+    }
+  }
+
   // ── 5. Send push notifications ──
 
   let notificationsSent = 0;
 
-  if (transitions.length > 0) {
-    // Collect unique user IDs
-    const userIds = [...new Set(transitions.map((t) => t.userId))];
+  if (transitions.length > 0 || weightTransitions.length > 0) {
+    // Collect unique user IDs from both transition types
+    const userIds = [
+      ...new Set([
+        ...transitions.map((t) => t.userId),
+        ...weightTransitions.map((t) => t.userId),
+      ]),
+    ];
 
     // Batch fetch push tokens + user settings
     const { data: tokenRows } = await supabase
@@ -513,7 +678,7 @@ Deno.serve(async (req: Request) => {
     const { data: settingsRows } = await supabase
       .from('user_settings')
       .select(
-        'user_id, notifications_enabled, low_stock_alerts_enabled, empty_alerts_enabled',
+        'user_id, notifications_enabled, low_stock_alerts_enabled, empty_alerts_enabled, weight_estimate_alerts_enabled',
       )
       .in('user_id', userIds);
 
@@ -531,6 +696,7 @@ Deno.serve(async (req: Request) => {
         notifications_enabled: boolean;
         low_stock_alerts_enabled: boolean;
         empty_alerts_enabled: boolean;
+        weight_estimate_alerts_enabled: boolean;
       }
     >();
     for (const row of settingsRows ?? []) {
@@ -588,6 +754,36 @@ Deno.serve(async (req: Request) => {
           title,
           body,
           data: { type: t.type },
+          sound: 'default',
+          priority: 'high',
+        });
+      }
+      notificationsSent++;
+    }
+
+    // D-161: Weight estimate notifications
+    for (const wt of weightTransitions) {
+      const tokens = tokensByUser.get(wt.userId);
+      if (!tokens || tokens.length === 0) continue;
+
+      const settings = settingsByUser.get(wt.userId);
+      const notificationsEnabled = settings?.notifications_enabled ?? true;
+      const weightEnabled = settings?.weight_estimate_alerts_enabled ?? true;
+      if (!notificationsEnabled || !weightEnabled) continue;
+
+      const title = `${wt.petName}'s weight update`;
+      const body = `Based on feeding data, ${wt.petName} may have ${wt.direction} about ${wt.lbsChanged} lb. Tap to update.`;
+
+      for (const token of tokens) {
+        messages.push({
+          to: token,
+          title,
+          body,
+          data: {
+            type: 'weight_estimate',
+            pet_id: wt.petId,
+            estimated_change_lbs: wt.direction === 'gained' ? wt.lbsChanged : -wt.lbsChanged,
+          },
           sound: 'default',
           priority: 'high',
         });

@@ -11,18 +11,21 @@
 - 19,058 products (v7 reimport, Chewy + Amazon + Walmart)
 - Pet profiles, pantry (auto-deplete, budget-aware servings), treat battery
 - Appointments (CRUD, recurring, reminders, health records)
-- Push notifications (feeding, low stock, empty, recall, appointment, digest)
+- Push notifications (feeding, low stock, empty, recall, appointment, weight estimate, digest)
 - HomeScreen v2, Community tab, Top Matches, RevenueCat paywall
 - **Health condition scoring** — 12 conditions (P0-P3), Layer 3 adjustments, cardiac+DCM zero-out
 - **Health condition UI** — expanded condition picker (mutual exclusions, sub-types), ResultScreen advisories, medication tracking
+- **Weight goal slider (D-160)** — 7-position discrete slider (-3 to +3), cat -3 absent, condition-blocked positions, premium-gated, auto-reset on conflict
+- **Caloric accumulator (D-161)** — daily delta tracking in auto-deplete cron, weight estimate push notifications, WeightEstimateSheet (confirm/enter/dismiss), PetHubScreen banner
+- **BCS reference (D-162)** — 9-point educational guide, species tabs, tappable selection saves to pet profile, cat primordial pouch callout, free for all users
 
 ## What's Broken / Known Issues
 - Pre-existing TS errors: SharePantrySheet.tsx (Product type), feedingNotificationScheduler.ts (unit type)
 
 ## Numbers
-- **Tests:** 1012 passing / 50 suites
+- **Tests:** 1056 passing / 51 suites
 - **Decisions:** 128 (D-001 through D-166, non-sequential, all `###` normalized)
-- **Migrations:** 21 (001–021)
+- **Migrations:** 22 (001–022)
 - **Products:** 19,058
 
 ## Regression Anchors
@@ -32,8 +35,10 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next (M6)
-- Compare flow, Safe Swap recommendations, Weight goal slider (D-160)
-- Caloric accumulator (D-161), BCS reference (D-162), Vet Report PDF
+- Compare flow, Safe Swap recommendations
+- Vet Report PDF, affiliate integration
+- PortionCard: auto-populate feedings_per_day per condition
+- Safe Swap condition filters (topMatches.ts hard filters per condition)
 
 ## Optimization Status
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
@@ -43,32 +48,41 @@
 
 ## Last Session
 - **Date:** 2026-03-27
-- **Accomplished:** M6 Health Conditions Part 2 — schema, types, CRUD, expanded condition picker, medication tracking, ResultScreen advisories. No scoring files touched.
-  - Migration 021: `pet_condition_details` + `pet_medications` tables with RLS
-  - Added `PetConditionDetail` + `PetMedication` types to `src/types/pet.ts`
-  - Added 7 CRUD functions to `petService.ts` (getConditionDetails, upsertConditionDetail, deleteConditionDetail, getMedications, createMedication, updateMedication, deleteMedication) — all with offline guards
-  - Added `hypothyroid` to DOG_CONDITIONS in `src/data/conditions.ts`
-  - Expanded `conditionLogic.ts`: hypothyroid↔hyperthyroid mutual exclusion, `getConditionToast()` for species-rarity warnings
-  - Updated `HealthConditionsScreen.tsx`: mutual exclusion toasts, hyperthyroid sub-type question for cats (iodine_restricted vs medication_managed), condition detail sync on save
-  - Created `MedicationFormScreen.tsx`: add/edit/delete medication form with status chips, dosage, prescribed-for condition picker
-  - Added Medications section to `PetHubScreen.tsx`: current meds with green dot, past meds collapsed, empty state
-  - Created `HealthConditionAdvisories.tsx` component: per-condition advisory cards with score impact, cardiac+DCM zero-out warning, D-095 disclaimer
-  - Wired `HealthConditionAdvisories` into `ResultScreen.tsx` between Advisories and Safe Swap CTA
-  - 35 new tests across 3 new test files
-- **Files changed:** supabase/migrations/021_condition_details_medications.sql (NEW), src/types/pet.ts, src/types/navigation.ts, src/services/petService.ts, src/data/conditions.ts, src/utils/conditionLogic.ts, src/screens/HealthConditionsScreen.tsx, src/screens/MedicationFormScreen.tsx (NEW), src/screens/PetHubScreen.tsx, src/screens/ResultScreen.tsx, src/navigation/index.tsx, src/components/result/HealthConditionAdvisories.tsx (NEW), __tests__/services/petService.conditionDetails.test.ts (NEW), __tests__/utils/conditionLogic.test.ts, __tests__/data/conditions.test.ts, __tests__/components/result/HealthConditionAdvisories.test.ts (NEW)
+- **Accomplished:** M6 Weight Management — full D-160/D-161/D-162 implementation + post-ship fixes. No scoring files touched.
+  - **Phase 1–5: Core implementation**
+    - Migration 022: weight_goal_level, caloric_accumulator, accumulator_last_reset_at, accumulator_notification_sent, bcs_score, bcs_assessed_at on pets; weight_estimate_alerts_enabled on user_settings
+    - `src/utils/weightGoal.ts` (NEW): 5 pure functions + constants (getAdjustedDER, getAvailableLevels, estimateWeeklyChange, getCalorieContext, shouldClampLevel)
+    - `src/components/WeightGoalSlider.tsx` (NEW): swipeable pan-gesture slider with haptic detent feedback (react-native-gesture-handler + reanimated), tap fallback, premium gate, blocked positions
+    - Replaced old goal weight section in PortionCard with slider, wired getAdjustedDER into all DER consumers (pantryHelpers, EditPantryItemScreen, AddToPantrySheet, SharePantrySheet)
+    - HealthConditionsScreen auto-resets weight_goal_level to 0 on condition conflict
+    - Auto-deplete cron extended: inline DER computation (`computeInlineDER`), per-pet caloric accumulator, weight estimate push notifications
+    - `src/components/WeightEstimateSheet.tsx` (NEW): confirm estimate / enter actual weight / dismiss, all reset accumulator
+    - PetHubScreen: weight estimate banner, D-117 stale weight suppressed when accumulator active
+    - `src/screens/BCSReferenceScreen.tsx` (NEW): 9 BCS cards, species tabs, tappable selection, cat primordial pouch callout, saves bcs_score+bcs_assessed_at. Entry points from PortionCard, PetHubScreen, WeightEstimateSheet.
+    - NotificationPreferencesScreen: weight_estimate_alerts_enabled toggle
+    - `src/types/notifications.ts`: added weight_estimate_alerts_enabled to UserSettings, weight_estimate to NotificationType
+    - 44 new tests (weightGoal.test.ts), jest mocks for reanimated + gesture-handler
+  - **Post-ship fixes:**
+    - Pantry calorie target now shows adjusted DER (getCalorieContext uses computePetDer with weight_goal_level)
+    - Treat battery budget uses adjusted DER (replaced local computeDER with computePetDer)
+    - Slider rebuilt from tappable circles to swipeable pan gesture with haptic detents (worklet error fixed by inlining math in worklet, using runOnJS for snap+commit)
+    - Pantry serving sizes proportionally scale when slider moves (ratio = newMult/oldMult, await all updates before reload)
+    - SharePantrySheet now passes weight_goal_level to computePetDer (was using maintenance DER)
+  - **Migrations 021 + 022 applied to production, auto-deplete Edge Function deployed**
+- **Files changed:** supabase/migrations/022_weight_management.sql (NEW), src/types/pet.ts, src/types/notifications.ts, src/types/navigation.ts, src/utils/weightGoal.ts (NEW), __tests__/utils/weightGoal.test.ts (NEW), src/components/WeightGoalSlider.tsx (NEW), src/components/WeightEstimateSheet.tsx (NEW), src/components/PortionCard.tsx, src/utils/pantryHelpers.ts, src/utils/haptics.ts, src/screens/EditPantryItemScreen.tsx, src/components/pantry/AddToPantrySheet.tsx, src/components/pantry/SharePantrySheet.tsx, src/screens/HealthConditionsScreen.tsx, supabase/functions/auto-deplete/index.ts, src/screens/PetHubScreen.tsx, src/screens/pethub/PetHubStyles.ts, src/screens/pethub/petHubHelpers.ts (import only), src/services/petService.ts, src/screens/BCSReferenceScreen.tsx (NEW), src/navigation/index.tsx, src/screens/NotificationPreferencesScreen.tsx, __mocks__/react-native-reanimated.js (NEW), __mocks__/react-native-gesture-handler.js (NEW), package.json (jest moduleNameMapper), docs/status/CURRENT.md
 - **Not done yet:**
   - PortionCard: auto-populate feedings_per_day per condition (gi_sensitive=3, pancreatitis dogs=3-4, diabetes=2 locked)
   - Safe Swap condition filters (topMatches.ts hard filters per condition)
-  - Scoring reference docs: scoring-rules.md + scoring-details.md need condition scoring sections
+  - Scoring reference docs: scoring-rules.md + scoring-details.md need condition scoring + weight management sections
   - scoring-details.md bypass order is wrong (variety pack #3 vs recalled #3 — needs swap)
-  - Apply migration 021 to production database
-  - Remaining M6: compare flow, weight goal slider (D-160), caloric accumulator (D-161), BCS reference (D-162), vet report PDF, affiliate integration
-- **Next session should:** Run /boot. Either start Part 3 (Safe Swap condition filters + PortionCard feeding defaults) or move to another M6 feature (compare flow, weight goal slider). Health conditions scoring + UI are both complete.
+  - Remaining M6: compare flow, vet report PDF, affiliate integration
+- **Next session should:** Run /boot. Start compare flow or Safe Swap condition filters. Weight management is fully shipped and tested.
 - **Gotchas for next session:**
-  - Migration 021 creates `pet_condition_details` + `pet_medications` — needs applying to production.
-  - `weight_goal_lbs` is always null — no UI to set it yet. D-160 weight goal slider still M6-pending.
   - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules in conditionScoring.ts — display-only for now.
-  - HealthConditionAdvisories matches personalizations to conditions via keyword matching in labels — fragile but functional for placeholder. Designer will replace the component.
+  - HealthConditionAdvisories matches personalizations to conditions via keyword matching in labels — fragile but functional.
   - `scoring-details.md` Section 2 bypass order still wrong (variety pack/recalled swapped).
   - Batch-score server copy generated via sed transform — verify import paths if Deno complains.
-- **No new decisions added. No scoring logic changed. Migration 021 added.**
+  - Auto-deplete cron `computeInlineDER()` is a simplified copy of the client-side DER math — if portionCalculator.ts multiplier tables change, the cron must be updated manually.
+  - Jest now has `moduleNameMapper` for react-native-reanimated + gesture-handler mocks in `__mocks__/`. Any new component using these libraries will work in tests automatically.
+  - PortionCard `handleLevelChange` proportionally scales pantry serving sizes + reloads pantry. If user reports stale pantry data after slider change, check that `Promise.allSettled` completes before `loadPantry`.
+- **No new decisions added. No scoring logic changed. Migrations 021 + 022 applied to production.**

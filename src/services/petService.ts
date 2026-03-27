@@ -169,10 +169,14 @@ export async function updatePet(
   const { species: _stripped, ...safeUpdates } = updates;
   const patch: Record<string, unknown> = { ...safeUpdates };
 
-  // D-117: weight changed → update timestamp
+  // D-117: weight changed → update timestamp + D-161: reset accumulator
   if ('weight_current_lbs' in updates) {
     patch.weight_updated_at =
       updates.weight_current_lbs != null ? new Date().toISOString() : null;
+    // D-161: Manual weight update resets the caloric accumulator cycle
+    patch.caloric_accumulator = 0;
+    patch.accumulator_notification_sent = false;
+    patch.accumulator_last_reset_at = new Date().toISOString();
   }
 
   // Re-derive breed_size when breed or weight changes

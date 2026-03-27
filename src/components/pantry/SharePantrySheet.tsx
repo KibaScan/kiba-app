@@ -108,7 +108,7 @@ export function SharePantrySheet({
         let servingSize = source?.serving_size ?? 1;
         let servingSizeUnit = source?.serving_size_unit ?? 'cups';
 
-        const petDer = computePetDer(pet, canUseGoalWeight());
+        const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
         if (petDer != null) {
           const auto = computeAutoServingSize(petDer, feedingsPerDay, item.product);
           if (auto) {
@@ -167,7 +167,7 @@ export function SharePantrySheet({
     let newServing = assign.serving_size;
     let newUnit = assign.serving_size_unit;
     if (pet) {
-      const petDer = computePetDer(pet, canUseGoalWeight());
+      const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
       if (petDer != null) {
         const auto = computeAutoServingSize(petDer, next, item.product);
         if (auto) {

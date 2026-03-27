@@ -220,6 +220,24 @@ export const styles = StyleSheet.create({
     color: Colors.severityAmber,
   },
 
+  // ─── D-161: Weight Estimate Banner ────────────────────
+  weightEstimateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    borderRadius: 12,
+    padding: Spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  weightEstimateText: {
+    flex: 1,
+    fontSize: FontSizes.sm,
+    color: Colors.textPrimary,
+  },
+
   // ─── Quick Stats ───────────────────────────────────────
   statsRow: {
     flexDirection: 'row',

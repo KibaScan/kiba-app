@@ -25,6 +25,7 @@ import AppointmentsListScreen from '../screens/AppointmentsListScreen';
 import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import BCSReferenceScreen from '../screens/BCSReferenceScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -105,6 +106,7 @@ function MeStackScreen() {
       <MeStack.Screen name="CreatePet" component={CreatePetScreen} />
       <MeStack.Screen name="EditPet" component={EditPetScreen} />
       <MeStack.Screen name="HealthConditions" component={HealthConditionsScreen} />
+      <MeStack.Screen name="BCSReference" component={BCSReferenceScreen} />
       <MeStack.Screen name="MedicationForm" component={MedicationFormScreen} />
       <MeStack.Screen name="Appointments" component={AppointmentsListScreen} />
       <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />

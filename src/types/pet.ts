@@ -24,7 +24,7 @@ export type Species = 'dog' | 'cat';
 
 // ─── Pet Entity ───────────────────────────────────────────
 
-/** Matches `pets` table after migration 002. */
+/** Matches `pets` table after migration 022. */
 export interface Pet {
   id: string;
   user_id: string;
@@ -43,6 +43,16 @@ export interface Pet {
   life_stage: LifeStage | null;
   breed_size: BreedSize | null;
   health_reviewed_at: string | null;
+
+  // D-160: Weight goal slider (-3 to +3)
+  weight_goal_level: number | null;
+  // D-161: Caloric accumulator for estimated weight tracking
+  caloric_accumulator: number | null;
+  accumulator_last_reset_at: string | null;
+  accumulator_notification_sent: boolean | null;
+  // D-162: BCS self-assessment (owner-reported, educational only)
+  bcs_score: number | null;
+  bcs_assessed_at: string | null;
 
   created_at: string;
   updated_at: string;

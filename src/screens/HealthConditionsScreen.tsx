@@ -40,6 +40,7 @@ import {
   getAllergensForSpecies,
   HEALTHY_TAG,
 } from '../data/conditions';
+import { shouldClampLevel } from '../utils/weightGoal';
 import {
   toggleCondition,
   isConditionDisabled,
@@ -286,6 +287,20 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
 
       // Mark health as reviewed (distinguishes "No known conditions" from "never visited")
       await updatePet(petId, { health_reviewed_at: new Date().toISOString() });
+
+      // D-160: Auto-reset weight goal level if new conditions conflict
+      if (pet) {
+        const currentLevel = pet.weight_goal_level ?? 0;
+        const clampedLevel = shouldClampLevel(currentLevel, pet.species, conditionTags);
+        if (clampedLevel !== currentLevel) {
+          await updatePet(petId, { weight_goal_level: 0 });
+          const reason = conditionTags.includes('obesity') ? 'overweight' : 'underweight';
+          Alert.alert(
+            'Weight Goal Reset',
+            `${petName}'s weight goal was reset to Maintain because they're marked as ${reason}.`,
+          );
+        }
+      }
 
       saveSuccess();
 

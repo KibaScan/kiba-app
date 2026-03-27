@@ -11,7 +11,7 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M5 complete — M6 Alternatives Engine next
+**Current phase:** M6 in progress — weight management + health conditions complete, compare flow + safe swaps next
 
 **Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
 **Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
@@ -32,7 +32,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–020). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–022). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -54,7 +54,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 
 ## Schema Traps
 
-- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). **M6-pending →** D-160: `weight_goal_lbs` → `weight_goal_level SMALLINT` (-3 to +3, default 0), cat cap at -2. D-161: `caloric_accumulator` + `accumulator_last_reset_at` (estimated weight tracking). *(These columns do NOT exist yet — code still uses `weight_goal_lbs`. Migration needed in M6.)*
+- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). D-160: `weight_goal_level SMALLINT` (-3 to +3, default 0) — slider-based, replaces raw `weight_goal_lbs`. D-161: `caloric_accumulator` + `accumulator_last_reset_at` + `accumulator_notification_sent` (estimated weight tracking). D-162: `bcs_score` + `bcs_assessed_at` (owner-reported BCS, educational only). *(Migration 022 — all columns exist.)*
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
 - `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring). v7 enrichment (migration 020): `ga_*_dmb_pct` (pre-computed DMB), `aafco_inference` (derivation audit trail), `chewy_sku`/`asin`/`walmart_id` (retailer dedup), `image_url`, `source_url`. 19,058 products from Chewy + Amazon + Walmart.

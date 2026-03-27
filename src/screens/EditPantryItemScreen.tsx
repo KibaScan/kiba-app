@@ -161,7 +161,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
 
   const petDer = useMemo(() => {
     if (!activePet || isTreat) return null;
-    return computePetDer(activePet, canUseGoalWeight());
+    return computePetDer(activePet, canUseGoalWeight(), activePet.weight_goal_level);
   }, [activePet, isTreat]);
 
   const existingKcal = useMemo(() => {

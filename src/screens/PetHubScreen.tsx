@@ -23,7 +23,6 @@ import {
   calculateScoreAccuracy,
   getStaleWeightMonths,
   formatStaleWeightMessage,
-  computeDER,
   capitalizeFirst,
   ACTIVITY_LABELS,
 } from './pethub/petHubHelpers';
@@ -36,7 +35,7 @@ import {
   getMedications,
 } from '../services/petService';
 import { getConditionsForSpecies } from '../data/conditions';
-import { getWeightUnitPref } from '../utils/pantryHelpers';
+import { getWeightUnitPref, computePetDer } from '../utils/pantryHelpers';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
@@ -45,6 +44,8 @@ import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerShee
 import { getHealthRecords, getUpcomingAppointments } from '../services/appointmentService';
 import { supabase } from '../services/supabase';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
+import WeightEstimateSheet from '../components/WeightEstimateSheet';
+import { KCAL_PER_LB } from '../utils/weightGoal';
 import type { Pet, PetCondition, PetAllergen, PetMedication } from '../types/pet';
 import type { Appointment, PetHealthRecord, HealthRecordType } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
@@ -83,6 +84,9 @@ export default function PetHubScreen({ navigation }: Props) {
   const [manualRecordVisible, setManualRecordVisible] = useState(false);
   const [defaultRecordType, setDefaultRecordType] = useState<HealthRecordType>('vaccination');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  // ─── D-161: Weight estimate sheet ──────────────────────
+  const [weightEstimateVisible, setWeightEstimateVisible] = useState(false);
 
   // ─── Treat quick picker (D-124 revised) ────────────────
   const [treatPickerVisible, setTreatPickerVisible] = useState(false);
@@ -163,9 +167,11 @@ export default function PetHubScreen({ navigation }: Props) {
     activePet.health_reviewed_at != null,
   );
   const staleMonths = getStaleWeightMonths(activePet.weight_updated_at);
+  // D-117: Suppress stale weight nag when accumulator is actively tracking (D-161)
+  const accumulatorActive = activePet.caloric_accumulator != null && activePet.caloric_accumulator !== 0;
   const showStaleWeight =
-    staleMonths != null && staleMonths > 6 && activePet.weight_current_lbs != null;
-  const der = computeDER(activePet);
+    staleMonths != null && staleMonths > 6 && activePet.weight_current_lbs != null && !accumulatorActive;
+  const der = computePetDer(activePet, false, activePet.weight_goal_level);
   const activityLabel =
     ACTIVITY_LABELS[activePet.species]?.[activePet.activity_level] ??
     capitalizeFirst(activePet.activity_level);
@@ -391,6 +397,26 @@ export default function PetHubScreen({ navigation }: Props) {
           </TouchableOpacity>
         )}
 
+        {/* (d2) D-161: Weight estimate banner */}
+        {activePet.accumulator_notification_sent && activePet.caloric_accumulator != null && activePet.caloric_accumulator !== 0 && (() => {
+          const threshold = KCAL_PER_LB[activePet.species] ?? 3150;
+          const lbsChanged = Math.round(Math.abs(activePet.caloric_accumulator / threshold) * 10) / 10;
+          const direction = activePet.caloric_accumulator > 0 ? 'gained' : 'lost';
+          return (
+            <TouchableOpacity
+              style={styles.weightEstimateBanner}
+              onPress={() => setWeightEstimateVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="scale-outline" size={20} color={Colors.accent} />
+              <Text style={styles.weightEstimateText}>
+                {activePet.name} may have {direction} about {lbsChanged} lb based on feeding data.
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          );
+        })()}
+
         {/* (e) Quick stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statChip}>
@@ -437,7 +463,13 @@ export default function PetHubScreen({ navigation }: Props) {
 
         {/* Portion card — daily calorie summary */}
         <View style={styles.portionSection}>
-          <PortionCard pet={activePet} product={null} conditions={conditionTags} showPetName={false} />
+          <PortionCard
+            pet={activePet}
+            product={null}
+            conditions={conditionTags}
+            showPetName={false}
+            onBCSPress={() => navigation.navigate('BCSReference', { petId: activePet.id })}
+          />
           {der != null && (
             <TreatBatteryGauge
               treatBudgetKcal={calculateTreatBudget(der)}
@@ -797,6 +829,20 @@ export default function PetHubScreen({ navigation }: Props) {
           if (activePet) {
             getHealthRecords(activePet.id).then(setHealthRecords).catch(() => {});
           }
+        }}
+      />
+
+      {/* D-161: Weight estimate sheet */}
+      <WeightEstimateSheet
+        pet={activePet}
+        visible={weightEstimateVisible}
+        onClose={() => setWeightEstimateVisible(false)}
+        onUpdate={() => {
+          // Refresh pet data from store (updatePet already syncs)
+        }}
+        onLearnMore={() => {
+          setWeightEstimateVisible(false);
+          navigation.navigate('BCSReference', { petId: activePet.id });
         }}
       />
 

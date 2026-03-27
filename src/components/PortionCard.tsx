@@ -5,7 +5,7 @@
 // D-106: portions are display-only, never modify scores.
 // D-062: cat hepatic lipidosis amber warning card.
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Pet } from '../types/pet';
@@ -15,13 +15,16 @@ import {
   calculateRER,
   getDerMultiplier,
   calculateDailyPortion,
-  calculateGoalWeightPortion,
 } from '../services/portionCalculator';
 import { isPremium } from '../utils/permissions';
+import { updatePet } from '../services/petService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveCalories } from '../utils/calorieEstimation';
-import * as haptics from '../utils/haptics';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { usePantryStore } from '../stores/usePantryStore';
+import { updatePetAssignment } from '../services/pantryService';
+import { getAdjustedDER, WEIGHT_GOAL_MULTIPLIERS } from '../utils/weightGoal';
+import WeightGoalSlider from './WeightGoalSlider';
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -31,6 +34,7 @@ interface PortionCardProps {
   conditions: string[];
   isSupplemental?: boolean;
   showPetName?: boolean;
+  onBCSPress?: () => void;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -136,7 +140,7 @@ export function shouldShowGoalWeight(
 
 // ─── Component ───────────────────────────────────────────
 
-export default function PortionCard({ pet, product, conditions, isSupplemental, showPetName = true }: PortionCardProps) {
+export default function PortionCard({ pet, product, conditions, isSupplemental, showPetName = true, onBCSPress }: PortionCardProps) {
   const [showInfo, setShowInfo] = useState(false);
   const [portionUnit, setPortionUnit] = useState<'cups' | 'grams'>('cups');
 
@@ -150,6 +154,40 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
     setPortionUnit(unit);
     AsyncStorage.setItem(PORTION_UNIT_KEY, unit);
   };
+
+  const handleLevelChange = useCallback(async (level: number) => {
+    try {
+      const oldLevel = pet.weight_goal_level ?? 0;
+      await updatePet(pet.id, {
+        weight_goal_level: level,
+        health_reviewed_at: new Date().toISOString(),
+      });
+
+      // Scale serving sizes proportionally to DER change
+      const oldMult = WEIGHT_GOAL_MULTIPLIERS[oldLevel] ?? 1.0;
+      const newMult = WEIGHT_GOAL_MULTIPLIERS[level] ?? 1.0;
+      if (oldMult !== newMult) {
+        const ratio = newMult / oldMult;
+        const items = usePantryStore.getState().items;
+        const updates: Promise<unknown>[] = [];
+        for (const item of items) {
+          if (item.product.category === 'treat') continue;
+          const asgn = item.assignments.find(
+            (a) => a.pet_id === pet.id && a.feeding_frequency === 'daily',
+          );
+          if (!asgn) continue;
+          const newServing = Math.round(asgn.serving_size * ratio * 100) / 100;
+          updates.push(updatePetAssignment(asgn.id, { serving_size: newServing }));
+        }
+        await Promise.allSettled(updates);
+      }
+
+      // Reload pantry with updated servings + adjusted target_kcal
+      await usePantryStore.getState().loadPantry(pet.id);
+    } catch {
+      // Silently fail — UI already reflects the change via store update
+    }
+  }, [pet]);
 
   const portionData = useMemo(() => {
     if (pet.weight_current_lbs == null) return null;
@@ -167,52 +205,18 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
       conditions,
     });
 
-    const der = Math.round(rer * multiplierResult.multiplier);
+    const baseDer = Math.round(rer * multiplierResult.multiplier);
+    const level = pet.weight_goal_level ?? 0;
+    const der = level !== 0 ? getAdjustedDER(baseDer, level) : baseDer;
 
     const dailyPortion = product
       ? calculateDailyPortion(der, product.ga_kcal_per_cup, product.ga_kcal_per_kg)
       : null;
 
-    const showGoal = shouldShowGoalWeight(
-      pet.weight_goal_lbs,
-      pet.weight_current_lbs,
-      conditions,
-      isPremium(),
-    );
-
-    let goalResult = null;
-    let goalPortion = null;
-    if (showGoal && pet.weight_goal_lbs != null) {
-      goalResult = calculateGoalWeightPortion({
-        currentWeightLbs: pet.weight_current_lbs,
-        goalWeightLbs: pet.weight_goal_lbs,
-        species: pet.species,
-        lifeStage: pet.life_stage,
-        isNeutered: pet.is_neutered,
-        activityLevel: pet.activity_level,
-        ageMonths,
-        conditions,
-      });
-      if (product) {
-        goalPortion = calculateDailyPortion(
-          goalResult.derKcal,
-          product.ga_kcal_per_cup,
-          product.ga_kcal_per_kg,
-        );
-      }
-    }
-
-    return { der, multiplierResult, dailyPortion, showGoal, goalResult, goalPortion };
+    return { baseDer, der, multiplierResult, dailyPortion };
   }, [pet, product, conditions]);
 
   const toggleData = useMemo(() => canShowPortionToggle(product), [product]);
-
-  // Fire hepatic warning haptic when warning becomes visible
-  useEffect(() => {
-    if (portionData?.goalResult?.hepaticWarning) {
-      haptics.hepaticWarning();
-    }
-  }, [portionData?.goalResult?.hepaticWarning]);
 
   // Supplemental products — portion calculation is nonsensical for toppers/mixers
   if (isSupplemental) {
@@ -236,7 +240,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
     );
   }
 
-  const { der, multiplierResult, dailyPortion, showGoal, goalResult, goalPortion } = portionData;
+  const { baseDer, der, multiplierResult, dailyPortion } = portionData;
 
   return (
     <View style={styles.card}>
@@ -332,43 +336,21 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
         </Text>
       )}
 
-      {/* Goal weight section (premium-gated) */}
-      {showGoal && goalResult && (
+      {/* D-160: Weight goal slider */}
+      {!isSupplemental && (
         <View style={styles.goalSection}>
-          <Text style={styles.goalTitle}>Goal Weight Portions</Text>
-          <Text style={styles.goalDer}>
-            <Text style={styles.derValue}>{formatCalories(goalResult.derKcal)}</Text>
-            <Text style={styles.derUnit}> kcal/day</Text>
-          </Text>
-          {goalPortion?.cups != null && (() => {
-            const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
-            return (
-              <Text style={styles.goalPortion}>
-                ~{useGrams
-                  ? `${formatGrams(goalPortion.cups * toggleData.gramsPerCup!)} g/day`
-                  : `${formatCups(goalPortion.cups)} cups/day`}
-              </Text>
-            );
-          })()}
-          {goalPortion?.cups == null && goalPortion?.grams != null && (
-            <Text style={styles.goalPortion}>
-              ~{formatGrams(goalPortion.grams)} g/day
-            </Text>
+          <WeightGoalSlider
+            pet={pet}
+            baseDER={baseDer}
+            conditions={conditions}
+            onLevelChange={handleLevelChange}
+          />
+          {onBCSPress && (
+            <TouchableOpacity onPress={onBCSPress} style={styles.bcsLink} activeOpacity={0.7}>
+              <Ionicons name="body-outline" size={14} color={Colors.accent} />
+              <Text style={styles.bcsLinkText}>What's my pet's body condition?</Text>
+            </TouchableOpacity>
           )}
-        </View>
-      )}
-
-      {/* Hepatic lipidosis warning — D-062, D-095 compliant */}
-      {goalResult?.hepaticWarning && (
-        <View style={styles.hepaticCard}>
-          <View style={styles.hepaticHeader}>
-            <Ionicons name="alert-circle" size={18} color={Colors.severityAmber} />
-            <Text style={styles.hepaticTitle}>Gradual weight loss is important</Text>
-          </View>
-          <Text style={styles.hepaticBody}>
-            Losing weight too quickly can strain the liver in cats. Consider discussing
-            a weight loss plan with your veterinarian.
-          </Text>
         </View>
       )}
     </View>
@@ -451,17 +433,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     gap: Spacing.xs,
   },
-  goalTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  goalDer: {
+  bcsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 4,
     marginTop: Spacing.xs,
   },
-  goalPortion: {
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
+  bcsLinkText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    fontWeight: '500',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -491,28 +473,5 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
     fontStyle: 'italic',
-  },
-  hepaticCard: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.severityAmber,
-    padding: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  hepaticHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  hepaticTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.severityAmber,
-  },
-  hepaticBody: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    lineHeight: 18,
   },
 });
