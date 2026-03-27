@@ -1,7 +1,7 @@
 # Kiba — Scoring Rules Reference
 
 > **Read this before implementing ANY scoring logic.**
-> **Last updated:** March 17, 2026 (M4.5 Round 5: D-150 life stage mismatch moved from NP bucket to Layer 3 with category-scaled penalties; D-151 under-4-weeks nursing advisory suppresses life stage penalty. 641 tests passing.)
+> **Last updated:** March 26, 2026 (M5 complete. D-150 life stage mismatch in Layer 3; D-151 nursing advisory. Current test count in `docs/status/CURRENT.md`.)
 > **Canonical sources:** This file consolidates rules from DECISIONS.md, NUTRITIONAL_PROFILE_BUCKET_SPEC.md, BREED_MODIFIERS_DOGS.md, BREED_MODIFIERS_CATS.md, and PORTION_CALCULATOR_SPEC.md. If this file conflicts with DECISIONS.md, DECISIONS.md wins.
 
 ---
@@ -345,7 +345,7 @@ Breakdown:
 
 ### Test Count
 
-**641 tests** across 32 suites must pass after any change.
+Current test count in `docs/status/CURRENT.md`. All tests must pass after any change.
 
 ---
 
@@ -408,8 +408,6 @@ export const NP_SUB_WEIGHTS = {
 | `src/services/scoring/formulationScore.ts` | FC bucket — AAFCO statement, preservatives, naming |
 | `src/services/scoring/speciesRules.ts` | Layer 2 — DCM, carb overload, taurine |
 | `src/services/scoring/personalization.ts` | Layer 3 — allergens, category-scaled life stage mismatch, breed modifiers, under-4-weeks nursing advisory suppression |
-| `src/services/scoring/dmbConversion.ts` | DMB math |
-| `src/services/scoring/carbEstimate.ts` | NFE calculation + ash estimation |
 | `src/utils/lifeStage.ts` | Life stage derivation, `isUnder4Weeks()` for nursing advisory |
 | `src/utils/supplementalClassifier.ts` | D-136 feeding guide keyword parser |
 | `src/utils/constants.ts` | SCORING_WEIGHTS, SCORE_COLORS, SEVERITY_COLORS, AAFCO_STATEMENT_STATUS, getScoreColor(), getVerdictLabel() |

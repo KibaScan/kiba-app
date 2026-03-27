@@ -1,17 +1,18 @@
-# Dataset Field Mapping — dataset_kiba_v6_merged.json → Supabase
+# Dataset Field Mapping — Product Data → Supabase
 
-> Documents which fields from the v6 scraped dataset were imported into the products table,
+> Documents which fields from the scraped datasets were imported into the products table,
 > which were dropped, and why.
 >
-> Last updated: March 15, 2026 (Migration 008 adds feeding_guidelines, is_vet_diet, special_diet, image_url, source_url)
+> Last updated: March 26, 2026 (v7 reimport — migration 020, 19,058 products from Chewy + Amazon + Walmart)
 
 ---
 
 ## Source
 
-- **File:** `dataset_kiba_v6_merged.json` (24 MB, 9,089 records)
-- **Import script:** `scripts/import/import_products.py` (reads from `scripts/import/config.py:JSON_PATH`)
-- **Import run:** M4 Session 6 — 9,089 products inserted, 8,366 UPCs, 0 errors
+- **Current dataset:** v7 reimport (March 25, 2026) — 19,058 products from Chewy, Amazon, Walmart
+- **Previous:** v6 merged (9,089 records, Chewy only) — fully superseded by v7
+- **Import script:** `scripts/import/import_products.py`
+- **Latest enrichment (migration 020):** Pre-computed DMB columns, AAFCO inference audit trail, retailer dedup IDs
 
 ---
 
@@ -104,19 +105,35 @@ These have potential value but no current consumer in the app:
 
 ---
 
-## Dataset Statistics
+## Dataset Statistics (v7)
 
 | Metric | Count |
 |---|---|
-| Total records | 9,089 |
-| Unique (brand, name) pairs | ~9,000 |
-| With `ingredients_raw` | 8,967 |
-| With GA data (`_qa_has_ga`) | ~5,800 |
-| With UPC (`_qa_has_upc`) | 8,366 |
-| `_is_vet_diet = true` | 125 |
-| Has `special_diet` | 2,281 |
-| Has `image_url` | ~8,500 |
-| Has `feeding_guidelines` | ~7,000 (estimate) |
+| Total products | 19,058 |
+| Sources | Chewy + Amazon + Walmart |
+| With `ingredients_raw` | ~18,500 |
+| With GA data | ~12,000 |
+| With UPC | ~16,000 |
+| `is_vet_diet = true` | ~200 |
+
+v6 stats (historical): 9,089 records, Chewy only.
+
+---
+
+## v7 Enrichment Fields (Migration 020)
+
+| DB Column | Purpose |
+|---|---|
+| `ga_protein_dmb_pct` (+ fat, fiber, Ca, P) | Pre-computed DMB values — avoids runtime conversion |
+| `aafco_inference` | Derivation audit trail for inferred AAFCO status |
+| `chewy_sku` | Chewy retailer ID for dedup + affiliate |
+| `asin` | Amazon retailer ID |
+| `walmart_id` | Walmart retailer ID |
+| `image_url` | Product image URL |
+| `source_url` | Source listing URL |
+| `kcal_per_unit` | Per-unit calorie data |
+| `unit_weight_g` | Unit weight in grams |
+| `default_serving_format` | Default serving format hint |
 
 ---
 
@@ -128,4 +145,9 @@ These have potential value but no current consumer in the app:
 | 004 | `needs_review`, `contributed_by`, `user_corrected_*` (community) |
 | 005 | `base_score`, `review_status` (batch scoring) |
 | 007 | `is_supplemental` (D-136 classification) |
-| **008** | **`feeding_guidelines`, `is_vet_diet`, `special_diet`, `image_url`, `source_url`** |
+| 008 | `feeding_guidelines`, `is_vet_diet`, `special_diet`, `image_url`, `source_url` |
+| 010 | `product_form` (kibble/wet/raw/freeze-dried) |
+| 014 | `pantry_items`, `pantry_pet_assignments` tables |
+| 017 | `push_tokens`, `user_settings` tables |
+| 018 | `pet_appointments` table |
+| **020** | **v7 enrichment: `ga_*_dmb_pct`, `aafco_inference`, `chewy_sku`, `asin`, `walmart_id`, `kcal_per_unit`, `unit_weight_g`, `default_serving_format`** |
