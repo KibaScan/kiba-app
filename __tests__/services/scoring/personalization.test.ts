@@ -309,16 +309,27 @@ describe('applyPersonalization — Layer 3', () => {
 
   // ─── Health Conditions ────────────────────────────────
 
-  test('conditions present → flagged with adjustment 0 (M1 stub)', () => {
+  test('conditions with matching rules → condition adjustments appear', () => {
+    // Obesity condition + high-fat product → fires obesity_high_fat_penalty
+    const product = makeProduct({ ga_fat_pct: 20, ga_moisture_pct: 10, product_form: 'dry' });
+    const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
+    const pet = makePet();
+    const result = applyPersonalization(80, product, ingredients, pet, [], ['obesity']);
+
+    const conditions = result.personalizations.filter(p => p.type === 'condition');
+    expect(conditions.length).toBeGreaterThan(0);
+    expect(conditions[0].adjustment).not.toBe(0);
+  });
+
+  test('conditions with no matching rules → no condition personalizations', () => {
+    // joint has no rules yet (P2), adult dog → no CKD rules fire
     const product = makeProduct();
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const pet = makePet();
-    const result = applyPersonalization(80, product, ingredients, pet, [], ['ckd', 'joint']);
+    const result = applyPersonalization(80, product, ingredients, pet, [], ['joint']);
 
     const condition = result.personalizations.find(p => p.type === 'condition');
-    expect(condition).toBeDefined();
-    expect(condition!.adjustment).toBe(0);
-    expect(condition!.label).toContain('Mochi');
+    expect(condition).toBeUndefined();
   });
 
   test('no conditions → no condition personalization', () => {

@@ -233,12 +233,12 @@ export function scoreNutritionalProfile(
       ? scoreFatDog(fatDmb!, thresholds.fatMin)
       : scoreFatCat(fatDmb!, thresholds.fatMin);
 
-  // Fiber suppression: AAFCO statement "weight management"/"light" OR pet has 'obesity'
+  // Fiber suppression: AAFCO statement "weight management"/"light"
+  // NOTE: Obesity condition fiber logic moved to Layer 3 (conditionScoring.ts)
   const aafco = input.aafcoStatement?.toLowerCase() ?? '';
   const suppressFiber =
     aafco.includes('weight management') ||
-    aafco.includes('light') ||
-    input.petConditions.includes('obesity');
+    aafco.includes('light');
 
   let fiberScore = scoreFiber(fiberDmb, suppressFiber);
 
@@ -289,6 +289,7 @@ export function scoreNutritionalProfile(
   }
 
   // Senior cat protein boost/penalty
+  // NOTE: CKD gate removed — condition compensation now in Layer 3 (conditionScoring.ts)
   if (isSenior && input.species === 'cat' && !proteinNull) {
     if (proteinDmb! >= 30) {
       modifiers.push({
@@ -299,7 +300,7 @@ export function scoreNutritionalProfile(
         citationSource: 'NRC-2006; Laflamme-2005',
       });
       proteinScore += 5;
-    } else if (!input.petConditions.includes('ckd')) {
+    } else {
       modifiers.push({
         name: 'senior_cat_protein_penalty',
         points: -10,

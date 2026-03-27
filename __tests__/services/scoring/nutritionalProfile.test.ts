@@ -237,14 +237,15 @@ describe('Senior cat protein modifier', () => {
     expect(mod!.points).toBe(-10);
   });
 
-  it('NO penalty when protein DMB < 30% but HAS CKD (CKD-gated)', () => {
+  it('penalty FIRES for CKD cats too (CKD gate moved to Layer 3 conditionScoring.ts)', () => {
     const result = scoreNutritionalProfile(makeAdultCatWet({
       lifeStage: 'senior',
       gaProteinPct: 5,
       petConditions: ['ckd'],
     }));
     const mod = result.modifiersApplied.find(m => m.name === 'senior_cat_protein_penalty');
-    expect(mod).toBeUndefined();
+    expect(mod).toBeDefined();
+    expect(mod!.points).toBe(-10);
   });
 });
 
@@ -301,12 +302,14 @@ describe('Fiber suppression', () => {
     expect(result.subScores.fiber).toBe(75);
   });
 
-  it('reduces penalty 50% for obesity condition', () => {
+  it('obesity condition no longer suppresses fiber in NP (moved to Layer 3)', () => {
     const result = scoreNutritionalProfile(makeAdultDogDry({
       gaFiberPct: 8,
       petConditions: ['obesity'],
     }));
-    expect(result.subScores.fiber).toBe(75);
+    // Fiber suppression for obesity moved to conditionScoring.ts Layer 3.
+    // NP now only suppresses fiber for AAFCO "weight management"/"light" statements.
+    expect(result.subScores.fiber).toBe(50);
   });
 
   it('does NOT suppress when no weight management context', () => {
