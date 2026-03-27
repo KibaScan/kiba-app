@@ -22,3 +22,5 @@ Before we end this session, do the following:
 
 7. If this session added migrations or new tables: update migration count
    in CURRENT.md and flag schema gotchas that may need updating.
+
+8. Run /check-numbers. If anything drifted, fix before closing.
