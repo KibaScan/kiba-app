@@ -193,6 +193,17 @@ Adult+ eating growth food: −5 flat.
 
 Cap: ±10 total (D-109). Applied from breed-specific modifier tables.
 
+### Allergen Score Cap (D-167)
+
+After all Layer 3 adjustments (allergen flags, life stage, breed, conditions), if the product contains any of the pet's declared allergens, the score is hard-capped at 50.
+
+- **Trigger:** `personalizations.some(p => p.type === 'allergen')` — fires when the product actually contains allergen-matching ingredients (direct OR possible match)
+- **Cap value:** 50 — the threshold at which ResultScreen switches from "Consider for occasional use" to "Explore higher-scoring alternatives for [Pet]"
+- **Mechanism:** Early return from `applyPersonalization()` with `finalScore: 50`, following the cardiac/DCM zero-out pattern
+- **Cap entry:** Added to personalizations array with `adjustment: 50 - uncappedScore` for waterfall transparency
+- **No-op when:** Score is already at or below 50 (other penalties were sufficient)
+- **Applies to:** All categories (daily food, supplemental, treats)
+
 ---
 
 ## 7.5. Layer 3: Condition Scoring (`conditionScoring.ts`)
@@ -490,3 +501,4 @@ Verify after ANY scoring change. Run: `npx jest --testPathPattern=regressionAnch
 | D-160 | Weight goal slider (±3 levels) | weightGoal.ts, pantryHelpers.ts |
 | D-161 | Caloric accumulator | auto-deplete Edge Function |
 | D-162 | BCS reference (educational) | BCSReferenceScreen.tsx |
+| D-167 | Allergen score cap (hard ceiling 50) | personalization.ts |

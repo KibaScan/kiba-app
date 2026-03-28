@@ -24,8 +24,8 @@
 - Pre-existing TS errors: SharePantrySheet.tsx (Product type), feedingNotificationScheduler.ts (unit type)
 
 ## Numbers
-- **Tests:** 1070 passing / 52 suites
-- **Decisions:** 128 (D-001 through D-166, non-sequential, all `###` normalized)
+- **Tests:** 1075 passing / 52 suites
+- **Decisions:** 129 (D-001 through D-167, non-sequential, all `###` normalized)
 - **Migrations:** 22 (001–022)
 - **Products:** 19,058
 
@@ -49,32 +49,29 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-27
-- **Accomplished:** Code review of M6 CompareScreen implementation + 3 cleanup fixes.
-  - **Reviewed all 11 files** (4 new, 7 modified) — see walkthrough.md and implementation_plan.md for full inventory
-  - **New files reviewed clean:** keyDifferences.ts (9-rule engine), keyDifferences.test.ts (14 tests), CompareScreen.tsx, CompareProductPickerSheet.tsx
-  - **Modified files reviewed clean:** ScoreRing.tsx, PortionCard.tsx, ResultScreen.tsx, AddToPantrySheet.tsx, navigation.ts, index.tsx, calorieEstimation.ts
-  - **DER bug fixes verified correct** in all 4 sites (ResultScreen ×2, AddToPantrySheet ×2)
-  - **3 fixes applied to CompareScreen.tsx:**
-    1. Removed unused `getScoreColor` import
-    2. Replaced `.length` dependency proxies with `.join()` for stable reactivity
-    3. Typed `KEY_DIFF_ICONS` with `ComponentProps<typeof Ionicons>['name']`, dropped `as any`
-- **Files changed:** src/screens/CompareScreen.tsx (3 edits), docs/status/CURRENT.md
+- **Date:** 2026-03-28
+- **Accomplished:** D-167 Allergen Score Cap + M6 CompareScreen code review.
+  - **D-167: Allergen score cap at 50** — products containing a pet's declared allergens (direct or possible match) are hard-capped at 50 in `applyPersonalization()`. Ensures ResultScreen always shows "Explore alternatives" for allergen-containing foods instead of "Consider for occasional use."
+    - 12-line cap block in `personalization.ts`, follows cardiac/DCM zero-out pattern
+    - 5 new tests + 3 updated tests + 1 integration test updated
+    - D-167 added to DECISIONS.md, scoring-rules.md sections 9 and 13 updated
+  - **CompareScreen code review** (prior in session): reviewed all 11 files (4 new, 7 modified), applied 3 cleanup fixes to CompareScreen.tsx (unused import, `.length` dep proxy, `as any` on Ionicons)
+- **Files changed:** src/services/scoring/personalization.ts, __tests__/services/scoring/personalization.test.ts, __tests__/services/scoring/allergenOverride.test.ts, src/screens/CompareScreen.tsx, DECISIONS.md, docs/references/scoring-rules.md, docs/status/CURRENT.md
 - **Not done yet:**
   - Safe Swap recommendations + condition filters
   - Vet Report PDF, affiliate integration
   - PortionCard: auto-populate feedings_per_day per condition
   - Paywall gate: `canCompare()` currently stubbed true — needs real premium check (M7)
   - `aafco_inference` not on Product type (Rule 5 uses aafco_statement only for now)
-  - Scoring reference docs still need condition scoring + weight management sections
-  - `scoring-details.md` bypass order still wrong (variety pack/recalled swapped)
-- **Next session should:** Run /boot. Start Safe Swap condition filters or vet report PDF. Compare flow is shipped and reviewed.
+  - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
+- **Next session should:** Run /boot. Commit + push D-167 changes. Start Safe Swap condition filters or vet report PDF.
 - **Gotchas for next session:**
+  - **D-167 scoring change**: scoring-details.md updated with allergen cap. Still needs condition scoring + weight management sections.
   - `canCompare()` is stubbed to return `true` — don't forget to gate behind real paywall in M7.
-  - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights — if supplemental products reach CompareScreen, breakdown denominator will be wrong. Low risk since picker filters by category.
+  - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights — supplemental products would show wrong denominator. Low risk since picker filters by category.
   - SafeSwapSection referenced in M6 prompt doesn't exist — `src/components/result/` only has HealthConditionAdvisories.tsx. Separate build needed.
   - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules in conditionScoring.ts — display-only.
-  - `scoring-details.md` Section 2 bypass order still wrong (variety pack/recalled swapped).
+  - Bypass order docs were fixed this session (scoring-details.md was correct; CLAUDE.md + pipeline.ts comment were wrong, now fixed).
   - Auto-deplete cron `computeInlineDER()` is a simplified copy of client-side DER math — if portionCalculator.ts multiplier tables change, cron must be updated manually.
   - `pantryHelpers.ts:385` `getSystemRecommendation()` missing weight_goal_level param — function is unused but worth fixing preemptively.
-- **No new decisions added. No scoring logic changed. No new migrations.**
+- **New decision: D-167 (Allergen Score Cap). Scoring logic changed (personalization.ts Layer 3). No new migrations.**

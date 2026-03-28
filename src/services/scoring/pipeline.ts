@@ -108,7 +108,7 @@ function makeEmptyResult(
  * into ProductIngredient[], then delegates to computeScore().
  *
  * Bypass order (checked before scoring): vet diet → species mismatch →
- * variety pack → recalled → supplemental → normal.
+ * recalled → variety pack → supplemental → normal.
  *
  * Returns both the ScoredResult and the hydrated ingredients array
  * (needed by ResultScreen for ingredient list, severity badges, etc.).

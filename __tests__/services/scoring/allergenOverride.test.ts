@@ -327,9 +327,12 @@ describe('computeScore — D-129 allergen delta', () => {
     const withAllergen = computeScore(product, ingredients, pet, ['chicken']);
 
     // Poultry byproduct meal is already 'caution' base severity.
-    // Override to 'caution' = no change. Delta should be 0.
+    // Override to 'caution' = no change. IQ delta should be 0.
     expect(withAllergen.allergenDelta).toBe(0);
-    expect(withAllergen.finalScore).toBe(noAllergen.finalScore);
+    // D-167: even though IQ didn't change, possible_match allergen flag
+    // triggers score cap at 50 ("Explore alternatives" UI threshold).
+    expect(withAllergen.finalScore).toBe(50);
+    expect(withAllergen.finalScore).toBeLessThan(noAllergen.finalScore);
   });
 
   test('no allergen-matching ingredients — zero delta, identical score', () => {

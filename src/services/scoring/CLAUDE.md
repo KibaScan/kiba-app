@@ -6,8 +6,8 @@ Brand-blind (D-019). Affiliate-invisible (D-020).
 ## Pipeline bypass order (checked in pipeline.ts, not engine.ts)
 1. Vet diet (D-135) → bypass, no score
 2. Species mismatch (D-144) → bypass, no score
-3. Variety pack (D-145) → bypass, no score
-4. Recalled product (D-158) → bypass, warning + ingredients only
+3. Recalled product (D-158) → bypass, warning + ingredients only
+4. Variety pack (D-145) → bypass, no score
 5. Supplemental → reduced weights (65/35/0)
 6. Normal → full weights (55/30/15)
 

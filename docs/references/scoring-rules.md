@@ -327,7 +327,17 @@ When a pet has declared allergens, the scoring engine overrides ingredient sever
 - Engine scores IQ twice: `baseIqResult` (waterfall) and `iqResult` (composite)
 - `allergenDelta` = weighted difference between the two
 - Waterfall shows "[Pet Name]'s Allergen Sensitivity: −[X] pts" row when delta > 0
-- Real-world impact: chicken-heavy product 92 → 67 (amber) for chicken-allergic dog
+- Real-world impact: chicken-heavy product 92 → IQ override drops to ~67, then D-167 cap brings to 50
+
+### D-167: Hard Allergen Score Cap
+
+After all Layer 3 adjustments, if any allergen-type personalizations exist and score exceeds 50, the score is capped at 50. This guarantees allergen-containing products trigger the "Explore higher-scoring alternatives" prompt in ResultScreen (which fires at score <= 50).
+
+- Both `direct_match` and `possible_match` trigger the cap
+- Applies to all product categories (daily food, supplemental, treats)
+- Cap entry appears in personalizations array with the adjustment delta
+- If other penalties already pushed below 50, cap is a no-op
+- Follows the cardiac/DCM zero-out pattern in `applyPersonalization()`
 
 ---
 
@@ -398,7 +408,7 @@ export const NP_SUB_WEIGHTS = {
 5. **Layer 1 — Formulation (if applicable):** AAFCO statement + preservative + naming.
 6. **Composite:** weighted sum of applicable buckets.
 7. **Layer 2 — Species Rules:** percentage multipliers (DCM, carb overload, taurine check).
-8. **Layer 3 — Personalization:** allergen delta applied, **category-scaled life stage mismatch** (daily −15, supplemental −10, treat −5 for puppy/kitten+adult food; −5 all categories for adult+growth food; suppressed for pets under 4 weeks), breed modifiers (already applied within NP in step 4 — don't double-count).
+8. **Layer 3 — Personalization:** allergen delta applied, **category-scaled life stage mismatch** (daily −15, supplemental −10, treat −5 for puppy/kitten+adult food; −5 all categories for adult+growth food; suppressed for pets under 4 weeks), breed modifiers (already applied within NP in step 4 — don't double-count). **D-167 allergen cap:** if any allergen match exists and score > 50, cap at 50.
 9. **Nursing advisory flag** added if pet is under 4 weeks old (informational, no score impact).
 10. **Final clamp** [0, 100], round to integer.
 

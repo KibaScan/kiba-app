@@ -214,6 +214,26 @@ export function applyPersonalization(
     }
   }
 
+  // ─── 5. Allergen Score Cap (D-167) ──────────────────────
+  // Products containing a pet's declared allergens must never appear
+  // "acceptable." Cap at 50 so ResultScreen shows "Explore alternatives."
+  const ALLERGEN_SCORE_CAP = 50;
+  const hasAllergenMatch = personalizations.some(p => p.type === 'allergen');
+
+  if (hasAllergenMatch) {
+    const uncappedScore = Math.max(0, Math.min(100, score + adjustment));
+    if (uncappedScore > ALLERGEN_SCORE_CAP) {
+      personalizations.push({
+        type: 'allergen',
+        label: `Score capped — contains ingredients flagged as allergens for ${petName}`,
+        adjustment: ALLERGEN_SCORE_CAP - uncappedScore,
+        petName,
+        severity: 'direct_match',
+      });
+      return { finalScore: ALLERGEN_SCORE_CAP, personalizations };
+    }
+  }
+
   const finalScore = Math.max(0, Math.min(100, score + adjustment));
 
   return { finalScore, personalizations };

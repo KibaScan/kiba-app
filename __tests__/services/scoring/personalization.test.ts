@@ -121,7 +121,7 @@ describe('applyPersonalization — Layer 3', () => {
 
   // ─── Allergen Cross-Reference ─────────────────────────
 
-  test('direct allergen match: chicken allergen + chicken meal → flag, score unchanged', () => {
+  test('direct allergen match: chicken allergen + chicken meal → flag + cap at 50 (D-167)', () => {
     const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
@@ -130,16 +130,20 @@ describe('applyPersonalization — Layer 3', () => {
     const pet = makePet({ name: 'Mochi' });
     const result = applyPersonalization(80, product, ingredients, pet, ['chicken']);
 
-    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen');
+    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen' && p.adjustment === 0);
     expect(allergenFlags).toHaveLength(1);
     expect(allergenFlags[0].severity).toBe('direct_match');
-    expect(allergenFlags[0].adjustment).toBe(0);
     expect(allergenFlags[0].label).toContain('Chicken meal');
     expect(allergenFlags[0].label).toContain('Mochi');
-    expect(result.finalScore).toBe(80);
+
+    // D-167: score capped at 50, cap entry present
+    const capEntry = result.personalizations.find(p => p.type === 'allergen' && p.adjustment !== 0);
+    expect(capEntry).toBeDefined();
+    expect(capEntry!.adjustment).toBe(-30);
+    expect(result.finalScore).toBe(50);
   });
 
-  test('possible allergen match: chicken allergen + poultry fat → flag, score unchanged', () => {
+  test('possible allergen match: chicken allergen + poultry fat → flag + cap at 50 (D-167)', () => {
     const product = makeProduct();
     const ingredients = [
       makeIngredient({
@@ -153,14 +157,15 @@ describe('applyPersonalization — Layer 3', () => {
     const pet = makePet({ name: 'Mochi' });
     const result = applyPersonalization(80, product, ingredients, pet, ['chicken']);
 
-    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen');
+    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen' && p.adjustment === 0);
     expect(allergenFlags).toHaveLength(1);
     expect(allergenFlags[0].severity).toBe('possible_match');
-    expect(allergenFlags[0].adjustment).toBe(0);
     expect(allergenFlags[0].label).toContain('Poultry fat');
     expect(allergenFlags[0].label).toContain('chicken');
     expect(allergenFlags[0].label).toContain('Verify with manufacturer');
-    expect(result.finalScore).toBe(80);
+
+    // D-167: possible matches also trigger cap
+    expect(result.finalScore).toBe(50);
   });
 
   test('no allergen match: pet allergic to beef, product has chicken → no flags', () => {
@@ -187,7 +192,7 @@ describe('applyPersonalization — Layer 3', () => {
     expect(allergenFlags).toHaveLength(0);
   });
 
-  test('multiple allergen matches on different ingredients', () => {
+  test('multiple allergen matches on different ingredients → cap at 50 (D-167)', () => {
     const product = makeProduct();
     const ingredients = [
       makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
@@ -197,13 +202,81 @@ describe('applyPersonalization — Layer 3', () => {
     const pet = makePet();
     const result = applyPersonalization(80, product, ingredients, pet, ['chicken', 'beef']);
 
-    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen');
+    const allergenFlags = result.personalizations.filter(p => p.type === 'allergen' && p.adjustment === 0);
     expect(allergenFlags).toHaveLength(2);
     expect(allergenFlags.every(f => f.severity === 'direct_match')).toBe(true);
-    expect(result.finalScore).toBe(80);
+    expect(result.finalScore).toBe(50);
   });
 
-  // ─── Life Stage Matching ──────────────────────────────
+  // ─── Allergen Score Cap (D-167) ─────────────────────────
+
+  test('allergen cap: score already below 50 → no cap applied', () => {
+    const product = makeProduct();
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
+    ];
+    const pet = makePet();
+    const result = applyPersonalization(40, product, ingredients, pet, ['chicken']);
+
+    const capEntry = result.personalizations.find(p => p.type === 'allergen' && p.adjustment !== 0);
+    expect(capEntry).toBeUndefined();
+    expect(result.finalScore).toBe(40);
+  });
+
+  test('allergen cap: score exactly 50 → no cap applied', () => {
+    const product = makeProduct();
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
+    ];
+    const pet = makePet();
+    const result = applyPersonalization(50, product, ingredients, pet, ['chicken']);
+
+    const capEntry = result.personalizations.find(p => p.type === 'allergen' && p.adjustment !== 0);
+    expect(capEntry).toBeUndefined();
+    expect(result.finalScore).toBe(50);
+  });
+
+  test('allergen cap: score 51 → capped to 50 with adjustment -1', () => {
+    const product = makeProduct();
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
+    ];
+    const pet = makePet();
+    const result = applyPersonalization(51, product, ingredients, pet, ['chicken']);
+
+    const capEntry = result.personalizations.find(p => p.type === 'allergen' && p.adjustment !== 0);
+    expect(capEntry).toBeDefined();
+    expect(capEntry!.adjustment).toBe(-1);
+    expect(result.finalScore).toBe(50);
+  });
+
+  test('allergen cap: life stage penalty + allergen → cap still applies if above 50', () => {
+    const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
+    ];
+    // Puppy eating adult food = -15 → 90 - 15 = 75, still > 50 → cap to 50
+    const pet = makePet({ life_stage: 'puppy' as any });
+    const result = applyPersonalization(90, product, ingredients, pet, ['chicken']);
+
+    expect(result.finalScore).toBe(50);
+  });
+
+  test('allergen cap: condition penalty pushes below 50 → no cap needed', () => {
+    const product = makeProduct();
+    const ingredients = [
+      makeIngredient({ position: 1, canonical_name: 'chicken meal', allergen_group: 'chicken', is_protein_fat_source: true }),
+    ];
+    const pet = makePet();
+    // Score 55, condition penalty would push to 45 → below cap, so cap is no-op
+    const result = applyPersonalization(45, product, ingredients, pet, ['chicken']);
+
+    const capEntry = result.personalizations.find(p => p.type === 'allergen' && p.adjustment !== 0);
+    expect(capEntry).toBeUndefined();
+    expect(result.finalScore).toBe(45);
+  });
+
+  // ─── Life Stage Matching ───────────────────��──────────
 
   test('puppy + adult daily food → −15 points', () => {
     const product = makeProduct({ life_stage_claim: 'Adult Maintenance' });

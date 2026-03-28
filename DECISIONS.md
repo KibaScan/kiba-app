@@ -2954,5 +2954,28 @@ This is optional — user can stay in weight mode if they prefer.
 
 **What this does NOT change:** Serving mode toggle behavior, auto/manual calculation, D-165 budget logic, D-164 unit labels, depletion math, database schema.
 
+### D-167: Allergen Score Cap — Hard Ceiling at 50
+**Status:** LOCKED
+**Date:** March 28, 2026
+**Milestone:** M6
+**Depends on:** D-129 (allergen override), D-097 (allergen cross-reference), D-098 (cross-reactivity)
+
+**Problem:** The D-129 allergen override applies per-ingredient IQ penalties when a product contains a pet's declared allergens, but high-quality products can still score 65+ ("Fair match" or above). ResultScreen only shows "Explore higher-scoring alternatives" at score <= 50 — anything above 50 shows "Consider for occasional use." A food containing a known allergen should never be framed as acceptable.
+
+**Decision:** When a product contains any ingredient matching a pet's declared allergens (direct match via `allergen_group` OR possible match via `allergen_group_possible`), the personalized score is hard-capped at 50. This guarantees the "Explore alternatives" UI prompt and places the product in the amber/red zone.
+
+**Mechanism:**
+- Applied in `applyPersonalization()` after all Layer 3 adjustments (life stage, conditions), before final clamp
+- Fires when `personalizations.some(p => p.type === 'allergen')` — only when the product actually contains allergen-matching ingredients, not just because the pet has allergens defined
+- Cap entry added to personalizations array with the adjustment delta for waterfall transparency
+- Follows the cardiac/DCM zero-out pattern (hard override in Layer 3)
+- If other adjustments already pushed score below 50, the cap is a no-op
+
+**Applies to:** All product categories (daily food, supplemental, treats). An allergen in a treat is still an allergen.
+
+**Does NOT replace D-129:** The IQ override continues to apply position-weighted severity deductions. The cap is a ceiling on top — they're complementary.
+
+**Regression impact:** Pure Balance (62) and Temptations (9) are scored without pet allergens — cap code path never entered. Zero regression risk.
+
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*
