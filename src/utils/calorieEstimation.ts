@@ -123,3 +123,50 @@ function deriveKcalPerUnit(kcalPerKg: number, unitWeightG: number | null): numbe
   if (unitWeightG == null || unitWeightG <= 0 || kcalPerKg <= 0) return null;
   return Math.round((kcalPerKg * unitWeightG) / 1000);
 }
+
+// ─── kcal/cup Resolution ────────────────────────────────
+
+/** Standard dry kibble cup weight in grams (industry average 100-120g). */
+const DRY_FOOD_GRAMS_PER_CUP = 110;
+
+export interface KcalPerCupResult {
+  kcalPerCup: number;
+  isEstimated: boolean;
+}
+
+/**
+ * Resolves kcal per cup using a priority fallback chain:
+ * 1. Supabase ga_kcal_per_cup → source: label
+ * 2. ga_kcal_per_kg + standard cup weight (dry food only) → source: estimated
+ * 3. Atwater kcal/kg + standard cup weight (dry food only) → source: estimated
+ * 4. null — can't determine kcal/cup
+ */
+export function resolveKcalPerCup(product: Product): KcalPerCupResult | null {
+  // Priority 1: DB label value
+  if (product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0) {
+    return { kcalPerCup: product.ga_kcal_per_cup, isEstimated: false };
+  }
+
+  // Priority 2+3: Estimate from kcal/kg (dry food only — cups don't apply to wet)
+  const isDry = product.product_form === 'dry' || (product.ga_moisture_pct ?? 10) <= 14;
+  if (!isDry) return null;
+
+  // Try DB kcal/kg first
+  if (product.ga_kcal_per_kg != null && product.ga_kcal_per_kg > 0) {
+    return {
+      kcalPerCup: Math.round((product.ga_kcal_per_kg / 1000) * DRY_FOOD_GRAMS_PER_CUP),
+      isEstimated: true,
+    };
+  }
+
+  // Try Atwater estimate
+  const cal = resolveCalories(product);
+  if (cal && cal.kcalPerKg > 0) {
+    return {
+      kcalPerCup: Math.round((cal.kcalPerKg / 1000) * DRY_FOOD_GRAMS_PER_CUP),
+      isEstimated: true,
+    };
+  }
+
+  return null;
+}

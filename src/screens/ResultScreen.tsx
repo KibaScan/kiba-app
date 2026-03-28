@@ -63,17 +63,18 @@ import { WhatGoodLooksLike } from '../components/scoring/WhatGoodLooksLike';
 import { PetShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
 import PortionCard from '../components/PortionCard';
-import { getAgeMonths } from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
+import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
 import { HealthConditionAdvisories } from '../components/result/HealthConditionAdvisories';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
-import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
+
 import { resolveCalories } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
+import { computePetDer } from '../utils/pantryHelpers';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
@@ -100,18 +101,10 @@ export default function ResultScreen() {
   );
 
   // DER computation for portion/treat advisory (D-106: display-only)
+  // D-160: Uses computePetDer which respects weight_goal_level
   const petDer = useMemo(() => {
-    if (!pet || pet.weight_current_lbs == null) return null;
-    const ageMonths = getAgeMonths(pet.date_of_birth) ?? undefined;
-    const rer = calculateRER(lbsToKg(pet.weight_current_lbs));
-    const { multiplier } = getDerMultiplier({
-      species: pet.species,
-      lifeStage: pet.life_stage,
-      isNeutered: pet.is_neutered,
-      activityLevel: pet.activity_level,
-      ageMonths,
-    });
-    return Math.round(rer * multiplier);
+    if (!pet) return null;
+    return computePetDer(pet, false, pet.weight_goal_level);
   }, [pet]);
 
   // ─── State ──────────────────────────────────────────────
@@ -140,6 +133,7 @@ export default function ResultScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<ProductIngredient | null>(null);
   const [pantrySheetVisible, setPantrySheetVisible] = useState(false);
+  const [comparePickerVisible, setComparePickerVisible] = useState(false);
   const [petConditions, setPetConditions] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
 
@@ -864,7 +858,7 @@ export default function ResultScreen() {
         {/* Portion advisory — daily food only (standalone, not collapsible) */}
         {scoredResult && pet && product && product.category === 'daily_food' && pet.weight_current_lbs != null && (
           <View style={styles.portionSection}>
-            <PortionCard pet={pet} product={product} conditions={[]} isSupplemental={isSupplemental} />
+            <PortionCard pet={pet} product={product} conditions={petConditions} isSupplemental={isSupplemental} />
           </View>
         )}
 
@@ -880,7 +874,7 @@ export default function ResultScreen() {
               });
               return;
             }
-            // TODO: Compare flow (M6+)
+            setComparePickerVisible(true);
           }}
         >
           <Ionicons name="git-compare-outline" size={18} color={Colors.accent} />
@@ -919,6 +913,26 @@ export default function ResultScreen() {
           visible={pantrySheetVisible}
           onClose={() => setPantrySheetVisible(false)}
           onAdded={() => setPantrySheetVisible(false)}
+        />
+      )}
+
+      {/* Compare product picker (M6) */}
+      {product && petId && (
+        <CompareProductPickerSheet
+          visible={comparePickerVisible}
+          onClose={() => setComparePickerVisible(false)}
+          onSelectProduct={(selectedProductBId) => {
+            setComparePickerVisible(false);
+            navigation.navigate('Compare', {
+              productAId: productId,
+              productBId: selectedProductBId,
+              petId: petId,
+            });
+          }}
+          productAId={productId}
+          petId={petId}
+          species={species}
+          category={product.category === 'treat' ? 'treat' : 'daily_food'}
         />
       )}
 

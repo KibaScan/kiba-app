@@ -19,7 +19,7 @@ import {
 import { isPremium } from '../utils/permissions';
 import { updatePet } from '../services/petService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { resolveCalories } from '../utils/calorieEstimation';
+import { resolveCalories, resolveKcalPerCup } from '../utils/calorieEstimation';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { usePantryStore } from '../stores/usePantryStore';
 import { updatePetAssignment } from '../services/pantryService';
@@ -218,6 +218,9 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
 
   const toggleData = useMemo(() => canShowPortionToggle(product), [product]);
 
+  // Resolve kcal/cup — DB value first, estimated fallback for dry food
+  const resolvedCup = useMemo(() => product ? resolveKcalPerCup(product) : null, [product]);
+
   // Supplemental products — portion calculation is nonsensical for toppers/mixers
   if (isSupplemental) {
     return (
@@ -282,9 +285,9 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
         </View>
       )}
 
-      {/* Quick portion conversion when kcal_per_cup available */}
-      {product?.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 && (() => {
-        const cups = der / product.ga_kcal_per_cup;
+      {/* Cups/day from resolved kcal/cup (DB or estimated) */}
+      {resolvedCup && (() => {
+        const cups = der / resolvedCup.kcalPerCup;
         const isVerySmall = pet.species === 'cat' ? cups < 0.25 : cups < 0.33;
         const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
         return (
@@ -293,7 +296,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
               {'\u2248'} {useGrams
                 ? `${formatGrams(cups * toggleData.gramsPerCup!)} g/day`
                 : `${formatCups(cups)} cups/day`}
-              {toggleData.isEstimated && <Text style={styles.estimatedTag}> (estimated)</Text>}
+              {resolvedCup.isEstimated && <Text style={styles.estimatedTag}> (est.)</Text>}
             </Text>
             {isVerySmall && (
               <Text style={styles.cupsNote}>
@@ -319,20 +322,10 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
         </View>
       )}
 
-      {/* Product portions: cups preferred, grams fallback */}
-      {dailyPortion?.cups != null && product && (() => {
-        const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
-        return (
-          <Text style={styles.portionLine} numberOfLines={1}>
-            ~{useGrams
-              ? `${formatGrams(dailyPortion.cups * toggleData.gramsPerCup!)} g/day`
-              : `${formatCups(dailyPortion.cups)} cups/day`} of {shortenProductName(product.name)}
-          </Text>
-        );
-      })()}
-      {dailyPortion?.cups == null && dailyPortion?.grams != null && product && (
-        <Text style={styles.portionLine} numberOfLines={1}>
-          ~{formatGrams(dailyPortion.grams)} g/day of {shortenProductName(product.name)}
+      {/* kcal per cup — actionable density metric */}
+      {resolvedCup && (
+        <Text style={styles.portionLine}>
+          {resolvedCup.kcalPerCup.toLocaleString()} kcal/cup{resolvedCup.isEstimated ? ' (est.)' : ''}
         </Text>
       )}
 

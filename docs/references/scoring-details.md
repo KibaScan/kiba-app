@@ -25,8 +25,8 @@ Checked sequentially before scoring runs. If any fires, scoring engine is skippe
 
 1. **Vet diet** (D-135) → no score, return ingredients only
 2. **Species mismatch** (D-144) → no score, bypass reason
-3. **Variety pack** (D-145) → no score, bypass reason
-4. **Recalled product** (D-158) → no score, warning + ingredients, `isRecalled` flag
+3. **Recalled product** (D-158) → no score, warning + ingredients, `isRecalled` flag
+4. **Variety pack** (D-145) → no score, bypass reason
 5. **Supplemental detection** (D-136/D-146) → runtime reclassification, then score with 65/35/0
 6. **Normal** → score with standard weights
 
@@ -195,6 +195,207 @@ Cap: ±10 total (D-109). Applied from breed-specific modifier tables.
 
 ---
 
+## 7.5. Layer 3: Condition Scoring (`conditionScoring.ts`)
+
+File: `src/utils/conditionScoring.ts`
+
+**12 conditions** across 4 priority tiers. Applied as flat point adjustments to the final composite score.
+
+### Architecture
+
+- **Input:** Product, ingredients, pet profile, conditions list
+- **Output:** `ConditionScoringResult` — adjustments array, total adjustment, zeroOut flag
+- Each adjustment has: condition, rule ID, points (±), bucket label (IQ/NP/FC), citation, reason
+- Bucket label is for **display categorization** only — not a weighted sub-score target
+
+### Cap Logic
+
+| Cap | Value |
+|-----|-------|
+| Per-condition total | ±8 points |
+| Total bonus cap | +10 max |
+| Total penalty cap | −15 max |
+
+When a per-condition total exceeds ±8, all rules for that condition are proportionally scaled.
+
+### Critical Safety Override: cardiac + DCM = 0
+
+If a **dog** has `cardiac` condition AND the food triggers DCM pulse advisory (`evaluateDcmRisk()`):
+- Score is set to **0** (not just penalized)
+- `zeroOut = true`, no other condition rules evaluated
+- Regression anchor: Pure Balance + cardiac dog = 0
+
+### P0 Conditions
+
+#### Obesity (5 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High fiber bonus | Both | fiber DMB > 5% | +2 |
+| High fat penalty | Both | fat DMB > 18% | −3 |
+| High calorie penalty | Both | kcal/kg DMB > 4200 (dry) / 1200 (wet) | −3 |
+| L-Carnitine bonus | Both | L-carnitine present | +1 |
+| Lean protein bonus | Both | protein DMB > 30% AND fat DMB < 14% | +2 |
+
+#### Underweight (4 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High calorie bonus | Both | kcal/kg DMB > 4000 (dry) / 1100 (wet) | +2 |
+| High protein bonus | Both | protein DMB > 32% | +2 |
+| High fiber penalty | Both | fiber DMB > 6% | −2 |
+| Weight mgmt formula penalty | Both | Name contains "lite/light/healthy weight" | −3 |
+
+#### GI Sensitive (4 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High fat penalty | Dogs | fat DMB > 18% | −3 |
+| Digestive fiber bonus | Both | psyllium/pumpkin/beet pulp present | +1 |
+| Prebiotic bonus | Both | chicory root/inulin/FOS present | +1 |
+| Lactose penalty | Both | dairy in top 10 | −2 |
+
+### P1 Conditions
+
+#### Diabetes — Critical Dog/Cat Split (9 rules)
+
+**Dogs** — fiber-based management:
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High fiber bonus | Dogs | fiber DMB > 5% | +3 |
+| Complex carb bonus | Dogs | barley/sorghum/oats in top 10 | +2 |
+| Simple sugar penalty | Both | corn syrup/molasses/fructose/etc | −4 |
+| Semi-moist penalty | Dogs | product_form = semi_moist | −3 |
+
+**Cats** — carb-based management (D-149 estimation):
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Ultra-low carb bonus | Cats | carb DMB < 10% | +4 |
+| Low carb bonus | Cats | carb DMB 10-20% | +2 |
+| High carb penalty | Cats | carb DMB > 30% | −5 |
+| Wet food bonus | Cats | wet format | +2 |
+| Dry kibble penalty | Cats | dry format | −2 |
+| Gravy penalty | Cats | name contains "gravy"/"in sauce" | −1 |
+
+#### Pancreatitis — Critical Dog/Cat Split (6 rules)
+
+**Dogs** — fat is THE trigger:
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High fat penalty | Dogs | fat DMB > 12% | −5 |
+| Ultra high fat penalty | Dogs | fat DMB > 18% | −3 (stacks) |
+| Lean protein bonus | Dogs | protein DMB > 25% AND fat DMB < 10% | +3 |
+| Digestive enzyme bonus | Dogs | enzymes present | +1 |
+
+**Cats** — NOT fat-triggered (IBD connection):
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Digestible protein bonus | Cats | fish/rabbit/egg/turkey in top 5 | +2 |
+| Novel protein bonus | Cats | rabbit/venison/duck in top 3 | +1 |
+
+### P2 Conditions
+
+#### CKD — Kidney Disease (7 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Senior cat protein gate | Cats | senior + protein DMB < 30% | +3 |
+| High phosphorus penalty | Both | P DMB > 1.0 (cat) / 1.2 (dog) | −4 |
+| Moderate protein bonus | Both | protein in range (cat 28-35, dog 20-28) | +2 |
+| High protein penalty | Both | protein DMB > 42 (cat) / 35 (dog) | −3 |
+| Cat wet food bonus | Cats | wet format | +3 |
+| Omega-3 bonus | Both | fish oil/EPA/DHA present | +1 |
+| High sodium penalty | Both | salt/sodium in top 10 | −2 |
+
+#### Cardiac — Heart Disease (8 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| DCM zero-out | Dogs | cardiac + DCM fires | **Score = 0** |
+| Taurine + L-Carnitine bonus | Dogs | both present | +3 |
+| High sodium penalty | Dogs | salt/sodium in top 10 | −3 |
+| Omega-3 bonus | Dogs | fish oil/EPA/DHA present | +1 |
+| Cat taurine missing penalty | Cats | no taurine | −5 |
+| Cat sodium penalty | Cats | salt/sodium in top 10 | −2 |
+| Cat omega-3 bonus | Cats | fish oil/EPA/DHA present | +2 |
+| Cat wet food bonus | Cats | wet format | +1 |
+
+#### Urinary (3 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Wet food bonus | Both | wet format | +3 |
+| Dry-only penalty | Both | dry format | −3 |
+| High moisture bonus | Both | moisture > 75% | +1 |
+
+#### Joint (3 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Omega-3 bonus | Both | fish oil/EPA/DHA present | +2 |
+| High calorie penalty | Both | dry + kcal/kg DMB > 4200 | −2 |
+| Glucosamine/chondroitin bonus | Both | present | +1 |
+
+### P3 Conditions
+
+#### Skin & Coat (5 rules)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| Omega-3 bonus | Both | fish oil/EPA/DHA present | +3 |
+| Omega-6 bonus | Both | ga_omega6_pct > 0 | +1 |
+| Unnamed protein penalty | Both | unnamed protein sources | −3 |
+| Multi-protein penalty | Both | > 3 distinct allergen groups | −2 |
+| Limited protein bonus | Both | 1-2 distinct allergen groups | +2 |
+
+#### Hypothyroidism (5 rules, dogs only)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High fat penalty | Dogs | fat DMB > 16% | −3 |
+| High calorie penalty | Dogs | kcal/kg DMB > 4000 | −2 |
+| High fiber bonus | Dogs | fiber DMB > 5% | +2 |
+| Omega-3 bonus | Dogs | fish oil/EPA/DHA present | +2 |
+| L-Carnitine bonus | Dogs | L-carnitine present | +1 |
+
+#### Hyperthyroidism (3 rules, cats only)
+| Rule | Species | Trigger | Points |
+|------|---------|---------|--------|
+| High calorie bonus | Cats | kcal/kg DMB > 4500 | +3 |
+| High protein bonus | Cats | protein DMB > 40% | +2 |
+| Wet food bonus | Cats | wet format | +1 |
+
+### Not Implemented
+
+`liver` and `seizures` tags exist in DOG_CONDITIONS but have **no scoring rules** — display-only for now.
+
+---
+
+## 13. Weight Management (D-160, D-161, D-162)
+
+Not part of the scoring engine — these affect calorie calculations only.
+
+### Weight Goal Slider (D-160)
+
+File: `src/utils/weightGoal.ts`
+
+7-position discrete slider (-3 to +3), stored as `weight_goal_level` on pets table.
+
+| Level | Multiplier | Label |
+|-------|-----------|-------|
+| -3 | 0.80 | Aggressive loss (cats: absent) |
+| -2 | 0.85 | Moderate loss |
+| -1 | 0.90 | Mild loss |
+| 0 | 1.00 | Maintain |
+| +1 | 1.10 | Mild gain |
+| +2 | 1.15 | Moderate gain |
+| +3 | 1.20 | Aggressive gain |
+
+**DER adjustment:** `adjustedDER = baseDER × multiplier`
+
+**Blocked positions:** Conditions auto-block contradictory positions (e.g., obesity blocks +1/+2/+3).
+
+**Single source of truth:** `computePetDer()` in `pantryHelpers.ts` — used by ResultScreen, AddToPantrySheet, PortionCard, pantry budget.
+
+### Caloric Accumulator (D-161)
+
+Server-side in auto-deplete cron (`supabase/functions/auto-deplete/`). Tracks daily caloric delta between food consumed and DER target. Triggers weight estimate push notifications.
+
+### BCS Reference (D-162)
+
+Educational-only. 9-point scale, species-specific cards. Owner-reported BCS saves to `bcs_score` on pets table. No impact on scoring.
+
 ## 8. Supplemental Classification (D-136, D-146)
 
 File: `src/utils/supplementalClassifier.ts`
@@ -261,7 +462,7 @@ Verify after ANY scoring change. Run: `npx jest --testPathPattern=regressionAnch
 
 ---
 
-## 12. Decision Reference
+## 14. Decision Reference
 
 | Decision | Scope | File |
 |---|---|---|
@@ -282,6 +483,10 @@ Verify after ANY scoring change. Run: `npx jest --testPathPattern=regressionAnch
 | D-143 | "Danger" → "Severe" display | constants.ts |
 | D-144 | Species mismatch bypass | pipeline.ts |
 | D-145 | Variety pack bypass | pipeline.ts |
+| D-149 | Feline carb estimation (diabetes) | conditionScoring.ts |
 | D-150 | Life stage mismatch (Layer 3) | personalization.ts |
 | D-151 | Nursing advisory (<4 weeks) | engine.ts |
 | D-158 | Recalled product bypass | pipeline.ts |
+| D-160 | Weight goal slider (±3 levels) | weightGoal.ts, pantryHelpers.ts |
+| D-161 | Caloric accumulator | auto-deplete Edge Function |
+| D-162 | BCS reference (educational) | BCSReferenceScreen.tsx |

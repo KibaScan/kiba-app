@@ -206,7 +206,7 @@ export function AddToPantrySheet({
     // Compute auto serving directly on open (don't rely on effect chain —
     // if memo dependencies haven't changed, auto-sync effect won't re-fire)
     const newFeedings = getSmartDefaultFeedingsPerDay(product.category, pantryItems, pet.id);
-    const der = computePetDer(pet, canUseGoalWeight());
+    const der = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
     if (!treat && der != null) {
       const existKcal = computeExistingPantryKcal(pantryItems, pet.id);
       const budget = Math.max(0, der - existKcal);
@@ -265,7 +265,7 @@ export function AddToPantrySheet({
       feedingsPerDay,
       product,
       maintenanceDer: petDer,
-      adjustedDer: petDer, // same until D-160 lands
+      adjustedDer: petDer, // D-160: already includes weight_goal_level via computePetDer
       existingPantryKcal: existingKcal,
       petName: pet.name,
       isTreat: treat,

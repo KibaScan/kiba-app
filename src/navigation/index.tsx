@@ -33,6 +33,7 @@ import PaywallScreen from '../screens/PaywallScreen';
 import CommunityContributionScreen from '../screens/CommunityContributionScreen';
 import ProductConfirmScreen from '../screens/ProductConfirmScreen';
 import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
+import CompareScreen from '../screens/CompareScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -56,6 +57,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Result" component={ResultScreen} />
       <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+      <HomeStack.Screen name="Compare" component={CompareScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -67,6 +69,7 @@ function CommunityStackScreen() {
       <CommunityStack.Screen name="CommunityMain" component={CommunityScreen} />
       <CommunityStack.Screen name="Result" component={ResultScreen} />
       <CommunityStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <CommunityStack.Screen name="Compare" component={CompareScreen} />
     </CommunityStack.Navigator>
   );
 }
@@ -81,6 +84,7 @@ function ScanStackScreen() {
       <ScanStack.Screen name="CommunityContribution" component={CommunityContributionScreen} />
       <ScanStack.Screen name="ProductConfirm" component={ProductConfirmScreen} />
       <ScanStack.Screen name="IngredientCapture" component={IngredientCaptureScreen} />
+      <ScanStack.Screen name="Compare" component={CompareScreen} />
     </ScanStack.Navigator>
   );
 }
@@ -93,6 +97,7 @@ function PantryStackScreen() {
       <PantryStack.Screen name="EditPantryItem" component={EditPantryItemScreen} />
       <PantryStack.Screen name="Result" component={ResultScreen} />
       <PantryStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <PantryStack.Screen name="Compare" component={CompareScreen} />
     </PantryStack.Navigator>
   );
 }
@@ -115,6 +120,7 @@ function MeStackScreen() {
       <MeStack.Screen name="Settings" component={SettingsScreen} />
       <MeStack.Screen name="Result" component={ResultScreen} />
       <MeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <MeStack.Screen name="Compare" component={CompareScreen} />
     </MeStack.Navigator>
   );
 }

@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from config import get_client, JSON_PATH, ERROR_LOG_PATH, BATCH_SIZE
 from validators import validate_record
 from hash_utils import compute_ingredients_hash
+from size_parser import parse_size_to_kg
 
 
 # ─── Field Mapping ──────────────────────────────────────────────
@@ -140,6 +141,13 @@ def map_product_row(record: dict) -> dict:
         'chewy_sku': record.get('chewy_sku'),
         'asin': record.get('asin'),
         'walmart_id': str(record['walmart_id']) if record.get('walmart_id') else None,
+
+        # Price + size (M6 Safe Swap value slot)
+        'price': float(record['price']) if record.get('price') is not None else None,
+        'price_currency': record.get('price_currency') or 'USD',
+        'product_size_kg': parse_size_to_kg(
+            record.get('product_size') or record.get('price_size')
+        ),
 
         'last_verified_at': now_ts,
     }

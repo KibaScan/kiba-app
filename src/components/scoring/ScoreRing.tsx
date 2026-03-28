@@ -39,6 +39,7 @@ interface ScoreRingProps {
   species: 'dog' | 'cat';
   isPartialScore: boolean;
   isSupplemental?: boolean;
+  size?: 'large' | 'small';
 }
 
 // ─── Ring Geometry ───────────────────────────────────────
@@ -69,6 +70,16 @@ const OUTLINE_COLOR = '#0D0D0D';
 const OUTLINE_INNER_R = RADIUS - RING_BORDER / 2 - OUTLINE_WIDTH / 2;  // just inside track
 const OUTLINE_OUTER_R = RADIUS + RING_BORDER / 2 + OUTLINE_WIDTH / 2;  // just outside track
 
+// ─── Small Ring Geometry ────────────────────────────────
+
+const SM_RING_SIZE = 80;
+const SM_RING_BORDER = 5;
+const SM_RADIUS = (SM_RING_SIZE - SM_RING_BORDER) / 2;     // 37.5
+const SM_CIRCUMFERENCE = 2 * Math.PI * SM_RADIUS;
+const SM_SVG_SIZE = SM_RING_SIZE + 20;                      // 100
+const SM_SVG_CENTER = SM_SVG_SIZE / 2;                      // 50
+const SM_SVG_OFFSET = -(SM_SVG_SIZE - SM_RING_SIZE) / 2;    // -10
+
 // ─── Pet Photo (bottom-right corner) ────────────────────
 
 const PHOTO_SIZE = 40;
@@ -85,7 +96,9 @@ export function ScoreRing({
   species,
   isPartialScore,
   isSupplemental = false,
+  size = 'large',
 }: ScoreRingProps) {
+  const isSmall = size === 'small';
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [displayScore, setDisplayScore] = useState(0);
   const fullName = petName || (species === 'dog' ? 'your dog' : 'your cat');
@@ -121,6 +134,63 @@ export function ScoreRing({
       `Suitability is an algorithmic estimate for ${displayName}'s specific profile based on published research. It is not a universal product rating or a substitute for veterinary medical advice.`,
     );
   };
+
+  // ─── Small variant (early return) ─────────────────────
+  if (isSmall) {
+    const smTotalArc = isSupplemental ? SM_CIRCUMFERENCE * 0.75 : SM_CIRCUMFERENCE;
+    const smRotation = isSupplemental ? 135 : -90;
+    const smTrackDash = isSupplemental
+      ? [SM_CIRCUMFERENCE * 0.75, SM_CIRCUMFERENCE]
+      : [SM_CIRCUMFERENCE];
+    const smDashoffset = animatedValue.interpolate({
+      inputRange: [0, 100],
+      outputRange: [smTotalArc, 0],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <View style={smStyles.wrapper}>
+        <View style={smStyles.ringContainer}>
+          <Svg
+            width={SM_SVG_SIZE}
+            height={SM_SVG_SIZE}
+            style={{ position: 'absolute', left: SM_SVG_OFFSET, top: SM_SVG_OFFSET }}
+          >
+            <Circle
+              cx={SM_SVG_CENTER}
+              cy={SM_SVG_CENTER}
+              r={SM_RADIUS}
+              stroke={TRACK_COLOR}
+              strokeWidth={SM_RING_BORDER}
+              fill="none"
+              strokeDasharray={smTrackDash}
+              rotation={smRotation}
+              origin={`${SM_SVG_CENTER}, ${SM_SVG_CENTER}`}
+              strokeLinecap="round"
+            />
+            <AnimatedCircle
+              cx={SM_SVG_CENTER}
+              cy={SM_SVG_CENTER}
+              r={SM_RADIUS}
+              stroke={ringColor}
+              strokeWidth={SM_RING_BORDER}
+              fill="none"
+              strokeDasharray={smTrackDash}
+              strokeDashoffset={smDashoffset}
+              rotation={smRotation}
+              origin={`${SM_SVG_CENTER}, ${SM_SVG_CENTER}`}
+              strokeLinecap="round"
+            />
+          </Svg>
+          <View style={smStyles.centerContent}>
+            <Text style={[smStyles.scoreValue, { color: ringColor }]}>
+              {displayScore}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   // ─── SVG arc calculations ────────────────────────────
   const totalArc = isSupplemental ? ARC_270 : CIRCUMFERENCE;
@@ -411,5 +481,33 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
     marginTop: 2,
+  },
+});
+
+// ─── Small Variant Styles ────────────────────────────────
+
+const smStyles = StyleSheet.create({
+  wrapper: {
+    alignItems: 'center',
+  },
+  ringContainer: {
+    width: SM_RING_SIZE,
+    height: SM_RING_SIZE,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  centerContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
 });

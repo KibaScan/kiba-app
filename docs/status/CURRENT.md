@@ -18,12 +18,13 @@
 - **Weight goal slider (D-160)** — 7-position discrete slider (-3 to +3), cat -3 absent, condition-blocked positions, premium-gated, auto-reset on conflict
 - **Caloric accumulator (D-161)** — daily delta tracking in auto-deplete cron, weight estimate push notifications, WeightEstimateSheet (confirm/enter/dismiss), PetHubScreen banner
 - **BCS reference (D-162)** — 9-point educational guide, species tabs, tappable selection saves to pet profile, cat primordial pouch callout, free for all users
+- **Compare flow** — 9-rule key differences engine, two-column CompareScreen (score breakdown, nutrition table, ingredients), CompareProductPickerSheet (search, recent scans, camera), kcal/cup estimation fallback (DB → kcal/kg × 110g → Atwater), PortionCard kcal/cup display
 
 ## What's Broken / Known Issues
 - Pre-existing TS errors: SharePantrySheet.tsx (Product type), feedingNotificationScheduler.ts (unit type)
 
 ## Numbers
-- **Tests:** 1056 passing / 51 suites
+- **Tests:** 1070 passing / 52 suites
 - **Decisions:** 128 (D-001 through D-166, non-sequential, all `###` normalized)
 - **Migrations:** 22 (001–022)
 - **Products:** 19,058
@@ -35,10 +36,11 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next (M6)
-- Compare flow, Safe Swap recommendations
+- Safe Swap recommendations + condition filters (topMatches.ts hard filters per condition)
 - Vet Report PDF, affiliate integration
 - PortionCard: auto-populate feedings_per_day per condition
-- Safe Swap condition filters (topMatches.ts hard filters per condition)
+- Paywall gate: replace `canCompare()` stub with real premium check (M7)
+- `aafco_inference` on Product type (low priority — Rule 5 uses aafco_statement only)
 
 ## Optimization Status
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
@@ -48,41 +50,31 @@
 
 ## Last Session
 - **Date:** 2026-03-27
-- **Accomplished:** M6 Weight Management — full D-160/D-161/D-162 implementation + post-ship fixes. No scoring files touched.
-  - **Phase 1–5: Core implementation**
-    - Migration 022: weight_goal_level, caloric_accumulator, accumulator_last_reset_at, accumulator_notification_sent, bcs_score, bcs_assessed_at on pets; weight_estimate_alerts_enabled on user_settings
-    - `src/utils/weightGoal.ts` (NEW): 5 pure functions + constants (getAdjustedDER, getAvailableLevels, estimateWeeklyChange, getCalorieContext, shouldClampLevel)
-    - `src/components/WeightGoalSlider.tsx` (NEW): swipeable pan-gesture slider with haptic detent feedback (react-native-gesture-handler + reanimated), tap fallback, premium gate, blocked positions
-    - Replaced old goal weight section in PortionCard with slider, wired getAdjustedDER into all DER consumers (pantryHelpers, EditPantryItemScreen, AddToPantrySheet, SharePantrySheet)
-    - HealthConditionsScreen auto-resets weight_goal_level to 0 on condition conflict
-    - Auto-deplete cron extended: inline DER computation (`computeInlineDER`), per-pet caloric accumulator, weight estimate push notifications
-    - `src/components/WeightEstimateSheet.tsx` (NEW): confirm estimate / enter actual weight / dismiss, all reset accumulator
-    - PetHubScreen: weight estimate banner, D-117 stale weight suppressed when accumulator active
-    - `src/screens/BCSReferenceScreen.tsx` (NEW): 9 BCS cards, species tabs, tappable selection, cat primordial pouch callout, saves bcs_score+bcs_assessed_at. Entry points from PortionCard, PetHubScreen, WeightEstimateSheet.
-    - NotificationPreferencesScreen: weight_estimate_alerts_enabled toggle
-    - `src/types/notifications.ts`: added weight_estimate_alerts_enabled to UserSettings, weight_estimate to NotificationType
-    - 44 new tests (weightGoal.test.ts), jest mocks for reanimated + gesture-handler
-  - **Post-ship fixes:**
-    - Pantry calorie target now shows adjusted DER (getCalorieContext uses computePetDer with weight_goal_level)
-    - Treat battery budget uses adjusted DER (replaced local computeDER with computePetDer)
-    - Slider rebuilt from tappable circles to swipeable pan gesture with haptic detents (worklet error fixed by inlining math in worklet, using runOnJS for snap+commit)
-    - Pantry serving sizes proportionally scale when slider moves (ratio = newMult/oldMult, await all updates before reload)
-    - SharePantrySheet now passes weight_goal_level to computePetDer (was using maintenance DER)
-  - **Migrations 021 + 022 applied to production, auto-deplete Edge Function deployed**
-- **Files changed:** supabase/migrations/022_weight_management.sql (NEW), src/types/pet.ts, src/types/notifications.ts, src/types/navigation.ts, src/utils/weightGoal.ts (NEW), __tests__/utils/weightGoal.test.ts (NEW), src/components/WeightGoalSlider.tsx (NEW), src/components/WeightEstimateSheet.tsx (NEW), src/components/PortionCard.tsx, src/utils/pantryHelpers.ts, src/utils/haptics.ts, src/screens/EditPantryItemScreen.tsx, src/components/pantry/AddToPantrySheet.tsx, src/components/pantry/SharePantrySheet.tsx, src/screens/HealthConditionsScreen.tsx, supabase/functions/auto-deplete/index.ts, src/screens/PetHubScreen.tsx, src/screens/pethub/PetHubStyles.ts, src/screens/pethub/petHubHelpers.ts (import only), src/services/petService.ts, src/screens/BCSReferenceScreen.tsx (NEW), src/navigation/index.tsx, src/screens/NotificationPreferencesScreen.tsx, __mocks__/react-native-reanimated.js (NEW), __mocks__/react-native-gesture-handler.js (NEW), package.json (jest moduleNameMapper), docs/status/CURRENT.md
+- **Accomplished:** Code review of M6 CompareScreen implementation + 3 cleanup fixes.
+  - **Reviewed all 11 files** (4 new, 7 modified) — see walkthrough.md and implementation_plan.md for full inventory
+  - **New files reviewed clean:** keyDifferences.ts (9-rule engine), keyDifferences.test.ts (14 tests), CompareScreen.tsx, CompareProductPickerSheet.tsx
+  - **Modified files reviewed clean:** ScoreRing.tsx, PortionCard.tsx, ResultScreen.tsx, AddToPantrySheet.tsx, navigation.ts, index.tsx, calorieEstimation.ts
+  - **DER bug fixes verified correct** in all 4 sites (ResultScreen ×2, AddToPantrySheet ×2)
+  - **3 fixes applied to CompareScreen.tsx:**
+    1. Removed unused `getScoreColor` import
+    2. Replaced `.length` dependency proxies with `.join()` for stable reactivity
+    3. Typed `KEY_DIFF_ICONS` with `ComponentProps<typeof Ionicons>['name']`, dropped `as any`
+- **Files changed:** src/screens/CompareScreen.tsx (3 edits), docs/status/CURRENT.md
 - **Not done yet:**
-  - PortionCard: auto-populate feedings_per_day per condition (gi_sensitive=3, pancreatitis dogs=3-4, diabetes=2 locked)
-  - Safe Swap condition filters (topMatches.ts hard filters per condition)
-  - Scoring reference docs: scoring-rules.md + scoring-details.md need condition scoring + weight management sections
-  - scoring-details.md bypass order is wrong (variety pack #3 vs recalled #3 — needs swap)
-  - Remaining M6: compare flow, vet report PDF, affiliate integration
-- **Next session should:** Run /boot. Start compare flow or Safe Swap condition filters. Weight management is fully shipped and tested.
+  - Safe Swap recommendations + condition filters
+  - Vet Report PDF, affiliate integration
+  - PortionCard: auto-populate feedings_per_day per condition
+  - Paywall gate: `canCompare()` currently stubbed true — needs real premium check (M7)
+  - `aafco_inference` not on Product type (Rule 5 uses aafco_statement only for now)
+  - Scoring reference docs still need condition scoring + weight management sections
+  - `scoring-details.md` bypass order still wrong (variety pack/recalled swapped)
+- **Next session should:** Run /boot. Start Safe Swap condition filters or vet report PDF. Compare flow is shipped and reviewed.
 - **Gotchas for next session:**
-  - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules in conditionScoring.ts — display-only for now.
-  - HealthConditionAdvisories matches personalizations to conditions via keyword matching in labels — fragile but functional.
+  - `canCompare()` is stubbed to return `true` — don't forget to gate behind real paywall in M7.
+  - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights — if supplemental products reach CompareScreen, breakdown denominator will be wrong. Low risk since picker filters by category.
+  - SafeSwapSection referenced in M6 prompt doesn't exist — `src/components/result/` only has HealthConditionAdvisories.tsx. Separate build needed.
+  - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules in conditionScoring.ts — display-only.
   - `scoring-details.md` Section 2 bypass order still wrong (variety pack/recalled swapped).
-  - Batch-score server copy generated via sed transform — verify import paths if Deno complains.
-  - Auto-deplete cron `computeInlineDER()` is a simplified copy of the client-side DER math — if portionCalculator.ts multiplier tables change, the cron must be updated manually.
-  - Jest now has `moduleNameMapper` for react-native-reanimated + gesture-handler mocks in `__mocks__/`. Any new component using these libraries will work in tests automatically.
-  - PortionCard `handleLevelChange` proportionally scales pantry serving sizes + reloads pantry. If user reports stale pantry data after slider change, check that `Promise.allSettled` completes before `loadPantry`.
-- **No new decisions added. No scoring logic changed. Migrations 021 + 022 applied to production.**
+  - Auto-deplete cron `computeInlineDER()` is a simplified copy of client-side DER math — if portionCalculator.ts multiplier tables change, cron must be updated manually.
+  - `pantryHelpers.ts:385` `getSystemRecommendation()` missing weight_goal_level param — function is unused but worth fixing preemptively.
+- **No new decisions added. No scoring logic changed. No new migrations.**

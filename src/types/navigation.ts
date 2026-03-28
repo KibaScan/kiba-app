@@ -19,6 +19,7 @@ export type ScanStackParamList = {
     productName: string | null;
     brand: string | null;
   };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type HomeStackParamList = {
@@ -26,12 +27,14 @@ export type HomeStackParamList = {
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
   AppointmentDetail: { appointmentId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type CommunityStackParamList = {
   CommunityMain: undefined;
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type PantryStackParamList = {
@@ -39,6 +42,7 @@ export type PantryStackParamList = {
   EditPantryItem: { itemId: string };
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type MeStackParamList = {
@@ -62,6 +66,7 @@ export type MeStackParamList = {
   Settings: undefined;
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 // ─── Paywall Trigger ─────────────────────────────────
