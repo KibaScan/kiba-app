@@ -51,6 +51,12 @@ import type { Appointment, PetHealthRecord, HealthRecordType } from '../types/ap
 import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
+import { canExportVetReport } from '../utils/permissions';
+import { getPantryForPet } from '../services/pantryService';
+import { assembleVetReportData } from '../services/vetReportService';
+import { generateVetReportHTML } from '../utils/vetReportHTML';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 // ─── Component ────────────────────────────────────────────
 
@@ -69,6 +75,69 @@ export default function PetHubScreen({ navigation }: Props) {
   const treatCount = useTreatBatteryStore((s) =>
     activePet ? (s.consumedByPet[activePet.id]?.count ?? 0) : 0,
   );
+
+  // ─── Vet Report ─────────────────────────────────────────
+  const [vetReportLoading, setVetReportLoading] = useState(false);
+
+  const handleGenerateVetReport = useCallback(async () => {
+    if (!activePet) return;
+
+    // Premium gate
+    if (!canExportVetReport()) {
+      Alert.alert(
+        'Premium Feature',
+        'Upgrade to Kiba Premium to generate vet diet reports.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    // Empty pantry guard — synchronous check before any async work
+    try {
+      const pantryCards = await getPantryForPet(activePet.id);
+      const assignedItems = pantryCards.filter(c => c.is_active);
+
+      if (assignedItems.length === 0) {
+        Alert.alert(
+          'No Foods Tracked',
+          `Add products to ${activePet.name}'s pantry for a complete diet report.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Go to Pantry',
+              onPress: () => (navigation.getParent() as any)?.navigate('Pantry', { screen: 'PantryMain' }),
+            },
+          ],
+        );
+        return;
+      }
+
+      setVetReportLoading(true);
+
+      // Assemble data → HTML → PDF → Share
+      const reportData = await assembleVetReportData(activePet.id, pantryCards);
+      const html = generateVetReportHTML(reportData);
+
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 612,  // US Letter
+        height: 792,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `${activePet.name} — Vet Diet Report`,
+          UTI: 'com.adobe.pdf',
+        });
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      Alert.alert('Report Error', message);
+    } finally {
+      setVetReportLoading(false);
+    }
+  }, [activePet, navigation]);
 
   // ─── Health data (screen-scoped, reloaded on focus) ─────
   const [conditions, setConditions] = useState<PetCondition[]>([]);
@@ -780,6 +849,24 @@ export default function PetHubScreen({ navigation }: Props) {
         <Text style={styles.healthDisclaimer}>
           Health records are for your reference. Consult your veterinarian for your pet's care schedule.
         </Text>
+
+        {/* Vet Report (M6) */}
+        <TouchableOpacity
+          style={styles.settingsNavRow}
+          activeOpacity={0.7}
+          onPress={handleGenerateVetReport}
+          disabled={vetReportLoading}
+        >
+          {vetReportLoading ? (
+            <ActivityIndicator size="small" color={Colors.accent} />
+          ) : (
+            <Ionicons name="document-text-outline" size={20} color={Colors.accent} />
+          )}
+          <Text style={[styles.settingsNavLabel, { color: Colors.accent }]}>
+            {vetReportLoading ? 'Generating Report…' : 'Generate Vet Report'}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+        </TouchableOpacity>
 
         {/* Settings */}
         <TouchableOpacity
