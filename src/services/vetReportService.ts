@@ -147,7 +147,7 @@ export async function assembleVetReportData(
 
 // ─── Ingredient Fetch ───────────────────────────────────
 
-async function fetchIngredientNames(
+export async function fetchIngredientNames(
   productIds: string[],
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
@@ -175,7 +175,7 @@ async function fetchIngredientNames(
 
 // ─── Diet Items Builder ─────────────────────────────────
 
-function buildDietItems(
+export function buildDietItems(
   cards: PantryCardData[],
   petId: string,
   allergens: string[],
@@ -225,7 +225,7 @@ function buildDietItems(
   });
 }
 
-function formatServing(assignment: PantryPetAssignment): string {
+export function formatServing(assignment: PantryPetAssignment): string {
   const size = assignment.serving_size;
   const unit = assignment.serving_size_unit;
   const freq = assignment.feedings_per_day;
@@ -234,7 +234,7 @@ function formatServing(assignment: PantryPetAssignment): string {
   return `${sizeStr} ${unit} × ${freq}/day`;
 }
 
-function getFormLabel(
+export function getFormLabel(
   product: PantryCardData['product'],
   card: PantryCardData,
 ): string {
@@ -247,7 +247,7 @@ function getFormLabel(
 
 // ─── Combined Nutrition ─────────────────────────────────
 
-function computeCombinedNutrition(
+export function computeCombinedNutrition(
   items: VetReportDietItem[],
   species: 'dog' | 'cat',
 ): CombinedNutrition {
@@ -361,7 +361,7 @@ function emptyCombinedNutrition(species: 'dog' | 'cat'): CombinedNutrition {
 
 // ─── Supplemental Nutrients ─────────────────────────────
 
-function computeSupplementNutrients(cards: PantryCardData[]): SupplementNutrient[] {
+export function computeSupplementNutrients(cards: PantryCardData[]): SupplementNutrient[] {
   const nutrients: SupplementNutrient[] = [];
 
   // Helper: scan all products for a GA field, take highest value
@@ -435,7 +435,7 @@ function computeSupplementNutrients(cards: PantryCardData[]): SupplementNutrient
 
 // ─── Flags ──────────────────────────────────────────────
 
-function generateFlags(
+export function generateFlags(
   dietItems: VetReportDietItem[],
   cards: PantryCardData[],
   nutrition: CombinedNutrition,
@@ -543,7 +543,7 @@ function generateFlags(
 
 // ─── Condition Management Notes ─────────────────────────
 
-function generateConditionNotes(
+export function generateConditionNotes(
   conditionTags: string[],
   nutrition: CombinedNutrition,
   dietItems: VetReportDietItem[],
@@ -667,7 +667,7 @@ function generateConditionNotes(
 
 // ─── Treat Summary ──────────────────────────────────────
 
-function computeTreatSummary(
+export function computeTreatSummary(
   petId: string,
   cards: PantryCardData[],
 ): TreatSummary | null {
@@ -713,7 +713,7 @@ function computeTreatSummary(
 
 // ─── Weight Tracking ────────────────────────────────────
 
-function buildWeightTracking(pet: Pet): WeightTrackingData {
+export function buildWeightTracking(pet: Pet): WeightTrackingData {
   const goalLevel = pet.weight_goal_level ?? 0;
   const driftLbs = pet.caloric_accumulator != null && pet.caloric_accumulator !== 0
     ? Math.round((pet.caloric_accumulator / KCAL_PER_LB) * 10) / 10

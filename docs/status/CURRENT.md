@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-03-27
+# Project Status — Last updated 2026-03-28
 
 ## Active Milestone
 **M6 — Alternatives Engine** (compare flow, safe swaps, weight management, BCS reference, vet report PDF)
@@ -25,7 +25,7 @@
 - Pre-existing TS errors: SharePantrySheet.tsx (Product type), feedingNotificationScheduler.ts (unit type)
 
 ## Numbers
-- **Tests:** 1075 passing / 52 suites
+- **Tests:** 1137 passing / 53 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, all `###` normalized)
 - **Migrations:** 22 (001–022)
 - **Products:** 19,058
@@ -51,38 +51,34 @@
 
 ## Last Session
 - **Date:** 2026-03-28
-- **Accomplished:** Vet Report PDF review + bug fixes + layout alignment + polish. Also D-167 allergen score cap and CompareScreen review earlier in session.
-  - **Vet Report code review** — reviewed all 5 files (4 new, 1 modified). Found 3 critical, 3 medium issues.
-  - **Bug fixes applied:**
-    - BCS gauge triangle marker math (zone-aware positioning for flex 3:2:2:2)
-    - Ca/P fields added to VetReportDietItem type + populated in buildDietItems + AAFCO checks added (dog: Ca>=0.5%, P>=0.4%; cat: Ca>=0.6%, P>=0.5%)
-    - Removed unsafe `as unknown as` casts for calcium/phosphorus
-    - Hypothyroidism observation text fixed ("exceeds threshold" not "preferred")
-    - 3x D-095 "preferred" violations reworded to observational language
-    - Footer disclaimer added to all 4 pages
-  - **Layout alignment (3 phases):**
-    - Phase 1: Title "KIBA — Diet Report for [Name]" centered, Pet Profile bordered box with 4-column grid, medications as bullet lists, caloric summary above diet table, dropped AAFCO column from diet table
-    - Phase 2: Unified nutrition table (Nutrient/As-Fed/DMB/AAFCO), inline supplemental nutrients, "Weight Tracking" section simplified
-    - Phase 3: Per-product numbered inline format with Category/AAFCO/macros/kcal/ingredients
-  - **Polish:** BCS 9-cell gauge with color-coded zones (CSS classes + print-color-adjust), section headers with gray background bars, bordered-section wrappers, brand stripped from diet table product names, treat row hidden when kcal unknown, AAFCO shows "—" when no DMB data, footer bumped to 8px
-  - **ownerDietaryCards.ts** — wrote 28 clinical dietary cards (14 conditions × 2 species) from Spec §17
-  - **D-167 + CompareScreen** — allergen score cap at 50, CompareScreen cleanup (earlier in session)
-- **Files changed:** src/utils/vetReportHTML.ts, src/types/vetReport.ts, src/services/vetReportService.ts, src/data/ownerDietaryCards.ts (NEW), src/services/scoring/personalization.ts, __tests__/services/scoring/personalization.test.ts, __tests__/services/scoring/allergenOverride.test.ts, src/screens/CompareScreen.tsx, src/services/scoring/pipeline.ts, src/services/scoring/CLAUDE.md, DECISIONS.md, docs/references/scoring-rules.md, docs/references/scoring-details.md, docs/plans/vet_report_plan_review.md (NEW), docs/status/CURRENT.md
+- **Accomplished:** Vet report test suite — 62 tests covering all internal pure functions + owner dietary cards + conflict detection.
+  - **vetReportService.test.ts (NEW)** — 62 tests across 11 suites:
+    - `formatServing` (3): single/multiple feedings, whole number formatting
+    - `getFormLabel` (6): treat/supp/top/dry/wet/fallback
+    - `buildDietItems` (4): field mapping, allergen cross-reference, "As needed" fallback, missing ingredients
+    - `computeCombinedNutrition` (7): calorie-weighted averages, treat/supplement exclusion, empty nutrition, DMB conversion, AAFCO thresholds (dog+cat), null handling
+    - `computeSupplementNutrients` (3): highest value selection, empty array, probiotics presence
+    - `generateFlags` (10): all P1-P8 priorities, DCM dogs-only guard, sequential numbering
+    - `generateConditionNotes` (13): CKD, pancreatitis (dog vs cat), diabetes (dog vs cat), obesity, hypothyroid, GI, skin, joint, cardiac taurine detection, liver/seizures no-op
+    - `computeTreatSummary` (4): battery source, kcalIsEstimated, pantry fallback, null
+    - `buildWeightTracking` (5): field defaults, drift calculation, negative drift, all goal labels, null fields
+    - `getOwnerDietaryCards` (4): healthy maintenance, allergen trigger, render order, species-specific
+    - `detectConflicts` (4): CKD+underweight, pancreatitis+underweight dogs-only, no conflicts, both conflicts
+  - Exported 10 internal pure functions from `vetReportService.ts` for testability
+- **Files changed:** src/services/vetReportService.ts (added exports), __tests__/services/vetReportService.test.ts (NEW), docs/status/CURRENT.md
 - **Not done yet:**
   - Safe Swap recommendations + condition filters
   - Affiliate integration
   - PortionCard: auto-populate feedings_per_day per condition
   - Paywall gate: `canCompare()` currently stubbed true — needs real premium check (M7)
   - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
-  - Vet report tests not yet written (25+ planned in vetReportService.test.ts)
-- **Next session should:** Run /boot. Commit + push all changes. Write vet report tests. Start Safe Swap condition filters.
+- **Next session should:** Run /boot. Commit + push all changes. Start Safe Swap condition filters.
 - **Gotchas for next session:**
-  - Vet report has no automated tests yet — `vetReportService.test.ts` needs to be created with combined nutrition math, AAFCO checks, flag generation, condition notes, owner dietary cards, treat waterfall, weight drift tests.
-  - `expo-print` was installed this session (`npx expo install expo-print`) — verify it's in package.json.
+  - `expo-print` was installed last session (`npx expo install expo-print`) — verify it's in package.json.
   - BCS gauge uses CSS classes with `!important` + `print-color-adjust: exact` for color rendering in expo-print. If colors stop rendering, check the global style block.
   - `canCompare()` is stubbed to return `true` — don't forget to gate behind real paywall in M7.
   - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules or dietary cards — display-only.
   - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights.
   - `pantryHelpers.ts:385` `getSystemRecommendation()` missing weight_goal_level param — unused function.
   - Auto-deplete cron `computeInlineDER()` must be synced manually if portionCalculator multiplier tables change.
-- **New decision this session: D-167 (Allergen Score Cap). Scoring logic changed (personalization.ts Layer 3). No new migrations.**
+- **No new decisions, no scoring changes, no new migrations this session.**
