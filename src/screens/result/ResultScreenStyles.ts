@@ -146,54 +146,6 @@ export const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
 
-  // ─── Safe Swap (D-126 blur pattern)
-  safeSwapCard: {
-    marginBottom: Spacing.lg,
-  },
-  safeSwapBlur: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: Spacing.md,
-    overflow: 'hidden',
-    opacity: 0.7,
-  },
-  safeSwapLockOverlay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  safeSwapLockText: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  safeSwapRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  safeSwapDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  safeSwapPlaceholderBar: {
-    flex: 1,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.cardBorder,
-  },
-  safeSwapScoreBadge: {
-    width: 36,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.cardBorder,
-  },
-
   // ─── Compare Button
   compareButton: {
     flexDirection: 'row',

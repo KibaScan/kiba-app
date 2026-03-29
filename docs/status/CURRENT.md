@@ -22,10 +22,10 @@
 - **Vet Report PDF** — 4-page diet-centric report via expo-print (no Kiba scores). Pet profile with BCS gauge, caloric summary, combined nutrition with AAFCO checks, supplemental nutrients, flags, weight tracking, per-product detail, condition management notes, owner dietary cards (28 cards × conflict detection), vet notes. Premium-gated via `canExportVetReport()`.
 
 ## What's Broken / Known Issues
-- Pre-existing TS errors: SharePantrySheet.tsx (Product type), feedingNotificationScheduler.ts (unit type)
+- No pre-existing TS errors (all 7 fixed this session)
 
 ## Numbers
-- **Tests:** 1137 passing / 53 suites
+- **Tests:** 1178 passing / 54 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, all `###` normalized)
 - **Migrations:** 22 (001–022)
 - **Products:** 19,058
@@ -51,31 +51,37 @@
 
 ## Last Session
 - **Date:** 2026-03-28
-- **Accomplished:** Vet report test suite — 62 tests covering all internal pure functions + owner dietary cards + conflict detection.
-  - **vetReportService.test.ts (NEW)** — 62 tests across 11 suites:
-    - `formatServing` (3): single/multiple feedings, whole number formatting
-    - `getFormLabel` (6): treat/supp/top/dry/wet/fallback
-    - `buildDietItems` (4): field mapping, allergen cross-reference, "As needed" fallback, missing ingredients
-    - `computeCombinedNutrition` (7): calorie-weighted averages, treat/supplement exclusion, empty nutrition, DMB conversion, AAFCO thresholds (dog+cat), null handling
-    - `computeSupplementNutrients` (3): highest value selection, empty array, probiotics presence
-    - `generateFlags` (10): all P1-P8 priorities, DCM dogs-only guard, sequential numbering
-    - `generateConditionNotes` (13): CKD, pancreatitis (dog vs cat), diabetes (dog vs cat), obesity, hypothyroid, GI, skin, joint, cardiac taurine detection, liver/seizures no-op
-    - `computeTreatSummary` (4): battery source, kcalIsEstimated, pantry fallback, null
-    - `buildWeightTracking` (5): field defaults, drift calculation, negative drift, all goal labels, null fields
-    - `getOwnerDietaryCards` (4): healthy maintenance, allergen trigger, render order, species-specific
-    - `detectConflicts` (4): CKD+underweight, pancreatitis+underweight dogs-only, no conflicts, both conflicts
-  - Exported 10 internal pure functions from `vetReportService.ts` for testability
-- **Files changed:** src/services/vetReportService.ts (added exports), __tests__/services/vetReportService.test.ts (NEW), docs/status/CURRENT.md
+- **Accomplished:** Safe Swap recommendations — Plan 1 (core service + UI + tests). Also fixed all 7 pre-existing TS errors.
+  - **safeSwapService.ts (NEW)** — full query + filter pipeline:
+    - Pure functions: `toDMB`, `inferMoisture`, `applyConditionHardFilters`, `generateSwapReason`, `dcmPulsePatternFires`
+    - 6 condition hard filters: pancreatitis (dog fat >15% DMB), CKD (phosphorus), diabetes (cat carb >25% DMB), obesity (kcal density), cardiac (DCM pulse pattern), underweight (name keywords)
+    - 5 exclusion queries (parallel): allergen, severity, pantry, recent scans, cardiac DCM
+    - `fetchSafeSwaps()` — base query on `pet_product_scores` + products join, returns top 3 candidates with swap reasons
+  - **SafeSwapSection.tsx (NEW)** — UI component:
+    - Premium users: 3-card row with product image, brand, name, score + "for [petName]" (D-094), swap reason, Compare link
+    - Free users: blurred placeholder with paywall tap (migrated from ResultScreen)
+    - Bypassed products: hidden. Empty results: hidden.
+  - **ResultScreen.tsx** — replaced 34-line placeholder with SafeSwapSection component, lifted petAllergenGroups to state
+  - **ResultScreenStyles.ts** — removed 8 unused placeholder styles
+  - **safeSwapService.test.ts (NEW)** — 41 tests across 5 suites:
+    - `toDMB` (2), `inferMoisture` (4), `applyConditionHardFilters` (18), `dcmPulsePatternFires` (6), `generateSwapReason` (11)
+  - **Pre-existing TS error fixes (7 errors → 0):**
+    - CreatePetScreen, OnboardingScreen, ScanScreen: added missing migration 022 fields to createPet() calls
+    - WeightGoalSlider: cast currentLevel to ALL_LEVELS literal union
+    - feedingNotificationScheduler: removed stale 'units' comparison (D-164)
+    - SharePantrySheet: cast item.product as Product for computeAutoServingSize
+- **Files changed:** src/services/safeSwapService.ts (NEW), src/components/result/SafeSwapSection.tsx (NEW), __tests__/services/safeSwapService.test.ts (NEW), src/screens/ResultScreen.tsx, src/screens/result/ResultScreenStyles.ts, src/screens/CreatePetScreen.tsx, src/screens/OnboardingScreen.tsx, src/screens/ScanScreen.tsx, src/components/WeightGoalSlider.tsx, src/services/feedingNotificationScheduler.ts, src/components/pantry/SharePantrySheet.tsx, docs/status/CURRENT.md
 - **Not done yet:**
-  - Safe Swap recommendations + condition filters
+  - Safe Swap Plan 2: curated layout (Top Pick / Fish-Based / Great Value) — needs migration 023 + price backfill rework. Curated layout is daily dry food only; other categories use top-3-by-score.
+  - Safe Swap Plan 3: multi-pet chip row (Buster / Milo / All Dogs)
   - Affiliate integration
   - PortionCard: auto-populate feedings_per_day per condition
   - Paywall gate: `canCompare()` currently stubbed true — needs real premium check (M7)
   - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
-- **Next session should:** Run /boot. Commit + push all changes. Start Safe Swap condition filters.
+- **Next session should:** Run /boot. Commit + push. Review Safe Swap Plan 2 (curated layout + price migration) or start affiliate integration.
 - **Gotchas for next session:**
-  - `expo-print` was installed last session (`npx expo install expo-print`) — verify it's in package.json.
-  - BCS gauge uses CSS classes with `!important` + `print-color-adjust: exact` for color rendering in expo-print. If colors stop rendering, check the global style block.
+  - `safe swaps/` folder still exists with draft files — can be cleaned up or used as reference for Plan 2.
+  - Safe Swap relies on `pet_product_scores` cache being populated. If empty for a pet, section silently hides. Batch score must have run first (via topMatches.ts triggerBatchScore).
   - `canCompare()` is stubbed to return `true` — don't forget to gate behind real paywall in M7.
   - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules or dietary cards — display-only.
   - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights.

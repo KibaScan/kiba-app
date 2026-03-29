@@ -84,10 +84,10 @@ function formatServingDisplay(
 ): string {
   if (servingMode === 'unit') {
     let label: string;
-    if (unitLabel && unitLabel !== 'units') {
+    if (unitLabel) {
       label = unitLabel;
     } else {
-      label = servingSizeUnit !== 'units' ? servingSizeUnit : 'servings';
+      label = servingSizeUnit === 'cups' || servingSizeUnit === 'scoops' ? servingSizeUnit : 'servings';
     }
     const displayUnit = size <= 1 ? singularize(label) : label;
     return `${toUnicodeFraction(size)} ${displayUnit}`;

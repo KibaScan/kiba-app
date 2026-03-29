@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { PantryCardData, PantryPetAssignment } from '../../types/pantry';
 import { PantryOfflineError } from '../../types/pantry';
+import type { Product } from '../../types';
 import type { Pet } from '../../types/pet';
 import { useActivePetStore } from '../../stores/useActivePetStore';
 import {
@@ -110,7 +111,7 @@ export function SharePantrySheet({
 
         const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
         if (petDer != null) {
-          const auto = computeAutoServingSize(petDer, feedingsPerDay, item.product);
+          const auto = computeAutoServingSize(petDer, feedingsPerDay, item.product as Product);
           if (auto) {
             servingSize = Math.round(auto.amount * 100) / 100;
             servingSizeUnit = auto.unit;
@@ -169,7 +170,7 @@ export function SharePantrySheet({
     if (pet) {
       const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
       if (petDer != null) {
-        const auto = computeAutoServingSize(petDer, next, item.product);
+        const auto = computeAutoServingSize(petDer, next, item.product as Product);
         if (auto) {
           newServing = Math.round(auto.amount * 100) / 100;
           newUnit = auto.unit;

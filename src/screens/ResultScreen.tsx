@@ -27,7 +27,7 @@ import {
   ResultRecalledBypass,
   ResultVarietyPackBypass,
 } from './result/ResultBypassViews';
-import { canUseSafeSwaps, canCompare } from '../utils/permissions';
+import { canCompare } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
 import type { ScoredResult, ProductIngredient } from '../types/scoring';
@@ -68,6 +68,7 @@ import { isSupplementalByName } from '../utils/supplementalClassifier';
 import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
 import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
 import { HealthConditionAdvisories } from '../components/result/HealthConditionAdvisories';
+import { SafeSwapSection } from '../components/result/SafeSwapSection';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 
@@ -135,6 +136,7 @@ export default function ResultScreen() {
   const [pantrySheetVisible, setPantrySheetVisible] = useState(false);
   const [comparePickerVisible, setComparePickerVisible] = useState(false);
   const [petConditions, setPetConditions] = useState<string[]>([]);
+  const [petAllergenGroups, setPetAllergenGroups] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
 
   const phase: 'loading' | 'ready' =
@@ -224,6 +226,7 @@ export default function ResultScreen() {
           petConditions = conditionRows.map((c) => c.condition_tag);
         }
         setPetConditions(petConditions);
+        setPetAllergenGroups(petAllergens);
         const { scoredResult: result, ingredients } = await scoreProduct(product, pet, petAllergens, petConditions);
         setScoredResult(result);
         setHydratedIngredients(ingredients);
@@ -641,40 +644,22 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Safe Swap CTA (D-126: blur + lock for free users) */}
-        <TouchableOpacity
-          style={styles.safeSwapCard}
-          activeOpacity={0.7}
-          onPress={() => {
-            if (!canUseSafeSwaps()) {
-              (navigation as any).navigate('Paywall', {
-                trigger: 'safe_swap',
-                petName: displayName,
-              });
-            }
-            // TODO: Safe Swap flow (M6+)
-          }}
-        >
-          <View style={styles.safeSwapBlur}>
-            <View style={styles.safeSwapLockOverlay}>
-              <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
-              <Text style={styles.safeSwapLockText}>
-                Discover healthier alternatives
-              </Text>
-            </View>
-            {/* Fake blurred rows */}
-            <View style={styles.safeSwapRow}>
-              <View style={[styles.safeSwapDot, { backgroundColor: Colors.severityGreen }]} />
-              <View style={styles.safeSwapPlaceholderBar} />
-              <View style={styles.safeSwapScoreBadge} />
-            </View>
-            <View style={styles.safeSwapRow}>
-              <View style={[styles.safeSwapDot, { backgroundColor: Colors.severityGreen }]} />
-              <View style={styles.safeSwapPlaceholderBar} />
-              <View style={styles.safeSwapScoreBadge} />
-            </View>
-          </View>
-        </TouchableOpacity>
+        {/* Safe Swap Alternatives (M6) */}
+        {product && (
+          <SafeSwapSection
+            productId={product.id}
+            petId={pet?.id ?? ''}
+            species={species}
+            category={product.category}
+            productForm={product.product_form}
+            isSupplemental={product.is_supplemental}
+            scannedScore={scoredResult?.finalScore ?? 0}
+            petName={displayName}
+            allergenGroups={petAllergenGroups}
+            conditionTags={petConditions}
+            isBypassed={!!scoredResult?.bypass}
+          />
+        )}
 
         {/* Share button */}
         <TouchableOpacity

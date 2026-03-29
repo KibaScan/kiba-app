@@ -39,7 +39,7 @@ interface WeightGoalSliderProps {
 }
 
 export default function WeightGoalSlider({ pet, baseDER, conditions, onLevelChange }: WeightGoalSliderProps) {
-  const currentLevel = pet.weight_goal_level ?? 0;
+  const currentLevel = (pet.weight_goal_level ?? 0) as typeof ALL_LEVELS[number];
   const premium = canUseGoalWeight();
 
   const availableLevels = useMemo(
@@ -70,7 +70,7 @@ export default function WeightGoalSlider({ pet, baseDER, conditions, onLevelChan
 
   // Convert level to detent index within visibleLevels
   const levelToIndex = useCallback(
-    (level: number) => visibleLevels.indexOf(level),
+    (level: number) => visibleLevels.indexOf(level as typeof ALL_LEVELS[number]),
     [visibleLevels],
   );
 
