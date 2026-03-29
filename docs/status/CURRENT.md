@@ -41,7 +41,6 @@
 ## Up Next (M6)
 - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
 - PortionCard: auto-populate feedings_per_day per condition
-- Paywall gate: replace `canCompare()` stub with real premium check (M7)
 - `aafco_inference` on Product type (low priority — Rule 5 uses aafco_statement only)
 - Run migration 023 on production database (price/size columns)
 - Run `scripts/import/backfill_price_size.py` against v7 dataset to populate price/size data
@@ -73,7 +72,6 @@
   - `scripts/import/backfill_price_size.py` needs to be run against v7 dataset to populate price/size data for Great Value slot
   - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
   - PortionCard: auto-populate feedings_per_day per condition
-  - Paywall gate: `canCompare()` currently stubbed true — needs real premium check (M7)
   - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
   - `safe swaps/` draft folder can be cleaned up (no longer needed)
 - **Next session should:** Run /boot. Commit + push. Apply migration 023 to prod. Run backfill_price_size.py. Then start affiliate integration or other M6 items.
