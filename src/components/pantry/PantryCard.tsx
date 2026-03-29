@@ -181,6 +181,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
               isRecalled={isRecalled}
               isVetDiet={isVetDiet}
               isSupplemental={product.is_supplemental}
+              petName={activePet.name}
             />
             {!isTreat && item.days_remaining != null && !item.is_empty ? (
               <View style={styles.remainingRow}>
@@ -284,11 +285,13 @@ function ScoreBadge({
   isRecalled,
   isVetDiet,
   isSupplemental,
+  petName,
 }: {
   score: number | null;
   isRecalled: boolean;
   isVetDiet: boolean;
   isSupplemental: boolean;
+  petName: string;
 }) {
   if (isRecalled) {
     return (
@@ -317,7 +320,7 @@ function ScoreBadge({
   const color = getScoreColor(score, isSupplemental);
   return (
     <Text style={[styles.scoreText, { color }]}>
-      {score}% match
+      {score}% match for {petName}
     </Text>
   );
 }

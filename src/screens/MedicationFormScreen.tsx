@@ -184,7 +184,7 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
           {/* Prescribed for */}
           {conditions.length > 0 && (
             <>
-              <Text style={styles.label}>Prescribed for (optional)</Text>
+              <Text style={styles.label}>Linked condition (optional)</Text>
               <View style={styles.chipRow}>
                 <TouchableOpacity
                   style={[

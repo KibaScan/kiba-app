@@ -50,6 +50,7 @@ export function ScanHistoryCard({ item, petName, onPress }: ScanHistoryCardProps
           isRecalled={product.is_recalled}
           isVetDiet={product.is_vet_diet}
           isSupplemental={product.is_supplemental}
+          petName={petName}
         />
         <Text style={styles.time}>{formatRelativeTime(item.scanned_at)}</Text>
       </View>
@@ -64,11 +65,13 @@ function ScoreBadge({
   isRecalled,
   isVetDiet,
   isSupplemental,
+  petName,
 }: {
   score: number | null;
   isRecalled: boolean;
   isVetDiet: boolean;
   isSupplemental: boolean;
+  petName: string;
 }) {
   if (isRecalled) {
     return (
@@ -97,7 +100,7 @@ function ScoreBadge({
   const color = getScoreColor(score, isSupplemental);
   return (
     <Text style={[styles.scoreText, { color }]}>
-      {score}% match
+      {score}% match for {petName}
     </Text>
   );
 }

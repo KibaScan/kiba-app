@@ -190,6 +190,20 @@ export async function scoreProduct(
     };
   }
 
+  // D-158: Recalled products — no score, bypass with warning + ingredients
+  if (product.is_recalled) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['recalled']).scoredResult,
+        bypass: 'recalled' as const,
+        bypassReason: 'This product has been recalled by the FDA',
+        isPartialScore: false,
+        isRecalled: true,
+      },
+      ingredients: hydrated,
+    };
+  }
+
   // Variety pack bypass — concatenated multi-recipe lists produce unreliable scores
   if (detectVarietyPack(product.name, hydrated)) {
     return {

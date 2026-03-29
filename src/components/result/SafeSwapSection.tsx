@@ -283,7 +283,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
             {/* Score */}
             <View style={s.scoreRow}>
               <View style={[s.scoreDot, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) }]} />
-              <Text style={s.scoreText}>{Math.round(c.final_score)}%</Text>
+              <Text style={s.scoreText}>{Math.round(c.final_score)}% match</Text>
             </View>
             <Text style={s.scoreLabel}>for {displayName}</Text>
 
