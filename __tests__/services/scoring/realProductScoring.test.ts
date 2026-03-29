@@ -61,6 +61,7 @@ const P1: Product = {
   needs_review: false,
   base_score: null, base_score_computed_at: null,
   last_verified_at: null, formula_change_log: null, affiliate_links: null,
+  price: null, price_currency: null, product_size_kg: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
 } as Product;
 
@@ -118,6 +119,7 @@ const P2: Product = {
   needs_review: false,
   base_score: null, base_score_computed_at: null,
   last_verified_at: null, formula_change_log: null, affiliate_links: null,
+  price: null, price_currency: null, product_size_kg: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
 } as Product;
 
@@ -151,7 +153,11 @@ const DOG_PET = {
   weight_updated_at: null, activity_level: 'moderate' as const,
   is_neutered: true, sex: 'male' as const, breed_size: 'large' as const,
   life_stage: LifeStage.Adult, photo_url: null,
-  health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
+  health_reviewed_at: null,
+  weight_goal_level: null, caloric_accumulator: null,
+  accumulator_last_reset_at: null, accumulator_notification_sent: null,
+  bcs_score: null, bcs_assessed_at: null,
+  created_at: '2026-01-01', updated_at: '2026-01-01',
 };
 
 const CAT_PET = {
@@ -161,7 +167,11 @@ const CAT_PET = {
   weight_updated_at: null, activity_level: 'low' as const,
   is_neutered: true, sex: 'female' as const, breed_size: null,
   life_stage: LifeStage.Mature, photo_url: null,
-  health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
+  health_reviewed_at: null,
+  weight_goal_level: null, caloric_accumulator: null,
+  accumulator_last_reset_at: null, accumulator_notification_sent: null,
+  bcs_score: null, bcs_assessed_at: null,
+  created_at: '2026-01-01', updated_at: '2026-01-01',
 };
 
 // ─── Tests ────────────────────────────────────────────────────

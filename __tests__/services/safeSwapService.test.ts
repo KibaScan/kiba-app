@@ -5,6 +5,8 @@ import {
   applyConditionHardFilters,
   generateSwapReason,
   dcmPulsePatternFires,
+  assignCuratedSlots,
+  intersectCandidatePools,
   toDMB,
   inferMoisture,
 } from '../../src/services/safeSwapService';
@@ -18,6 +20,14 @@ import type {
 
 jest.mock('../../src/services/supabase', () => ({
   supabase: { from: jest.fn(), auth: { getSession: jest.fn() } },
+}));
+
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn().mockResolvedValue(null),
+    setItem: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 // ─── Test Helpers ───────────────────────────────────────
@@ -39,6 +49,8 @@ function makeCandidate(overrides: Partial<CandidateRow> = {}): CandidateRow {
     ga_moisture_pct: 10,
     ga_kcal_per_kg: 3500,
     name: 'Test Product',
+    price: null,
+    product_size_kg: null,
     ...overrides,
   };
 }
@@ -405,5 +417,201 @@ describe('generateSwapReason', () => {
         }
       }
     }
+  });
+});
+
+// ─── assignCuratedSlots ────────────────────────────────
+
+describe('assignCuratedSlots', () => {
+  // Candidates sorted by score DESC (as they would be from the DB query)
+  const candidates: CandidateRow[] = [
+    makeCandidate({ product_id: 'top-score', final_score: 95 }),
+    makeCandidate({ product_id: 'fish-product', final_score: 90 }),
+    makeCandidate({ product_id: 'value-product', final_score: 85, price: 25, product_size_kg: 5 }), // $5/kg
+    makeCandidate({ product_id: 'another', final_score: 80 }),
+    makeCandidate({ product_id: 'cheap', final_score: 78, price: 10, product_size_kg: 5 }), // $2/kg
+  ];
+
+  const fishIds = new Set(['fish-product']);
+  const noFish = new Set<string>();
+
+  it('Top Pick = highest score candidate', () => {
+    const result = assignCuratedSlots(candidates, fishIds, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    expect(result![0].slot_label).toBe('Top Pick');
+    expect(result![0].product_id).toBe('top-score');
+  });
+
+  it('Fish-Based = highest score fish candidate (no fish allergy)', () => {
+    const result = assignCuratedSlots(candidates, fishIds, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    const fishSlot = result!.find(c => c.slot_label === 'Fish-Based');
+    expect(fishSlot).toBeDefined();
+    expect(fishSlot!.product_id).toBe('fish-product');
+    expect(fishSlot!.is_fish_based).toBe(true);
+  });
+
+  it('pet has fish allergy → slot 2 becomes Another Pick', () => {
+    const result = assignCuratedSlots(candidates, fishIds, true, [], ['fish'], 'dog');
+    expect(result).not.toBeNull();
+    const slot2 = result!.find(c => c.slot_label === 'Another Pick');
+    expect(slot2).toBeDefined();
+    expect(slot2!.product_id).toBe('fish-product'); // 2nd highest score
+    // No Fish-Based slot
+    expect(result!.find(c => c.slot_label === 'Fish-Based')).toBeUndefined();
+  });
+
+  it('Great Value = lowest price_per_kg (excluding already-selected)', () => {
+    const result = assignCuratedSlots(candidates, fishIds, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    const valueSlot = result!.find(c => c.slot_label === 'Great Value');
+    expect(valueSlot).toBeDefined();
+    expect(valueSlot!.product_id).toBe('cheap'); // $2/kg is cheapest
+    expect(valueSlot!.price_per_kg).toBeCloseTo(2, 1);
+  });
+
+  it('no fish candidates + no fish allergy → 2 slots (Top Pick + Great Value)', () => {
+    const result = assignCuratedSlots(candidates, noFish, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(2);
+    expect(result![0].slot_label).toBe('Top Pick');
+    expect(result![1].slot_label).toBe('Great Value');
+  });
+
+  it('no price data → 2 slots (Top Pick + Fish-Based)', () => {
+    const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
+    const result = assignCuratedSlots(noPriceCandidates, fishIds, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(2);
+    expect(result![0].slot_label).toBe('Top Pick');
+    expect(result![1].slot_label).toBe('Fish-Based');
+  });
+
+  it('neither fish nor price + no fish allergy → 1 slot → returns null (fallback to generic)', () => {
+    const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
+    const result = assignCuratedSlots(noPriceCandidates, noFish, false, [], [], 'dog');
+    expect(result).toBeNull();
+  });
+
+  it('fish allergy + no price data → 2 slots (Top Pick + Another Pick)', () => {
+    const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
+    const result = assignCuratedSlots(noPriceCandidates, fishIds, true, [], ['fish'], 'dog');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(2);
+    expect(result![0].slot_label).toBe('Top Pick');
+    expect(result![1].slot_label).toBe('Another Pick');
+  });
+
+  it('Great Value cannot be same product as Top Pick or Fish-Based', () => {
+    // Make the cheapest product also be the top score and fish-based
+    const tricky: CandidateRow[] = [
+      makeCandidate({ product_id: 'top-fish-cheap', final_score: 95, price: 5, product_size_kg: 5 }),
+      makeCandidate({ product_id: 'second', final_score: 88, price: 20, product_size_kg: 5 }),
+      makeCandidate({ product_id: 'third', final_score: 82, price: 15, product_size_kg: 5 }),
+    ];
+    const trickyFish = new Set(['top-fish-cheap']);
+    const result = assignCuratedSlots(tricky, trickyFish, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    // Top Pick and Fish-Based are the same product? No — Top Pick takes it first,
+    // then Fish-Based is the same product but already selected, so no Fish-Based slot.
+    // Actually: Top Pick = top-fish-cheap, Fish-Based looks for fish not already selected = none.
+    // So we get Top Pick + Great Value (second cheapest that's not selected)
+    expect(result).toHaveLength(2);
+    expect(result![0].product_id).toBe('top-fish-cheap');
+    expect(result![1].slot_label).toBe('Great Value');
+    expect(result![1].product_id).toBe('third'); // $3/kg is cheaper than $4/kg
+  });
+
+  it('all 3 slots filled → returns 3 candidates with correct labels', () => {
+    const result = assignCuratedSlots(candidates, fishIds, false, [], [], 'dog');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(3);
+    const labels = result!.map(c => c.slot_label);
+    expect(labels).toContain('Top Pick');
+    expect(labels).toContain('Fish-Based');
+    expect(labels).toContain('Great Value');
+  });
+
+  it('each candidate has a reason from generateSwapReason', () => {
+    const result = assignCuratedSlots(candidates, fishIds, false, ['obesity'], [], 'dog');
+    expect(result).not.toBeNull();
+    for (const c of result!) {
+      expect(c.reason).toBe('Lower calorie density');
+    }
+  });
+
+  it('empty candidates returns null', () => {
+    const result = assignCuratedSlots([], fishIds, false, [], [], 'dog');
+    expect(result).toBeNull();
+  });
+});
+
+// ─── intersectCandidatePools ───────────────────────────
+
+describe('intersectCandidatePools', () => {
+  it('two pools, full overlap → uses floor scores', () => {
+    const pool1 = [
+      makeCandidate({ product_id: 'A', final_score: 90 }),
+      makeCandidate({ product_id: 'B', final_score: 85 }),
+    ];
+    const pool2 = [
+      makeCandidate({ product_id: 'A', final_score: 80 }),
+      makeCandidate({ product_id: 'B', final_score: 92 }),
+    ];
+    const result = intersectCandidatePools([pool1, pool2]);
+    expect(result).toHaveLength(2);
+    // A: floor = min(90,80) = 80, B: floor = min(85,92) = 85
+    // Sorted DESC by floor: B(85), A(80)
+    expect(result[0].product_id).toBe('B');
+    expect(result[0].final_score).toBe(85);
+    expect(result[1].product_id).toBe('A');
+    expect(result[1].final_score).toBe(80);
+  });
+
+  it('two pools, partial overlap → only intersected products', () => {
+    const pool1 = [
+      makeCandidate({ product_id: 'A', final_score: 90 }),
+      makeCandidate({ product_id: 'B', final_score: 85 }),
+    ];
+    const pool2 = [
+      makeCandidate({ product_id: 'B', final_score: 88 }),
+      makeCandidate({ product_id: 'C', final_score: 95 }),
+    ];
+    const result = intersectCandidatePools([pool1, pool2]);
+    expect(result).toHaveLength(1);
+    expect(result[0].product_id).toBe('B');
+    expect(result[0].final_score).toBe(85); // floor
+  });
+
+  it('three pools, one has no overlap → empty result', () => {
+    const pool1 = [makeCandidate({ product_id: 'A', final_score: 90 })];
+    const pool2 = [makeCandidate({ product_id: 'A', final_score: 85 })];
+    const pool3 = [makeCandidate({ product_id: 'X', final_score: 95 })];
+    const result = intersectCandidatePools([pool1, pool2, pool3]);
+    expect(result).toHaveLength(0);
+  });
+
+  it('single pool → pass-through unchanged', () => {
+    const pool = [
+      makeCandidate({ product_id: 'A', final_score: 90 }),
+      makeCandidate({ product_id: 'B', final_score: 85 }),
+    ];
+    const result = intersectCandidatePools([pool]);
+    expect(result).toHaveLength(2);
+    expect(result[0].product_id).toBe('A');
+    expect(result[0].final_score).toBe(90);
+  });
+
+  it('empty pools array → empty result', () => {
+    expect(intersectCandidatePools([])).toHaveLength(0);
+  });
+
+  it('floor score with 3 pools: 90/85/92 → 85', () => {
+    const pool1 = [makeCandidate({ product_id: 'X', final_score: 90 })];
+    const pool2 = [makeCandidate({ product_id: 'X', final_score: 85 })];
+    const pool3 = [makeCandidate({ product_id: 'X', final_score: 92 })];
+    const result = intersectCandidatePools([pool1, pool2, pool3]);
+    expect(result).toHaveLength(1);
+    expect(result[0].final_score).toBe(85);
   });
 });

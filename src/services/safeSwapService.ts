@@ -9,6 +9,7 @@
 // D-094: suitability framing. D-095: UPVM compliance. D-020: brand-blind.
 
 import { supabase } from './supabase';
+import { getPetAllergens, getPetConditions } from './petService';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -22,6 +23,15 @@ export interface SwapCandidate {
   category: string;
   is_supplemental: boolean;
   reason: string;
+  price_per_kg: number | null;
+  is_fish_based: boolean;
+  slot_label: string | null; // 'Top Pick' | 'Fish-Based' | 'Another Pick' | 'Great Value' | null
+}
+
+/** Wrapper returned by fetchSafeSwaps. */
+export interface SafeSwapResult {
+  candidates: SwapCandidate[];
+  mode: 'curated' | 'generic';
 }
 
 /** Intermediate row with GA fields needed for condition hard filters. */
@@ -41,6 +51,8 @@ export interface CandidateRow {
   ga_moisture_pct: number | null;
   ga_kcal_per_kg: number | null;
   name: string;
+  price: number | null;
+  product_size_kg: number | null;
 }
 
 // ─── DMB Helpers ────────────────────────────────────────
@@ -129,9 +141,7 @@ function underweightFilter(): HardFilter {
 }
 
 // Cardiac dog: exclude products where DCM pulse rules would fire.
-// This requires ingredient data which we won't have in CandidateRow.
-// Cardiac filtering will be applied in Phase 2 via ingredient query.
-// For now, export the check so it can be tested.
+// Requires ingredient data — applied via fetchCardiacDcmExclusions().
 export interface PulseIngredient {
   position: number;
   is_pulse: boolean;
@@ -242,6 +252,119 @@ export function generateSwapReason(
   }
 
   return 'Higher overall match';
+}
+
+// ─── Fish-Based Tagging ────────────────────────────────
+// Uses allergen_group = 'fish' from ingredients_dict (not regex on product name).
+
+async function tagFishBased(candidateIds: string[]): Promise<Set<string>> {
+  if (candidateIds.length === 0) return new Set();
+
+  const { data, error } = await supabase
+    .from('product_ingredients')
+    .select('product_id, ingredients_dict(allergen_group)')
+    .in('product_id', candidateIds)
+    .lte('position', 3);
+
+  if (error || !data) return new Set();
+
+  const fishIds = new Set<string>();
+  for (const row of data as Record<string, unknown>[]) {
+    const dict = row.ingredients_dict as { allergen_group: string | null } | null;
+    if (dict?.allergen_group === 'fish') {
+      fishIds.add(row.product_id as string);
+    }
+  }
+  return fishIds;
+}
+
+// ─── Curated Slot Assignment ───────────────────────────
+// Pure function: assigns Top Pick / Fish-Based (or Another Pick) / Great Value.
+// Returns null if fewer than 2 slots can be filled → caller falls back to generic.
+
+function candidateToPricePerKg(c: CandidateRow): number | null {
+  if (c.price != null && c.product_size_kg != null && c.product_size_kg > 0) {
+    return c.price / c.product_size_kg;
+  }
+  return null;
+}
+
+function candidateToSwap(
+  c: CandidateRow,
+  slotLabel: string | null,
+  fishIds: Set<string>,
+  conditionTags: string[],
+  allergenGroups: string[],
+  species: 'dog' | 'cat',
+): SwapCandidate {
+  return {
+    product_id: c.product_id,
+    final_score: c.final_score,
+    product_name: c.product_name,
+    brand: c.brand,
+    image_url: c.image_url,
+    product_form: c.product_form,
+    category: c.category,
+    is_supplemental: c.is_supplemental,
+    reason: generateSwapReason(c, conditionTags, allergenGroups, species),
+    price_per_kg: candidateToPricePerKg(c),
+    is_fish_based: fishIds.has(c.product_id),
+    slot_label: slotLabel,
+  };
+}
+
+export function assignCuratedSlots(
+  candidates: CandidateRow[],
+  fishProductIds: Set<string>,
+  petHasFishAllergy: boolean,
+  conditionTags: string[],
+  allergenGroups: string[],
+  species: 'dog' | 'cat',
+): SwapCandidate[] | null {
+  if (candidates.length === 0) return null;
+
+  const selected = new Set<string>(); // track selected product_ids
+  const slots: SwapCandidate[] = [];
+
+  // Slot 1: Top Pick — highest score
+  const topPick = candidates[0]; // already sorted by score DESC
+  if (topPick) {
+    slots.push(candidateToSwap(topPick, 'Top Pick', fishProductIds, conditionTags, allergenGroups, species));
+    selected.add(topPick.product_id);
+  }
+
+  // Slot 2: Fish-Based or Another Pick
+  if (!petHasFishAllergy) {
+    // Fish-Based: highest score among fish candidates not already selected
+    const fishCandidate = candidates.find(c => fishProductIds.has(c.product_id) && !selected.has(c.product_id));
+    if (fishCandidate) {
+      slots.push(candidateToSwap(fishCandidate, 'Fish-Based', fishProductIds, conditionTags, allergenGroups, species));
+      selected.add(fishCandidate.product_id);
+    }
+  } else {
+    // Another Pick: second-highest score
+    const anotherPick = candidates.find(c => !selected.has(c.product_id));
+    if (anotherPick) {
+      slots.push(candidateToSwap(anotherPick, 'Another Pick', fishProductIds, conditionTags, allergenGroups, species));
+      selected.add(anotherPick.product_id);
+    }
+  }
+
+  // Slot 3: Great Value — lowest price_per_kg among remaining
+  const valueCandidate = candidates
+    .filter(c => !selected.has(c.product_id) && c.price != null && c.product_size_kg != null && c.product_size_kg > 0)
+    .sort((a, b) => (a.price! / a.product_size_kg!) - (b.price! / b.product_size_kg!))
+    [0];
+
+  if (valueCandidate) {
+    slots.push(candidateToSwap(valueCandidate, 'Great Value', fishProductIds, conditionTags, allergenGroups, species));
+    selected.add(valueCandidate.product_id);
+  }
+
+  // Need at least 2 slots for curated mode
+  if (slots.length < 2) return null;
+
+  return slots;
 }
 
 // ─── Fetch Parameters ───────────────────────────────────
@@ -412,23 +535,19 @@ async function fetchCardiacDcmExclusions(
   return excluded;
 }
 
-// ─── Main Fetcher ───────────────────────────────────────
+// ─── Base Pool Query ───────────────────────────────────
+// Shared by single-pet and group-mode fetchers.
 
-/**
- * Fetch safe swap alternatives for a scanned product.
- * Returns top 3 candidates ranked by score, filtered for safety.
- * Returns empty array if fewer than MIN_RESULTS survive filtering.
- */
-export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<SwapCandidate[]> {
-  const {
-    petId, species, category, productForm, isSupplemental,
-    scannedProductId, scannedScore, allergenGroups, conditionTags,
-  } = params;
-
-  // ── Stage 1: Base query ──────────────────────────────
-  const minScore = Math.max(scannedScore, MIN_SCORE_THRESHOLD);
-
-  let query = supabase
+async function fetchBasePool(
+  petId: string,
+  category: string,
+  productForm: string | null,
+  isSupplemental: boolean,
+  species: 'dog' | 'cat',
+  scannedProductId: string,
+  minScore: number,
+): Promise<CandidateRow[]> {
+  const query = supabase
     .from('pet_product_scores')
     .select(`
       product_id, final_score, is_supplemental, category,
@@ -436,7 +555,8 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Swap
         name, brand, image_url, product_form, is_vet_diet, is_recalled,
         target_species, is_supplemental,
         ga_fat_pct, ga_protein_pct, ga_fiber_pct, ga_phosphorus_pct,
-        ga_moisture_pct, ga_kcal_per_kg
+        ga_moisture_pct, ga_kcal_per_kg,
+        price, product_size_kg
       )
     `)
     .eq('pet_id', petId)
@@ -449,13 +569,11 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Swap
   const { data, error } = await query;
   if (error || !data || data.length === 0) return [];
 
-  // Map to CandidateRow, applying product-level filters
   const candidates: CandidateRow[] = [];
   for (const row of data as Record<string, unknown>[]) {
     const product = row.products as Record<string, unknown> | null;
     if (!product) continue;
 
-    // Hard exclusions at product level
     if (product.is_vet_diet) continue;
     if (product.is_recalled) continue;
     if (product.target_species !== species) continue;
@@ -478,12 +596,89 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Swap
       ga_moisture_pct: (product.ga_moisture_pct as number) ?? null,
       ga_kcal_per_kg: (product.ga_kcal_per_kg as number) ?? null,
       name: (product.name as string) ?? '',
+      price: (product.price as number) ?? null,
+      product_size_kg: (product.product_size_kg as number) ?? null,
     });
   }
 
-  if (candidates.length === 0) return [];
+  return candidates;
+}
 
-  // ── Stages 2-5: Exclusion filters (parallel) ────────
+// ─── Pool Intersection (Group Mode) ────────────────────
+// Intersects candidate pools across multiple pets.
+// Uses floor score (lowest across all pets) for ranking.
+
+export function intersectCandidatePools(pools: CandidateRow[][]): CandidateRow[] {
+  if (pools.length === 0) return [];
+  if (pools.length === 1) return pools[0];
+
+  // Build map from first pool
+  const map = new Map<string, { candidate: CandidateRow; floorScore: number }>();
+  for (const c of pools[0]) {
+    map.set(c.product_id, { candidate: c, floorScore: c.final_score });
+  }
+
+  // Intersect with remaining pools
+  for (let i = 1; i < pools.length; i++) {
+    const poolIds = new Set(pools[i].map(c => c.product_id));
+    // Remove products not in this pool
+    map.forEach((_, pid) => { if (!poolIds.has(pid)) map.delete(pid); });
+    // Update floor scores
+    for (const c of pools[i]) {
+      const entry = map.get(c.product_id);
+      if (entry) entry.floorScore = Math.min(entry.floorScore, c.final_score);
+    }
+  }
+
+  // Build result with floor scores, sorted DESC
+  const result: CandidateRow[] = [];
+  map.forEach(({ candidate, floorScore }) => {
+    result.push({ ...candidate, final_score: floorScore });
+  });
+  result.sort((a, b) => b.final_score - a.final_score);
+
+  return result;
+}
+
+// ─── Group Exclusion Helpers ───────────────────────────
+
+async function fetchGroupPantryExclusions(petIds: string[]): Promise<Set<string>> {
+  const sets = await Promise.all(petIds.map(fetchPantryExclusions));
+  const union = new Set<string>();
+  sets.forEach(s => s.forEach(id => union.add(id)));
+  return union;
+}
+
+async function fetchGroupScanExclusions(petIds: string[]): Promise<Set<string>> {
+  const sets = await Promise.all(petIds.map(fetchRecentScanExclusions));
+  const union = new Set<string>();
+  sets.forEach(s => s.forEach(id => union.add(id)));
+  return union;
+}
+
+// ─── Main Fetcher (Single Pet) ─────────────────────────
+
+/**
+ * Fetch safe swap alternatives for a scanned product (single pet).
+ * Daily dry food: tries curated 3-pick layout (Top Pick / Fish-Based / Great Value).
+ * All other categories: generic top 3 by score.
+ * Falls back to generic if curated can't fill 2+ slots.
+ */
+export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<SafeSwapResult> {
+  const {
+    petId, species, category, productForm, isSupplemental,
+    scannedProductId, scannedScore, allergenGroups, conditionTags,
+  } = params;
+
+  const isCurated = category === 'daily_food' && productForm === 'dry' && !isSupplemental;
+  const minScore = Math.max(scannedScore, MIN_SCORE_THRESHOLD);
+  const emptyResult: SafeSwapResult = { candidates: [], mode: 'generic' };
+
+  // Stage 1: Base pool
+  const candidates = await fetchBasePool(petId, category, productForm, isSupplemental, species, scannedProductId, minScore);
+  if (candidates.length === 0) return emptyResult;
+
+  // Stages 2-5: Exclusion filters (parallel)
   const candidateIds = candidates.map(c => c.product_id);
 
   const [allergenExcl, severityExcl, pantryExcl, scanExcl, cardiacExcl] = await Promise.all([
@@ -503,23 +698,112 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Swap
 
   let filtered = candidates.filter(c => !allExcluded.has(c.product_id));
 
-  // ── Stage 6: Condition hard filters ──────────────────
+  // Stage 6: Condition hard filters
   filtered = applyConditionHardFilters(filtered, conditionTags, species);
 
-  // ── Stage 7: Build results ───────────────────────────
-  if (filtered.length < MIN_RESULTS) return [];
+  // Stage 7: Build results
+  if (filtered.length < MIN_RESULTS) return emptyResult;
+
+  if (isCurated) {
+    const fishIds = await tagFishBased(filtered.map(c => c.product_id));
+    const petHasFishAllergy = allergenGroups.includes('fish');
+    const curated = assignCuratedSlots(filtered, fishIds, petHasFishAllergy, conditionTags, allergenGroups, species);
+    if (curated) return { candidates: curated, mode: 'curated' };
+  }
 
   const top = filtered.slice(0, MIN_RESULTS);
+  const noFish = new Set<string>();
+  return {
+    candidates: top.map(c => candidateToSwap(c, null, noFish, conditionTags, allergenGroups, species)),
+    mode: 'generic',
+  };
+}
 
-  return top.map(c => ({
-    product_id: c.product_id,
-    final_score: c.final_score,
-    product_name: c.product_name,
-    brand: c.brand,
-    image_url: c.image_url,
-    product_form: c.product_form,
-    category: c.category,
-    is_supplemental: c.is_supplemental,
-    reason: generateSwapReason(c, conditionTags, allergenGroups, species),
-  }));
+// ─── Group Fetcher (Multi-Pet) ─────────────────────────
+
+export interface FetchGroupSafeSwapsParams {
+  petIds: string[];
+  species: 'dog' | 'cat';
+  category: string;
+  productForm: string | null;
+  isSupplemental: boolean;
+  scannedProductId: string;
+  scannedScore: number;
+}
+
+/**
+ * Fetch safe swap alternatives for multiple same-species pets.
+ * Intersects candidate pools, uses floor score, unions allergens/conditions.
+ */
+export async function fetchGroupSafeSwaps(params: FetchGroupSafeSwapsParams): Promise<SafeSwapResult> {
+  const { petIds, species, category, productForm, isSupplemental, scannedProductId, scannedScore } = params;
+
+  const isCurated = category === 'daily_food' && productForm === 'dry' && !isSupplemental;
+  const minScore = Math.max(scannedScore, MIN_SCORE_THRESHOLD);
+  const emptyResult: SafeSwapResult = { candidates: [], mode: 'generic' };
+
+  if (petIds.length === 0) return emptyResult;
+
+  // Fetch allergens, conditions, and base pools for all pets in parallel
+  const [allergenSets, conditionSets, pools] = await Promise.all([
+    Promise.all(petIds.map(async pid => {
+      const rows = await getPetAllergens(pid);
+      return rows.map(r => r.allergen);
+    })),
+    Promise.all(petIds.map(async pid => {
+      const rows = await getPetConditions(pid);
+      return rows.map(r => r.condition_tag);
+    })),
+    Promise.all(petIds.map(pid =>
+      fetchBasePool(pid, category, productForm, isSupplemental, species, scannedProductId, minScore),
+    )),
+  ]);
+
+  // Union allergens and conditions across all pets
+  const unionAllergens = [...new Set(allergenSets.flat())];
+  const unionConditions = [...new Set(conditionSets.flat())];
+
+  // Intersect pools → floor-scored candidates
+  const intersected = intersectCandidatePools(pools);
+  if (intersected.length === 0) return emptyResult;
+
+  // Exclusion filters (parallel) — use group helpers for pantry/scan
+  const candidateIds = intersected.map(c => c.product_id);
+
+  const [allergenExcl, severityExcl, pantryExcl, scanExcl, cardiacExcl] = await Promise.all([
+    fetchAllergenExclusions(candidateIds, unionAllergens),
+    fetchSeverityExclusions(candidateIds, species),
+    fetchGroupPantryExclusions(petIds),
+    fetchGroupScanExclusions(petIds),
+    fetchCardiacDcmExclusions(candidateIds, unionConditions, species),
+  ]);
+
+  const allExcluded = new Set<string>();
+  allergenExcl.forEach(id => allExcluded.add(id));
+  severityExcl.forEach(id => allExcluded.add(id));
+  pantryExcl.forEach(id => allExcluded.add(id));
+  scanExcl.forEach(id => allExcluded.add(id));
+  cardiacExcl.forEach(id => allExcluded.add(id));
+
+  let filtered = intersected.filter(c => !allExcluded.has(c.product_id));
+
+  // Condition hard filters (union = most restrictive)
+  filtered = applyConditionHardFilters(filtered, unionConditions, species);
+
+  if (filtered.length < MIN_RESULTS) return emptyResult;
+
+  // Build results (curated or generic)
+  if (isCurated) {
+    const fishIds = await tagFishBased(filtered.map(c => c.product_id));
+    const petHasFishAllergy = unionAllergens.includes('fish');
+    const curated = assignCuratedSlots(filtered, fishIds, petHasFishAllergy, unionConditions, unionAllergens, species);
+    if (curated) return { candidates: curated, mode: 'curated' };
+  }
+
+  const top = filtered.slice(0, MIN_RESULTS);
+  const noFish = new Set<string>();
+  return {
+    candidates: top.map(c => candidateToSwap(c, null, noFish, unionConditions, unionAllergens, species)),
+    mode: 'generic',
+  };
 }

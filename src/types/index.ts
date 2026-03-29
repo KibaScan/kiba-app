@@ -130,6 +130,11 @@ export interface Product {
   }> | null;
   affiliate_links: Record<string, string> | null;
 
+  // Price + size (M6 Safe Swap value slot — migration 023)
+  price: number | null;
+  price_currency: string | null;
+  product_size_kg: number | null;
+
   created_at: string;
   updated_at: string;
 }

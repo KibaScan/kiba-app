@@ -55,6 +55,9 @@ const PURE_BALANCE_PRODUCT: Product = {
   last_verified_at: null,
   formula_change_log: null,
   affiliate_links: null,
+  price: null,
+  price_currency: null,
+  product_size_kg: null,
   created_at: '2026-03-14T00:00:00.000Z',
   updated_at: '2026-03-14T00:00:00.000Z',
 };
@@ -124,6 +127,12 @@ const PET: PetProfile = {
   life_stage: LifeStage.Adult,
   photo_url: null,
   health_reviewed_at: null,
+  weight_goal_level: null,
+  caloric_accumulator: null,
+  accumulator_last_reset_at: null,
+  accumulator_notification_sent: null,
+  bcs_score: null,
+  bcs_assessed_at: null,
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
 };

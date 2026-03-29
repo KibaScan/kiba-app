@@ -51,6 +51,9 @@ function makeProduct(id: string): Product {
     is_vet_diet: false,
     base_score: null,
     base_score_computed_at: null,
+    price: null,
+    price_currency: null,
+    product_size_kg: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   };

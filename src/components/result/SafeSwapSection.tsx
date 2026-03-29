@@ -3,12 +3,13 @@
 // Premium users see real recommendations; free users see blurred placeholder.
 // D-094: suitability framing. D-095: UPVM compliance. D-020: brand-blind.
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
+  ScrollView,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
@@ -19,7 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { getScoreColor } from '../scoring/ScoreRing';
 import { canUseSafeSwaps, canCompare } from '../../utils/permissions';
-import { fetchSafeSwaps, SwapCandidate } from '../../services/safeSwapService';
+import { fetchSafeSwaps, fetchGroupSafeSwaps, type SafeSwapResult } from '../../services/safeSwapService';
+import { getPetAllergens, getPetConditions } from '../../services/petService';
+import { useActivePetStore } from '../../stores/useActivePetStore';
 import type { ScanStackParamList } from '../../types/navigation';
 
 // ─── Props ──────────────────────────────────────────────
@@ -38,6 +41,18 @@ interface SafeSwapSectionProps {
   isBypassed: boolean;
 }
 
+// ─── Slot Icon Mapping ─────────────────────────────────
+
+function slotIcon(label: string): keyof typeof Ionicons.glyphMap {
+  switch (label) {
+    case 'Top Pick': return 'star-outline';
+    case 'Fish-Based': return 'fish-outline';
+    case 'Another Pick': return 'sparkles-outline';
+    case 'Great Value': return 'pricetag-outline';
+    default: return 'star-outline';
+  }
+}
+
 // ─── Component ──────────────────────────────────────────
 
 export function SafeSwapSection(props: SafeSwapSectionProps) {
@@ -47,30 +62,92 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   } = props;
 
   const navigation = useNavigation<NativeStackNavigationProp<ScanStackParamList>>();
-  const [candidates, setCandidates] = useState<SwapCandidate[]>([]);
+  const [result, setResult] = useState<SafeSwapResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
-
-  // Don't render for bypassed products (vet diet, recalled, variety pack, species mismatch)
-  if (isBypassed) return null;
 
   const premium = canUseSafeSwaps();
 
-  // Fetch alternatives on mount (premium only)
-  useEffect(() => {
-    if (!premium || !petId || fetched) return;
+  // ─── Multi-pet state ────────────────────────────────
+  const allPets = useActivePetStore(st => st.pets);
+  const sameSpeciesPets = useMemo(
+    () => allPets.filter(p => p.species === species),
+    [allPets, species],
+  );
+  const showChips = sameSpeciesPets.length > 1;
+
+  const [selectedPetId, setSelectedPetId] = useState(petId);
+  const [groupMode, setGroupMode] = useState(false);
+
+  // Client-side cache: avoids re-fetching when switching chips
+  const cacheRef = useRef(new Map<string, SafeSwapResult>());
+  // Stale closure guard: incremented on each fetch, checked after async
+  const fetchIdRef = useRef(0);
+
+  const selectedPet = sameSpeciesPets.find(p => p.id === selectedPetId);
+  const displayName = groupMode
+    ? `your ${species === 'dog' ? 'dogs' : 'cats'}`
+    : (selectedPet?.name ?? petName);
+
+  // ─── Fetch logic ────────────────────────────────────
+  const loadSwaps = useCallback(async () => {
+    if (isBypassed || !premium) return;
+
+    const cacheKey = groupMode ? '__group__' : selectedPetId;
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached) { setResult(cached); return; }
+
+    const thisId = ++fetchIdRef.current;
     setLoading(true);
 
-    fetchSafeSwaps({
-      petId, species, category, productForm, isSupplemental,
-      scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
-    })
-      .then(setCandidates)
-      .catch(() => setCandidates([]))
-      .finally(() => { setLoading(false); setFetched(true); });
-  }, [premium, petId]); // eslint-disable-line react-hooks/exhaustive-deps
+    try {
+      let swapResult: SafeSwapResult;
 
-  // ─── Free user: blurred placeholder ─────────────────
+      if (groupMode) {
+        swapResult = await fetchGroupSafeSwaps({
+          petIds: sameSpeciesPets.map(p => p.id),
+          species, category, productForm, isSupplemental,
+          scannedProductId: productId, scannedScore,
+        });
+      } else if (selectedPetId === petId) {
+        // Active pet — use props allergens/conditions (no extra fetch)
+        swapResult = await fetchSafeSwaps({
+          petId, species, category, productForm, isSupplemental,
+          scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+        });
+      } else {
+        // Different pet — fetch their allergens/conditions
+        const [aRows, cRows] = await Promise.all([
+          getPetAllergens(selectedPetId),
+          getPetConditions(selectedPetId),
+        ]);
+        swapResult = await fetchSafeSwaps({
+          petId: selectedPetId, species, category, productForm, isSupplemental,
+          scannedProductId: productId, scannedScore,
+          allergenGroups: aRows.map(r => r.allergen),
+          conditionTags: cRows.map(r => r.condition_tag),
+        });
+      }
+
+      if (fetchIdRef.current !== thisId) return; // stale
+      cacheRef.current.set(cacheKey, swapResult);
+      setResult(swapResult);
+    } catch {
+      if (fetchIdRef.current !== thisId) return;
+      setResult(null);
+    } finally {
+      if (fetchIdRef.current === thisId) setLoading(false);
+    }
+  }, [
+    isBypassed, premium, groupMode, selectedPetId, petId,
+    sameSpeciesPets, species, category, productForm, isSupplemental,
+    productId, scannedScore, allergenGroups, conditionTags,
+  ]);
+
+  useEffect(() => { loadSwaps(); }, [loadSwaps]);
+
+  // ─── Early returns (after all hooks) ────────────────
+  if (isBypassed) return null;
+
   if (!premium) {
     return (
       <TouchableOpacity
@@ -103,7 +180,6 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
     );
   }
 
-  // ─── Loading state ──────────────────────────────────
   if (loading) {
     return (
       <View style={s.container}>
@@ -112,30 +188,67 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
     );
   }
 
-  // ─── No results: silent hide ────────────────────────
-  if (fetched && candidates.length === 0) return null;
-  if (!fetched) return null;
+  if (!result || result.candidates.length === 0) return null;
+
+  // ─── Derived values for navigation ──────────────────
+  const navPetId = groupMode ? petId : selectedPetId;
 
   // ─── Real recommendations ───────────────────────────
   return (
     <View style={s.container}>
+      {/* Multi-pet chip row */}
+      {showChips && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={s.chipRow}
+          contentContainerStyle={s.chipRowContent}
+        >
+          {sameSpeciesPets.map(p => (
+            <TouchableOpacity
+              key={p.id}
+              style={[s.chip, !groupMode && selectedPetId === p.id && s.chipActive]}
+              onPress={() => { setGroupMode(false); setSelectedPetId(p.id); }}
+            >
+              {!groupMode && selectedPetId === p.id && (
+                <Ionicons name="checkmark" size={14} color={Colors.accent} />
+              )}
+              <Text style={[s.chipText, !groupMode && selectedPetId === p.id && s.chipTextActive]}>
+                {p.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[s.chip, groupMode && s.chipActive]}
+            onPress={() => setGroupMode(true)}
+          >
+            {groupMode && <Ionicons name="checkmark" size={14} color={Colors.accent} />}
+            <Text style={[s.chipText, groupMode && s.chipTextActive]}>
+              All {species === 'dog' ? 'Dogs' : 'Cats'}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
       {/* Header */}
       <Text style={s.header}>
-        Higher-scoring alternatives for {petName}
+        Higher-scoring alternatives for {displayName}
       </Text>
       <Text style={s.subtitle}>
-        Based on {petName}'s unique dietary needs.
+        {groupMode
+          ? `Products that work well for all ${displayName}.`
+          : `Based on ${displayName}'s unique dietary needs.`}
       </Text>
 
       {/* 3-card row */}
       <View style={s.cardRow}>
-        {candidates.map((c) => (
+        {result.candidates.map((c) => (
           <TouchableOpacity
             key={c.product_id}
             style={s.card}
             activeOpacity={0.7}
             onPress={() => {
-              navigation.push('Result', { productId: c.product_id, petId });
+              navigation.push('Result', { productId: c.product_id, petId: navPetId });
             }}
           >
             {/* Product image */}
@@ -148,6 +261,14 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
                 </View>
               )}
             </View>
+
+            {/* Slot label (curated mode only) */}
+            {c.slot_label && (
+              <View style={s.slotLabelRow}>
+                <Ionicons name={slotIcon(c.slot_label)} size={12} color={Colors.accent} />
+                <Text style={s.slotLabelText}>{c.slot_label.toUpperCase()}</Text>
+              </View>
+            )}
 
             {/* Brand */}
             <Text style={s.brand} numberOfLines={1}>
@@ -164,7 +285,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
               <View style={[s.scoreDot, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) }]} />
               <Text style={s.scoreText}>{Math.round(c.final_score)}%</Text>
             </View>
-            <Text style={s.scoreLabel}>for {petName}</Text>
+            <Text style={s.scoreLabel}>for {displayName}</Text>
 
             {/* Swap reason */}
             <Text style={s.reason} numberOfLines={1}>
@@ -178,14 +299,14 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
                 if (!canCompare()) {
                   (navigation as any).navigate('Paywall', {
                     trigger: 'compare',
-                    petName,
+                    petName: displayName,
                   });
                   return;
                 }
                 (navigation as any).navigate('Compare', {
                   productAId: productId,
                   productBId: c.product_id,
-                  petId,
+                  petId: navPetId,
                 });
               }}
             >
@@ -203,6 +324,36 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
 const s = StyleSheet.create({
   container: {
     marginBottom: Spacing.lg,
+  },
+  chipRow: {
+    marginBottom: Spacing.sm,
+  },
+  chipRowContent: {
+    gap: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  chipActive: {
+    backgroundColor: Colors.accent + '18',
+    borderColor: Colors.accent + '40',
+  },
+  chipText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.accent,
+    fontWeight: '600',
   },
   header: {
     fontSize: FontSizes.lg,
@@ -245,6 +396,19 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+  },
+  slotLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  slotLabelText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: Colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   brand: {
     fontSize: FontSizes.xs,

@@ -77,6 +77,12 @@ function fakePet(overrides: Partial<Pet> = {}): Pet {
     life_stage: null,
     breed_size: null,
     health_reviewed_at: null,
+    weight_goal_level: null,
+    caloric_accumulator: null,
+    accumulator_last_reset_at: null,
+    accumulator_notification_sent: null,
+    bcs_score: null,
+    bcs_assessed_at: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -116,6 +122,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     expect(result).toEqual(returned);
@@ -164,6 +176,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -197,6 +215,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -225,6 +249,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -253,6 +283,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -278,6 +314,12 @@ describe('createPet', () => {
         life_stage: null,
         breed_size: null,
         health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
       }),
     ).rejects.toThrow('Pet name is required');
   });
@@ -301,6 +343,12 @@ describe('createPet', () => {
         life_stage: null,
         breed_size: null,
         health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
       }),
     ).rejects.toThrow('Pet name must be 20 characters or fewer');
   });
@@ -327,6 +375,12 @@ describe('createPet', () => {
       life_stage: null,
       breed_size: null,
       health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
