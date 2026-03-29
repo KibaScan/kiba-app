@@ -898,6 +898,7 @@ export default function ResultScreen() {
           visible={pantrySheetVisible}
           onClose={() => setPantrySheetVisible(false)}
           onAdded={() => setPantrySheetVisible(false)}
+          conditions={petConditions}
         />
       )}
 

@@ -20,6 +20,8 @@ import {
   computeAutoServingSize,
   computeBudgetWarning,
   getSmartDefaultFeedingsPerDay,
+  getConditionFeedingsPerDay,
+  getConditionFeedingAdvisory,
   parseProductSize,
   convertToKg,
   convertFromKg,
@@ -600,6 +602,106 @@ describe('getSmartDefaultFeedingsPerDay', () => {
       assignments: [makeAssignment({ pet_id: 'pet-2', feeding_frequency: 'daily' })],
     })];
     expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, items, 'pet-1')).toBe(2);
+  });
+
+  test('pancreatitis condition → 3', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, [], 'pet-1', ['pancreatitis'])).toBe(3);
+  });
+
+  test('liver condition → 4', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, [], 'pet-1', ['liver'])).toBe(4);
+  });
+
+  test('multiple conditions → highest wins', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, [], 'pet-1', ['obesity', 'liver'])).toBe(4);
+  });
+
+  test('conditions ignored for treats', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.Treat, [], 'pet-1', ['pancreatitis'])).toBe(1);
+  });
+
+  test('existing daily food overrides condition recommendation', () => {
+    const items = [makePantryCard()];
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, items, 'pet-1', ['pancreatitis'])).toBe(1);
+  });
+
+  test('no matching conditions → default 2', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, [], 'pet-1', ['allergy', 'joint'])).toBe(2);
+  });
+
+  test('undefined conditions → default 2', () => {
+    expect(getSmartDefaultFeedingsPerDay(Category.DailyFood, [], 'pet-1', undefined)).toBe(2);
+  });
+});
+
+// ─── getConditionFeedingsPerDay ─────────────────────────
+
+describe('getConditionFeedingsPerDay', () => {
+  test('empty conditions → null', () => {
+    expect(getConditionFeedingsPerDay([])).toBeNull();
+  });
+
+  test('non-feeding conditions → null', () => {
+    expect(getConditionFeedingsPerDay(['allergy', 'joint', 'skin', 'cardiac'])).toBeNull();
+  });
+
+  test('single condition → its value', () => {
+    expect(getConditionFeedingsPerDay(['pancreatitis'])).toBe(3);
+    expect(getConditionFeedingsPerDay(['gi_sensitive'])).toBe(3);
+    expect(getConditionFeedingsPerDay(['ckd'])).toBe(3);
+    expect(getConditionFeedingsPerDay(['liver'])).toBe(4);
+    expect(getConditionFeedingsPerDay(['diabetes'])).toBe(3);
+    expect(getConditionFeedingsPerDay(['obesity'])).toBe(3);
+    expect(getConditionFeedingsPerDay(['underweight'])).toBe(3);
+  });
+
+  test('multiple conditions → highest wins', () => {
+    expect(getConditionFeedingsPerDay(['pancreatitis', 'liver'])).toBe(4);
+    expect(getConditionFeedingsPerDay(['obesity', 'diabetes'])).toBe(3);
+  });
+
+  test('mix of feeding and non-feeding conditions', () => {
+    expect(getConditionFeedingsPerDay(['allergy', 'pancreatitis', 'joint'])).toBe(3);
+  });
+});
+
+// ─── getConditionFeedingAdvisory ────────────────────────
+
+describe('getConditionFeedingAdvisory', () => {
+  test('empty conditions → null', () => {
+    expect(getConditionFeedingAdvisory([])).toBeNull();
+  });
+
+  test('non-feeding conditions → null', () => {
+    expect(getConditionFeedingAdvisory(['allergy', 'cardiac'])).toBeNull();
+  });
+
+  test('pancreatitis → 3 meals, reason text', () => {
+    const result = getConditionFeedingAdvisory(['pancreatitis']);
+    expect(result).not.toBeNull();
+    expect(result!.mealsPerDay).toBe(3);
+    expect(result!.reason).toBe('pancreatitis');
+  });
+
+  test('obesity → 3 meals, weight management reason', () => {
+    const result = getConditionFeedingAdvisory(['obesity']);
+    expect(result).not.toBeNull();
+    expect(result!.mealsPerDay).toBe(3);
+    expect(result!.reason).toBe('weight management');
+  });
+
+  test('liver → 4 meals, liver health reason', () => {
+    const result = getConditionFeedingAdvisory(['liver']);
+    expect(result).not.toBeNull();
+    expect(result!.mealsPerDay).toBe(4);
+    expect(result!.reason).toBe('liver health');
+  });
+
+  test('multiple conditions → highest meals with its reason', () => {
+    const result = getConditionFeedingAdvisory(['obesity', 'liver']);
+    expect(result).not.toBeNull();
+    expect(result!.mealsPerDay).toBe(4);
+    expect(result!.reason).toBe('liver health');
   });
 });
 

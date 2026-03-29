@@ -247,13 +247,87 @@ export function computeBudgetWarning(params: {
 }
 
 /**
- * Smart default feedings per day. If pet already has daily food in pantry,
- * default to 1 (adding a second food). Otherwise 2. Treats always 1.
+ * Condition → recommended feedings per day mapping.
+ * Conditions that benefit from smaller, more frequent meals return 3+.
+ * Returns null when no condition requires a non-default frequency.
+ *
+ * Clinical rationale (all from standard vet nutrition references):
+ *   pancreatitis — smaller meals reduce pancreatic enzyme load per feeding
+ *   gi_sensitive  — easier digestion, reduced GI distension
+ *   ckd           — reduce phosphorus load per meal, manage nausea
+ *   liver         — reduce hepatic processing load (dogs only, but tag is dog-only)
+ *   diabetes      — steadier glucose curves with smaller meals
+ *   obesity       — satiety maintenance, reduce gorging
+ *   underweight   — more feeding opportunities to increase total intake
+ */
+const CONDITION_FEEDINGS: Record<string, number> = {
+  pancreatitis: 3,
+  gi_sensitive: 3,
+  ckd: 3,
+  liver: 4,
+  diabetes: 3,
+  obesity: 3,
+  underweight: 3,
+};
+
+/**
+ * Returns the recommended feedings_per_day based on conditions, or null
+ * if no condition warrants a non-default frequency.
+ * When multiple conditions are present, the highest recommendation wins.
+ */
+export function getConditionFeedingsPerDay(conditions: string[]): number | null {
+  let max = 0;
+  for (const c of conditions) {
+    const rec = CONDITION_FEEDINGS[c];
+    if (rec != null && rec > max) max = rec;
+  }
+  return max > 0 ? max : null;
+}
+
+/** Human-readable condition labels for feeding advisory display. */
+const CONDITION_LABELS: Record<string, string> = {
+  pancreatitis: 'pancreatitis',
+  gi_sensitive: 'sensitive digestion',
+  ckd: 'kidney health',
+  liver: 'liver health',
+  diabetes: 'diabetes',
+  obesity: 'weight management',
+  underweight: 'weight gain',
+};
+
+/**
+ * Returns a feeding frequency advisory string for PortionCard display,
+ * or null if no condition warrants special frequency.
+ * D-095 compliant: factual observation, not a directive.
+ */
+export function getConditionFeedingAdvisory(conditions: string[]): {
+  mealsPerDay: number;
+  reason: string;
+} | null {
+  let maxMeals = 0;
+  let reason = '';
+  for (const c of conditions) {
+    const rec = CONDITION_FEEDINGS[c];
+    if (rec != null && rec > maxMeals) {
+      maxMeals = rec;
+      reason = CONDITION_LABELS[c] ?? c;
+    }
+  }
+  return maxMeals > 0 ? { mealsPerDay: maxMeals, reason } : null;
+}
+
+/**
+ * Smart default feedings per day. Priority:
+ *   1. Treats → always 1
+ *   2. Adding second daily food → 1 (splitting existing meals)
+ *   3. Health condition recommendation (highest across all conditions)
+ *   4. Fallback → 2
  */
 export function getSmartDefaultFeedingsPerDay(
   category: Category,
   pantryItems: PantryCardData[],
   petId: string,
+  conditions?: string[],
 ): number {
   if (category === Category.Treat) return 1;
   const hasDailyFood = pantryItems.some(item =>
@@ -261,7 +335,9 @@ export function getSmartDefaultFeedingsPerDay(
     && !item.is_empty
     && item.assignments.some(a => a.pet_id === petId && a.feeding_frequency === 'daily'),
   );
-  return hasDailyFood ? 1 : 2;
+  if (hasDailyFood) return 1;
+  const conditionRec = conditions ? getConditionFeedingsPerDay(conditions) : null;
+  return conditionRec ?? 2;
 }
 
 /**

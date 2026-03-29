@@ -116,6 +116,7 @@ interface AddToPantrySheetProps {
   visible: boolean;
   onClose: () => void;
   onAdded: (item: PantryItem) => void;
+  conditions?: string[];
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -126,6 +127,7 @@ export function AddToPantrySheet({
   visible,
   onClose,
   onAdded,
+  conditions,
 }: AddToPantrySheetProps) {
   const treat = isTreat(product.category);
 
@@ -183,7 +185,7 @@ export function AddToPantrySheet({
     const mode = treat ? 'unit' : defaultServingMode(product.product_form);
     setServingMode(mode);
     setQuantityUnit(mode === 'weight' ? 'lbs' : 'units');
-    setFeedingsPerDay(getSmartDefaultFeedingsPerDay(product.category, pantryItems, pet.id));
+    setFeedingsPerDay(getSmartDefaultFeedingsPerDay(product.category, pantryItems, pet.id, conditions));
     setFeedingFrequency(getDefaultFeedingFrequency(product.category));
     setCustomServing(false);
     setCustomServingText('');
@@ -205,7 +207,7 @@ export function AddToPantrySheet({
 
     // Compute auto serving directly on open (don't rely on effect chain —
     // if memo dependencies haven't changed, auto-sync effect won't re-fire)
-    const newFeedings = getSmartDefaultFeedingsPerDay(product.category, pantryItems, pet.id);
+    const newFeedings = getSmartDefaultFeedingsPerDay(product.category, pantryItems, pet.id, conditions);
     const der = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
     if (!treat && der != null) {
       const existKcal = computeExistingPantryKcal(pantryItems, pet.id);

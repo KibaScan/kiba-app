@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-03-28 (session 2)
+# Project Status — Last updated 2026-03-29 (session 3)
 
 ## Active Milestone
 **M6 — Alternatives Engine** (compare flow, safe swaps, weight management, BCS reference, vet report PDF)
@@ -22,12 +22,13 @@
 - **Vet Report PDF** — 4-page diet-centric report via expo-print (no Kiba scores). Pet profile with BCS gauge, caloric summary, combined nutrition with AAFCO checks, supplemental nutrients, flags, weight tracking, per-product detail, condition management notes, owner dietary cards (28 cards × conflict detection), vet notes. Premium-gated via `canExportVetReport()`.
 - **Safe Swap curated layout (Plan 2)** — daily dry food gets curated 3-pick (Top Pick / Fish-Based / Great Value). Fish-Based uses `allergen_group = 'fish'` from `ingredients_dict` (not regex). Great Value uses `price / product_size_kg` (migration 023). Fish allergy → Fish-Based replaced with "Another Pick" (2nd highest score). Falls back to generic top-3 if < 2 curated slots fill. All other categories unchanged (generic top-3).
 - **Safe Swap multi-pet (Plan 3)** — chip row for 2+ same-species pets + "All Dogs"/"All Cats" group mode. Group mode: intersects candidate pools across all pets, uses floor score (lowest), unions allergens (widest exclusion) and conditions (most restrictive filters). Curated layout works in group mode. Client-side cache per chip tap. Stale closure guard for rapid taps.
+- **Condition-aware feeding frequency** — auto-populate `feedings_per_day` based on pet health conditions when adding to pantry. 7 conditions mapped (pancreatitis/gi_sensitive/ckd/diabetes/obesity/underweight → 3, liver → 4). PortionCard shows feeding advisory when conditions warrant smaller, more frequent meals. D-095 compliant copy.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors (all 7 fixed this session)
 
 ## Numbers
-- **Tests:** 1196 passing / 54 suites
+- **Tests:** 1214 passing / 54 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, all `###` normalized)
 - **Migrations:** 23 (001–023)
 - **Products:** 19,058
@@ -40,7 +41,6 @@
 
 ## Up Next (M6)
 - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
-- PortionCard: auto-populate feedings_per_day per condition
 - `aafco_inference` on Product type (low priority — Rule 5 uses aafco_statement only)
 - Run migration 023 on production database (price/size columns)
 - Run `scripts/import/backfill_price_size.py` against v7 dataset to populate price/size data
@@ -52,26 +52,19 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-28 (session 2)
-- **Accomplished:** Safe Swap Plan 2 (curated layout) + Plan 3 (multi-pet chip row). Also fixed pre-existing TS errors in ~20 test files (Pet mock migration 022 fields + Product price fields).
-  - **Safe Swap Plan 2 — Curated Layout:**
-    - Migration 023: `price`, `price_currency`, `product_size_kg` on products table + partial index for value ranking
-    - Product type updated with 3 new nullable fields
-    - `safeSwapService.ts` extended: `SafeSwapResult` wrapper type (`mode: 'curated' | 'generic'`), `tagFishBased()` (allergen_group = 'fish' in top-3 ingredients), `assignCuratedSlots()` (Top Pick / Fish-Based or Another Pick / Great Value), `candidateToSwap()` helper
-    - `SafeSwapSection.tsx`: slot label badges with icons (star/fish/sparkles/pricetag), result wrapper state
-    - 12 new tests for `assignCuratedSlots`
-  - **Safe Swap Plan 3 — Multi-Pet Chip Row:**
-    - `safeSwapService.ts`: extracted `fetchBasePool()` from `fetchSafeSwaps()`, added `intersectCandidatePools()` (pure, exported), `fetchGroupPantryExclusions()`, `fetchGroupScanExclusions()`, `fetchGroupSafeSwaps()` (full group pipeline: parallel pool fetch → intersect → floor score → union allergens/conditions → exclusions → curated or generic)
-    - `SafeSwapSection.tsx`: chip row (horizontal ScrollView of pet name chips + "All Dogs"/"All Cats"), `selectedPetId` + `groupMode` state, `cacheRef` (Map for per-chip results), `fetchIdRef` (stale closure guard), `loadSwaps` callback with 3 paths (group / active pet / different pet), `displayName` for group mode ("your dogs/cats")
-    - 6 new tests for `intersectCandidatePools`
-  - **Test mock fixes:** Added migration 022 Pet fields (6 fields) to ~14 test files, added Product price fields (3 fields) to ~17 test files
-  - **Pre-existing hook ordering fix:** Moved early `isBypassed` return after all hooks in SafeSwapSection
-- **Files changed:** src/services/safeSwapService.ts, src/components/result/SafeSwapSection.tsx, __tests__/services/safeSwapService.test.ts, src/types/index.ts, supabase/migrations/023_safe_swap_price_columns.sql (NEW), + ~20 test files (mock field additions)
+- **Date:** 2026-03-29 (session 3)
+- **Accomplished:** Condition-aware feeding frequency auto-population + PortionCard feeding advisory.
+  - `pantryHelpers.ts`: added `CONDITION_FEEDINGS` mapping (7 conditions), `getConditionFeedingsPerDay()`, `getConditionFeedingAdvisory()`, updated `getSmartDefaultFeedingsPerDay()` with optional `conditions` param
+  - `PortionCard.tsx`: shows feeding advisory when conditions warrant more frequent meals (e.g., "3 smaller meals per day may support pancreatitis")
+  - `AddToPantrySheet.tsx`: accepts `conditions` prop, passes to smart default on open
+  - `ResultScreen.tsx`: passes `petConditions` to AddToPantrySheet
+  - 18 new tests covering all condition mappings, priority logic, advisory output, and integration with existing smart default
+  - Also removed stale `canCompare()` stub references from CURRENT.md (already fully implemented)
+- **Files changed:** src/utils/pantryHelpers.ts, src/components/PortionCard.tsx, src/components/pantry/AddToPantrySheet.tsx, src/screens/ResultScreen.tsx, __tests__/utils/pantryHelpers.test.ts, docs/status/CURRENT.md
 - **Not done yet:**
   - Migration 023 needs to be applied to production database
   - `scripts/import/backfill_price_size.py` needs to be run against v7 dataset to populate price/size data for Great Value slot
   - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
-  - PortionCard: auto-populate feedings_per_day per condition
   - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
   - `safe swaps/` draft folder can be cleaned up (no longer needed)
 - **Next session should:** Run /boot. Commit + push. Apply migration 023 to prod. Run backfill_price_size.py. Then start affiliate integration or other M6 items.
@@ -79,10 +72,10 @@
   - `safe swaps/` folder still exists with draft files — safe to delete now that Plans 1-3 are complete.
   - Migration 023 must be applied to prod before Great Value slot can populate.
   - Safe Swap relies on `pet_product_scores` cache being populated. If empty for a pet, section silently hides.
-  - `canCompare()` is stubbed to return `true` — don't forget to gate behind real paywall in M7.
   - Multi-pet chip row only shows for 2+ same-species pets (premium only by nature — free tier max 1 pet).
   - Group mode uses floor score (lowest across all pets) — this is intentional and most conservative.
   - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules or dietary cards — display-only.
   - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights.
   - Auto-deplete cron `computeInlineDER()` must be synced manually if portionCalculator multiplier tables change.
-- **No new decisions, no scoring changes this session. 1 new migration (023).**
+  - Bypass views (vet diet, species mismatch, etc.) don't pass conditions to AddToPantrySheet — correctly falls back to default 2. Not a bug; those products aren't condition-scored.
+- **No new decisions, no scoring changes, no new migrations this session.**

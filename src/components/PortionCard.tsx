@@ -24,6 +24,7 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { usePantryStore } from '../stores/usePantryStore';
 import { updatePetAssignment } from '../services/pantryService';
 import { getAdjustedDER, WEIGHT_GOAL_MULTIPLIERS } from '../utils/weightGoal';
+import { getConditionFeedingAdvisory } from '../utils/pantryHelpers';
 import WeightGoalSlider from './WeightGoalSlider';
 
 // ─── Props ───────────────────────────────────────────────
@@ -221,6 +222,9 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
   // Resolve kcal/cup — DB value first, estimated fallback for dry food
   const resolvedCup = useMemo(() => product ? resolveKcalPerCup(product) : null, [product]);
 
+  // Condition-based feeding frequency advisory
+  const feedingAdvisory = useMemo(() => getConditionFeedingAdvisory(conditions), [conditions]);
+
   // Supplemental products — portion calculation is nonsensical for toppers/mixers
   if (isSupplemental) {
     return (
@@ -306,6 +310,16 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
           </>
         );
       })()}
+
+      {/* Condition-based feeding frequency advisory */}
+      {feedingAdvisory && (
+        <View style={styles.feedingAdvisory}>
+          <Ionicons name="nutrition-outline" size={14} color={Colors.accent} />
+          <Text style={styles.feedingAdvisoryText}>
+            {feedingAdvisory.mealsPerDay} smaller meals per day may support {feedingAdvisory.reason}
+          </Text>
+        </View>
+      )}
 
       {/* Multiplier label */}
       <Text style={styles.multiplierLabel}>
@@ -399,6 +413,20 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
     fontStyle: 'italic',
+  },
+  feedingAdvisory: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  feedingAdvisoryText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    flex: 1,
   },
   multiplierLabel: {
     fontSize: FontSizes.sm,
