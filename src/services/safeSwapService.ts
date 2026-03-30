@@ -54,6 +54,7 @@ export interface CandidateRow {
   name: string;
   price: number | null;
   product_size_kg: number | null;
+  life_stage_claim: string | null;
 }
 
 // ─── DMB Helpers ────────────────────────────────────────
@@ -205,6 +206,40 @@ export function applyConditionHardFilters(
     const dmb = buildCandidateDmb(c);
     // Candidate must pass ALL filters (not excluded by any)
     return !filters.some(f => f(c, dmb));
+  });
+}
+
+// ─── Life Stage Hard Filter ─────────────────────────────
+// Exclude products whose life_stage_claim doesn't match the pet's life stage.
+// "All Life Stages" and null claims always pass.
+
+const GROWTH_CLAIMS = ['puppy', 'kitten', 'growth'];
+const ADULT_SENIOR_CLAIMS = ['adult', 'maintenance', 'senior'];
+
+export function applyLifeStageFilter(
+  candidates: CandidateRow[],
+  petLifeStage: string | null,
+): CandidateRow[] {
+  if (!petLifeStage) return candidates;
+
+  const isGrowthPet = petLifeStage === 'puppy' || petLifeStage === 'kitten';
+  const isAdultPlusPet = ['junior', 'adult', 'mature', 'senior', 'geriatric'].includes(petLifeStage);
+
+  return candidates.filter(c => {
+    if (!c.life_stage_claim) return true;
+    const claim = c.life_stage_claim.toLowerCase();
+
+    if (claim.includes('all life stages')) return true;
+
+    const isGrowthClaim = GROWTH_CLAIMS.some(k => claim.includes(k));
+    const isAdultSeniorClaim = ADULT_SENIOR_CLAIMS.some(k => claim.includes(k));
+
+    // Growth pet should not see adult/senior-only food
+    if (isGrowthPet && isAdultSeniorClaim && !isGrowthClaim) return false;
+    // Adult+ pet should not see growth-only food
+    if (isAdultPlusPet && isGrowthClaim && !isAdultSeniorClaim) return false;
+
+    return true;
   });
 }
 
@@ -387,6 +422,7 @@ export interface FetchSafeSwapsParams {
   scannedScore: number;
   allergenGroups: string[];
   conditionTags: string[];
+  petLifeStage: string | null;
 }
 
 const MIN_SCORE_THRESHOLD = 65;
@@ -576,7 +612,7 @@ async function fetchBasePool(
         target_species, is_supplemental,
         ga_fat_pct, ga_protein_pct, ga_fiber_pct, ga_phosphorus_pct,
         ga_moisture_pct, ga_kcal_per_kg,
-        price, product_size_kg
+        price, product_size_kg, life_stage_claim
       )
     `)
     .eq('pet_id', petId)
@@ -618,6 +654,7 @@ async function fetchBasePool(
       name: (product.name as string) ?? '',
       price: (product.price as number) ?? null,
       product_size_kg: (product.product_size_kg as number) ?? null,
+      life_stage_claim: (product.life_stage_claim as string) ?? null,
     });
   }
 
@@ -687,7 +724,7 @@ async function fetchGroupScanExclusions(petIds: string[]): Promise<Set<string>> 
 export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<SafeSwapResult> {
   const {
     petId, species, category, productForm, isSupplemental,
-    scannedProductId, scannedScore, allergenGroups, conditionTags,
+    scannedProductId, scannedScore, allergenGroups, conditionTags, petLifeStage,
   } = params;
 
   const isCurated = category === 'daily_food' && productForm === 'dry' && !isSupplemental;
@@ -720,8 +757,9 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Safe
 
   let filtered = candidates.filter(c => !allExcluded.has(c.product_id));
 
-  // Stage 6: Condition hard filters
+  // Stage 6: Condition hard filters + life stage filter
   filtered = applyConditionHardFilters(filtered, conditionTags, species);
+  filtered = applyLifeStageFilter(filtered, petLifeStage);
 
   // Stage 7: Build results
   if (filtered.length < MIN_RESULTS) return { candidates: [], mode: 'generic' };

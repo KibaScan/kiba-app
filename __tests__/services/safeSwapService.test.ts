@@ -51,6 +51,7 @@ function makeCandidate(overrides: Partial<CandidateRow> = {}): CandidateRow {
     name: 'Test Product',
     price: null,
     product_size_kg: null,
+    life_stage_claim: null,
     ...overrides,
   };
 }

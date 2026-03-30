@@ -228,3 +228,38 @@ export async function batchScoreOnDevice(
     duration_ms: Date.now() - startTime,
   };
 }
+
+// ─── Hybrid: Edge Function first, client-side fallback ──────
+
+/**
+ * Tries the batch-score Edge Function first (scores all 19K products server-side).
+ * Falls back to client-side scoring (200 products) if the Edge Function fails
+ * (WORKER_LIMIT on free tier, timeout, network error, etc.).
+ */
+export async function batchScoreHybrid(
+  petId: string,
+  petProfile: Pet,
+  category?: string,
+  productForm?: string | null,
+): Promise<{ scored: number; duration_ms: number }> {
+  // Try Edge Function first
+  try {
+    const { data, error } = await supabase.functions.invoke('batch-score', {
+      body: {
+        pet_id: petId,
+        pet_profile: petProfile,
+        ...(category && { category }),
+        ...(productForm && { product_form: productForm }),
+      },
+    });
+
+    if (!error && data?.scored != null) {
+      return { scored: data.scored, duration_ms: data.duration_ms ?? 0 };
+    }
+  } catch {
+    // Edge Function unavailable — fall through to client-side
+  }
+
+  // Fallback: client-side scoring (200 products)
+  return batchScoreOnDevice(petId, petProfile, category, productForm);
+}

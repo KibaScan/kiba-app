@@ -667,6 +667,7 @@ export default function ResultScreen() {
             petName={displayName}
             allergenGroups={petAllergenGroups}
             conditionTags={petConditions}
+            petLifeStage={pet?.life_stage ?? null}
             isBypassed={!!scoredResult?.bypass}
           />
         )}

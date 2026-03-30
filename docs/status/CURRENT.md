@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-03-29 (session 5)
+# Project Status — Last updated 2026-03-30 (session 6)
 
 ## Active Milestone
 **M6 — Alternatives Engine** (compare flow, safe swaps, weight management, BCS reference, vet report PDF)
@@ -18,11 +18,14 @@
 - **Weight goal slider (D-160)** — 7-position discrete slider (-3 to +3), cat -3 absent, condition-blocked positions, premium-gated, auto-reset on conflict
 - **Caloric accumulator (D-161)** — daily delta tracking in auto-deplete cron, weight estimate push notifications, WeightEstimateSheet (confirm/enter/dismiss), PetHubScreen banner
 - **BCS reference (D-162)** — 9-point educational guide, species tabs, tappable selection saves to pet profile, cat primordial pouch callout, free for all users
-- **Compare flow** — 9-rule key differences engine, two-column CompareScreen (score breakdown, nutrition table, ingredients), CompareProductPickerSheet (search, recent scans, camera), kcal/cup estimation fallback (DB → kcal/kg × 110g → Atwater), PortionCard kcal/cup display
+- **Compare flow** — 9-rule key differences engine, two-column CompareScreen (score breakdown, nutrition table, ingredients), CompareProductPickerSheet (search, recent scans, camera), kcal/cup estimation fallback (DB → kcal/kg × 110g → Atwater), PortionCard kcal/cup display. **"Your Other Pets" section** — collapsible, lazy-loaded scores for other same-species pets on CompareScreen
 - **Vet Report PDF** — 4-page diet-centric report via expo-print (no Kiba scores). Pet profile with BCS gauge, caloric summary, combined nutrition with AAFCO checks, supplemental nutrients, flags, weight tracking, per-product detail, condition management notes, owner dietary cards (28 cards × conflict detection), vet notes. Premium-gated via `canExportVetReport()`.
 - **Safe Swap curated layout (Plan 2)** — daily dry food gets curated 3-pick (Top Pick / Fish-Based / Great Value). Fish-Based uses `allergen_group = 'fish'` from `ingredients_dict` (not regex). Great Value uses `price / product_size_kg` (migration 023). Fish allergy → Fish-Based replaced with "Another Pick" (2nd highest score). Falls back to generic top-3 if < 2 curated slots fill. All other categories unchanged (generic top-3).
 - **Safe Swap multi-pet (Plan 3)** — chip row for 2+ same-species pets + "All Dogs"/"All Cats" group mode. Group mode: intersects candidate pools across all pets, uses floor score (lowest), unions allergens (widest exclusion) and conditions (most restrictive filters). Curated layout works in group mode. Client-side cache per chip tap. Stale closure guard for rapid taps.
 - **Condition-aware feeding frequency** — auto-populate `feedings_per_day` based on pet health conditions when adding to pantry. 7 conditions mapped (pancreatitis/gi_sensitive/ckd/diabetes/obesity/underweight → 3, liver → 4). PortionCard shows feeding advisory when conditions warrant smaller, more frequent meals. D-095 compliant copy.
+- **Safe Swap simplified** — removed multi-pet chip row, active pet only. Collapsible (default closed), free users see inline premium CTA. Life stage hard filter (puppies don't see senior food, seniors don't see puppy food, "All Life Stages" always passes). Great Value fallback to "Another Pick" when no price data.
+- **Hybrid batch scoring** — `batchScoreHybrid()` tries Edge Function first (19K products server-side), falls back to client-side (200 products) on failure. Graceful degradation for Supabase free tier.
+- **Price backfill** — 15,781 products updated with price + product_size_kg from v7 dataset. 74.6% of daily food now has price data for Great Value slots.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors (all 7 fixed this session)
@@ -52,35 +55,31 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-29 (session 5)
-- **Accomplished:** Client-side batch scoring — replaced Edge Function with on-device scoring, fixing the WORKER_LIMIT OOM blocker. Safe Swaps confirmed working on-device.
-  - **Client-side batch scoring (DONE, verified on device):** New `src/services/batchScoreOnDevice.ts` — fetches 200 candidate products + ingredients from Supabase, scores on-device using existing `computeScore()` engine (~9s for 182 products), upserts to `pet_product_scores`. Mirrors Edge Function's 8-step flow but runs entirely on-device. In-memory rate limit (5 min). Replaces `triggerBatchScore()` Edge Function call everywhere.
-  - **Safe Swap trigger fix (DONE):** Widened trigger condition — now fires when `candidates === 0` (not just when `cacheEmpty === true`). Fixes stale cache scenario where old Edge Function rows exist but no candidates survive filters.
-  - **Safe Swap minScore fix (DONE):** Changed `minScore` from `Math.max(scannedScore, 65)` to flat `MIN_SCORE_THRESHOLD` (65). Previous logic starved candidates for well-scoring products (e.g., scanned product scores 75 → only 76+ products qualify → too few candidates).
-  - **Debug artifact cleanup (DONE):** Removed all `__DEV__` debug cards, `debugInfo` state, console.log/warn statements from SafeSwapSection. Removed `triggerBatchScore()` function and `SUPABASE_ANON_KEY` export (no longer needed).
-  - **Migration 023 applied to production (DONE):** `price`, `price_currency`, `product_size_kg` columns now exist on `products` table. This was blocking the Safe Swap base pool query (PostgREST error on unknown columns).
-  - **Exported `hydrateIngredient` from pipeline.ts (DONE):** One-word change, needed by batchScoreOnDevice.
-  - **9 new tests (DONE):** `__tests__/services/batchScoreOnDevice.test.ts` — rate limit, happy path, empty products, variety pack skip, supplemental detection, no ingredients, pet not found, upsert error, allergens/conditions passthrough.
-- **Files changed:** src/services/batchScoreOnDevice.ts (NEW), __tests__/services/batchScoreOnDevice.test.ts (NEW), src/services/scoring/pipeline.ts, src/components/result/SafeSwapSection.tsx, src/stores/useTopMatchesStore.ts, src/services/topMatches.ts, src/services/safeSwapService.ts
-- **Still uncommitted from session 4:** src/components/result/HealthConditionAdvisories.tsx, src/data/conditionAdvisories.ts, src/screens/ResultScreen.tsx, supabase/functions/batch-score/* (Edge Function import fixes), docs/status/CURRENT.md
+- **Date:** 2026-03-30 (session 6)
+- **Accomplished:** Safe Swap UX overhaul, multi-pet scoring moved to CompareScreen, price backfill, hybrid scoring, life stage filtering.
+  - **SafeSwapSection simplified:** Removed multi-pet chip row, group mode, `useActivePetStore`, `fetchGroupSafeSwaps` call path, per-pet caching. Active pet only. ~200 lines removed.
+  - **Collapsible Safe Swap section:** Default collapsed, grey card header matching other collapsibles (Score Breakdown, Ingredients). Free users see inline "Become a member" CTA on expand.
+  - **CompareScreen "Your Other Pets":** Collapsible section after Key Differences, lazy-loads scores for other same-species pets on expand. Two-column layout with colored score dots. Resets when Product B is swapped.
+  - **Great Value fallback:** When no price data, slot 3 falls back to "Another Pick" (next highest scoring) instead of showing only 2 cards.
+  - **Card alignment fix:** `cardBottom` with `marginTop: 'auto'` aligns scores/reasons across cards with variable-height content.
+  - **Price backfill (DONE):** Ran `backfill_price_size.py` — 15,781 products updated. 74.6% daily food, 55.5% treats, 25.5% supplements now have price data. 20 transient connection errors (negligible).
+  - **Hybrid batch scoring (DONE):** `batchScoreHybrid()` in `batchScoreOnDevice.ts` — tries Edge Function first, falls back to client-side. SafeSwapSection now calls hybrid version.
+  - **Life stage hard filter (DONE):** `applyLifeStageFilter()` in `safeSwapService.ts` — puppies don't see senior/adult-only food, adults don't see puppy/kitten-only food, "All Life Stages" always passes. Added `life_stage_claim` to CandidateRow + fetchBasePool select.
+  - **Header copy:** Changed to "Top picks for {petName}" / "Alternatives matched to {petName}'s dietary needs."
+  - **Python 3.9 fix:** `size_parser.py` — changed `str | None` to `Optional[str]` for compatibility.
+- **Files changed:** src/components/result/SafeSwapSection.tsx, src/screens/CompareScreen.tsx, src/screens/ResultScreen.tsx, src/services/safeSwapService.ts, src/services/batchScoreOnDevice.ts, __tests__/services/safeSwapService.test.ts, scripts/import/size_parser.py, docs/status/CURRENT.md
 - **Not done yet:**
-  - **Hybrid scoring approach** — try Edge Function first (when Supabase Pro), fall back to client-side. Edge Function code still in `supabase/functions/batch-score/`. Would enable scoring all 19K products server-side.
-  - **Multi-pet group mode** — "All Dogs"/"All Cats" chip requires cached scores for ALL same-species pets. Currently only the active pet gets scored, so group mode returns 0 candidates. Need to batch-score for each pet without cached scores.
-  - **UX brainstorm in progress** — explored alternatives to pet chip row: tap score ring → bottom sheet with per-pet scores (no bulk scoring needed), "Find Better" as dedicated screen, swipe-stack alternatives, Home screen recommendations. No decision locked yet.
-  - `scripts/import/backfill_price_size.py` needs to be run against v7 dataset.
-  - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons).
-  - `safe swaps/` draft folder can be cleaned up.
-  - Only 2 curated candidates appeared in testing (not 3) — severity exclusion filter may be too aggressive for the 200-product sample.
-- **Next session should:** Run /boot. Review the UX brainstorm options for multi-pet scoring display (see `safeswapsimplementation_plan.md` or start fresh). Key decision: keep the current chip row approach (needs multi-pet batch scoring) vs. tap-score-ring approach (cheap, scores one product per pet on-demand). Then implement whichever UX approach is chosen.
+  - `safe swaps/` draft folder should be deleted (everything superseded by live code or in `scripts/import/`)
+  - `safeswapsimplementation_plan.md` in repo root — Gemini's plan, can be cleaned up
+  - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
+  - `aafco_inference` on Product type (low priority)
+  - CompareScreen pet switcher dropdown (deferred — "Your Other Pets" row is sufficient for now)
+  - "Who Benefits Most?" summary line on CompareScreen (deferred)
+- **Next session should:** Run /boot. Delete `safe swaps/` folder and `safeswapsimplementation_plan.md`. Consider affiliate integration or other M6 items.
 - **Gotchas for next session:**
-  - `.env` still uses JWT-format anon key (`eyJhbG...`) from session 4.
-  - `SUPABASE_ANON_KEY` is no longer exported from `supabase.ts` — reverted to private.
-  - `triggerBatchScore()` no longer exists — removed from `topMatches.ts`. Edge Function code in `supabase/functions/batch-score/` is retained as verified engine copy.
-  - `SafeSwapResult.cacheEmpty` field still exists and is used by the trigger logic.
-  - `isCachePopulated()` still exported from `safeSwapService.ts`.
-  - `safeSwapService.ts` `minScore` is now flat 65 (both single-pet and group mode).
-  - Safe Swap trigger fires on `candidates === 0 || cacheEmpty`, not just `cacheEmpty`.
-  - `batchScoreOnDevice.ts` has in-memory rate limit Map — resets on app restart.
-  - Session 4 files still uncommitted (HealthConditionAdvisories, conditionAdvisories, ResultScreen, batch-score Edge Function fixes).
-  - `safeswapsimplementation_plan.md` in repo root — Gemini's plan, can be cleaned up.
+  - `batchScoreHybrid()` is now the entry point — Edge Function will fail on free tier and gracefully fall back to client-side. If upgraded to Supabase Pro, Edge Function will activate automatically.
+  - `fetchGroupSafeSwaps()` still exists in `safeSwapService.ts` but is no longer called from SafeSwapSection (kept for potential future use).
+  - `life_stage_claim` is free text — filter uses keyword matching (growth: puppy/kitten/growth; adult/senior: adult/maintenance/senior). "All Life Stages" is a special pass-through.
+  - Price backfill had 20 transient errors out of 15,801 — those products still have null price/size. Re-running the script would fix them.
+  - CompareScreen "Your Other Pets" resets scores when Product B changes (via picker). Scores are lazy-loaded on section expand only.
 - **No new decisions, no scoring logic changes, no new migrations this session.**

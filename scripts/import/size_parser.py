@@ -8,9 +8,10 @@ variety packs). NULL is better than wrong for price-per-kg calculations.
 """
 
 import re
+from typing import Optional
 
 
-def parse_size_to_kg(size_str: str | None) -> float | None:
+def parse_size_to_kg(size_str: Optional[str]) -> Optional[float]:
     """Parse product size string to weight in kg.
 
     Handles common patterns from Chewy/Amazon/Walmart scrapes:

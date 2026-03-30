@@ -20,7 +20,7 @@ import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { getScoreColor } from '../scoring/ScoreRing';
 import { canUseSafeSwaps, canCompare } from '../../utils/permissions';
 import { fetchSafeSwaps, type SafeSwapResult } from '../../services/safeSwapService';
-import { batchScoreOnDevice } from '../../services/batchScoreOnDevice';
+import { batchScoreHybrid } from '../../services/batchScoreOnDevice';
 import { supabase } from '../../services/supabase';
 import type { ScanStackParamList } from '../../types/navigation';
 
@@ -37,6 +37,7 @@ interface SafeSwapSectionProps {
   petName: string;
   allergenGroups: string[];
   conditionTags: string[];
+  petLifeStage: string | null;
   isBypassed: boolean;
 }
 
@@ -57,7 +58,7 @@ function slotIcon(label: string): keyof typeof Ionicons.glyphMap {
 export function SafeSwapSection(props: SafeSwapSectionProps) {
   const {
     productId, petId, species, category, productForm, isSupplemental,
-    scannedScore, petName, allergenGroups, conditionTags, isBypassed,
+    scannedScore, petName, allergenGroups, conditionTags, petLifeStage, isBypassed,
   } = props;
 
   const navigation = useNavigation<NativeStackNavigationProp<ScanStackParamList>>();
@@ -82,7 +83,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
     try {
       let swapResult = await fetchSafeSwaps({
         petId, species, category, productForm, isSupplemental,
-        scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+        scannedProductId: productId, scannedScore, allergenGroups, conditionTags, petLifeStage,
       });
 
       if (fetchIdRef.current !== thisId) return;
@@ -97,10 +98,10 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
           const { data: petRow } = await supabase
             .from('pets').select('*').eq('id', petId).single();
           if (petRow && fetchIdRef.current === thisId) {
-            await batchScoreOnDevice(petId, petRow, category, productForm);
+            await batchScoreHybrid(petId, petRow, category, productForm);
             swapResult = await fetchSafeSwaps({
               petId, species, category, productForm, isSupplemental,
-              scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+              scannedProductId: productId, scannedScore, allergenGroups, conditionTags, petLifeStage,
             });
           }
         } catch { /* swallow */ }
@@ -120,7 +121,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
     }
   }, [
     isBypassed, premium, petId, species, category, productForm,
-    isSupplemental, productId, scannedScore, allergenGroups, conditionTags,
+    isSupplemental, productId, scannedScore, allergenGroups, conditionTags, petLifeStage,
   ]);
 
   useEffect(() => { loadSwaps(); }, [loadSwaps]);
@@ -142,10 +143,10 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
       >
         <View style={s.headerTextGroup}>
           <Text style={s.header}>
-            Higher-scoring alternatives for {petName}
+            Top picks for {petName}
           </Text>
           <Text style={s.subtitle}>
-            Based on {petName}'s unique dietary needs.
+            Alternatives matched to {petName}'s dietary needs.
           </Text>
         </View>
         <Ionicons
