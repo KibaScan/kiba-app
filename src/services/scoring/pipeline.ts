@@ -27,7 +27,7 @@ export interface PipelineResult {
 
 // ─── Hydration ───────────────────────────────────────────
 
-function hydrateIngredient(
+export function hydrateIngredient(
   row: ProductIngredientRow,
 ): ProductIngredient | null {
   const dict = row.ingredients_dict;

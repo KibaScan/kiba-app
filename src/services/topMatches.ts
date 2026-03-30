@@ -186,23 +186,3 @@ export async function searchProducts(
   }));
 }
 
-// ─── Trigger Batch Score ────────────────────────────────
-
-/**
- * Call the batch-score Edge Function to (re)compute all scores for a pet.
- * Returns count of scored products and timing.
- */
-export async function triggerBatchScore(
-  petId: string,
-  petProfile: Pet,
-): Promise<{ scored: number; duration_ms: number }> {
-  const { data, error } = await supabase.functions.invoke('batch-score', {
-    body: { pet_id: petId, pet_profile: petProfile },
-  });
-
-  if (error) {
-    throw new Error(`Batch scoring failed: ${error.message}`);
-  }
-
-  return data as { scored: number; duration_ms: number };
-}

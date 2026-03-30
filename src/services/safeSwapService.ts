@@ -32,6 +32,7 @@ export interface SwapCandidate {
 export interface SafeSwapResult {
   candidates: SwapCandidate[];
   mode: 'curated' | 'generic';
+  cacheEmpty?: boolean;
 }
 
 /** Intermediate row with GA fields needed for condition hard filters. */
@@ -535,6 +536,18 @@ async function fetchCardiacDcmExclusions(
   return excluded;
 }
 
+// ─── Cache Existence Check ────────────────────────────
+// Lightweight check: does pet_product_scores have ANY rows for this pet?
+// Used to distinguish "empty cache" from "all candidates filtered out."
+
+export async function isCachePopulated(petId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('pet_product_scores')
+    .select('product_id', { count: 'exact', head: true })
+    .eq('pet_id', petId);
+  return (count ?? 0) > 0;
+}
+
 // ─── Base Pool Query ───────────────────────────────────
 // Shared by single-pet and group-mode fetchers.
 
@@ -671,12 +684,14 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Safe
   } = params;
 
   const isCurated = category === 'daily_food' && productForm === 'dry' && !isSupplemental;
-  const minScore = Math.max(scannedScore, MIN_SCORE_THRESHOLD);
-  const emptyResult: SafeSwapResult = { candidates: [], mode: 'generic' };
+  const minScore = MIN_SCORE_THRESHOLD;
 
   // Stage 1: Base pool
   const candidates = await fetchBasePool(petId, category, productForm, isSupplemental, species, scannedProductId, minScore);
-  if (candidates.length === 0) return emptyResult;
+  if (candidates.length === 0) {
+    const populated = await isCachePopulated(petId);
+    return { candidates: [], mode: 'generic', cacheEmpty: !populated };
+  }
 
   // Stages 2-5: Exclusion filters (parallel)
   const candidateIds = candidates.map(c => c.product_id);
@@ -702,7 +717,7 @@ export async function fetchSafeSwaps(params: FetchSafeSwapsParams): Promise<Safe
   filtered = applyConditionHardFilters(filtered, conditionTags, species);
 
   // Stage 7: Build results
-  if (filtered.length < MIN_RESULTS) return emptyResult;
+  if (filtered.length < MIN_RESULTS) return { candidates: [], mode: 'generic' };
 
   if (isCurated) {
     const fishIds = await tagFishBased(filtered.map(c => c.product_id));
@@ -739,7 +754,7 @@ export async function fetchGroupSafeSwaps(params: FetchGroupSafeSwapsParams): Pr
   const { petIds, species, category, productForm, isSupplemental, scannedProductId, scannedScore } = params;
 
   const isCurated = category === 'daily_food' && productForm === 'dry' && !isSupplemental;
-  const minScore = Math.max(scannedScore, MIN_SCORE_THRESHOLD);
+  const minScore = MIN_SCORE_THRESHOLD;
   const emptyResult: SafeSwapResult = { candidates: [], mode: 'generic' };
 
   if (petIds.length === 0) return emptyResult;
@@ -765,7 +780,12 @@ export async function fetchGroupSafeSwaps(params: FetchGroupSafeSwapsParams): Pr
 
   // Intersect pools → floor-scored candidates
   const intersected = intersectCandidatePools(pools);
-  if (intersected.length === 0) return emptyResult;
+  if (intersected.length === 0) {
+    // Check if any pet has an empty cache
+    const populated = await Promise.all(petIds.map(isCachePopulated));
+    const anyCacheEmpty = populated.some(p => !p);
+    return { candidates: [], mode: 'generic', cacheEmpty: anyCacheEmpty };
+  }
 
   // Exclusion filters (parallel) — use group helpers for pantry/scan
   const candidateIds = intersected.map(c => c.product_id);

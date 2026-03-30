@@ -21,6 +21,7 @@ import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { getScoreColor } from '../scoring/ScoreRing';
 import { canUseSafeSwaps, canCompare } from '../../utils/permissions';
 import { fetchSafeSwaps, fetchGroupSafeSwaps, type SafeSwapResult } from '../../services/safeSwapService';
+import { batchScoreOnDevice } from '../../services/batchScoreOnDevice';
 import { getPetAllergens, getPetConditions } from '../../services/petService';
 import { useActivePetStore } from '../../stores/useActivePetStore';
 import type { ScanStackParamList } from '../../types/navigation';
@@ -64,6 +65,8 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   const navigation = useNavigation<NativeStackNavigationProp<ScanStackParamList>>();
   const [result, setResult] = useState<SafeSwapResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const batchTriedRef = useRef(false);
 
   const premium = canUseSafeSwaps();
 
@@ -129,6 +132,36 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
       }
 
       if (fetchIdRef.current !== thisId) return; // stale
+      // If cache is empty OR no candidates survived filters, trigger on-device scoring and retry
+      if ((swapResult.cacheEmpty || swapResult.candidates.length === 0) && !batchTriedRef.current) {
+        batchTriedRef.current = true;
+        setPreparing(true);
+        setLoading(false);
+        try {
+          const targetPet = allPets.find(p => p.id === (groupMode ? petId : selectedPetId));
+          if (targetPet) {
+            await batchScoreOnDevice(targetPet.id, targetPet, category, productForm);
+            // Retry fetch after on-device scoring populates cache
+            if (groupMode) {
+              swapResult = await fetchGroupSafeSwaps({
+                petIds: sameSpeciesPets.map(p => p.id),
+                species, category, productForm, isSupplemental,
+                scannedProductId: productId, scannedScore,
+              });
+            } else {
+              swapResult = await fetchSafeSwaps({
+                petId: selectedPetId, species, category, productForm, isSupplemental,
+                scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+              });
+            }
+          }
+        } catch {
+        } finally {
+          if (fetchIdRef.current === thisId) setPreparing(false);
+        }
+      }
+
+      if (fetchIdRef.current !== thisId) return; // stale after retry
       cacheRef.current.set(cacheKey, swapResult);
       setResult(swapResult);
     } catch {
@@ -149,6 +182,10 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   if (isBypassed) return null;
 
   if (!premium) {
+    const headline = scannedScore < 60
+      ? `Better-scoring options exist for ${petName}`
+      : `Higher-scoring alternatives for ${petName}`;
+
     return (
       <TouchableOpacity
         style={s.container}
@@ -160,30 +197,51 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
           });
         }}
       >
-        <View style={s.blur}>
-          <View style={s.lockOverlay}>
-            <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
-            <Text style={s.lockText}>Discover healthier alternatives</Text>
+        <View style={s.freeBanner}>
+          {/* Header */}
+          <View style={s.freeBannerHeader}>
+            <Ionicons name="shield-checkmark-outline" size={24} color={Colors.accent} />
+            <Text style={s.freeBannerHeadline}>{headline}</Text>
           </View>
-          <View style={s.placeholderRow}>
-            <View style={[s.placeholderDot, { backgroundColor: Colors.severityGreen }]} />
-            <View style={s.placeholderBar} />
-            <View style={s.placeholderBadge} />
+          <Text style={s.freeBannerSubtitle}>
+            Products with stronger match scores are available in this category.
+          </Text>
+
+          {/* Ghost cards */}
+          <View style={s.ghostCardRow}>
+            {[0, 1, 2].map(i => (
+              <View key={i} style={s.ghostCard}>
+                <View style={s.ghostImageBox}>
+                  <Ionicons name="cube-outline" size={20} color={Colors.textTertiary + '60'} />
+                </View>
+                <View style={s.ghostBar} />
+                <View style={[s.ghostBar, { width: '50%' }]} />
+                <Text style={s.ghostScore}>??%</Text>
+              </View>
+            ))}
           </View>
-          <View style={s.placeholderRow}>
-            <View style={[s.placeholderDot, { backgroundColor: Colors.severityGreen }]} />
-            <View style={s.placeholderBar} />
-            <View style={s.placeholderBadge} />
+
+          {/* CTA */}
+          <View style={s.freeBannerCta}>
+            <Text style={s.freeBannerCtaText}>See What Scores Higher</Text>
+            <Ionicons name="arrow-forward-outline" size={16} color={Colors.accent} />
           </View>
         </View>
       </TouchableOpacity>
     );
   }
 
-  if (loading) {
+  if (loading || preparing) {
     return (
       <View style={s.container}>
-        <ActivityIndicator size="small" color={Colors.textSecondary} />
+        <View style={s.preparingContainer}>
+          <ActivityIndicator size="small" color={Colors.accent} />
+          <Text style={s.preparingText}>
+            {preparing
+              ? `Preparing recommendations for ${displayName}...`
+              : 'Loading alternatives...'}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -461,48 +519,94 @@ const s = StyleSheet.create({
     color: Colors.accent,
   },
 
-  // ─── Free user placeholder (migrated from ResultScreenStyles)
-  blur: {
+  // ─── Free user paywall banner ──────────────────────────
+  freeBanner: {
     backgroundColor: Colors.card,
     borderRadius: 12,
-    padding: Spacing.md,
-    overflow: 'hidden',
-    opacity: 0.7,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
   },
-  lockOverlay: {
+  freeBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: Spacing.sm,
+  },
+  freeBannerHeadline: {
+    flex: 1,
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  freeBannerSubtitle: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: Spacing.md,
+  },
+  ghostCardRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: Spacing.md,
+  },
+  ghostCard: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: 10,
+    padding: 8,
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  ghostImageBox: {
+    width: '100%',
+    height: 48,
+    borderRadius: 6,
+    backgroundColor: Colors.cardBorder + '40',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  ghostBar: {
+    width: '70%',
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.cardBorder,
+    marginBottom: 4,
+  },
+  ghostScore: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  freeBannerCta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 6,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.cardBorder,
   },
-  lockText: {
+  freeBannerCtaText: {
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: Colors.accent,
   },
-  placeholderRow: {
+
+  // ─── Preparing state ─────────────────────────────────
+  preparingContainer: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+    justifyContent: 'center',
+    gap: 10,
   },
-  placeholderDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  placeholderBar: {
-    flex: 1,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.cardBorder,
-  },
-  placeholderBadge: {
-    width: 36,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.cardBorder,
+  preparingText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
   },
 });
