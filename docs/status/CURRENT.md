@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-03-29 (session 3)
+# Project Status — Last updated 2026-03-29 (session 5)
 
 ## Active Milestone
 **M6 — Alternatives Engine** (compare flow, safe swaps, weight management, BCS reference, vet report PDF)
@@ -28,7 +28,7 @@
 - No pre-existing TS errors (all 7 fixed this session)
 
 ## Numbers
-- **Tests:** 1214 passing / 54 suites
+- **Tests:** 1231 passing / 56 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, all `###` normalized)
 - **Migrations:** 23 (001–023)
 - **Products:** 19,058
@@ -52,30 +52,35 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-29 (session 3)
-- **Accomplished:** Condition-aware feeding frequency auto-population + PortionCard feeding advisory.
-  - `pantryHelpers.ts`: added `CONDITION_FEEDINGS` mapping (7 conditions), `getConditionFeedingsPerDay()`, `getConditionFeedingAdvisory()`, updated `getSmartDefaultFeedingsPerDay()` with optional `conditions` param
-  - `PortionCard.tsx`: shows feeding advisory when conditions warrant more frequent meals (e.g., "3 smaller meals per day may support pancreatitis")
-  - `AddToPantrySheet.tsx`: accepts `conditions` prop, passes to smart default on open
-  - `ResultScreen.tsx`: passes `petConditions` to AddToPantrySheet
-  - 18 new tests covering all condition mappings, priority logic, advisory output, and integration with existing smart default
-  - Also removed stale `canCompare()` stub references from CURRENT.md (already fully implemented)
-- **Files changed:** src/utils/pantryHelpers.ts, src/components/PortionCard.tsx, src/components/pantry/AddToPantrySheet.tsx, src/screens/ResultScreen.tsx, __tests__/utils/pantryHelpers.test.ts, docs/status/CURRENT.md
+- **Date:** 2026-03-29 (session 5)
+- **Accomplished:** Client-side batch scoring — replaced Edge Function with on-device scoring, fixing the WORKER_LIMIT OOM blocker. Safe Swaps confirmed working on-device.
+  - **Client-side batch scoring (DONE, verified on device):** New `src/services/batchScoreOnDevice.ts` — fetches 200 candidate products + ingredients from Supabase, scores on-device using existing `computeScore()` engine (~9s for 182 products), upserts to `pet_product_scores`. Mirrors Edge Function's 8-step flow but runs entirely on-device. In-memory rate limit (5 min). Replaces `triggerBatchScore()` Edge Function call everywhere.
+  - **Safe Swap trigger fix (DONE):** Widened trigger condition — now fires when `candidates === 0` (not just when `cacheEmpty === true`). Fixes stale cache scenario where old Edge Function rows exist but no candidates survive filters.
+  - **Safe Swap minScore fix (DONE):** Changed `minScore` from `Math.max(scannedScore, 65)` to flat `MIN_SCORE_THRESHOLD` (65). Previous logic starved candidates for well-scoring products (e.g., scanned product scores 75 → only 76+ products qualify → too few candidates).
+  - **Debug artifact cleanup (DONE):** Removed all `__DEV__` debug cards, `debugInfo` state, console.log/warn statements from SafeSwapSection. Removed `triggerBatchScore()` function and `SUPABASE_ANON_KEY` export (no longer needed).
+  - **Migration 023 applied to production (DONE):** `price`, `price_currency`, `product_size_kg` columns now exist on `products` table. This was blocking the Safe Swap base pool query (PostgREST error on unknown columns).
+  - **Exported `hydrateIngredient` from pipeline.ts (DONE):** One-word change, needed by batchScoreOnDevice.
+  - **9 new tests (DONE):** `__tests__/services/batchScoreOnDevice.test.ts` — rate limit, happy path, empty products, variety pack skip, supplemental detection, no ingredients, pet not found, upsert error, allergens/conditions passthrough.
+- **Files changed:** src/services/batchScoreOnDevice.ts (NEW), __tests__/services/batchScoreOnDevice.test.ts (NEW), src/services/scoring/pipeline.ts, src/components/result/SafeSwapSection.tsx, src/stores/useTopMatchesStore.ts, src/services/topMatches.ts, src/services/safeSwapService.ts
+- **Still uncommitted from session 4:** src/components/result/HealthConditionAdvisories.tsx, src/data/conditionAdvisories.ts, src/screens/ResultScreen.tsx, supabase/functions/batch-score/* (Edge Function import fixes), docs/status/CURRENT.md
 - **Not done yet:**
-  - Migration 023 needs to be applied to production database
-  - `scripts/import/backfill_price_size.py` needs to be run against v7 dataset to populate price/size data for Great Value slot
-  - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
-  - Scoring reference docs: scoring-details.md still needs condition scoring + weight management sections
-  - `safe swaps/` draft folder can be cleaned up (no longer needed)
-- **Next session should:** Run /boot. Commit + push. Apply migration 023 to prod. Run backfill_price_size.py. Then start affiliate integration or other M6 items.
+  - **Hybrid scoring approach** — try Edge Function first (when Supabase Pro), fall back to client-side. Edge Function code still in `supabase/functions/batch-score/`. Would enable scoring all 19K products server-side.
+  - **Multi-pet group mode** — "All Dogs"/"All Cats" chip requires cached scores for ALL same-species pets. Currently only the active pet gets scored, so group mode returns 0 candidates. Need to batch-score for each pet without cached scores.
+  - **UX brainstorm in progress** — explored alternatives to pet chip row: tap score ring → bottom sheet with per-pet scores (no bulk scoring needed), "Find Better" as dedicated screen, swipe-stack alternatives, Home screen recommendations. No decision locked yet.
+  - `scripts/import/backfill_price_size.py` needs to be run against v7 dataset.
+  - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons).
+  - `safe swaps/` draft folder can be cleaned up.
+  - Only 2 curated candidates appeared in testing (not 3) — severity exclusion filter may be too aggressive for the 200-product sample.
+- **Next session should:** Run /boot. Review the UX brainstorm options for multi-pet scoring display (see `safeswapsimplementation_plan.md` or start fresh). Key decision: keep the current chip row approach (needs multi-pet batch scoring) vs. tap-score-ring approach (cheap, scores one product per pet on-demand). Then implement whichever UX approach is chosen.
 - **Gotchas for next session:**
-  - `safe swaps/` folder still exists with draft files — safe to delete now that Plans 1-3 are complete.
-  - Migration 023 must be applied to prod before Great Value slot can populate.
-  - Safe Swap relies on `pet_product_scores` cache being populated. If empty for a pet, section silently hides.
-  - Multi-pet chip row only shows for 2+ same-species pets (premium only by nature — free tier max 1 pet).
-  - Group mode uses floor score (lowest across all pets) — this is intentional and most conservative.
-  - `liver` and `seizures` tags exist in DOG_CONDITIONS but have NO scoring rules or dietary cards — display-only.
-  - `getMaxBucket()` in CompareScreen only handles treat vs daily_food weights.
-  - Auto-deplete cron `computeInlineDER()` must be synced manually if portionCalculator multiplier tables change.
-  - Bypass views (vet diet, species mismatch, etc.) don't pass conditions to AddToPantrySheet — correctly falls back to default 2. Not a bug; those products aren't condition-scored.
-- **No new decisions, no scoring changes, no new migrations this session.**
+  - `.env` still uses JWT-format anon key (`eyJhbG...`) from session 4.
+  - `SUPABASE_ANON_KEY` is no longer exported from `supabase.ts` — reverted to private.
+  - `triggerBatchScore()` no longer exists — removed from `topMatches.ts`. Edge Function code in `supabase/functions/batch-score/` is retained as verified engine copy.
+  - `SafeSwapResult.cacheEmpty` field still exists and is used by the trigger logic.
+  - `isCachePopulated()` still exported from `safeSwapService.ts`.
+  - `safeSwapService.ts` `minScore` is now flat 65 (both single-pet and group mode).
+  - Safe Swap trigger fires on `candidates === 0 || cacheEmpty`, not just `cacheEmpty`.
+  - `batchScoreOnDevice.ts` has in-memory rate limit Map — resets on app restart.
+  - Session 4 files still uncommitted (HealthConditionAdvisories, conditionAdvisories, ResultScreen, batch-score Edge Function fixes).
+  - `safeswapsimplementation_plan.md` in repo root — Gemini's plan, can be cleaned up.
+- **No new decisions, no scoring logic changes, no new migrations this session.**

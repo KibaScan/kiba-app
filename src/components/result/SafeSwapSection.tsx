@@ -3,13 +3,12 @@
 // Premium users see real recommendations; free users see blurred placeholder.
 // D-094: suitability framing. D-095: UPVM compliance. D-020: brand-blind.
 
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
-  ScrollView,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
@@ -20,10 +19,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { getScoreColor } from '../scoring/ScoreRing';
 import { canUseSafeSwaps, canCompare } from '../../utils/permissions';
-import { fetchSafeSwaps, fetchGroupSafeSwaps, type SafeSwapResult } from '../../services/safeSwapService';
+import { fetchSafeSwaps, type SafeSwapResult } from '../../services/safeSwapService';
 import { batchScoreOnDevice } from '../../services/batchScoreOnDevice';
-import { getPetAllergens, getPetConditions } from '../../services/petService';
-import { useActivePetStore } from '../../stores/useActivePetStore';
+import { supabase } from '../../services/supabase';
 import type { ScanStackParamList } from '../../types/navigation';
 
 // ─── Props ──────────────────────────────────────────────
@@ -67,102 +65,52 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   const [loading, setLoading] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const batchTriedRef = useRef(false);
+  const fetchIdRef = useRef(0);
+  const cachedRef = useRef<SafeSwapResult | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const premium = canUseSafeSwaps();
-
-  // ─── Multi-pet state ────────────────────────────────
-  const allPets = useActivePetStore(st => st.pets);
-  const sameSpeciesPets = useMemo(
-    () => allPets.filter(p => p.species === species),
-    [allPets, species],
-  );
-  const showChips = sameSpeciesPets.length > 1;
-
-  const [selectedPetId, setSelectedPetId] = useState(petId);
-  const [groupMode, setGroupMode] = useState(false);
-
-  // Client-side cache: avoids re-fetching when switching chips
-  const cacheRef = useRef(new Map<string, SafeSwapResult>());
-  // Stale closure guard: incremented on each fetch, checked after async
-  const fetchIdRef = useRef(0);
-
-  const selectedPet = sameSpeciesPets.find(p => p.id === selectedPetId);
-  const displayName = groupMode
-    ? `your ${species === 'dog' ? 'dogs' : 'cats'}`
-    : (selectedPet?.name ?? petName);
 
   // ─── Fetch logic ────────────────────────────────────
   const loadSwaps = useCallback(async () => {
     if (isBypassed || !premium) return;
-
-    const cacheKey = groupMode ? '__group__' : selectedPetId;
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached) { setResult(cached); return; }
+    if (cachedRef.current) { setResult(cachedRef.current); return; }
 
     const thisId = ++fetchIdRef.current;
     setLoading(true);
 
     try {
-      let swapResult: SafeSwapResult;
+      let swapResult = await fetchSafeSwaps({
+        petId, species, category, productForm, isSupplemental,
+        scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+      });
 
-      if (groupMode) {
-        swapResult = await fetchGroupSafeSwaps({
-          petIds: sameSpeciesPets.map(p => p.id),
-          species, category, productForm, isSupplemental,
-          scannedProductId: productId, scannedScore,
-        });
-      } else if (selectedPetId === petId) {
-        // Active pet — use props allergens/conditions (no extra fetch)
-        swapResult = await fetchSafeSwaps({
-          petId, species, category, productForm, isSupplemental,
-          scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
-        });
-      } else {
-        // Different pet — fetch their allergens/conditions
-        const [aRows, cRows] = await Promise.all([
-          getPetAllergens(selectedPetId),
-          getPetConditions(selectedPetId),
-        ]);
-        swapResult = await fetchSafeSwaps({
-          petId: selectedPetId, species, category, productForm, isSupplemental,
-          scannedProductId: productId, scannedScore,
-          allergenGroups: aRows.map(r => r.allergen),
-          conditionTags: cRows.map(r => r.condition_tag),
-        });
-      }
+      if (fetchIdRef.current !== thisId) return;
 
-      if (fetchIdRef.current !== thisId) return; // stale
-      // If cache is empty OR no candidates survived filters, trigger on-device scoring and retry
+      // If cache empty or no candidates, trigger on-device scoring and retry
       if ((swapResult.cacheEmpty || swapResult.candidates.length === 0) && !batchTriedRef.current) {
         batchTriedRef.current = true;
         setPreparing(true);
         setLoading(false);
         try {
-          const targetPet = allPets.find(p => p.id === (groupMode ? petId : selectedPetId));
-          if (targetPet) {
-            await batchScoreOnDevice(targetPet.id, targetPet, category, productForm);
-            // Retry fetch after on-device scoring populates cache
-            if (groupMode) {
-              swapResult = await fetchGroupSafeSwaps({
-                petIds: sameSpeciesPets.map(p => p.id),
-                species, category, productForm, isSupplemental,
-                scannedProductId: productId, scannedScore,
-              });
-            } else {
-              swapResult = await fetchSafeSwaps({
-                petId: selectedPetId, species, category, productForm, isSupplemental,
-                scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
-              });
-            }
+          // petProfile needed for scoring — use minimal shape from props
+          const { data: petRow } = await supabase
+            .from('pets').select('*').eq('id', petId).single();
+          if (petRow && fetchIdRef.current === thisId) {
+            await batchScoreOnDevice(petId, petRow, category, productForm);
+            swapResult = await fetchSafeSwaps({
+              petId, species, category, productForm, isSupplemental,
+              scannedProductId: productId, scannedScore, allergenGroups, conditionTags,
+            });
           }
-        } catch {
-        } finally {
+        } catch { /* swallow */ }
+        finally {
           if (fetchIdRef.current === thisId) setPreparing(false);
         }
       }
 
-      if (fetchIdRef.current !== thisId) return; // stale after retry
-      cacheRef.current.set(cacheKey, swapResult);
+      if (fetchIdRef.current !== thisId) return;
+      cachedRef.current = swapResult;
       setResult(swapResult);
     } catch {
       if (fetchIdRef.current !== thisId) return;
@@ -171,9 +119,8 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
       if (fetchIdRef.current === thisId) setLoading(false);
     }
   }, [
-    isBypassed, premium, groupMode, selectedPetId, petId,
-    sameSpeciesPets, species, category, productForm, isSupplemental,
-    productId, scannedScore, allergenGroups, conditionTags,
+    isBypassed, premium, petId, species, category, productForm,
+    isSupplemental, productId, scannedScore, allergenGroups, conditionTags,
   ]);
 
   useEffect(() => { loadSwaps(); }, [loadSwaps]);
@@ -181,132 +128,71 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   // ─── Early returns (after all hooks) ────────────────
   if (isBypassed) return null;
 
-  if (!premium) {
-    const headline = scannedScore < 60
-      ? `Better-scoring options exist for ${petName}`
-      : `Higher-scoring alternatives for ${petName}`;
+  // Premium users: hide section entirely if no results (after loading)
+  if (premium && !loading && !preparing && (!result || result.candidates.length === 0)) return null;
 
-    return (
+  // ─── Render ─────────────────────────────────────────
+  return (
+    <View style={s.container}>
+      {/* Collapsible header */}
       <TouchableOpacity
-        style={s.container}
+        style={s.headerRow}
         activeOpacity={0.7}
-        onPress={() => {
-          (navigation as any).navigate('Paywall', {
-            trigger: 'safe_swap',
-            petName,
-          });
-        }}
+        onPress={() => setExpanded(prev => !prev)}
       >
-        <View style={s.freeBanner}>
-          {/* Header */}
-          <View style={s.freeBannerHeader}>
-            <Ionicons name="shield-checkmark-outline" size={24} color={Colors.accent} />
-            <Text style={s.freeBannerHeadline}>{headline}</Text>
-          </View>
-          <Text style={s.freeBannerSubtitle}>
-            Products with stronger match scores are available in this category.
+        <View style={s.headerTextGroup}>
+          <Text style={s.header}>
+            Higher-scoring alternatives for {petName}
           </Text>
-
-          {/* Ghost cards */}
-          <View style={s.ghostCardRow}>
-            {[0, 1, 2].map(i => (
-              <View key={i} style={s.ghostCard}>
-                <View style={s.ghostImageBox}>
-                  <Ionicons name="cube-outline" size={20} color={Colors.textTertiary + '60'} />
-                </View>
-                <View style={s.ghostBar} />
-                <View style={[s.ghostBar, { width: '50%' }]} />
-                <Text style={s.ghostScore}>??%</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* CTA */}
-          <View style={s.freeBannerCta}>
-            <Text style={s.freeBannerCtaText}>See What Scores Higher</Text>
-            <Ionicons name="arrow-forward-outline" size={16} color={Colors.accent} />
-          </View>
+          <Text style={s.subtitle}>
+            Based on {petName}'s unique dietary needs.
+          </Text>
         </View>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={20}
+          color={Colors.textSecondary}
+        />
       </TouchableOpacity>
-    );
-  }
 
-  if (loading || preparing) {
-    return (
-      <View style={s.container}>
+      {/* Expanded body */}
+      {expanded && !premium && (
+        <TouchableOpacity
+          style={s.premiumCta}
+          activeOpacity={0.7}
+          onPress={() => {
+            (navigation as any).navigate('Paywall', {
+              trigger: 'safe_swap',
+              petName,
+            });
+          }}
+        >
+          <Text style={s.premiumCtaText}>
+            Become a member to see higher-scoring alternatives
+          </Text>
+          <Ionicons name="arrow-forward" size={16} color={Colors.accent} />
+        </TouchableOpacity>
+      )}
+
+      {expanded && premium && (loading || preparing) && (
         <View style={s.preparingContainer}>
           <ActivityIndicator size="small" color={Colors.accent} />
           <Text style={s.preparingText}>
             {preparing
-              ? `Preparing recommendations for ${displayName}...`
+              ? `Preparing recommendations for ${petName}...`
               : 'Loading alternatives...'}
           </Text>
         </View>
-      </View>
-    );
-  }
-
-  if (!result || result.candidates.length === 0) return null;
-
-  // ─── Derived values for navigation ──────────────────
-  const navPetId = groupMode ? petId : selectedPetId;
-
-  // ─── Real recommendations ───────────────────────────
-  return (
-    <View style={s.container}>
-      {/* Multi-pet chip row */}
-      {showChips && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={s.chipRow}
-          contentContainerStyle={s.chipRowContent}
-        >
-          {sameSpeciesPets.map(p => (
-            <TouchableOpacity
-              key={p.id}
-              style={[s.chip, !groupMode && selectedPetId === p.id && s.chipActive]}
-              onPress={() => { setGroupMode(false); setSelectedPetId(p.id); }}
-            >
-              {!groupMode && selectedPetId === p.id && (
-                <Ionicons name="checkmark" size={14} color={Colors.accent} />
-              )}
-              <Text style={[s.chipText, !groupMode && selectedPetId === p.id && s.chipTextActive]}>
-                {p.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={[s.chip, groupMode && s.chipActive]}
-            onPress={() => setGroupMode(true)}
-          >
-            {groupMode && <Ionicons name="checkmark" size={14} color={Colors.accent} />}
-            <Text style={[s.chipText, groupMode && s.chipTextActive]}>
-              All {species === 'dog' ? 'Dogs' : 'Cats'}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
       )}
 
-      {/* Header */}
-      <Text style={s.header}>
-        Higher-scoring alternatives for {displayName}
-      </Text>
-      <Text style={s.subtitle}>
-        {groupMode
-          ? `Products that work well for all ${displayName}.`
-          : `Based on ${displayName}'s unique dietary needs.`}
-      </Text>
-
-      {/* 3-card row */}
-      <View style={s.cardRow}>
+      {expanded && premium && result && result.candidates.length > 0 && <View style={s.cardRow}>
         {result.candidates.map((c) => (
           <TouchableOpacity
             key={c.product_id}
             style={s.card}
             activeOpacity={0.7}
             onPress={() => {
-              navigation.push('Result', { productId: c.product_id, petId: navPetId });
+              navigation.push('Result', { productId: c.product_id, petId });
             }}
           >
             {/* Product image */}
@@ -338,17 +224,20 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
               {c.product_name}
             </Text>
 
-            {/* Score */}
-            <View style={s.scoreRow}>
-              <View style={[s.scoreDot, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) }]} />
-              <Text style={s.scoreText}>{Math.round(c.final_score)}% match</Text>
-            </View>
-            <Text style={s.scoreLabel}>for {displayName}</Text>
+            {/* Bottom-anchored section — aligns across cards */}
+            <View style={s.cardBottom}>
+              {/* Score */}
+              <View style={s.scoreRow}>
+                <View style={[s.scoreDot, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) }]} />
+                <Text style={s.scoreText}>{Math.round(c.final_score)}% match</Text>
+              </View>
+              <Text style={s.scoreLabel}>for {petName}</Text>
 
-            {/* Swap reason */}
-            <Text style={s.reason} numberOfLines={1}>
-              {c.reason}
-            </Text>
+              {/* Swap reason */}
+              <Text style={s.reason} numberOfLines={2}>
+                {c.reason}
+              </Text>
+            </View>
 
             {/* Compare link */}
             <TouchableOpacity
@@ -357,14 +246,14 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
                 if (!canCompare()) {
                   (navigation as any).navigate('Paywall', {
                     trigger: 'compare',
-                    petName: displayName,
+                    petName,
                   });
                   return;
                 }
                 (navigation as any).navigate('Compare', {
                   productAId: productId,
                   productBId: c.product_id,
-                  petId: navPetId,
+                  petId,
                 });
               }}
             >
@@ -372,7 +261,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
-      </View>
+      </View>}
     </View>
   );
 }
@@ -383,35 +272,17 @@ const s = StyleSheet.create({
   container: {
     marginBottom: Spacing.lg,
   },
-  chipRow: {
-    marginBottom: Spacing.sm,
-  },
-  chipRowContent: {
-    gap: 8,
-  },
-  chip: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
     backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderRadius: 12,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+    marginBottom: Spacing.md,
   },
-  chipActive: {
-    backgroundColor: Colors.accent + '18',
-    borderColor: Colors.accent + '40',
-  },
-  chipText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
-  chipTextActive: {
-    color: Colors.accent,
-    fontWeight: '600',
+  headerTextGroup: {
+    flex: 1,
   },
   header: {
     fontSize: FontSizes.lg,
@@ -422,7 +293,6 @@ const s = StyleSheet.create({
   subtitle: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
-    marginBottom: Spacing.md,
   },
   cardRow: {
     flexDirection: 'row',
@@ -460,6 +330,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginBottom: 4,
+    minHeight: 16,
   },
   slotLabelText: {
     fontSize: FontSizes.xs,
@@ -479,8 +350,11 @@ const s = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
     minHeight: 32,
+  },
+  cardBottom: {
+    marginTop: 'auto',
+    paddingTop: Spacing.sm,
   },
   scoreRow: {
     flexDirection: 'row',
@@ -519,78 +393,20 @@ const s = StyleSheet.create({
     color: Colors.accent,
   },
 
-  // ─── Free user paywall banner ──────────────────────────
-  freeBanner: {
+  // ─── Premium CTA (free users) ──────────────────────────
+  premiumCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: Colors.card,
     borderRadius: 12,
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.accent + '30',
   },
-  freeBannerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: Spacing.sm,
-  },
-  freeBannerHeadline: {
-    flex: 1,
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  freeBannerSubtitle: {
+  premiumCtaText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-    marginBottom: Spacing.md,
-  },
-  ghostCardRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: Spacing.md,
-  },
-  ghostCard: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    padding: 8,
-    alignItems: 'center',
-    opacity: 0.6,
-  },
-  ghostImageBox: {
-    width: '100%',
-    height: 48,
-    borderRadius: 6,
-    backgroundColor: Colors.cardBorder + '40',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  ghostBar: {
-    width: '70%',
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.cardBorder,
-    marginBottom: 4,
-  },
-  ghostScore: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: Colors.textTertiary,
-    marginTop: 2,
-  },
-  freeBannerCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingTop: Spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
-  },
-  freeBannerCtaText: {
-    fontSize: FontSizes.md,
     fontWeight: '600',
     color: Colors.accent,
   },

@@ -8,7 +8,7 @@
  * 3. Duplicate canonical ingredient names at different positions
  */
 
-import type { ProductIngredient } from '../types/scoring';
+import type { ProductIngredient } from '../types/scoring.ts';
 
 const VARIETY_PACK_PATTERNS: RegExp[] = [
   /variety\s*pack/i,

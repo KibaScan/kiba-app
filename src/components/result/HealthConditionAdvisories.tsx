@@ -18,6 +18,7 @@ interface HealthConditionAdvisoriesProps {
   petName: string;
   personalizations: PersonalizationDetail[];  // pre-filtered to type==='condition'
   finalScore: number;
+  kcalNote?: string | null;
 }
 
 // ─── Display name map ───────────────────────────────────
@@ -57,6 +58,7 @@ export function HealthConditionAdvisories({
   petName,
   personalizations,
   finalScore,
+  kcalNote,
 }: HealthConditionAdvisoriesProps) {
   if (conditions.length === 0) return null;
 
@@ -112,7 +114,7 @@ export function HealthConditionAdvisories({
       {/* Per-condition cards */}
       {conditions.map((condition) => {
         const displayName = CONDITION_DISPLAY_NAMES[condition] ?? condition;
-        const advisory = getConditionAdvisory(condition, species, petName);
+        const advisory = getConditionAdvisory(condition, species, petName, kcalNote);
 
         // Find personalizations matching this condition
         const condPersonalizations = personalizations.filter(

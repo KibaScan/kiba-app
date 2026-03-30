@@ -8,8 +8,8 @@
  * Reference: NRC, 2006 — Nutrient Requirements of Dogs and Cats.
  */
 
-import { Category } from '../types';
-import type { Product } from '../types';
+import { Category } from '../types/index.ts';
+import type { Product } from '../types/index.ts';
 
 export type CalorieSource = 'label' | 'estimated' | null;
 

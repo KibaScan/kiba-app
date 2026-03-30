@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { scoreProduct, PipelineResult } from '../services/scoring/pipeline';
 import { computeKeyDifferences, KeyDifference } from '../utils/keyDifferences';
-import { ScoreRing } from '../components/scoring/ScoreRing';
+import { ScoreRing, getScoreColor } from '../components/scoring/ScoreRing';
 import { Colors, FontSizes, Spacing, SCORING_WEIGHTS } from '../utils/constants';
 import { stripBrandFromName, toDisplayName } from '../utils/formatters';
 import { getPetAllergens, getPetConditions } from '../services/petService';
@@ -87,6 +87,17 @@ export default function CompareScreen({ route, navigation }: Props) {
   // Pet data
   const pets = useActivePetStore((s) => s.pets);
   const pet = useMemo(() => pets.find((p) => p.id === petId) ?? null, [pets, petId]);
+  const otherPets = useMemo(
+    () => pets.filter(p => p.species === pet?.species && p.id !== petId),
+    [pets, pet, petId],
+  );
+
+  // ─── Other pets' scores (lazy-loaded on expand) ────────
+  const [otherPetScores, setOtherPetScores] = useState<
+    Map<string, { scoreA: number; scoreB: number }>
+  >(new Map());
+  const [otherPetsExpanded, setOtherPetsExpanded] = useState(false);
+  const [otherPetsLoading, setOtherPetsLoading] = useState(false);
 
   // ─── Premium gate (stub: implement when paywall ships) ──
 
@@ -151,6 +162,45 @@ export default function CompareScreen({ route, navigation }: Props) {
 
     return () => { cancelled = true; };
   }, [productAId, productBId, pet?.id, petAllergens.join(), petConditions.join()]);
+
+  // Reset other pet scores when products change
+  useEffect(() => {
+    setOtherPetScores(new Map());
+  }, [productBId]);
+
+  // ─── Lazy-load other pets' scores on expand ─────────────
+  useEffect(() => {
+    if (!otherPetsExpanded || otherPetScores.size > 0 || !productA || !productB) return;
+    let cancelled = false;
+
+    (async () => {
+      setOtherPetsLoading(true);
+      const scores = new Map<string, { scoreA: number; scoreB: number }>();
+
+      for (const op of otherPets) {
+        if (cancelled) return;
+        const [allergens, conditions] = await Promise.all([
+          getPetAllergens(op.id),
+          getPetConditions(op.id),
+        ]);
+        const [resA, resB] = await Promise.all([
+          scoreProduct(productA, op, allergens.map(a => a.allergen), conditions.map(c => c.condition_tag)),
+          scoreProduct(productB, op, allergens.map(a => a.allergen), conditions.map(c => c.condition_tag)),
+        ]);
+        scores.set(op.id, {
+          scoreA: resA.scoredResult.finalScore,
+          scoreB: resB.scoredResult.finalScore,
+        });
+      }
+
+      if (!cancelled) {
+        setOtherPetScores(scores);
+        setOtherPetsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [otherPetsExpanded, otherPetScores.size, productA, productB, otherPets]);
 
   // ─── Computed values ────────────────────────────────────
   const keyDifferences = useMemo(() => {
@@ -359,6 +409,56 @@ export default function CompareScreen({ route, navigation }: Props) {
                 <Text style={ss.diffText}>{diff.text}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* ─── Your Other Pets ──────────────────────────── */}
+        {otherPets.length > 0 && (
+          <View style={ss.section}>
+            <TouchableOpacity
+              style={ss.sectionHeader}
+              onPress={() => setOtherPetsExpanded(!otherPetsExpanded)}
+              activeOpacity={0.7}
+            >
+              <Text style={ss.sectionTitle}>Your Other Pets</Text>
+              <Ionicons
+                name={otherPetsExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={Colors.textSecondary}
+              />
+            </TouchableOpacity>
+            {otherPetsExpanded && (
+              otherPetsLoading ? (
+                <View style={ss.otherPetsLoading}>
+                  <ActivityIndicator size="small" color={Colors.accent} />
+                  <Text style={ss.otherPetsLoadingText}>Scoring for your other pets…</Text>
+                </View>
+              ) : (
+                otherPets.map(op => {
+                  const scores = otherPetScores.get(op.id);
+                  if (!scores) return null;
+                  const highlightA = scores.scoreA > scores.scoreB;
+                  const highlightB = scores.scoreB > scores.scoreA;
+                  return (
+                    <View key={op.id} style={ss.otherPetRow}>
+                      <View style={ss.otherPetScoreCell}>
+                        <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreA, false) }]} />
+                        <Text style={[ss.otherPetScore, highlightA && { color: Colors.accent }]}>
+                          {Math.round(scores.scoreA)}%
+                        </Text>
+                      </View>
+                      <Text style={ss.otherPetName} numberOfLines={1}>{op.name}</Text>
+                      <View style={ss.otherPetScoreCell}>
+                        <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreB, false) }]} />
+                        <Text style={[ss.otherPetScore, highlightB && { color: Colors.accent }]}>
+                          {Math.round(scores.scoreB)}%
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )
+            )}
           </View>
         )}
 
@@ -716,6 +816,49 @@ const ss = StyleSheet.create({
     flex: 1,
     fontSize: FontSizes.xs,
     color: Colors.textPrimary,
+  },
+
+  // Other pets
+  otherPetsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+  },
+  otherPetsLoadingText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  otherPetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.cardBorder,
+  },
+  otherPetScoreCell: {
+    width: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  otherPetDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  otherPetScore: {
+    fontSize: FontSizes.sm,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  otherPetName: {
+    flex: 1,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 
   // CTA

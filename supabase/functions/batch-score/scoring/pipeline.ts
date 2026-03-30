@@ -3,12 +3,12 @@
 // No React/UI imports. No brand awareness (D-019). No affiliate logic (D-020).
 
 // TODO: supabase client will be injected by Edge Function index.ts
-import { computeScore } from './engine';
-import type { Product, PetProfile, IngredientDict } from '../types';
-import type { ProductIngredient, ScoredResult } from '../types/scoring';
-import { detectVarietyPack } from '../utils/varietyPackDetector';
-import { isSupplementalByName } from '../utils/supplementalClassifier';
-import { normalizeCanonicalName } from '../utils/ingredientNormalizer';
+import { computeScore } from './engine.ts';
+import type { Product, PetProfile, IngredientDict } from '../types/index.ts';
+import type { ProductIngredient, ScoredResult } from '../types/scoring.ts';
+import { detectVarietyPack } from '../utils/varietyPackDetector.ts';
+import { isSupplementalByName } from '../utils/supplementalClassifier.ts';
+import { normalizeCanonicalName } from '../utils/ingredientNormalizer.ts';
 
 // ─── Supabase Row Shape ──────────────────────────────────
 

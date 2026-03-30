@@ -3,8 +3,8 @@
 // Dog rules and cat rules never share (D-011).
 // DCM and carb overload are percentages of baseScore, not flat points.
 
-import type { Product } from '../types';
-import type { ProductIngredient, AppliedRule, SpeciesRuleResult, DcmResult } from '../types/scoring';
+import type { Product } from '../types/index.ts';
+import type { ProductIngredient, AppliedRule, SpeciesRuleResult, DcmResult } from '../types/scoring.ts';
 
 // ─── UGT1A6 concern ingredients ────────────────────────
 

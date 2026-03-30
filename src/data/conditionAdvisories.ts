@@ -62,12 +62,14 @@ const CONDITION_ADVISORIES: Record<string, AdvisoryEntry> = {
 
 /**
  * Returns the D-095 compliant advisory string for a condition + species,
- * with {petName} replaced. Returns null if no advisory exists.
+ * with {petName} and {kcalNote} replaced. Returns null if no advisory exists.
+ * When kcalNote is absent, the calorie sentence is stripped entirely.
  */
 export function getConditionAdvisory(
   condition: string,
   species: Species,
   petName: string,
+  kcalNote?: string | null,
 ): string | null {
   const entry = CONDITION_ADVISORIES[condition];
   if (!entry) return null;
@@ -75,5 +77,13 @@ export function getConditionAdvisory(
   const template = entry[species];
   if (!template) return null;
 
-  return template.replace(/\{petName\}/g, petName);
+  let result = template.replace(/\{petName\}/g, petName);
+
+  if (kcalNote) {
+    result = result.replace(/\{kcalNote\}/g, kcalNote);
+  } else {
+    result = result.replace(/\s*This product provides \{kcalNote\}\./, '');
+  }
+
+  return result;
 }

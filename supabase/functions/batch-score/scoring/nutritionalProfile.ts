@@ -3,7 +3,7 @@
 // Scores 4 sub-nutrients against AAFCO thresholds using species-specific curves.
 // Products scored on DMB basis. Bucket output is 0-100.
 
-import type { BreedSize, Modifier, NutritionScoreResult } from '../types/scoring';
+import type { BreedSize, Modifier, NutritionScoreResult } from '../types/scoring.ts';
 
 // ─── Input Contract ─────────────────────────────────────
 

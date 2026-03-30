@@ -1,7 +1,7 @@
 // Kiba — TypeScript Interfaces (Scoring-Only Subset)
 // Trimmed for Edge Function use. Full types live in src/types/.
 
-import type { IngredientSeverity } from './scoring';
+import type { IngredientSeverity } from './scoring.ts';
 
 // ─── Enums ──────────────────────────────────────────────
 
@@ -146,5 +146,5 @@ export interface IngredientDict {
 
 // ─── Pet Re-export ──────────────────────────────────────
 
-export type { Pet as PetProfile } from './pet';
-export type { PetCondition, PetAllergen } from './pet';
+export type { Pet as PetProfile } from './pet.ts';
+export type { PetCondition, PetAllergen } from './pet.ts';

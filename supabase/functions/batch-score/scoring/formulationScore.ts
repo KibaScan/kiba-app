@@ -2,8 +2,8 @@
 // Pure function. No Supabase, no side effects, no brand awareness.
 // Three sub-checks: AAFCO statement, preservative quality, protein naming.
 
-import type { Product } from '../types';
-import type { ProductIngredient, FormulationScoreResult } from '../types/scoring';
+import type { Product } from '../types/index.ts';
+import type { ProductIngredient, FormulationScoreResult } from '../types/scoring.ts';
 
 // ─── Sub-check: AAFCO Statement (50%) ─────────────────
 

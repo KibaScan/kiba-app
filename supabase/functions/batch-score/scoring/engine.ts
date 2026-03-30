@@ -2,23 +2,23 @@
 // Pure function. No Supabase, no side effects, no brand awareness (D-019).
 // D-020: affiliate_links is architecturally excluded from scoring.
 
-import type { Product, PetProfile } from '../types';
-import { Category, LifeStage } from '../types';
+import type { Product, PetProfile } from '../types/index.ts';
+import { Category, LifeStage } from '../types/index.ts';
 import type {
   ProductIngredient,
   ScoredResult,
   CarbEstimate,
   PersonalizationDetail,
-} from '../types/scoring';
+} from '../types/scoring.ts';
 
-import { scoreIngredients } from './ingredientQuality';
-import { scoreNutritionalProfile } from './nutritionalProfile';
-import type { NutritionalProfileInput } from './nutritionalProfile';
-import { scoreFormulation } from './formulationScore';
-import { applySpeciesRules } from './speciesRules';
-import { applyPersonalization, buildAllergenOverrideMap } from './personalization';
-import { SCORING_WEIGHTS } from '../utils/constants';
-import { isUnder4Weeks } from '../utils/lifeStage';
+import { scoreIngredients } from './ingredientQuality.ts';
+import { scoreNutritionalProfile } from './nutritionalProfile.ts';
+import type { NutritionalProfileInput } from './nutritionalProfile.ts';
+import { scoreFormulation } from './formulationScore.ts';
+import { applySpeciesRules } from './speciesRules.ts';
+import { applyPersonalization, buildAllergenOverrideMap } from './personalization.ts';
+import { SCORING_WEIGHTS } from '../utils/constants.ts';
+import { isUnder4Weeks } from '../utils/lifeStage.ts';
 
 // ─── Helpers ──────────────────────────────────────────
 

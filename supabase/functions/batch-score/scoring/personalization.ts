@@ -3,11 +3,11 @@
 // Optional layer — returns score unchanged when petProfile is null.
 // All labels follow D-094 suitability framing and D-095 UPVM compliance.
 
-import type { Product, PetProfile } from '../types';
-import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../types/scoring';
-import { toDisplayName } from '../utils/formatters';
-import { isUnder4Weeks } from '../utils/lifeStage';
-import { computeConditionAdjustments } from '../utils/conditionScoring';
+import type { Product, PetProfile } from '../types/index.ts';
+import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../types/scoring.ts';
+import { toDisplayName } from '../utils/formatters.ts';
+import { isUnder4Weeks } from '../utils/lifeStage.ts';
+import { computeConditionAdjustments } from '../utils/conditionScoring.ts';
 
 // ─── D-129: Allergen Override Map ─────────────────────────
 

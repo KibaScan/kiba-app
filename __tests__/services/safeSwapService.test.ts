@@ -478,28 +478,33 @@ describe('assignCuratedSlots', () => {
     expect(result![1].slot_label).toBe('Great Value');
   });
 
-  it('no price data → 2 slots (Top Pick + Fish-Based)', () => {
+  it('no price data → 3 slots (Top Pick + Fish-Based + Another Pick fallback)', () => {
     const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
     const result = assignCuratedSlots(noPriceCandidates, fishIds, false, [], [], 'dog');
     expect(result).not.toBeNull();
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(3);
     expect(result![0].slot_label).toBe('Top Pick');
     expect(result![1].slot_label).toBe('Fish-Based');
+    expect(result![2].slot_label).toBe('Another Pick');
   });
 
-  it('neither fish nor price + no fish allergy → 1 slot → returns null (fallback to generic)', () => {
+  it('neither fish nor price + no fish allergy → 2 slots (Top Pick + Another Pick)', () => {
     const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
     const result = assignCuratedSlots(noPriceCandidates, noFish, false, [], [], 'dog');
-    expect(result).toBeNull();
-  });
-
-  it('fish allergy + no price data → 2 slots (Top Pick + Another Pick)', () => {
-    const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
-    const result = assignCuratedSlots(noPriceCandidates, fishIds, true, [], ['fish'], 'dog');
     expect(result).not.toBeNull();
     expect(result).toHaveLength(2);
     expect(result![0].slot_label).toBe('Top Pick');
     expect(result![1].slot_label).toBe('Another Pick');
+  });
+
+  it('fish allergy + no price data → 3 slots (Top Pick + Another Pick + Another Pick)', () => {
+    const noPriceCandidates = candidates.map(c => ({ ...c, price: null, product_size_kg: null }));
+    const result = assignCuratedSlots(noPriceCandidates, fishIds, true, [], ['fish'], 'dog');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(3);
+    expect(result![0].slot_label).toBe('Top Pick');
+    expect(result![1].slot_label).toBe('Another Pick');
+    expect(result![2].slot_label).toBe('Another Pick');
   });
 
   it('Great Value cannot be same product as Top Pick or Fish-Based', () => {

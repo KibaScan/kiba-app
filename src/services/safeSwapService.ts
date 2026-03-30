@@ -360,6 +360,13 @@ export function assignCuratedSlots(
   if (valueCandidate) {
     slots.push(candidateToSwap(valueCandidate, 'Great Value', fishProductIds, conditionTags, allergenGroups, species));
     selected.add(valueCandidate.product_id);
+  } else {
+    // Fallback: no price data available — pick next highest scoring product
+    const fallback = candidates.find(c => !selected.has(c.product_id));
+    if (fallback) {
+      slots.push(candidateToSwap(fallback, 'Another Pick', fishProductIds, conditionTags, allergenGroups, species));
+      selected.add(fallback.product_id);
+    }
   }
 
   // Need at least 2 slots for curated mode

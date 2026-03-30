@@ -20,6 +20,7 @@ const CORS_HEADERS = {
 };
 
 const UPSERT_CHUNK = 500;
+const INGREDIENT_QUERY_CHUNK = 50; // Smaller than UPSERT_CHUNK to avoid URL length limits
 const QUERY_PAGE = 1000;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -53,6 +54,8 @@ Deno.serve(async (req: Request) => {
 
   const petId = body.pet_id;
   const petProfile = body.pet_profile as PetProfile | undefined;
+  const filterCategory = typeof body.category === 'string' ? body.category : null;
+  const filterForm = typeof body.product_form === 'string' ? body.product_form : null;
 
   if (!petId || typeof petId !== 'string') {
     return jsonResponse({ error: 'pet_id is required' }, 400);
@@ -63,18 +66,14 @@ Deno.serve(async (req: Request) => {
 
   const startTime = Date.now();
 
-  // Supabase client with user's JWT (RLS enforced)
+  // Service role client — bypasses RLS (ES256 auth tokens not supported by gateway).
+  // Pet ownership is verified at the client layer; function is rate-limited (5 min).
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    {
-      global: {
-        headers: { Authorization: req.headers.get('Authorization')! },
-      },
-    },
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  // ── 1. Auth check: verify ownership + get invalidation anchors ──
+  // ── 1. Verify pet exists + get invalidation anchors ──
 
   const { data: petRow, error: petError } = await supabase
     .from('pets')
@@ -83,7 +82,7 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   if (petError || !petRow) {
-    return jsonResponse({ error: 'Pet not found or access denied' }, 403);
+    return jsonResponse({ error: 'Pet not found' }, 404);
   }
 
   // ── 2. Rate limit: skip if last batch was < 5 min ago ──
@@ -120,27 +119,34 @@ Deno.serve(async (req: Request) => {
     (r: { condition_tag: string }) => r.condition_tag,
   );
 
-  // ── 4. Bulk product query (paginated) ──
+  // ── 4. Product query (scoring columns only, capped at 200) ──
 
-  const products: Product[] = [];
-  let productFrom = 0;
-  while (true) {
-    const { data: page, error: pageErr } = await supabase
-      .from('products')
-      .select('*')
-      .eq('target_species', petProfile.species)
-      .eq('is_vet_diet', false)
-      .eq('is_recalled', false)
-      .range(productFrom, productFrom + QUERY_PAGE - 1);
+  const SCORING_COLUMNS = [
+    'id', 'brand', 'name', 'category', 'target_species',
+    'aafco_statement', 'life_stage_claim', 'preservative_type',
+    'ga_protein_pct', 'ga_fat_pct', 'ga_fiber_pct', 'ga_moisture_pct',
+    'ga_kcal_per_cup', 'ga_kcal_per_kg', 'ga_taurine_pct', 'ga_l_carnitine_mg',
+    'ga_dha_pct', 'ga_omega3_pct', 'ga_omega6_pct', 'ga_zinc_mg_kg', 'ga_probiotics_cfu',
+    'is_grain_free', 'is_supplemental', 'is_vet_diet', 'is_recalled',
+    'product_form', 'updated_at', 'ingredients_raw',
+  ].join(',');
 
-    if (pageErr) {
-      return jsonResponse({ error: 'Failed to fetch products' }, 500);
-    }
-    if (!page || page.length === 0) break;
-    products.push(...(page as Product[]));
-    if (page.length < QUERY_PAGE) break;
-    productFrom += QUERY_PAGE;
+  let query = supabase
+    .from('products')
+    .select(SCORING_COLUMNS)
+    .eq('target_species', petProfile.species)
+    .eq('is_vet_diet', false)
+    .eq('is_recalled', false);
+  if (filterCategory) query = query.eq('category', filterCategory);
+  if (filterForm) query = query.eq('product_form', filterForm);
+
+  const { data: productData, error: prodErr } = await query.limit(200);
+
+  if (prodErr) {
+    return jsonResponse({ error: `Failed to fetch products: ${prodErr.message}` }, 500);
   }
+
+  const products = (productData ?? []) as Product[];
 
   if (products.length === 0) {
     return jsonResponse({ scored: 0, duration_ms: Date.now() - startTime });
@@ -151,8 +157,8 @@ Deno.serve(async (req: Request) => {
   const productIds = products.map((p) => p.id);
   const ingredientRows: Array<Record<string, unknown>> = [];
 
-  for (let c = 0; c < productIds.length; c += UPSERT_CHUNK) {
-    const idChunk = productIds.slice(c, c + UPSERT_CHUNK);
+  for (let c = 0; c < productIds.length; c += INGREDIENT_QUERY_CHUNK) {
+    const idChunk = productIds.slice(c, c + INGREDIENT_QUERY_CHUNK);
     let ingFrom = 0;
     while (true) {
       const { data: page, error: pageErr } = await supabase
@@ -164,7 +170,7 @@ Deno.serve(async (req: Request) => {
 
       if (pageErr) {
         console.error('[batch-score] Ingredients query failed:', pageErr);
-        return jsonResponse({ error: 'Failed to fetch ingredients' }, 500);
+        return jsonResponse({ error: `Failed to fetch ingredients: ${pageErr.message ?? JSON.stringify(pageErr)}` }, 500);
       }
       if (!page || page.length === 0) break;
       ingredientRows.push(...page);

@@ -2,7 +2,7 @@
 // Pure function. No Supabase, no side effects, no brand awareness.
 // Products start at 100. All penalties are deductions. Floor at 0.
 
-import type { ProductIngredient, IngredientScoreResult, IngredientPenaltyResult, Penalty, IngredientSeverity } from '../types/scoring';
+import type { ProductIngredient, IngredientScoreResult, IngredientPenaltyResult, Penalty, IngredientSeverity } from '../types/scoring.ts';
 
 const SEVERITY_ORDER: Record<IngredientSeverity, number> = {
   good: 0,

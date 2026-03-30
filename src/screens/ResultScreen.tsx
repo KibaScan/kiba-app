@@ -72,7 +72,7 @@ import { SafeSwapSection } from '../components/result/SafeSwapSection';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 
-import { resolveCalories } from '../utils/calorieEstimation';
+import { resolveCalories, resolveKcalPerCup } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { computePetDer } from '../utils/pantryHelpers';
@@ -121,6 +121,15 @@ export default function ResultScreen() {
     effectiveKcalPerUnit && treatBudget > 0
       ? calculateTreatsPerDay(treatBudget, effectiveKcalPerUnit)
       : null;
+
+  // Calorie note for health condition advisories (joint advisory)
+  const kcalNote = useMemo(() => {
+    if (!product) return null;
+    const cupResult = resolveKcalPerCup(product);
+    if (cupResult) return `${cupResult.kcalPerCup.toLocaleString()} kcal/cup`;
+    if (calorieData && calorieData.kcalPerKg > 0) return `${calorieData.kcalPerKg.toLocaleString()} kcal/kg`;
+    return null;
+  }, [product, calorieData]);
 
   // D-094: never display a naked score — fall back to species name
   const petName = pet?.name ?? null;
@@ -641,6 +650,7 @@ export default function ResultScreen() {
               (p) => p.type === 'condition',
             )}
             finalScore={scoredResult.finalScore}
+            kcalNote={kcalNote}
           />
         )}
 
