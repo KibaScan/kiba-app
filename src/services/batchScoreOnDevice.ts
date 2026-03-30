@@ -232,9 +232,10 @@ export async function batchScoreOnDevice(
 // ─── Hybrid: Edge Function first, client-side fallback ──────
 
 /**
- * Tries the batch-score Edge Function first (scores all 19K products server-side).
+ * Tries the batch-score Edge Function first (200 products server-side).
  * Falls back to client-side scoring (200 products) if the Edge Function fails
  * (WORKER_LIMIT on free tier, timeout, network error, etc.).
+ * Both paths filter by category + productForm when provided.
  */
 export async function batchScoreHybrid(
   petId: string,
@@ -244,7 +245,7 @@ export async function batchScoreHybrid(
 ): Promise<{ scored: number; duration_ms: number }> {
   // Try Edge Function first
   try {
-    const { data, error } = await supabase.functions.invoke('batch-score', {
+    const { data, error } = await supabase.functions.invoke<{ scored: number; duration_ms: number }>('batch-score', {
       body: {
         pet_id: petId,
         pet_profile: petProfile,
@@ -252,14 +253,33 @@ export async function batchScoreHybrid(
         ...(productForm && { product_form: productForm }),
       },
     });
+    if (__DEV__ && error) {
+      // Try to read the response body for more detail
+      try {
+        const ctx = (error as any).context;
+        if (ctx instanceof Response) {
+          const text = await ctx.clone().text();
+          console.log('[batchScoreHybrid] Edge Function response body:', text);
+        }
+      } catch { /* ignore */ }
+    }
 
     if (!error && data?.scored != null) {
+      if (__DEV__) console.log(`[batchScoreHybrid] Edge Function scored ${data.scored} products in ${data.duration_ms}ms`);
       return { scored: data.scored, duration_ms: data.duration_ms ?? 0 };
     }
-  } catch {
-    // Edge Function unavailable — fall through to client-side
+    if (__DEV__) {
+      const ctx = error?.context;
+      const status = ctx?.status ?? ctx?.statusCode ?? 'unknown';
+      const msg = typeof data === 'string' ? data : JSON.stringify(data);
+      console.log(`[batchScoreHybrid] Edge Function failed (HTTP ${status}), falling back to client-side. error=${error?.message} body=${msg}`);
+    }
+  } catch (err) {
+    if (__DEV__) console.log('[batchScoreHybrid] Edge Function unavailable, falling back to client-side', err);
   }
 
   // Fallback: client-side scoring (200 products)
-  return batchScoreOnDevice(petId, petProfile, category, productForm);
+  const result = await batchScoreOnDevice(petId, petProfile, category, productForm);
+  if (__DEV__) console.log(`[batchScoreHybrid] Client-side scored ${result.scored} products in ${result.duration_ms}ms`);
+  return result;
 }

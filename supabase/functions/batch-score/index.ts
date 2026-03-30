@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   // Pet ownership is verified at the client layer; function is rate-limited (5 min).
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    Deno.env.get('SERVICE_ROLE_KEY')!,
   );
 
   // ── 1. Verify pet exists + get invalidation anchors ──
@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   if (petError || !petRow) {
-    return jsonResponse({ error: 'Pet not found' }, 404);
+    return jsonResponse({ error: 'Pet not found', detail: petError?.message ?? 'no row returned', pet_id: petId }, 404);
   }
 
   // ── 2. Rate limit: skip if last batch was < 5 min ago ──

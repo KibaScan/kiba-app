@@ -67,19 +67,27 @@
   - **Life stage hard filter (DONE):** `applyLifeStageFilter()` in `safeSwapService.ts` — puppies don't see senior/adult-only food, adults don't see puppy/kitten-only food, "All Life Stages" always passes. Added `life_stage_claim` to CandidateRow + fetchBasePool select.
   - **Header copy:** Changed to "Top picks for {petName}" / "Alternatives matched to {petName}'s dietary needs."
   - **Python 3.9 fix:** `size_parser.py` — changed `str | None` to `Optional[str]` for compatibility.
-- **Files changed:** src/components/result/SafeSwapSection.tsx, src/screens/CompareScreen.tsx, src/screens/ResultScreen.tsx, src/services/safeSwapService.ts, src/services/batchScoreOnDevice.ts, __tests__/services/safeSwapService.test.ts, scripts/import/size_parser.py, docs/status/CURRENT.md
+  - **Edge Function deployed to Pro:** Fixed 401 (reserved `SUPABASE_` prefix → renamed to `SERVICE_ROLE_KEY`), fixed 404 (quoted JWT in secrets set). Edge Function now scoring 188 products in ~8s server-side.
+  - **Debug logging:** `__DEV__`-only logs in `batchScoreHybrid()` show which path was taken (Edge Function vs client-side), HTTP status on failure, and response body.
+  - **Architecture doc:** Created `docs/references/batch-scoring-architecture.md` — documents current system, 4 known issues (stale cache, no ordering, 200 limit, Edge Function parity), and 5 proposed approaches (TTL, count delta, pg_cron, raise limit, combo).
+- **Files changed:** src/components/result/SafeSwapSection.tsx, src/screens/CompareScreen.tsx, src/screens/ResultScreen.tsx, src/services/safeSwapService.ts, src/services/batchScoreOnDevice.ts, supabase/functions/batch-score/index.ts, __tests__/services/safeSwapService.test.ts, scripts/import/size_parser.py, docs/references/batch-scoring-architecture.md (NEW), docs/status/CURRENT.md
 - **Not done yet:**
+  - **Batch scoring improvements** — decide on approach from `docs/references/batch-scoring-architecture.md` (raise limit, TTL cache expiration, ordering). Current: 200 random products, cache never expires for new products.
   - `safe swaps/` draft folder should be deleted (everything superseded by live code or in `scripts/import/`)
   - `safeswapsimplementation_plan.md` in repo root — Gemini's plan, can be cleaned up
   - Affiliate integration (Chewy/Amazon links, FTC disclosure, buy buttons)
   - `aafco_inference` on Product type (low priority)
   - CompareScreen pet switcher dropdown (deferred — "Your Other Pets" row is sufficient for now)
   - "Who Benefits Most?" summary line on CompareScreen (deferred)
-- **Next session should:** Run /boot. Delete `safe swaps/` folder and `safeswapsimplementation_plan.md`. Consider affiliate integration or other M6 items.
+- **Next session should:** Run /boot. Read `docs/references/batch-scoring-architecture.md` and decide which cache/scoring approach to implement. Delete `safe swaps/` folder and `safeswapsimplementation_plan.md`.
 - **Gotchas for next session:**
-  - `batchScoreHybrid()` is now the entry point — Edge Function will fail on free tier and gracefully fall back to client-side. If upgraded to Supabase Pro, Edge Function will activate automatically.
-  - `fetchGroupSafeSwaps()` still exists in `safeSwapService.ts` but is no longer called from SafeSwapSection (kept for potential future use).
+  - **Supabase is now on Pro tier.** Edge Function is deployed and working (`batch-score`, `--no-verify-jwt`).
+  - Edge Function secret is `SERVICE_ROLE_KEY` (not `SUPABASE_SERVICE_ROLE_KEY` — reserved prefix).
+  - `batchScoreHybrid()` is the entry point — tries Edge Function, falls back to client-side. Both paths limited to 200 products.
+  - Both batch scoring paths fetch 200 products with **no ordering** — effectively random subset. Decision needed on whether to raise limit and add ordering.
+  - `fetchGroupSafeSwaps()` still exists in `safeSwapService.ts` but is no longer called (kept for potential future use).
   - `life_stage_claim` is free text — filter uses keyword matching (growth: puppy/kitten/growth; adult/senior: adult/maintenance/senior). "All Life Stages" is a special pass-through.
   - Price backfill had 20 transient errors out of 15,801 — those products still have null price/size. Re-running the script would fix them.
   - CompareScreen "Your Other Pets" resets scores when Product B changes (via picker). Scores are lazy-loaded on section expand only.
+  - `__DEV__` debug logs in `batchScoreHybrid()` show Edge Function status — strip automatically in production.
 - **No new decisions, no scoring logic changes, no new migrations this session.**
