@@ -71,6 +71,7 @@ export interface Product {
 
   // Formulation
   aafco_statement: string | null;
+  aafco_inference: string | null;
   life_stage_claim: string | null;
   preservative_type: PreservativeType | null;
 

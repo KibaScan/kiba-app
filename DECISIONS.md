@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 26, 2026 (128 decisions, D-001 through D-166, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion.)
+> Updated: March 31, 2026 (129 decisions, D-001 through D-167, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: condition-aware feeding frequency.)
 
 ---
 

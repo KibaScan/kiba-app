@@ -48,8 +48,6 @@
 ## Up Next (M6)
 - Enroll in Chewy Affiliate Partners + Amazon Associates → flip `affiliateConfig.ts` enabled: true
 - Safe Swap affiliate buy pills (deferred — separate PR, requires adding affiliate fields to candidate query)
-- `aafco_inference` on Product type (low priority — Rule 5 uses aafco_statement only)
-- Delete `safe swaps/` folder and `safeswapsimplementation_plan.md` from repo root
 
 ## Optimization Status
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
@@ -102,9 +100,7 @@
 - **Not done yet:**
   - Safe Swap affiliate buy pills (deferred — separate PR)
   - Walmart affiliate (DB column exists, no enrollment)
-  - `aafco_inference` on Product type (low priority)
-  - Delete `safe swaps/` folder and `safeswapsimplementation_plan.md`
-- **Next session should:** Run /boot. Enroll in affiliate programs when user base allows. Delete deprecated `safe swaps/` folder. Consider if M6 is complete enough to close.
+- **Next session should:** Run /boot. Enroll in affiliate programs when user base allows. Consider if M6 is complete enough to close.
 - **Gotchas for next session:**
   - **Affiliate buttons are dormant.** Both retailers have `enabled: false` in `src/config/affiliateConfig.ts`. Flip to `true` and replace placeholder tags after enrolling.
   - **Edge Function is deployed with Approach F.** Two-phase scoring, delta mode, per-category rate limit. Secret is `SERVICE_ROLE_KEY` (not `SUPABASE_SERVICE_ROLE_KEY`).

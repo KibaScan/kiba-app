@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 26, 2026 — M5 complete. Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: March 31, 2026 — M6 in progress. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -11,7 +11,7 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M6 in progress — weight management + health conditions complete, compare flow + safe swaps next
+**Current phase:** M6 in progress — compare flow + safe swaps complete, affiliate enrollment pending
 
 **Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
 **Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
@@ -21,7 +21,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 128 decisions (D-001–D-166, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
+| `DECISIONS.md` | 129 decisions (D-001–D-167, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
 | `ROADMAP.md` | Milestone plan, M5 scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
