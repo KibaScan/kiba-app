@@ -288,12 +288,12 @@ All three layers must be independently testable. Species rules never share betwe
 **Note:** Search by product name (text lookup, not barcode) is a premium feature. Free users must scan barcodes. This gates a power-user behavior that signals high intent — these users convert well. Scan limit uses rolling 7-day window based on DB timestamps (not calendar week reset).
 
 ### D-053: Affiliate Architecture — Amazon Compliance
-**Status:** LOCKED
+**Status:** LOCKED (revised March 31, 2026 — FTC disclosure moved to About page)
 **Date:** Feb 19, 2026
 **Decision:**
 - Chewy: Show estimated price with label "View on Chewy (Est. ~$45.99)" — labeled as estimate, compliant
 - Amazon: "Check Current Price on Amazon" — intentionally hides price per Amazon Associates TOS
-- FTC disclosure auto-renders below both buttons
+- FTC disclosure in About/Legal section (not inline on every screen — screen bloat)
 - Buy buttons hidden entirely for products scoring <50 — replaced with Safe Swap CTAs
 - Register iOS and Android app URLs in Amazon Associates dashboard
 

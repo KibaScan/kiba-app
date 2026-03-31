@@ -130,6 +130,12 @@ export interface Product {
   }> | null;
   affiliate_links: Record<string, string> | null;
 
+  // Retailer source fields (migration 020 — v7 enrichment)
+  source_url: string | null;
+  chewy_sku: string | null;
+  asin: string | null;
+  walmart_id: string | null;
+
   // Price + size (M6 Safe Swap value slot — migration 023)
   price: number | null;
   price_currency: string | null;

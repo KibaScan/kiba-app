@@ -63,6 +63,12 @@ export interface PantryItemWithProduct extends PantryItem {
     unit_weight_g: number | null;
     aafco_statement: string | null;
     life_stage_claim: string | null;
+    // Affiliate fields (M6 — for PantryCard reorder button)
+    source_url: string | null;
+    chewy_sku: string | null;
+    asin: string | null;
+    affiliate_links: Record<string, string> | null;
+    price: number | null;
   };
 }
 

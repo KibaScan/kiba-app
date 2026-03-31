@@ -1,26 +1,28 @@
 # Batch Scoring Architecture
 
 > How products get scored for Safe Swaps and Top Matches.
-> Last updated: 2026-03-30 (session 6)
+> Last updated: 2026-03-30 (session 7) — Approach F: Delta Scoring + Two-Phase Edge
 
 ---
 
-## Current System
+## Current System (Approach F)
 
 ### How It Works
 
-1. **First scan trigger**: When a pet has no cached scores (or candidates come back empty), `batchScoreHybrid()` fires from SafeSwapSection.
-2. **Hybrid path**: Tries the Edge Function (`supabase/functions/batch-score/`) first. If it fails (WORKER_LIMIT on free tier, timeout, etc.), falls back to client-side scoring (`batchScoreOnDevice()`).
-3. **Both paths**: Fetch 200 products matching `species + category + productForm`, score each via `computeScore()`, upsert results to `pet_product_scores`.
-4. **Cache read**: `fetchSafeSwaps()` queries `pet_product_scores` (top 50 by score), applies exclusion filters (allergens, severity, pantry, scans, cardiac DCM, conditions, life stage), then builds the 3-pick curated layout.
-5. **Rate limit**: 5 minutes per pet. Edge Function checks via DB query (`scored_at`), client-side checks via in-memory Map.
+1. **Trigger**: When Safe Swaps detect an empty or immature cache, `batchScoreHybrid()` fires.
+2. **Hybrid path**: Tries the Edge Function first (1000 products, two-phase). Falls back to client-side (200 products) on failure.
+3. **Delta check**: Both paths query cache maturity — if ≥80% of products for this category are already scored, only fetch new/updated products (delta mode). Otherwise, full batch.
+4. **Phase 1 (Edge Function)**: Scores the first 200 products (ordered by `updated_at DESC`), upserts, returns response immediately.
+5. **Phase 2 (Edge Function background)**: `EdgeRuntime.waitUntil()` scores remaining ~800 products in 200-product chunks with GC yields. Silent on failure — cache maturity check heals on next scan.
+6. **Cache read**: `fetchSafeSwaps()` queries `pet_product_scores` (top 300 by score), applies exclusion filters (allergens, severity, pantry, scans, cardiac DCM, conditions, life stage), then builds the 3-pick curated layout.
+7. **Rate limit**: 5 minutes per pet (full batch only — delta bypasses).
 
 ### Key Files
 
 | File | Role |
 |------|------|
 | `src/services/batchScoreOnDevice.ts` | Client-side scoring (200 products) + `batchScoreHybrid()` entry point |
-| `supabase/functions/batch-score/index.ts` | Edge Function scoring (200 products server-side) |
+| `supabase/functions/batch-score/index.ts` | Edge Function: two-phase scoring (200 sync + 800 background) |
 | `src/services/safeSwapService.ts` | Cache read, filtering, curated layout |
 | `src/components/result/SafeSwapSection.tsx` | UI + trigger logic |
 
@@ -28,94 +30,52 @@
 
 | Constant | Value | Location |
 |----------|-------|----------|
-| Product limit | 200 | Both paths: `.limit(200)` |
-| Rate limit | 5 min | `RATE_LIMIT_MS` in both files |
-| Candidate pool | 50 | `CANDIDATE_POOL_SIZE` in safeSwapService |
+| Edge Function limit | 1000 | `DEFAULT_LIMIT` in Edge Function, `limit_size` in hybrid call |
+| Client fallback limit | 200 | `CLIENT_LIMIT` in batchScoreOnDevice |
+| Phase 1 size | 200 | `PHASE1_SIZE` in Edge Function |
+| Phase 2 chunk size | 200 | `PHASE2_CHUNK` in Edge Function |
+| Phase 2 GC yield | 50ms | `PHASE2_YIELD_MS` in Edge Function |
+| Cache maturity threshold | 80% | `CACHE_MATURITY_THRESHOLD` in both files |
+| Rate limit | 5 min | `RATE_LIMIT_MS` in both files (full batch only) |
+| Candidate pool | 300 | `CANDIDATE_POOL_SIZE` in safeSwapService |
+| Exclusion chunk size | 100 | `EXCLUSION_CHUNK_SIZE` in safeSwapService |
 | Min score threshold | 65 | `MIN_SCORE_THRESHOLD` in safeSwapService |
 | Min results to show | 3 | `MIN_RESULTS` in safeSwapService |
 | Upsert chunk | 500 | `UPSERT_CHUNK` in both files |
 
 ---
 
-## Known Issues
+## Delta Scoring
 
-### 1. Stale Cache — New Products Never Scored
+Instead of TTL-based cache expiration, the system checks whether new products have been added or updated since the last score.
 
-**Problem**: After a pet's first batch score, new products added to the DB are never scored for that pet. The cache is never invalidated for new product arrivals.
+1. Query `MAX(product_updated_at)` from `pet_product_scores` for this pet+category.
+2. Count cached scores vs total products for the category.
+3. If cache is "mature" (≥80% coverage), use `.gt('updated_at', lastScoredTimestamp)` — typically returns 0-10 products.
+4. If cache is immature (Phase 2 failed, client fallback was used, etc.), run a full batch to heal.
 
-**Impact**: If 500 products are added next month, no existing pet sees them in Safe Swaps.
-
-**Current mitigations**: `checkCacheFreshness()` in `topMatches.ts` invalidates cache when the pet profile changes (weight, breed, conditions, health review), but does NOT check for new products.
-
-### 2. Random 200 Products — No Ordering
-
-**Problem**: The product query has no `ORDER BY`. Postgres returns an arbitrary 200 products from the ~2,000 matching dry dog food. Better products may be missed while mediocre ones get scored.
-
-**Impact**: Safe Swap quality is inconsistent — depends on which 200 Postgres happens to return.
-
-### 3. 200 Limit Covers ~10% of Dry Dog Food
-
-**Problem**: ~2,000 dry dog food products exist, but only 200 are scored. The Safe Swap candidate pool is artificially small.
-
-**Impact**: The curated 3-pick layout (Top Pick, Fish-Based, Great Value) is limited to the best of 200, not the best of 2,000.
-
-### 4. Edge Function and Client-Side Are Equivalent
-
-**Problem**: Both paths fetch 200 products with the same limit. The Edge Function doesn't provide more coverage — it only offloads CPU to the server.
-
-**Impact**: No benefit to Pro tier beyond reduced device battery/CPU usage.
+**Why 80%?** Adapts to category size. Small category (80 cat treats) with 65 cached = 81% → delta. Large category (2000 dry dog food) with only 200 cached = 10% → full batch.
 
 ---
 
-## Proposed Approaches
+## Two-Phase Edge Function
 
-### A. TTL-Based Cache Expiration
+The Edge Function uses `EdgeRuntime.waitUntil()` to score the full catalog without blocking the UI:
 
-**Idea**: Re-trigger batch scoring if the cache is older than N days (e.g., 7 days).
-
-**How**: Check `MAX(scored_at)` in `pet_product_scores` for the pet. If older than threshold, treat cache as empty and re-score.
-
-**Pros**: Simple. Catches new products within N days. No schema changes.
-**Cons**: Doesn't react immediately to new products. All pets re-score on the same cadence regardless of whether products changed.
-
-### B. Product Count Delta Check
-
-**Idea**: Compare total products matching the pet's filters to the number of cached scores. If products grew by >10%, trigger re-score.
-
-**How**: `SELECT COUNT(*) FROM products WHERE species=X AND category=Y` vs `SELECT COUNT(*) FROM pet_product_scores WHERE pet_id=Z`. If delta exceeds threshold, re-score.
-
-**Pros**: Only re-scores when there are actually new products. Efficient.
-**Cons**: Doesn't catch product updates (reformulations), only additions. Two extra count queries per Safe Swap load.
-
-### C. pg_cron Background Re-Score
-
-**Idea**: Nightly job (like auto-deplete) that re-scores active pets in the background.
-
-**How**: pg_cron triggers an Edge Function that iterates pets with `last_active > 7 days ago`, re-scores each. Uses `pg_net` to call the Edge Function.
-
-**Pros**: No user-facing latency. Scores can run overnight. Could score ALL products (not just 200) since there's no UX wait.
-**Cons**: Most complex. Edge Function needs to handle larger batches. Cost scales with active users. Supabase Pro required for pg_cron.
-
-### D. Raise Product Limit (Quick Win)
-
-**Idea**: Increase `.limit(200)` to `.limit(1000)` or remove entirely for the Edge Function.
-
-**How**: Change one line in each file. Edge Function can handle more since it runs server-side. Client-side could stay at 200 as fallback.
-
-**Pros**: Immediate coverage improvement. No architectural changes.
-**Cons**: Longer first-scan wait (~40s for 1,000 products). Doesn't solve staleness.
-
-### E. Combination: D + A
-
-**Recommended approach**: Raise Edge Function limit to 1,000+ (or uncapped) for better coverage on first score. Add TTL-based expiration (7 days) so caches refresh periodically and pick up new products.
-
-**Trade-off**: First scan takes longer (~30-40s with progress indicator), but subsequent scans are instant from cache. Cache auto-refreshes weekly.
+- **Phase 1** scores the top 200 products synchronously and returns the response (~8-10s).
+- **Phase 2** runs in the background, scoring the remaining products in 200-product chunks with 50ms yields for garbage collection.
+- Phase 2 failures are logged but silent. The cache maturity check ensures the next scan triggers a healing full batch if needed.
 
 ---
 
-## Decision Needed
+## Previous Issues (Resolved)
 
-- Which approach to implement (A-E or combination)?
-- What TTL feels right? (7 days? 14 days? User-configurable?)
-- Should the Edge Function limit differ from client-side? (e.g., Edge: 1,000, client fallback: 200)
-- Should re-scoring happen on app launch or only when Safe Swaps are viewed?
+| Issue | Status | Fix |
+|-------|--------|-----|
+| Stale cache (new products never scored) | **Resolved** | Delta scoring detects new/updated products |
+| Random 200 products (no ORDER BY) | **Resolved** | `ORDER BY updated_at DESC` on all product queries |
+| 200-product ceiling (~10% coverage) | **Resolved** | Edge Function scores up to 1000 via two-phase |
+| CANDIDATE_POOL_SIZE = 50 (filter wipeout) | **Resolved** | Raised to 300 with chunked exclusion queries |
+| Edge Function no advantage | **Resolved** | Asymmetric limits (1000 vs 200) + two-phase |
+| 414 URI Too Long risk | **Prevented** | Exclusion queries chunked at 100 IDs |
+| Phase 2 failure = permanent data gap | **Prevented** | Cache maturity check triggers healing full batch |

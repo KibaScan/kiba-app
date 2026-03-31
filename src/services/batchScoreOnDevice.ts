@@ -1,7 +1,10 @@
-// Client-side batch scoring — replaces batch-score Edge Function.
+// Client-side batch scoring — fallback when Edge Function is unavailable.
 // Fetches candidate products + ingredients from Supabase, scores on-device
 // using the same pure computeScore() engine, upserts to pet_product_scores.
-// Solves the WORKER_LIMIT OOM on Supabase free tier.
+//
+// Approach F: Delta Scoring + Asymmetric Limits
+// - Delta mode: only scores new/updated products (cache maturity gated)
+// - Client limit: 200 products (Edge Function handles 1000 via two-phase)
 
 import { supabase } from './supabase';
 import { computeScore } from './scoring/engine';
@@ -14,12 +17,14 @@ import type { Product } from '../types';
 import type { Pet } from '../types/pet';
 import type { ProductIngredient } from '../types/scoring';
 
-// ─── Constants (mirror Edge Function) ───────────────────────
+// ─── Constants (mirror Edge Function where noted) ──────────
 
 const UPSERT_CHUNK = 500;
 const INGREDIENT_QUERY_CHUNK = 50;
 const QUERY_PAGE = 1000;
-const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes (full batch only)
+const CLIENT_LIMIT = 200; // Client-side product cap (Edge Function uses 1000)
+const CACHE_MATURITY_THRESHOLD = 0.8; // Delta mode requires ≥80% cache coverage
 
 // In-memory rate limit per pet (survives across component mounts within app session)
 const lastBatchTimestamp = new Map<string, number>();
@@ -48,27 +53,68 @@ interface IngredientRow {
 
 /**
  * Batch-scores candidate products on-device for a given pet.
- * Fetches products + ingredients from Supabase, runs computeScore() in a loop,
- * upserts results to pet_product_scores cache.
- *
- * Same signature as the former triggerBatchScore() for drop-in replacement.
+ * Supports delta scoring (only new/updated products) when cache is mature.
+ * Falls back to full batch when cache is empty or incomplete.
  */
 export async function batchScoreOnDevice(
   petId: string,
   petProfile: Pet,
   category?: string,
   productForm?: string | null,
+  limitSize: number = CLIENT_LIMIT,
 ): Promise<{ scored: number; duration_ms: number }> {
   const startTime = Date.now();
 
-  // ── 1. In-memory rate limit ──
+  // ── 1. Delta check + cache maturity (lightweight, always allowed) ──
 
-  const lastRun = lastBatchTimestamp.get(petId);
-  if (lastRun && Date.now() - lastRun < RATE_LIMIT_MS) {
-    return { scored: 0, duration_ms: 0 };
+  let deltaTimestamp: string | null = null;
+  let cacheCount = 0;
+  let totalProducts = 0;
+
+  if (category) {
+    const [deltaRes, countRes, totalRes] = await Promise.all([
+      supabase
+        .from('pet_product_scores')
+        .select('product_updated_at')
+        .eq('pet_id', petId)
+        .eq('category', category)
+        .order('product_updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('pet_product_scores')
+        .select('id', { count: 'exact', head: true })
+        .eq('pet_id', petId)
+        .eq('category', category),
+      supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('target_species', petProfile.species)
+        .eq('is_vet_diet', false)
+        .eq('is_recalled', false)
+        .eq('category', category),
+    ]);
+    deltaTimestamp = deltaRes.data?.product_updated_at ?? null;
+    cacheCount = countRes.count ?? 0;
+    totalProducts = totalRes.count ?? 0;
   }
 
-  // ── 2. Fetch pet anchors (updated_at, health_reviewed_at) ──
+  const isCacheMature =
+    deltaTimestamp != null &&
+    totalProducts > 0 &&
+    cacheCount >= totalProducts * CACHE_MATURITY_THRESHOLD;
+
+  // ── 2. Rate limit (full batch only — delta is cheap) ──
+
+  if (!isCacheMature) {
+    const rateLimitKey = category ? `${petId}:${category}` : petId;
+    const lastRun = lastBatchTimestamp.get(rateLimitKey);
+    if (lastRun && Date.now() - lastRun < RATE_LIMIT_MS) {
+      return { scored: 0, duration_ms: 0 };
+    }
+  }
+
+  // ── 3. Fetch pet anchors (updated_at, health_reviewed_at) ──
 
   const { data: petRow, error: petError } = await supabase
     .from('pets')
@@ -80,7 +126,7 @@ export async function batchScoreOnDevice(
     throw new Error(`Pet not found: ${petError?.message ?? petId}`);
   }
 
-  // ── 3. Fetch allergens & conditions ──
+  // ── 4. Fetch allergens & conditions ──
 
   const [allergenRows, conditionRows] = await Promise.all([
     getPetAllergens(petId),
@@ -90,7 +136,7 @@ export async function batchScoreOnDevice(
   const allergens = allergenRows.map((r) => r.allergen);
   const conditions = conditionRows.map((r) => r.condition_tag);
 
-  // ── 4. Fetch candidate products (200 max) ──
+  // ── 5. Fetch candidate products (delta or full batch) ──
 
   let query = supabase
     .from('products')
@@ -101,20 +147,35 @@ export async function batchScoreOnDevice(
   if (category) query = query.eq('category', category);
   if (productForm) query = query.eq('product_form', productForm);
 
-  const { data: productData, error: prodErr } = await query.limit(200);
+  if (isCacheMature) {
+    // Delta mode: only fetch new/updated products since last score
+    query = query.gt('updated_at', deltaTimestamp!);
+  } else {
+    // Full batch: newest first, capped at limitSize
+    query = query.order('updated_at', { ascending: false }).limit(limitSize);
+  }
+
+  const { data: productData, error: prodErr } = await query;
 
   if (prodErr) {
     throw new Error(`Failed to fetch products: ${prodErr.message}`);
   }
 
-  const products = (productData ?? []) as Product[];
+  const products = (productData ?? []) as unknown as Product[];
 
   if (products.length === 0) {
-    lastBatchTimestamp.set(petId, Date.now());
+    const emptyRateLimitKey = category ? `${petId}:${category}` : petId;
+    if (!isCacheMature) lastBatchTimestamp.set(emptyRateLimitKey, Date.now());
     return { scored: 0, duration_ms: Date.now() - startTime };
   }
 
-  // ── 5. Bulk ingredient fetch (chunked by 50 IDs, paginated at 1000 rows) ──
+  if (__DEV__) {
+    console.log(
+      `[batchScoreOnDevice] ${isCacheMature ? 'Delta' : 'Full batch'}: ${products.length} products to score`,
+    );
+  }
+
+  // ── 6. Bulk ingredient fetch (chunked by 50 IDs, paginated at 1000 rows) ──
 
   const productIds = products.map((p) => p.id);
   const ingredientRows: IngredientRow[] = [];
@@ -141,12 +202,12 @@ export async function batchScoreOnDevice(
     }
   }
 
-  // ── 6. Hydrate + group by product_id ──
+  // ── 7. Hydrate + group by product_id ──
 
   const ingredientsByProduct = new Map<string, ProductIngredient[]>();
 
   for (const row of ingredientRows) {
-    const hydrated = hydrateIngredient(row);
+    const hydrated = hydrateIngredient(row as unknown as Parameters<typeof hydrateIngredient>[0]);
     if (!hydrated) continue;
 
     const list = ingredientsByProduct.get(row.product_id) ?? [];
@@ -154,7 +215,7 @@ export async function batchScoreOnDevice(
     ingredientsByProduct.set(row.product_id, list);
   }
 
-  // ── 7. Scoring loop ──
+  // ── 8. Scoring loop ──
 
   const results: Array<Record<string, unknown>> = [];
   const scoredAt = new Date().toISOString();
@@ -203,7 +264,7 @@ export async function batchScoreOnDevice(
     }
   }
 
-  // ── 8. Chunked upsert into pet_product_scores ──
+  // ── 9. Chunked upsert into pet_product_scores ──
 
   for (let i = 0; i < results.length; i += UPSERT_CHUNK) {
     const chunk = results.slice(i, i + UPSERT_CHUNK);
@@ -219,9 +280,12 @@ export async function batchScoreOnDevice(
     }
   }
 
-  // ── 9. Mark rate limit + return ──
+  // ── 10. Mark rate limit (full batch only) + return ──
 
-  lastBatchTimestamp.set(petId, Date.now());
+  if (!isCacheMature) {
+    const doneRateLimitKey = category ? `${petId}:${category}` : petId;
+    lastBatchTimestamp.set(doneRateLimitKey, Date.now());
+  }
 
   return {
     scored: results.length,
@@ -232,10 +296,9 @@ export async function batchScoreOnDevice(
 // ─── Hybrid: Edge Function first, client-side fallback ──────
 
 /**
- * Tries the batch-score Edge Function first (200 products server-side).
- * Falls back to client-side scoring (200 products) if the Edge Function fails
- * (WORKER_LIMIT on free tier, timeout, network error, etc.).
- * Both paths filter by category + productForm when provided.
+ * Tries the batch-score Edge Function first (1000 products, two-phase).
+ * Falls back to client-side scoring (200 products) if the Edge Function fails.
+ * Both paths support delta scoring when cache is mature.
  */
 export async function batchScoreHybrid(
   petId: string,
@@ -243,12 +306,17 @@ export async function batchScoreHybrid(
   category?: string,
   productForm?: string | null,
 ): Promise<{ scored: number; duration_ms: number }> {
-  // Try Edge Function first
+  // Try Edge Function first (1000 product limit, two-phase)
   try {
-    const { data, error } = await supabase.functions.invoke<{ scored: number; duration_ms: number }>('batch-score', {
+    const { data, error } = await supabase.functions.invoke<{
+      scored: number;
+      duration_ms: number;
+      phase2_started?: boolean;
+    }>('batch-score', {
       body: {
         pet_id: petId,
         pet_profile: petProfile,
+        limit_size: 1000,
         ...(category && { category }),
         ...(productForm && { product_form: productForm }),
       },
@@ -265,7 +333,12 @@ export async function batchScoreHybrid(
     }
 
     if (!error && data?.scored != null) {
-      if (__DEV__) console.log(`[batchScoreHybrid] Edge Function scored ${data.scored} products in ${data.duration_ms}ms`);
+      if (__DEV__) {
+        console.log(
+          `[batchScoreHybrid] Edge Function scored ${data.scored} products in ${data.duration_ms}ms` +
+          (data.phase2_started ? ' (Phase 2 running in background)' : ''),
+        );
+      }
       return { scored: data.scored, duration_ms: data.duration_ms ?? 0 };
     }
     if (__DEV__) {
@@ -278,8 +351,8 @@ export async function batchScoreHybrid(
     if (__DEV__) console.log('[batchScoreHybrid] Edge Function unavailable, falling back to client-side', err);
   }
 
-  // Fallback: client-side scoring (200 products)
-  const result = await batchScoreOnDevice(petId, petProfile, category, productForm);
+  // Fallback: client-side scoring (200 product limit)
+  const result = await batchScoreOnDevice(petId, petProfile, category, productForm, CLIENT_LIMIT);
   if (__DEV__) console.log(`[batchScoreHybrid] Client-side scored ${result.scored} products in ${result.duration_ms}ms`);
   return result;
 }

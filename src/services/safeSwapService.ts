@@ -10,6 +10,7 @@
 
 import { supabase } from './supabase';
 import { getPetAllergens, getPetConditions } from './petService';
+import { isSupplementalByName } from '../utils/supplementalClassifier';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -296,13 +297,13 @@ export function generateSwapReason(
 async function tagFishBased(candidateIds: string[]): Promise<Set<string>> {
   if (candidateIds.length === 0) return new Set();
 
-  const { data, error } = await supabase
-    .from('product_ingredients')
-    .select('product_id, ingredients_dict(allergen_group)')
-    .in('product_id', candidateIds)
-    .lte('position', 3);
+  const data = await chunkedProductQuery<Record<string, unknown>>(
+    'product_id, ingredients_dict(allergen_group)',
+    candidateIds,
+    (q) => q.lte('position', 3),
+  );
 
-  if (error || !data) return new Set();
+  if (data.length === 0) return new Set();
 
   const fishIds = new Set<string>();
   for (const row of data as Record<string, unknown>[]) {
@@ -426,10 +427,32 @@ export interface FetchSafeSwapsParams {
 }
 
 const MIN_SCORE_THRESHOLD = 65;
-const CANDIDATE_POOL_SIZE = 50;
+const CANDIDATE_POOL_SIZE = 300;
 const MIN_RESULTS = 3;
+const EXCLUSION_CHUNK_SIZE = 100; // Avoid 414 URI Too Long with large .in() arrays
 
 // ─── Exclusion Queries (run in parallel) ────────────────
+
+/** Chunked .in() query — splits large ID arrays to avoid 414 URI Too Long. */
+async function chunkedProductQuery<T>(
+  selectCols: string,
+  ids: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  extraFilters?: (q: any) => any,
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < ids.length; i += EXCLUSION_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + EXCLUSION_CHUNK_SIZE);
+    let q = supabase
+      .from('product_ingredients')
+      .select(selectCols)
+      .in('product_id', chunk);
+    if (extraFilters) q = extraFilters(q);
+    const { data } = await q;
+    if (data) results.push(...(data as T[]));
+  }
+  return results;
+}
 
 /** Products whose ingredients match any of the pet's allergen groups. */
 async function fetchAllergenExclusions(
@@ -438,13 +461,13 @@ async function fetchAllergenExclusions(
 ): Promise<Set<string>> {
   if (allergenGroups.length === 0 || candidateIds.length === 0) return new Set();
 
-  // Query product_ingredients joined with ingredients_dict for allergen_group
-  const { data, error } = await supabase
-    .from('product_ingredients')
-    .select('product_id, ingredients_dict(allergen_group, allergen_group_possible)')
-    .in('product_id', candidateIds);
+  // Query product_ingredients joined with ingredients_dict for allergen_group (chunked)
+  const data = await chunkedProductQuery<Record<string, unknown>>(
+    'product_id, ingredients_dict(allergen_group, allergen_group_possible)',
+    candidateIds,
+  );
 
-  if (error || !data) return new Set();
+  if (data.length === 0) return new Set();
 
   const allergenSet = new Set(allergenGroups);
   const excluded = new Set<string>();
@@ -485,12 +508,12 @@ async function fetchSeverityExclusions(
 
   const severityCol = species === 'dog' ? 'dog_base_severity' : 'cat_base_severity';
 
-  const { data, error } = await supabase
-    .from('product_ingredients')
-    .select(`product_id, ingredients_dict(${severityCol})`)
-    .in('product_id', candidateIds);
+  const data = await chunkedProductQuery<Record<string, unknown>>(
+    `product_id, ingredients_dict(${severityCol})`,
+    candidateIds,
+  );
 
-  if (error || !data) return new Set();
+  if (data.length === 0) return new Set();
 
   const excluded = new Set<string>();
   for (const row of data as Record<string, unknown>[]) {
@@ -550,13 +573,13 @@ async function fetchCardiacDcmExclusions(
   if (species !== 'dog' || !conditionTags.includes('cardiac')) return new Set();
   if (candidateIds.length === 0) return new Set();
 
-  const { data, error } = await supabase
-    .from('product_ingredients')
-    .select('product_id, position, ingredients_dict(is_pulse, is_pulse_protein)')
-    .in('product_id', candidateIds)
-    .lte('position', 10);
+  const data = await chunkedProductQuery<Record<string, unknown>>(
+    'product_id, position, ingredients_dict(is_pulse, is_pulse_protein)',
+    candidateIds,
+    (q) => q.lte('position', 10),
+  );
 
-  if (error || !data) return new Set();
+  if (data.length === 0) return new Set();
 
   // Group ingredients by product
   const byProduct = new Map<string, PulseIngredient[]>();
@@ -617,6 +640,7 @@ async function fetchBasePool(
     `)
     .eq('pet_id', petId)
     .eq('category', category)
+    .eq('is_supplemental', isSupplemental)
     .gt('final_score', minScore)
     .neq('product_id', scannedProductId)
     .order('final_score', { ascending: false })
@@ -633,8 +657,13 @@ async function fetchBasePool(
     if (product.is_vet_diet) continue;
     if (product.is_recalled) continue;
     if (product.target_species !== species) continue;
-    if (product.is_supplemental !== isSupplemental) continue;
+    // D-096: supplement category products are not scored (M16+)
+    if ((row.category as string) === 'supplement') continue;
+    // Use cached is_supplemental (includes D-146 runtime detection), not raw DB value
+    if ((row.is_supplemental as boolean) !== isSupplemental) continue;
     if (productForm && product.product_form !== productForm) continue;
+    // D-146 safety net: catch future data gaps where DB flag is wrong but name reveals supplemental
+    if (!isSupplemental && isSupplementalByName((product.name as string) ?? null)) continue;
 
     candidates.push({
       product_id: row.product_id as string,

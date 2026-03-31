@@ -4,6 +4,7 @@
 import React from 'react';
 import {
   Image,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,6 +22,7 @@ import {
   getScoreColor,
 } from '../../utils/constants';
 import { stripBrandFromName } from '../../utils/formatters';
+import { AFFILIATE_CONFIG } from '../../config/affiliateConfig';
 
 // ─── Props ──────────────────────────────────────────────
 
@@ -227,6 +229,54 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
             </Text>
           </View>
         )}
+        {/* Affiliate reorder button — D-065: surfaces when low stock + affiliate data exists */}
+        {item.is_low_stock && !item.is_empty && !isTreat && !isRecalled && (() => {
+          const p = item.product;
+          // Quick affiliate availability check without requiring full Product type
+          const chewyEnabled = AFFILIATE_CONFIG.chewy.enabled;
+          const amazonEnabled = AFFILIATE_CONFIG.amazon.enabled;
+
+          let reorderUrl: string | null = null;
+          let reorderLabel = '';
+
+          if (chewyEnabled) {
+            if (p.affiliate_links?.chewy) {
+              reorderUrl = p.affiliate_links.chewy;
+              reorderLabel = 'Reorder on Chewy';
+            } else if (p.source_url?.includes('chewy.com')) {
+              const sep = p.source_url.includes('?') ? '&' : '?';
+              reorderUrl = `${p.source_url}${sep}utm_source=partner&utm_medium=affiliate&utm_id=${AFFILIATE_CONFIG.chewy.tag}`;
+              reorderLabel = 'Reorder on Chewy';
+            } else if (p.chewy_sku) {
+              reorderUrl = `${AFFILIATE_CONFIG.chewy.baseUrl}/dp/${p.chewy_sku}?utm_source=partner&utm_medium=affiliate&utm_id=${AFFILIATE_CONFIG.chewy.tag}`;
+              reorderLabel = 'Reorder on Chewy';
+            }
+          }
+
+          if (!reorderUrl && amazonEnabled) {
+            if (p.affiliate_links?.amazon) {
+              reorderUrl = p.affiliate_links.amazon;
+              reorderLabel = 'Reorder on Amazon';
+            } else if (p.asin) {
+              reorderUrl = `${AFFILIATE_CONFIG.amazon.baseUrl}/dp/${p.asin}?tag=${AFFILIATE_CONFIG.amazon.tag}`;
+              reorderLabel = 'Reorder on Amazon';
+            }
+          }
+
+          if (!reorderUrl) return null;
+
+          return (
+            <TouchableOpacity
+              style={styles.reorderButton}
+              onPress={() => { Linking.openURL(reorderUrl!).catch(() => {}); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="cart-outline" size={14} color={Colors.accent} />
+              <Text style={styles.reorderText}>{reorderLabel}</Text>
+              <Ionicons name="open-outline" size={12} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          );
+        })()}
 
         {/* Shared indicator */}
         {isShared && (
@@ -530,6 +580,23 @@ const styles = StyleSheet.create({
   actionTextRemove: {
     fontSize: FontSizes.sm,
     color: SEVERITY_COLORS.danger,
+    fontWeight: '600',
+  },
+
+  // Affiliate reorder (D-065 — low stock)
+  reorderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: `${Colors.accent}15`,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  reorderText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
     fontWeight: '600',
   },
 });

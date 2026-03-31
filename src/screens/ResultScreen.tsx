@@ -69,6 +69,7 @@ import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
 import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
 import { HealthConditionAdvisories } from '../components/result/HealthConditionAdvisories';
 import { SafeSwapSection } from '../components/result/SafeSwapSection';
+import { AffiliateBuyButtons } from '../components/result/AffiliateBuyButtons';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 
@@ -856,6 +857,15 @@ export default function ResultScreen() {
           <View style={styles.portionSection}>
             <PortionCard pet={pet} product={product} conditions={petConditions} isSupplemental={isSupplemental} />
           </View>
+        )}
+
+        {/* Affiliate buy buttons (D-020, D-053) */}
+        {product && (
+          <AffiliateBuyButtons
+            product={product}
+            score={score}
+            isBypassed={!!scoredResult?.bypass}
+          />
         )}
 
         {/* Compare button (D-052: premium gate) */}
