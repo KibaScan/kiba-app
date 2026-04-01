@@ -6,7 +6,7 @@
 
 ---
 
-## Current Status: M6 In Progress (M0–M5 Done, M6 partial)
+## Current Status: M7 Complete (M0–M7 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -629,9 +629,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 > Goal: "This scored low. Here are three options scoring 80+."
 
-### Compare & Vet Report (moved from M4)
-- [ ] Compare button (side-by-side product comparison) — paywall gate already wired
-- [ ] Vet Report (shareable PDF summary for vet visits)
+### Compare & Vet Report (moved from M4) — COMPLETE
+- [x] Compare button (side-by-side product comparison) — 9-rule key differences engine, two-column CompareScreen, CompareProductPickerSheet
+- [x] Vet Report (shareable PDF summary for vet visits) — 4-page diet-centric report via expo-print, premium-gated
 
 ### Weight Management (moved from M5) — COMPLETE
 - [x] Weight goal slider on PortionCard (D-160) — 7 detents (-3 to +3), cat -3 hidden, swipeable pan gesture with haptic detents, live calorie context, premium-gated. Migration 022: `weight_goal_level SMALLINT` on `pets` table. All DER consumers wired. Proportional pantry serving scaling on slider change.
@@ -646,11 +646,11 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Primordial pouch callout for cats
 - [ ] Visual assets needed: BCS silhouettes per category (dog + cat) — currently using numbered circles
 
-### Safe Swap Recommendations
-- [ ] Query products in same category + species with score >threshold
-- [ ] Filter by user's pet allergies
-- [ ] Rank by score, then by price (if affiliate data available)
-- [ ] "See Higher-Scoring Alternatives" CTA on all results
+### Safe Swap Recommendations — COMPLETE
+- [x] Query products in same category + species with score >threshold (Plan 2 curated layout: Top Pick / Fish-Based / Great Value)
+- [x] Filter by user's pet allergies (fish allergy → Fish-Based replaced with "Another Pick")
+- [x] Rank by score, then by price (Great Value uses price/product_size_kg, migration 023)
+- [x] "See Higher-Scoring Alternatives" CTA on all results (Safe Swap section on ResultScreen, life stage hard filter)
 
 ### Affiliate Integration
 - [ ] Chewy affiliate program application (target: ~500+ active users)
@@ -662,14 +662,14 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M7: 7-Day Safe Switch Guide (Weeks 28–30)
+## M7: 7-Day Safe Switch Guide (Weeks 28–30) — COMPLETE
 
 > Goal: Guided food transition to reduce digestive upset.
 
-- [ ] Day-by-day transition plan (old food % → new food %)
-- [ ] Tummy Check prompts during transition
-- [ ] Completion celebration + review prompt
-- [ ] Species-specific transition speeds (cats need slower transitions)
+- [x] Day-by-day transition plan (old food % → new food %) — SafeSwitchDetailScreen with proportion bar, vertical timeline
+- [x] Tummy Check prompts during transition — 3 pills (perfect/soft stool/upset), upset advisory on 2+ consecutive
+- [x] Completion celebration + review prompt — completion card with "Done" CTA
+- [x] Species-specific transition speeds (cats need slower transitions) — dogs 7 days, cats 10 days, getDefaultDuration()
 
 ---
 

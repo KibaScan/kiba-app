@@ -8,7 +8,8 @@
 - ScanStack: ScanMain → Result → RecallDetail → CommunityContribution → ProductConfirm → IngredientCapture
 - HomeStack: HomeMain → Result → RecallDetail → AppointmentDetail
 - CommunityStack: CommunityMain → Result → RecallDetail
-- PantryStack: PantryMain → EditPantryItem → Result → RecallDetail
+- PantryStack: PantryMain → EditPantryItem → SafeSwitchSetup → SafeSwitchDetail → Result → RecallDetail
+- HomeStack: HomeMain → Result → RecallDetail → AppointmentDetail → SafeSwitchDetail → Compare
 - MeStack: MeMain → PetProfile → CreatePet → EditPet → HealthConditions → Appointments → CreateAppointment → AppointmentDetail → NotificationPreferences → Settings → Result → RecallDetail
 
 ## Patterns

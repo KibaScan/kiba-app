@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 31, 2026 — M6 in progress. Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: March 31, 2026 — M7 complete. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -11,7 +11,7 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M6 in progress — compare flow + safe swaps complete, affiliate enrollment pending
+**Current phase:** M7 complete — Safe Switch Guide done, affiliate enrollment pending
 
 **Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
 **Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
@@ -32,7 +32,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–022). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–025). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -90,7 +90,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - Ask AI / chatbot (liability — permanently removed)
 - Score supplements (M16+, D-096), grooming/cosmetics, vet diets (D-135 bypass)
 - `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
-- Compare flow (M6), Vet Report PDF (M6), variety pack scoring (D-145)
+- variety pack scoring (D-145)
 - Score recalled products (D-158 — bypass pattern, not score=0)
 - BCS questionnaire/diagnostic tool, photo-based BCS estimation (D-162 — educational reference only)
 - Raw goal weight input (D-160 supersedes D-061 — use weight goal level slider)

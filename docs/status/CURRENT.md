@@ -1,10 +1,10 @@
-# Project Status — Last updated 2026-03-31 (session 8)
+# Project Status — Last updated 2026-03-31 (session 9)
 
 ## Active Milestone
-**M7 — 7-Day Safe Switch Guide** (transition management, tummy check logging, daily mix ratios)
+**M8 — Kiba Index** (taste test voting, tummy check voting, aggregate display)
 
 ## Last Completed
-**M5 — Pantry + Appointments + HomeScreen v2** (March 26, 2026, branch `m5-complete`)
+**M7 — Safe Switch Guide** (March 31, 2026, branch `m5-complete`)
 
 ## What Works
 - Scan-to-score pipeline: barcode → 3-layer scoring (IQ/NP/FC) → result screen
@@ -57,47 +57,21 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-31 (session 8)
-- **Accomplished:** M7 Safe Switch Guide — full implementation (12 new files, 8 modified files, 29 new tests).
-  - **Database:** Migration 025 — `safe_switches` + `safe_switch_logs` tables, RLS policies, partial unique index (one active switch per pet)
-  - **Types:** `safeSwitch.ts` — `SafeSwitch`, `SafeSwitchLog`, `SafeSwitchCardData`, `TransitionDay`, `TummyCheck`
-  - **Pure helpers:** `safeSwitchHelpers.ts` — `getTransitionSchedule()`, `getMixForDay()`, `getCurrentDay()`, `getCupSplit()`, `shouldShowUpsetAdvisory()`, `getSpeciesNote()`, `getDefaultDuration()`
-  - **Service:** `safeSwitchService.ts` — CRUD (create/complete/cancel/pause/resume), `logTummyCheck()` upsert, `getActiveSwitchForPet()` composite loader
-  - **Notifications:** `safeSwitchNotificationScheduler.ts` — daily 9 AM mix reminder + 7 PM tummy check nudge, full-resync pattern
-  - **UI:** `SafeSwitchBanner.tsx` (full + compact modes), `SafeSwitchSetupScreen.tsx` (setup flow), `SafeSwitchDetailScreen.tsx` (daily command center)
-  - **Entry points:** "Switch to this" on Safe Swap cards (SafeSwapSection), "Find a replacement" on PantryCard (<60% daily food)
-  - **Navigation:** Registered SafeSwitchSetup + SafeSwitchDetail in PantryStack and HomeStack
-  - **Tests:** 29 new tests in `safeSwitchHelpers.test.ts`, `react-native-svg` Jest mock added
-  - **Bug fixes:** CTA button hidden behind tab bar (added 88px offset), hardcoded teal (#14B8A6) replaced with Colors.accent (#00B4D8)
-- **Files changed:**
-  - **Modified:**
-    - `package.json` (Jest moduleNameMapper for react-native-svg mock)
-    - `src/components/pantry/PantryCard.tsx` ("Find a replacement" link, onFindReplacement prop)
-    - `src/components/result/SafeSwapSection.tsx` ("Switch to this" CTA, onSwitchTo prop)
-    - `src/navigation/index.tsx` (SafeSwitchSetup + SafeSwitchDetail screen registration)
-    - `src/screens/HomeScreen.tsx` (compact SafeSwitchBanner insertion)
-    - `src/screens/PantryScreen.tsx` (full SafeSwitchBanner insertion, onFindReplacement wiring)
-    - `src/screens/ResultScreen.tsx` (onSwitchTo cross-tab navigation wiring)
-    - `src/types/navigation.ts` (SafeSwitchSetup + SafeSwitchDetail routes)
-  - **New:**
-    - `__mocks__/react-native-svg.js`
-    - `__tests__/utils/safeSwitchHelpers.test.ts`
-    - `src/components/pantry/SafeSwitchBanner.tsx`
-    - `src/screens/SafeSwitchSetupScreen.tsx`
-    - `src/screens/SafeSwitchDetailScreen.tsx`
-    - `src/services/safeSwitchNotificationScheduler.ts`
-    - `src/services/safeSwitchService.ts`
-    - `src/types/safeSwitch.ts`
-    - `src/utils/safeSwitchHelpers.ts`
-    - `supabase/migrations/025_safe_switches.sql`
+- **Date:** 2026-03-31 (session 9)
+- **Accomplished:** M7 tech debt fixes, ingredient cleanup commit, test fixture updates, doc updates.
+  - **Tech debt fix 1 — cup split:** `safeSwitchService.ts` now queries pantry_items + pantry_pet_assignments for actual serving_size. Added `dailyCups` to `SafeSwitchCardData`. Falls back to 2.4 when no pantry data.
+  - **Tech debt fix 2 — conflict validation:** `SafeSwitchSetupScreen.tsx` proactively checks `hasActiveSwitchForPet()` on mount. Shows amber warning banner + disables CTA if active switch exists.
+  - **Tech debt fix 3 — perpetual notifications:** `safeSwitchNotificationScheduler.ts` replaced `DAILY` triggers with finite `DATE` triggers for each remaining transition day. Day-specific mix content. Past times skipped.
+  - **Ingredient cleanup committed:** cleanup_ingredients.py (13 artifact merges, GA junk detection, colorant danger severity), synonyms.json (17 new mappings)
+  - **Test fixtures:** Added `aafco_inference: null` + v7 enrichment fields (`source_url`, `chewy_sku`, `asin`, `walmart_id`) to `makeProduct()` helpers across 15 test files. Fixed timezone bug in `safeSwitchHelpers.test.ts` (`toISOString` → local date formatting).
+  - **Cleanup:** Removed stray `src/parse_ingredients.py`, deleted stale "Up Next" items from CURRENT.md
 - **Not done yet:**
-  - `safeSwitchService.test.ts` (deferred — needs Supabase mocking)
-  - 3 tech debt flags: hardcoded 2.4 cup split, late conflict validation UX, perpetual DAILY notification triggers
-- **Next session should:** Test full Safe Switch lifecycle on iOS simulator (create → log → complete/cancel). Address tech debt flags if time allows.
+  - `safeSwitchService.test.ts` (deferred — needs Supabase mocking harness)
+- **Next session should:** Test full Safe Switch lifecycle on iOS simulator (create → log → complete/cancel). Start M8 Kiba Index planning.
 - **Gotchas for next session:**
   - **Migration 025 applied.** `safe_switches` + `safe_switch_logs` tables live in production.
-  - **Hardcoded cup split.** `SafeSwitchDetailScreen.tsx` line 183 uses `totalCups = 2.4` placeholder. Needs wiring to actual `serving_size` from pantry assignments.
-  - **Late conflict validation.** Setup screen checks for existing active switch only on CTA press, not on mount. User can see full preview then get rejected.
-  - **Perpetual notifications.** Safe Switch notifications use `DAILY` trigger (repeats forever). If user abandons without completing/cancelling, notifications fire indefinitely. Fix: use explicit Date triggers for remaining N days.
-  - Prior session gotchas still apply: affiliate buttons dormant, Edge Function deployed with Approach F, `parse_ingredients.py` slow, `fetchGroupSafeSwaps()` is dead code, `life_stage_claim` is free text.
+  - Affiliate buttons dormant — flip `affiliateConfig.ts` after enrollment.
+  - Edge Function deployed with Approach F (batch scoring).
+  - `fetchGroupSafeSwaps()` is dead code (multi-pet group mode removed).
+  - `life_stage_claim` is free text (no enum validation).
 - **Decision/scoring changes:** No new decisions. No scoring logic changed.
