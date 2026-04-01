@@ -129,21 +129,26 @@ def clean_ingredients_raw(text: str) -> tuple[str, str]:
     # v2.1: Repair missing open parens
     # "Chicken Fat preserved with mixed tocopherols)" → "Chicken Fat (preserved with mixed tocopherols)"
     # "Salmon Oil a source of DHA)" → "Salmon Oil (a source of DHA)"
-    text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+(preserved with\s+[^,)]+)\)',
-        r'\1 (\2)',
-        text, flags=re.IGNORECASE
-    )
-    text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+((?:a )?source of\s+[^,)]+)\)',
-        r'\1 (\2)',
-        text, flags=re.IGNORECASE
-    )
-    text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+((?:a )?natural source of\s+[^,)]+)\)',
-        r'\1 (\2)',
-        text, flags=re.IGNORECASE
-    )
+    # v2.5 FIX: Only run when close > open (actual missing opens). If already balanced,
+    # these regexes corrupt text by matching INSIDE existing parens — e.g. the "a" in
+    # "(a source of...)" gets matched as a word, inserting an extra "(" that breaks
+    # the tokenizer's depth tracking and fuses the entire list into one token.
+    if text.count(')') > text.count('('):
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+(preserved with\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+((?:a )?source of\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+((?:a )?natural source of\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
 
     # v2.5: Fix nested parens that break tokenizer depth tracking
     # Scraper produces: "Chicken (Natural (Source Of Chondroitin Sulfate),"
@@ -720,41 +725,32 @@ def strip_leading_conjunction(primary: str) -> str:
 # ─── Supabase Helpers ──────────────────────────────────────────
 
 def fetch_products(client, limit=None):
-    """TEMPORARY: Fetch only unparsed products via RPC.
-    Requires get_unparsed_products() function in Supabase.
-    REVERT after re-parse is complete.
-    """
-    result = client.rpc('get_unparsed_products').execute()
-    return result.data
+    """Fetch daily_food and treat products with ingredients_raw."""
+    all_products = []
+    page_size = 1000
+    offset = 0
 
-# --- ORIGINAL (revert to this after re-parse) ---
-# def fetch_products(client, limit=None):
-#     """Fetch daily_food and treat products with ingredients_raw."""
-#     all_products = []
-#     page_size = 1000
-#     offset = 0
-#
-#     while True:
-#         result = (client.table('products')
-#                   .select('id,ingredients_raw,ingredients_hash,category')
-#                   .range(offset, offset + page_size - 1)
-#                   .execute())
-#         all_products.extend(result.data)
-#         if len(result.data) < page_size:
-#             break
-#         offset += page_size
-#
-#     # Filter in Python (reliable across supabase-py versions)
-#     filtered = [
-#         p for p in all_products
-#         if p.get('ingredients_raw')
-#         and p['category'] in ('daily_food', 'treat')
-#     ]
-#
-#     if limit:
-#         filtered = filtered[:limit]
-#
-#     return filtered
+    while True:
+        result = (client.table('products')
+                  .select('id,ingredients_raw,ingredients_hash,category')
+                  .range(offset, offset + page_size - 1)
+                  .execute())
+        all_products.extend(result.data)
+        if len(result.data) < page_size:
+            break
+        offset += page_size
+
+    # Filter in Python (reliable across supabase-py versions)
+    filtered = [
+        p for p in all_products
+        if p.get('ingredients_raw')
+        and p['category'] in ('daily_food', 'treat')
+    ]
+
+    if limit:
+        filtered = filtered[:limit]
+
+    return filtered
 
 
 def fetch_ingredients_dict(client):
@@ -839,7 +835,6 @@ def main():
     conjunctions_stripped = 0
     preservatives_extracted = 0
     space_delimited_fixed = 0
-    debug_clean_shown = 0
 
     for i, formula_group in enumerate(unique_formulas):
         representative = formula_group[0]
@@ -893,22 +888,6 @@ def main():
 
             # Stage 2: Tokenize
             tokens = tokenize(recipe_text)
-            # DEBUG: show only clean products
-            if status == 'clean' and debug_clean_shown < 5:
-                print(f"  [{representative.get('id','')[:8]}] status={status} raw_len={len(recipe_text)} tokens={len(tokens)}")
-                for t_idx, t in enumerate(tokens[:3]):
-                    p = extract_primary_name(t)
-                    valid = validate_token(p)
-                    reason = ""
-                    if not valid:
-                        if len(p) > 55: reason = "too_long"
-                        elif len(p) < 2: reason = "too_short"
-                        elif len(p.split()) > 5: reason = "too_many_words"
-                        elif re.search(r'\b(is|are|was|were|has|have|does|will|can|should|these|this|those)\b', p, re.IGNORECASE) and len(p) > 15: reason = "sentence"
-                        else: reason = "other_filter"
-                    print(f"    tok[{t_idx}]: valid={valid} reason={reason} primary=[{p[:70]}]")
-                debug_clean_shown += 1
-            # END DEBUG
             tokens = expand_packs(tokens)
             tokens = split_slash_tokens(tokens)
 

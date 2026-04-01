@@ -69,6 +69,7 @@ import { AddToPantrySheet } from '../components/pantry/AddToPantrySheet';
 import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
 import { HealthConditionAdvisories } from '../components/result/HealthConditionAdvisories';
 import { SafeSwapSection } from '../components/result/SafeSwapSection';
+import { KibaIndexSection } from '../components/result/KibaIndexSection';
 import { AffiliateBuyButtons } from '../components/result/AffiliateBuyButtons';
 import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
@@ -860,6 +861,17 @@ export default function ResultScreen() {
             }}
             species={species}
             petName={displayName}
+          />
+        )}
+
+        {/* Kiba Index Section (M8) */}
+        {product && (
+          <KibaIndexSection
+            productId={product.id}
+            petId={pet?.id ?? null}
+            species={species}
+            petName={petName}
+            isBypassed={!!scoredResult?.bypass}
           />
         )}
 

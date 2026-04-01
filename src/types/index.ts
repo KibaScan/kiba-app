@@ -252,16 +252,6 @@ export interface SymptomLog {
   logged_at: string;
 }
 
-export interface KibaIndexVote {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  product_id: string;
-  taste_score: number; // 1-5
-  tummy_score: number; // 1-5
-  voted_at: string;
-}
-
 // ─── App State Types ────────────────────────────────────
 
 export interface OnboardingPetInput {

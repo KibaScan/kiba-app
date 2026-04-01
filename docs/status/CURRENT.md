@@ -1,10 +1,10 @@
 # Project Status — Last updated 2026-03-31 (session 9)
 
 ## Active Milestone
-**M8 — Kiba Index** (taste test voting, tummy check voting, aggregate display)
+**M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
 
 ## Last Completed
-**M7 — Safe Switch Guide** (March 31, 2026, branch `m5-complete`)
+**M8 — Kiba Index** (April 1, 2026, branch `m5-complete`)
 
 ## What Works
 - Scan-to-score pipeline: barcode → 3-layer scoring (IQ/NP/FC) → result screen
@@ -47,8 +47,11 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next
+- Apply migration 026 to production Supabase
 - Enroll in Chewy Affiliate Partners + Amazon Associates → flip `affiliateConfig.ts` enabled: true
-- M8: Kiba Index / Taste Test integration at Safe Switch completion
+- M9: UI polish & search UX overhaul
+- M10: Community points (XP engine, streaks, product submissions — lite scope)
+- M11: Symptom Detective (deferred — major App Store update feature)
 
 ## Optimization Status
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
@@ -57,21 +60,25 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-31 (session 9)
-- **Accomplished:** M7 tech debt fixes, ingredient cleanup commit, test fixture updates, doc updates.
-  - **Tech debt fix 1 — cup split:** `safeSwitchService.ts` now queries pantry_items + pantry_pet_assignments for actual serving_size. Added `dailyCups` to `SafeSwitchCardData`. Falls back to 2.4 when no pantry data.
-  - **Tech debt fix 2 — conflict validation:** `SafeSwitchSetupScreen.tsx` proactively checks `hasActiveSwitchForPet()` on mount. Shows amber warning banner + disables CTA if active switch exists.
-  - **Tech debt fix 3 — perpetual notifications:** `safeSwitchNotificationScheduler.ts` replaced `DAILY` triggers with finite `DATE` triggers for each remaining transition day. Day-specific mix content. Past times skipped.
-  - **Ingredient cleanup committed:** cleanup_ingredients.py (13 artifact merges, GA junk detection, colorant danger severity), synonyms.json (17 new mappings)
-  - **Test fixtures:** Added `aafco_inference: null` + v7 enrichment fields (`source_url`, `chewy_sku`, `asin`, `walmart_id`) to `makeProduct()` helpers across 15 test files. Fixed timezone bug in `safeSwitchHelpers.test.ts` (`toISOString` → local date formatting).
-  - **Cleanup:** Removed stray `src/parse_ingredients.py`, deleted stale "Up Next" items from CURRENT.md
+- **Date:** 2026-04-01 (session 10)
+- **Accomplished:** Reviewed Gemini's M8 Kiba Index implementation, fixed bugs and gaps.
+  - **Bug fix 1 — non-null assertion:** `KibaIndexSection.tsx:118` used unsafe `stats!` — replaced with `stats !== null &&` guard.
+  - **Bug fix 2 — optimistic double-count:** `total_votes` was bumped on every vote, even partial second-category votes that upsert the same row. Now only bumps when `prevVote` is null (new row).
+  - **Bug fix 3 — offline handling:** Added `isOnline()` check to `kibaIndexService.ts` before submitting votes. Added `Alert.alert` on vote failure instead of silent rollback.
+  - **Cleanup — stale type:** Removed pre-existing `KibaIndexVote` interface from `types/index.ts` (M0 scaffold, numeric 1-5 scores, unused — conflicted with service's string enum type).
+  - **Cleanup — hardcoded colors:** Replaced `#333333` → `Colors.cardBorder`, `#242424` → `Colors.card`, `rgba(245,158,11,...)` → `Colors.severityAmber` + hex opacity in KibaIndexSection, VoteBarChart, FeedbackCard.
+  - **Files modified:** `src/components/result/KibaIndexSection.tsx`, `src/services/kibaIndexService.ts`, `src/types/index.ts`, `src/components/result/kiba-index/VoteBarChart.tsx`, `src/components/result/kiba-index/FeedbackCard.tsx`
+  - **Files reviewed (no changes needed):** `supabase/migrations/026_kiba_index.sql`, `src/screens/ResultScreen.tsx`
 - **Not done yet:**
+  - **Migration 026 not applied to production** — must run in Supabase SQL Editor before testing.
   - `safeSwitchService.test.ts` (deferred — needs Supabase mocking harness)
-- **Next session should:** Test full Safe Switch lifecycle on iOS simulator (create → log → complete/cancel). Start M8 Kiba Index planning.
+  - Kiba Index tests not written (Gemini's plan mentioned them but didn't create them)
+  - State 5 "No Active Pet" missing CTA button (spec says `[ Add Pet → ]`, implementation only shows text — minor, rare edge case)
+- **Next session should:** Apply migration 026 to production. Test Kiba Index end-to-end on iOS simulator (scan → scroll to section → vote → verify bar chart). Consider Kiba Index tests.
 - **Gotchas for next session:**
-  - **Migration 025 applied.** `safe_switches` + `safe_switch_logs` tables live in production.
-  - Affiliate buttons dormant — flip `affiliateConfig.ts` after enrollment.
-  - Edge Function deployed with Approach F (batch scoring).
-  - `fetchGroupSafeSwaps()` is dead code (multi-pet group mode removed).
-  - `life_stage_claim` is free text (no enum validation).
+  - **Migration 026 NOT yet applied.** Must run before Kiba Index works. Drops NOT NULL on taste_vote/tummy_vote, creates `get_kiba_index_stats` RPC.
+  - Gemini created all M8 Kiba Index files (uncommitted) — service, components, migration, ResultScreen integration.
+  - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
+  - `fetchGroupSafeSwaps()` is still dead code.
+  - `life_stage_claim` is still free text (no enum validation).
 - **Decision/scoring changes:** No new decisions. No scoring logic changed.

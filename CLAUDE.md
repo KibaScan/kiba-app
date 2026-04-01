@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: March 31, 2026 — M7 complete. Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: April 1, 2026 — M8 complete. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -11,7 +11,7 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M7 complete — Safe Switch Guide done, affiliate enrollment pending
+**Current phase:** M8 complete — Kiba Index done. Next: M9 UI Polish & Search
 
 **Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
 **Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
@@ -22,7 +22,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | File | What it covers |
 |------|---------------|
 | `DECISIONS.md` | 129 decisions (D-001–D-167, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
-| `ROADMAP.md` | Milestone plan, M5 scope |
+| `ROADMAP.md` | Milestone plan, current scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
 | `docs/specs/BREED_MODIFIERS_DOGS.md` / `_CATS.md` | Breed data (23 dogs, 21 cats) |
@@ -32,7 +32,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–025). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–026). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -65,6 +65,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - **Pantry offline:** Write functions throw `PantryOfflineError`, reads return `[]` gracefully. Network check via `src/utils/network.ts`.
 - **Auto-deplete cron:** `supabase/functions/auto-deplete/` runs every 30 min via pg_cron+pg_net. Daily-total deduction (timezone-agnostic). Unit conversion: cups → kg (calorie-based or 0.1134 fallback) → quantity_unit. Idempotency: `last_deducted_at < todayStartUTC`. Sends push via Expo Push API for low stock (<=5 days/units) and empty transitions.
 - `pet_appointments` — `UUID[]` for `pet_ids` (not junction table), `type` CHECK ('vet_visit','grooming','medication','vaccination','other'), `reminder` default '1_day', `recurring` default 'none', hard delete (not soft-delete). RLS on user_id. Free tier: 2 active max (`canCreateAppointment` in permissions.ts).
+- `kiba_index_votes` — community taste/tummy voting. UNIQUE(user_id, pet_id, product_id). `taste_vote`/`tummy_vote` nullable (partial submissions). `get_kiba_index_stats` RPC for species-filtered aggregation (SECURITY DEFINER). Migration 026.
 - `scan_history` — per-pet scan records (NOT `scans`), FK to `products(id)`. Only non-bypass scans are inserted (ResultScreen:231). `permissions.ts` uses `from('scans')` for rate limiting — different concern.
 - **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
 - **Tab navigation:** Home | Community | (Scan) | Pantry | Me — Search tab was replaced by Community tab. `SearchScreen` deleted; premium text search lives on HomeScreen v2. `CommunityStackParamList` in navigation types.
@@ -89,7 +90,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 
 - Ask AI / chatbot (liability — permanently removed)
 - Score supplements (M16+, D-096), grooming/cosmetics, vet diets (D-135 bypass)
-- `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
+- `expo-barcode-scanner` (deprecated), star ratings (replaced by Kiba Index)
 - variety pack scoring (D-145)
 - Score recalled products (D-158 — bypass pattern, not score=0)
 - BCS questionnaire/diagnostic tool, photo-based BCS estimation (D-162 — educational reference only)

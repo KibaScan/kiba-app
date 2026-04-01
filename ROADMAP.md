@@ -1,12 +1,12 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 31, 2026
+> Updated: April 1, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M7 Complete (M0–M7 Done)
+## Current Status: M8 Complete (M0–M8 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -673,33 +673,61 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M8–M10: Community Features (Weeks 31–40)
+## M8: Kiba Index (Complete)
 
-> Goal: User-generated data flywheel.
+> Goal: Community-driven taste and digestion feedback on products.
 
-### Kiba Index (M8)
-- [ ] Taste Test voting (Loved it / Picky / Refused)
-- [ ] Tummy Check voting (Perfect / Soft stool / Upset)
-- [ ] Aggregate display on product results
-- [ ] One vote per pet per product enforcement
+- [x] Taste Test voting (Loved it / Picky / Refused)
+- [x] Tummy Check voting (Perfect / Soft stool / Upset)
+- [x] Aggregate display on product results (bar charts at 5+ votes threshold)
+- [x] One vote per pet per product enforcement (UPSERT on unique constraint)
+- [x] Partial submissions (taste today, tummy later)
+- [x] Picky Eater Approved badge (≥20 votes, ≥85% loved)
+- [x] Bypass rules (hidden for vet diet, recalled, species mismatch, variety pack)
+- [x] RPC aggregation function (SECURITY DEFINER, species-filtered)
 
-### Symptom Detective (M9)
+---
+
+## M9: UI Polish & Search (Next)
+
+> Goal: Polish existing features and fix UX friction before adding new capabilities.
+
+- [ ] Search improvements (HomeScreen v2 search UX overhaul)
+- [ ] UI polish pass across existing screens
+- [ ] General UX friction fixes
+
+---
+
+## M10: Community Points (Lite)
+
+> Goal: Lightweight engagement loop — points and streaks only. Cosmetics and leaderboard deferred.
+
+- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
+- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
+- [ ] Community safety flags (users flag suspect scores → review queue)
+
+**Deferred to later update:**
+- Moderation queue UI for submitted products
+- Cosmetic rewards (profile borders, badges)
+- Top contributor leaderboard
+
+---
+
+## M11: Symptom Detective (Deferred — Major App Store Update)
+
+> Goal: Daily health tracking with pattern detection. Big feature for post-launch update.
+
 - [ ] Daily symptom logging (5 categories)
 - [ ] Pattern detection algorithm (flag correlations after 2-4 weeks)
 - [ ] "Possible sensitivity to [ingredient]" advisory when pattern detected
 - [ ] Data visualization (calendar heatmap of symptoms)
-
-### Community Contributions (M10)
-- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
-- [ ] Moderation queue UI for submitted products (M3 stores with `needs_review = true`, M10 adds admin/review interface)
-- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
-- [ ] Cosmetic rewards (profile borders, badges) — positioned as contributor thank-you, not primary hook
-- [ ] Top contributor leaderboard (query `contributed_by` from M3 community products)
-- [ ] Community safety flags (users flag suspect scores → review queue)
+- [ ] iOS Home Screen widget (7/30-day mini heatmap, WidgetKit)
+- [ ] Notification quick-response logging ("How's Buster feeling today?" with one-tap actions)
+- [ ] Vet Report integration (symptom timeline, ingredient correlations, diet-symptom overlay)
 
 ---
 
-## M11: Launch Prep (Weeks 41–44)
+## M12: Launch Prep
 
 > Goal: App Store ready.
 
@@ -732,7 +760,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M12: Public Launch (Week 45)
+## M13: Public Launch
 
 > Goal: iOS App Store. Android 4-6 weeks later.
 
@@ -744,9 +772,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M13–M15: Growth (Weeks 46–56)
+## M14–M16: Growth
 
-### Retention Optimization (M13)
+### Retention Optimization (M14)
 - [ ] Scan streak incentives
 - [ ] Weekly pantry digest push notifications
 - [ ] "New score available" when re-scraped formula changes
@@ -757,19 +785,19 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Large widget: weekly summary + feeding schedule + recall badge
 - [ ] expo-widgets or native WidgetKit bridge
 
-### Android Launch (M14)
+### Android Launch (M15)
 - [ ] Port to Android via Expo EAS
 - [ ] Play Store ASO (different keyword dynamics)
 - [ ] Test paywall conversion rates vs iOS
 
-### International (M15)
+### International (M16)
 - [ ] UK/Canada/Australia keyword localization ("pet food checker UK")
 - [ ] Currency localization for affiliate links
 - [ ] Regional AAFCO equivalent standards (FEDIAF for EU)
 
 ---
 
-## M16+: Expansion (Post-Launch)
+## M17+: Expansion (Post-Launch)
 
 ### Elimination Diet Trial Tracker (D-100 — First Priority)
 > Goal: Transform Kiba from a scanner into a longitudinal health platform. Daily engagement for 8-12 weeks.
