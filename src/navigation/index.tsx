@@ -34,6 +34,8 @@ import CommunityContributionScreen from '../screens/CommunityContributionScreen'
 import ProductConfirmScreen from '../screens/ProductConfirmScreen';
 import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
 import CompareScreen from '../screens/CompareScreen';
+import SafeSwitchSetupScreen from '../screens/SafeSwitchSetupScreen';
+import SafeSwitchDetailScreen from '../screens/SafeSwitchDetailScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -58,6 +60,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
       <HomeStack.Screen name="Compare" component={CompareScreen} />
+      <HomeStack.Screen name="SafeSwitchDetail" component={SafeSwitchDetailScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -95,6 +98,8 @@ function PantryStackScreen() {
     <PantryStack.Navigator screenOptions={{ headerShown: false }}>
       <PantryStack.Screen name="PantryMain" component={PantryScreen} />
       <PantryStack.Screen name="EditPantryItem" component={EditPantryItemScreen} />
+      <PantryStack.Screen name="SafeSwitchSetup" component={SafeSwitchSetupScreen} />
+      <PantryStack.Screen name="SafeSwitchDetail" component={SafeSwitchDetailScreen} />
       <PantryStack.Screen name="Result" component={ResultScreen} />
       <PantryStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <PantryStack.Screen name="Compare" component={CompareScreen} />

@@ -1,888 +1,6 @@
 {
-  "timestamp": "2026-03-26T00:03:54.393506+00:00",
+  "timestamp": "2026-03-31T23:05:04.849947+00:00",
   "parsing_errors": [
-    {
-      "product_ids": [
-        "79077497-12d6-426e-8022-f70931970126"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Good 'n' Fun Triple Flavor Kabobs Chicken, Duck & Chicken Liver Dog Chews, 18 count\u2014Good 'n' Fun has created the ultimate rawhide treat with their Triple Flavor Kabobs Chicken, Duck & Chicken Liver Do"
-    },
-    {
-      "product_ids": [
-        "def9b093-a517-4439-8ada-cace620ee349"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (A Natural Source of Omega-3 Fatty Acids), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples, Blueber"
-    },
-    {
-      "product_ids": [
-        "23fde7f1-5a16-48c3-a3a9-59e22facb5eb"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (A Natural Source of Glucosamine and Chondroitin), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples,"
-    },
-    {
-      "product_ids": [
-        "b9cd5a94-8326-4378-82e8-05f580beb76a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls Dog Chews, 2 count\u2014Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls treat pups to a delicious combination of three favo"
-    },
-    {
-      "product_ids": [
-        "770ade5b-a1d4-4500-aa8d-3f0821ae12c8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Made in the USA.Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Dog treats for training and everyday treating.Pup-Peroni Original Bacon "
-    },
-    {
-      "product_ids": [
-        "c7be68e4-0f16-4065-af28-7336350779cb"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Organic 100% Grass Fed & Finished Beef Liver"
-    },
-    {
-      "product_ids": [
-        "8cbc05d7-cd78-4584-8828-d8d1920be2bd",
-        "a1359e3d-72b4-4eba-b7b1-72636d5bf95b",
-        "5f7bc1f7-e956-4174-8340-2f82df99c431",
-        "d0f36be8-d794-42ad-968f-4a8d3b448028"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Beef Liver."
-    },
-    {
-      "product_ids": [
-        "8aad7318-fa06-4c7e-b8b4-3a82cc10f5f7",
-        "98dc54a6-5cf5-4000-bcc7-f09c48c64caa"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "USA Sourced Wild-Caught Human Grade Sockeye Salmon."
-    },
-    {
-      "product_ids": [
-        "11f7b330-3994-454f-9e2d-0395a46d7657"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My dogs absolutely went crazy over them.... moreMy dogs absolutely went crazy over them.0 LikesReportShow More Reviews"
-    },
-    {
-      "product_ids": [
-        "704e1985-776c-429a-a813-37bda8868424"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Smelt."
-    },
-    {
-      "product_ids": [
-        "93cdc61d-78f6-44b7-a11a-0a3bbcd7f188"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Canadian Sourced Human Grade Wild-caught Cod Skin."
-    },
-    {
-      "product_ids": [
-        "afb43969-85f5-4048-8e87-40cf67748dfc"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck 55% Sweet potato 35% Coconut Glycerol 4% Peanut protein 3% Cassava starch 2% Sorbitol 0.2%"
-    },
-    {
-      "product_ids": [
-        "a37f0ca8-e91d-4cfa-bc7c-c618a2217d31"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Water| Corn Starch| Artificial And Natural Flavors| Artificial Chicken Flavor| Taurine| Thiamine Mononitrate (Vitamin B-1)."
-    },
-    {
-      "product_ids": [
-        "82e7e2da-7c2a-406a-96f5-ade2c0c07005"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Cage-Free Chicken Chicken Meal Lentils Peas Chicken Fat (preserved with Mixed Tocopherols) Chicken Liver Natural Chicken Flavor Chicken Gizzard Fenugreek Seed Salmon Oil (Preserved with Mixed Tocopher"
-    },
-    {
-      "product_ids": [
-        "7185727d-2507-4506-9191-467fbc771b42"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Chickpeas lentils Peas Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Brewer's Dried Yeast Potassium Chloride Choline Chloride DL Methionine Minerals: (Zinc Proteinate Iron Pro"
-    },
-    {
-      "product_ids": [
-        "6e46277e-8999-4d69-bfd8-2568fca0ca0b",
-        "385cdc6e-9087-455e-9d4a-af302d360bd7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Chicken Water Sufficient For Processing Potato Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate M"
-    },
-    {
-      "product_ids": [
-        "21e8edeb-7fd5-49fa-aabd-cebd168c8be2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure Ocean-Caught Human Grade Minnow"
-    },
-    {
-      "product_ids": [
-        "a11047df-26bc-4f28-bd0b-8a1ee5f82441",
-        "0487a195-a871-4166-b43b-dac46652d009"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Duck Liver"
-    },
-    {
-      "product_ids": [
-        "be6722ed-0e52-4c7b-8bab-a387235e7a42"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Chicken Breast & Organic Catnip"
-    },
-    {
-      "product_ids": [
-        "3c3ed546-66de-4d3e-ae2d-90fceafcd99d",
-        "7d567c08-1c42-4e69-8295-d9edcccbaf4d",
-        "d7a78f24-42d7-4a98-a2ff-90357d57ccef",
-        "56fe43d0-ada0-417f-b7e7-76bfb1dac564",
-        "bfee16a1-ce0b-4796-b013-f8001d4163fc"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Chicken Breast."
-    },
-    {
-      "product_ids": [
-        "0105604c-aa56-4e8e-94b4-4561240cfd52"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Ocean Whitefish."
-    },
-    {
-      "product_ids": [
-        "2852ebb3-09b4-4741-b3a7-6682abbce9eb"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Potato Chicken Fat (preserved with mixed tocopherols) Blueberries Brewer's Dried Yeast Choline Chloride DL\u2013Methionine Salt Minerals (Zinc Proteinate Iron Proteinate Calcium Carbonate Mangane"
-    },
-    {
-      "product_ids": [
-        "395c54ab-4ccf-4806-adc8-af3ca24a982a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Solid Gold Flavorful Feast Real Tuna & Sardine Grain-Free Gravy Pate Wet Cat Food, 3-oz can, case of 3\u2014Refine your furry friend's palate with a bowl of Solid Gold Flavorful Feast in Gravy with Real Tu"
-    },
-    {
-      "product_ids": [
-        "d943523e-3166-42f6-b9da-a8a0d1b48c0d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Shrimp."
-    },
-    {
-      "product_ids": [
-        "67966d42-244d-4eaa-a669-3953c6d40432",
-        "5fca98e1-de6c-4b27-bd23-e734c1beaa88"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Turkey Water Sufficient For Processing Potato Brewer'S Dried Yeast Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate"
-    },
-    {
-      "product_ids": [
-        "ec60094f-3117-4db2-aff4-7f158e0621c0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "\"Temptations Seafood Medley Flavor Adult Dry Cat Food, 13.5-lb bag\u2014Your kitty will be meowing with delight when you serve her Temptations Seafood Medley Flavor Adult Dry Cat Food. This purr-fect meal "
-    },
-    {
-      "product_ids": [
-        "a70cbfe7-e8c0-4f6e-85a8-dea729730756",
-        "ec00a538-9e4f-4c1e-ae5b-9ce811420d73",
-        "83c5a237-7753-4116-8436-47cf4eb5bcf9"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Salmon."
-    },
-    {
-      "product_ids": [
-        "261ad018-2ef3-448b-bdc3-0807b889e4da"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My dog loves the flavor... more"
-    },
-    {
-      "product_ids": [
-        "ef5b5fe3-e847-4d92-9f29-9b8c6823424b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure Ocean-Caught Human Grade Yellowfin Tuna"
-    },
-    {
-      "product_ids": [
-        "76a21113-e3e8-4003-8915-93a4e298e39f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Chicken Breast & Duck Liver."
-    },
-    {
-      "product_ids": [
-        "5ed24069-cb89-4ab2-aa94-0198c8695862"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "The Tiki Cat Queen Emma Luau Variety Pack Grain-Free Canned Cat Food calories per recipe is as follows: Tilapia 83 calories per can, Napili Luau Wild Salmon & Chicken 71calories per can, Hanalei Luau "
-    },
-    {
-      "product_ids": [
-        "9f4b8aa2-c06f-4162-8546-0124fba21247"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Temptations Classic Tasty Chicken Flavor Soft & Crunchy Cat Treats, 16-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These uni"
-    },
-    {
-      "product_ids": [
-        "1a272517-fe03-46e1-82c5-f83f894c0886",
-        "4eb9fbfc-c6fe-40e8-9e4c-4a9addf66ddb"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Freeze Dried Wild Alaskan Salmon."
-    },
-    {
-      "product_ids": [
-        "ef3721c3-78fe-4f45-b7fb-0946fee41459"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Chicken Heart."
-    },
-    {
-      "product_ids": [
-        "b47f7a1e-10cb-4c42-8c43-f334fe9fa23c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Turkey Breast"
-    },
-    {
-      "product_ids": [
-        "44691293-7a7e-4c46-8327-485cd7718ca7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "f4ca867e-09c9-4fc2-bf7b-e1d884944114"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Certified Organic Cereal Grass (May Contain Oat, Rye, Barley) and Growing Medium."
-    },
-    {
-      "product_ids": [
-        "a149df69-0897-44df-994b-c1fc019c67b3"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Tuna."
-    },
-    {
-      "product_ids": [
-        "fa07d996-8cbc-4f50-9fdd-422a2aba2add"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
-    },
-    {
-      "product_ids": [
-        "ff95519a-2a1c-43d0-9e01-80b16d76142f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Beef Liver"
-    },
-    {
-      "product_ids": [
-        "feda021a-a921-43c8-adb2-74028ba6c3f1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "f02965a1-4927-4da6-840f-6f7bbbe03f64"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "f516b501-54c0-459c-914f-7d1a64b932f0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
-    },
-    {
-      "product_ids": [
-        "c1333326-caf4-41b9-91e2-de1cd46a4db8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
-    },
-    {
-      "product_ids": [
-        "dbc61c26-5286-4721-b4e5-85b21535e484",
-        "9d12c3f2-2fd8-47fb-a297-6602588ee44b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Every Inaba product is made with yummy, high-quality ingredients including farm-raised chicken and/or wild-caught tuna.Each delicious, creamy Churu tube contains 91% moisture and only six calories, wh"
-    },
-    {
-      "product_ids": [
-        "ce52b601-812e-429b-b6a4-3804c1aaa173"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "2a9d7421-e33e-4169-98b3-3076d8395c39"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "New Zealand Grass-fed Lamb Green Tripe."
-    },
-    {
-      "product_ids": [
-        "6b1b13e6-4c3d-4fa5-9ef5-b2f277b1bd9a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
-    },
-    {
-      "product_ids": [
-        "13230176-c584-4c64-b112-20896461da9b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
-    },
-    {
-      "product_ids": [
-        "87e56826-b1a7-4fdb-92fa-2b7b4ccc0f91"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
-    },
-    {
-      "product_ids": [
-        "513c3005-3178-432d-a50a-cb3c2e047e66"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Freeze Dried Raw Chicken Liver."
-    },
-    {
-      "product_ids": [
-        "36521b3f-4e56-4ae8-ba93-20469d9357a2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal (Natural Source of Glucosamine and Chondroitin), Peas, Sweet Potato, Tapioca, Pea Starch, Pea Fiber, Dried Yeast, Pumpkin, Dried Egg, Flaxseed, Canola Oil, Natural Flavor, Salmon Meal, Al"
-    },
-    {
-      "product_ids": [
-        "a2cdcfd1-9e26-47e0-b45c-c53096a4679b",
-        "88766b14-0e41-4d30-8207-1574815eee3a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Rice Flour; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Dried Chicken; Natural Roast Beef Flavor; Natural Bacon Flav"
-    },
-    {
-      "product_ids": [
-        "abfabaaf-767d-44b3-8d1f-a33b3503b9e4"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "ORIJEN Original Chunks & Shreds Variety Pack Duck & Liver Wet Cat Food, 3-oz can, case of 12\u2014Promotes a healthy coat and skin with naturally occurring omega-3 and -6 fatty acids.ORIJEN Original Chunks"
-    },
-    {
-      "product_ids": [
-        "ad15015e-5151-4d98-a38b-da7999d33342"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Breast Dinner (Chicken, Chicken Broth, Natural Flavor, Sunflower Oil, Xanthan Gum, Locust Bean Gum, Tricalcium Phosphate, Potato Starch, Choline Chloride, Taurine, Zinc Sulfate, Ferrous Sulfat"
-    },
-    {
-      "product_ids": [
-        "07e64fee-2ba5-4cb6-9839-207ee9b52570"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Chicken Water Sufficient For Processing Rice Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate Man"
-    },
-    {
-      "product_ids": [
-        "083883ff-402c-4434-800c-938bdd19ed26"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef Pork Pork Meal Sweet Potato Tapioca Beef Liver Natural Pork Flavor Pork Fat (preserved with mixed tocopherols) Lamb Meal Ground Flaxseed Tomato Pomace Lamb Bison Free-Range Venison Grass-Fed Goat"
-    },
-    {
-      "product_ids": [
-        "7a1cbda2-7cb2-42ac-a406-0e3eebb83af0",
-        "1f596a15-6be1-4bb2-92d0-de93ba9f4cf5"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Potassium Chloride DL\u2013Methionine Choline Chloride Calcium Propionate (a preservative) Miner"
-    },
-    {
-      "product_ids": [
-        "24a8993e-d9c0-4b81-b491-a805f4bbff2c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Tomato Pomace Chicken Fat (preserved with mixed tocopherols) Dicalcium Phosphate Choline Chloride Calcium Propionate (a preservative) Minerals (Zinc Prot"
-    },
-    {
-      "product_ids": [
-        "6ba30423-863f-449c-97ef-1370f9771828"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Flavor seem to be a good attraction for eating... more"
-    },
-    {
-      "product_ids": [
-        "b1b6ec3c-3ec3-4204-912d-5fa2211efc96"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Tomato Pomace Chicken Fat (preserved with mixed tocopherols) (Mixed Tocopherols) Dicalcium Phosphate Choline Chloride Calcium Propionate (a preservative)"
-    },
-    {
-      "product_ids": [
-        "9d3be895-6e0a-4675-a17e-9a699a8a2a55",
-        "20e394a1-d3b1-44f5-8f24-0f9e8e4bae7c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Potassium Chloride DL\u2013Methionine Threonine Choline Chloride Calcium Propionate (a preservative) Ta"
-    },
-    {
-      "product_ids": [
-        "00efd492-867f-4b27-8491-03694a302d35"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Burbank Potato Norkotah Potato Pumpkin Chicken Fat (preserved with mixed tocopherols) Brewer's Dried Yeast Potassium Chloride Choline Chloride DL\u2013Methionine Blueberries Raspberries Cranberri"
-    },
-    {
-      "product_ids": [
-        "15ed778d-9e83-46ec-93ae-c93efab81b44"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
-    },
-    {
-      "product_ids": [
-        "9903b1b5-9878-417e-b290-dfd25a3124d1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Pearled Barley, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Ground Rice, Rice Bran, Canola Oil (Pr"
-    },
-    {
-      "product_ids": [
-        "699f3309-f9f2-427a-b9bd-ced0af1592e4",
-        "eabb51ae-729c-4e4b-8632-f62054e56023",
-        "71c7ec58-a461-4168-b4c9-4592e60e8900"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Bison; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Molasses; Salt; Citric Acid (preservative); Mixed Tocopherols (pr"
-    },
-    {
-      "product_ids": [
-        "c3dfb3b6-5737-471c-a081-6bc66bf35682"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), wheat flour, whole grain ground corn, rice bran, grain sorghum, dried plain beet pulp, chicken fat (preserved with mixed tocopherols), egg product, d"
-    },
-    {
-      "product_ids": [
-        "cff2c574-b636-4e2e-bff8-4b5114be7740"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Rice, Rice Bran, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Canola Oil (Preserved with Mixed Toco"
-    },
-    {
-      "product_ids": [
-        "e608182b-30f8-4dcf-bece-eb0d2cf08e04"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wild Caught Tuna Tuna Broth Wild-Caught Salmon Sunflower Oil Tapioca Organic Spinach Tricalcium Phosphate Salt Dandelion Greens Guar Gum Magnesium Sulfate Taurine Vitamin E Supplement Celery Powder Th"
-    },
-    {
-      "product_ids": [
-        "01f012d5-e2b2-424b-9493-f162e0ef50d4"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Rice Flour; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Natural Bacon Flavor; Natural Roast Beef Flavor; Dried Chick"
-    },
-    {
-      "product_ids": [
-        "6449b340-3317-4814-986f-c06202c24f20"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Questions & AnswersAsk a Question 4 Customer Questionswhat is the phosphorus levelAnswer by Chewy \u2022 Aug 12, 2022The Dry Matter Phosphorus levels in these options are: Beef: 4.20% Chicken: 0.47% Duck a"
-    },
-    {
-      "product_ids": [
-        "785b377a-6839-4809-8e81-9cbb7b5161ff"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (Natural Source of Glucosamine and Chondroitin), Chicken Meal (Natural Source of Glucosamine and Chondroitin), Tapioca, Chicken Fat (Preserved with Mixed Tocopherols), Sweet Potato, Pumpki"
-    },
-    {
-      "product_ids": [
-        "f8b8bd0b-cb4e-4811-87ec-8b09e42d5065"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Oatmeal Brown Rice Chicken Fat (Preserved With Mixed Tocopherols) Tomato Pomace Brewer's Yeast Threonine Potassium Chloride DL Methionine Taurine Calcium Propionate Blueberries Raspberries C"
-    },
-    {
-      "product_ids": [
-        "86a41258-bf1c-4912-b9b3-6b2ded4bbcaa"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, rice bran, chicken fat (preserved with mixed tocopherols), meat meal (a source of glucosamine), dried yeast, dr"
-    },
-    {
-      "product_ids": [
-        "ee041cba-8b10-4277-96c6-10d27ed860e1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless/Skinless Salmon Water Sufficient For Processing Potato Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Prot"
-    },
-    {
-      "product_ids": [
-        "1dd791cc-8ca7-4263-8e1b-2991f33d1df6"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Chickpeas Lentils Peas Tomato Pomace Salt Potassium Chloride DL\u2013Methionine Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate Chicken Fat (preserved with mixed tocopherols) (Mangan"
-    },
-    {
-      "product_ids": [
-        "e54bc24d-2228-469f-8859-e3ef96db8ff7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wild-Caught Salmon Fish Meal Lentils Peas Natural Vegetable Flavor Sunflower Oil (Preserved with Mixed Tocopherols) Wild-Caught Cod Wild Caught Tuna Ocean Fish Sun Cured Alfalfa Fenugreek Seed Choline"
-    },
-    {
-      "product_ids": [
-        "3e137ba3-cc1b-401c-b858-18e9f1329318"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken (A Source Of Glucosamine & Chondroitin Sulphate), Chicken Broth, Chicken Liver, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
-    },
-    {
-      "product_ids": [
-        "ff852475-f6e9-4296-a7e5-cb5910ff7ccf"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Tuna Fillet (A Source Of Glucosamine), Fish Broth, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
-    },
-    {
-      "product_ids": [
-        "673811e0-9ee2-483b-a463-2fe93b8ab18f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Peas, Chicken Fat (Preserved with Mixed Tocopherols), Rice Bran, Whitefish Meal, Dried Beet Pulp, Dried Egg, Flaxseed, Rice, P"
-    },
-    {
-      "product_ids": [
-        "53f3dbba-6294-4fc5-ae5c-108fc0bf3743"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless/Skinless Salmon Water Sufficient For Processing Rice Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Protei"
-    },
-    {
-      "product_ids": [
-        "fa712962-dc4c-4529-b98c-d14609bdac16"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Good lower price for my 35 kitties... more"
-    },
-    {
-      "product_ids": [
-        "0b5b7052-48ac-484e-9751-761cf8e229c0"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Questions & AnswersAsk a Question 5 Customer QuestionsAre there 24 cans of each flavor in this bundle?Answer by Chewy \u2022 May 30, 2021This bundle contains 24 cans of the Monterey Medley Grain-Free Natur"
-    },
-    {
-      "product_ids": [
-        "7df6d84f-63fb-4282-a625-6d33e6d83fd9"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Peanut Butter Carob & Vanilla Cream Fillings."
-    },
-    {
-      "product_ids": [
-        "17868fbd-9e8e-4575-a236-8c06b3c9bddf"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Pacific Ocean Fish Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Potassium Chloride Dicalcium Phosphate Salt Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (M"
-    },
-    {
-      "product_ids": [
-        "573aab2d-7cc1-4d69-9295-05c8fec817b8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Grass Fed Wagyu Beef Liver."
-    },
-    {
-      "product_ids": [
-        "21fd2b98-9558-4437-8a3b-187eb40c2cbd"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Brewer's Dried Yeast Rosemary extract"
-    },
-    {
-      "product_ids": [
-        "19b51e49-3c69-494f-a5f4-8afd4bf1491f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Brewer's Dried Yeast Rosemary extract"
-    },
-    {
-      "product_ids": [
-        "b0a2fc17-7d30-44f1-a23c-de6a00c2b1c4"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Antler Chews Are Made from 100% Natural Elk Antlers That Are Shed Each Year."
-    },
-    {
-      "product_ids": [
-        "b1888a21-b10c-453e-8ac2-00bd5f084a2f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Bacon Cage-Free Duck Oatmeal Barley Sorghum Millet Brown Rice Glycerin Brown Rice Syrup Salt Natural Hickory Smoke Flavor Dried Cultured Whey Natural Flavor Citric Acid (a preservative) Distilled Vine"
-    },
-    {
-      "product_ids": [
-        "aa6da42e-5b9a-4cd1-8060-d0f62177b5c0",
-        "1a339608-caf3-41ba-b6dd-cfde1a498581"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "New Zealand Sourced Human Grade Lamb Liver."
-    },
-    {
-      "product_ids": [
-        "0ab764c8-a847-4ac4-994e-33a14c3d2467"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef Farm-Raised Pork Pork Meal Barley Oatmeal Ground Flaxseed Natural Pork Flavor Beef Liver Pork Fat (preserved with mixed tocopherols) Tomato Pomace Beef Kidney Grass-Fed Lamb Bison Free-Range Veni"
-    },
-    {
-      "product_ids": [
-        "6b41011e-8c87-4bce-ba5f-4c269e5ed0df"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "picky dog didn't like it... more"
-    },
-    {
-      "product_ids": [
-        "1529f561-4a36-4be3-b86c-2ae38021e7b1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "USA sourced Human grade Pork Liver."
-    },
-    {
-      "product_ids": [
-        "a008d70e-5229-414c-9fbd-04ca8d99f5fe"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
-    },
-    {
-      "product_ids": [
-        "f328af40-7745-4802-9a3b-95e21ccf512d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Bacon Farm-Raised Pork Pork Liver Beef Liver Beef Kidney Beef Sodium Alginate Natural Bacon Flavor Mixed Tocopherols (preservative)"
-    },
-    {
-      "product_ids": [
-        "0658c39b-886f-4bfa-8b8a-efa5e9447dfa"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My dogs enjoyed the food... more"
-    },
-    {
-      "product_ids": [
-        "fdf0881a-f8f4-4827-90c0-8458fc83b522"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My two 115 lb Great Pyrenees absolutely love these \"cookies \" as we call them. On fact they love all the food from Honest Kitchen. We mix the veggie seed and nut... more"
-    },
-    {
-      "product_ids": [
-        "5f531fd6-7094-4503-b850-0833ff2a131b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Natural Balance Limited Ingredient Diets Mini Rewards Chicken Formula Dog Treats, 5.3-oz jar \u2014 Turn anytime into treat time with the Natural Balance Limited Ingredient Diets Mini Rewards Soft & Chewy "
-    },
-    {
-      "product_ids": [
-        "891688d1-aa97-422e-93b2-a3d94fcde89d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Mealtime is always a highlight of a hound's day, especially when you serve Pedigree Choice Cuts in Gravy Variety Pack + Chopped Ground Dinner Variety Pack Adult Wet Dog Food Pouches! Together, these v"
-    },
-    {
-      "product_ids": [
-        "5cb05e56-e509-4c56-922e-d1edd69eb404"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Buddy Biscuits Softies with Grilled Beef Grain-Free Soft & Chewy Dog Treats, 5-oz bag\u2014Each snack is oven-baked for a bold and drool-worthy flavor.Buddy Biscuits Softies with Grilled Beef Grain-Free So"
-    },
-    {
-      "product_ids": [
-        "31950894-fbc5-473c-a336-edf7f060c076"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Turkey & Sweet Potato."
-    },
-    {
-      "product_ids": [
-        "026d630e-9b18-4383-8f90-cc532abea6f7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Yeast Extract Salt Potassium Chloride DL\u2013Methionine Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (Mang"
-    },
-    {
-      "product_ids": [
-        "dafb8730-ce51-4efa-bcf4-a61fc4bd228f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Cloud Star Chewy Tricky Trainers Liver Flavor Dog Treats, 14-oz bag\u2014Who says you can't teach an old dog new tricks? Young or old, dogs will flip for the amazing taste of Cloud Star's Tricky Trainers. "
-    },
-    {
-      "product_ids": [
-        "87c3fe04-84e2-4c31-b218-23a708051b04"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (Natural Source of Glucosamine and Chondroitin), Pumpkin, Butternut Squash, Tapioca, Sunflower Oil (Preserved with Mixed Tocopherols), Flaxseed, Natural Flavors, DL-Methionine, Choline (Ch"
-    },
-    {
-      "product_ids": [
-        "996864f9-9255-45c5-9b9c-e2634b15ba7a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Cheddar Cheese."
-    },
-    {
-      "product_ids": [
-        "3703f47d-8c65-4ca2-9fc2-e3985a9a6ad0"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Jinx Kibble Sauce Beef Bone Broth Wet Dog Food Topper, 12-fl oz bottle\u2014Made with high-quality beef and savory bone broth for a mouthwatering boost of flavor.Jinx Kibble Sauce Beef Bone Broth Wet Dog F"
-    },
-    {
-      "product_ids": [
-        "b97c88a6-e20b-4a25-abd5-871e133801c1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Brewer's Dried Yeast Rosemary extract"
-    },
-    {
-      "product_ids": [
-        "01815bb1-f727-4293-aca9-ab50bd87f1e8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "USA Sourced Human Grade Bison Liver."
-    },
-    {
-      "product_ids": [
-        "9c5780c9-bdd1-4312-9b6e-ff0a2ec203ae"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Antler Chews Are Made from 100% Natural Moose Antlers That Are Shed Each Year."
-    },
-    {
-      "product_ids": [
-        "efa27449-3171-4f32-8a3b-608ef933f99d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Whole Beef Cooked In Its Own Juices."
-    },
-    {
-      "product_ids": [
-        "d1ead04e-13b6-4fc9-b99c-2e8995dd7eae"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
-    },
-    {
-      "product_ids": [
-        "7f3a4a7f-3d4d-446a-81bc-328f6e62d3a0"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
-    },
-    {
-      "product_ids": [
-        "abdcca78-0e75-41b8-8d6b-7fc2692e1b19"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Antler Chews Are Made from 100% Natural Deer Antlers That Are Shed Each Year."
-    },
-    {
-      "product_ids": [
-        "e471e538-e84a-447f-917f-1a6a07dd69a3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "This food surprised me with the great reaction Bandit had! He doesn't typically care much for freeze-dried food. However, after the first cautious sniff, he ate up both a bowl of Kismet and a Nug for "
-    },
-    {
-      "product_ids": [
-        "c28a9f04-e89f-48b2-82e2-17c18acb1ff2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Dicalcium Phosphate Choline Chloride Calcium Propionate (a preservative) Minerals (Zinc Prot"
-    },
-    {
-      "product_ids": [
-        "87bd9125-85ba-4960-8f0f-b4f60903eb3e"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "New: Chicken Meal (Natural Source of Glucosamine and Chondroitin), Chicken Fat (Preserved with Mixed Tocopherols), Peas, Pea Starch, Dried Yeast, Whitefish Meal (Source of DHA-Docosahexaenoic Acid), B"
-    },
-    {
-      "product_ids": [
-        "0151eca3-84a3-4a38-a0f8-b31e1e8420f7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food, 10.5-oz, case of 6 \u2014 The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food is a doggone easy wa"
-    },
-    {
-      "product_ids": [
-        "e1f1cf68-2172-41fb-80e6-512534ad9cef"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Help your furry friend enjoy his day! Each purchase comes with Rachael Ray Nutrish Natural Chicken & Veggies Recipe Dry Dog Food, 40-lb bag & Rachael Ray Nutrish Soup Bones Chicken & Veggies Flavor Do"
-    },
-    {
-      "product_ids": [
-        "bc0fc75c-d6a1-442a-81e6-0772d6260464"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Turkey Water Sufficient For Processing Rice Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate Mang"
-    },
-    {
-      "product_ids": [
-        "ebb7d9a9-82c6-4da3-a8ca-195afbc1795b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "For the best in freeze-dried dog treats look no further than Chewy. Search top freeze-dried dog treat brands and flavors online with ease on Chewy. Freeze-dried dog treats are the latest dog food craz"
-    },
-    {
-      "product_ids": [
-        "8d2aa24b-9b8f-4899-866e-3611ba6647c8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Give your best buddy a hearty choice of meals with Pedigree Chopped Ground Dinner Variety Pack with Chicken, Filet Mignon & Beef + Variety Pack with Chicken, Beef & Bacon Wet Dog Food. Made with a gro"
-    },
-    {
-      "product_ids": [
-        "b2359e94-5018-4caa-bc23-eaf6b100f6da"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Oatmeal Brown Rice Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Brewer's Yeast Potassium Chloride Choline Chloride Salt Blueberries Raspberries Cranberries Threonine DL\u2013Methi"
-    },
     {
       "product_ids": [
         "2785c0eb-1481-4862-bc13-985d765e3490"
@@ -892,17 +10,17 @@
     },
     {
       "product_ids": [
-        "1f467022-42c9-4d10-bc27-c491a52baade"
+        "2bd7a935-07d6-4d34-a291-a06a36ed1f4e",
+        "0c47dc3e-245b-4584-8910-8414ae2ff683",
+        "8947a26e-aa2e-4311-b359-4cc21825c588",
+        "ef40979f-f4da-4243-8e53-557b0f1073cf",
+        "6ea074db-a465-4e62-bb50-83de3be0b4fa",
+        "897e4a59-d215-4401-9094-18ca3a2d197d",
+        "d2e54f28-7b3b-42fe-8640-e31fb03acc30",
+        "4bcd367c-601f-4165-9704-cc602291a159"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Chicken or Duck and Sweet Potato Dog"
-    },
-    {
-      "product_ids": [
-        "f8584485-808c-4e72-983d-63d804dd6c6f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Venison; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Molasses; Salt; Citric Acid (preservative); Mixed Tocopherols ("
+      "raw_preview": ", it helps maintain overall well-being while being gentle on the stomach. The included grooming brush is designed for effortless coat maintenance, featuring an ergonomic handle for a comfortable grip "
     },
     {
       "product_ids": [
@@ -913,115 +31,17 @@
     },
     {
       "product_ids": [
-        "80602ba8-90ad-4660-a5d3-bf5a9deecc95"
+        "45162885-9cb7-4db1-a148-3f6f9fd513ba"
       ],
       "status": "contaminated",
-      "raw_preview": "without plastics or polymers. They are edible and digestible with an irresistible taste dogs love. Raised dental ridges safely scrub the teeth clean. Can be used as a snack anytime or inside the Everl"
+      "raw_preview": "About this itemProduct detailsDelight your cat with a flavorful rotation of meals from the Special Kitty Surf & Turf Variety Pack Pate. This 40-count collection features four delicious recipes: chicke"
     },
     {
       "product_ids": [
-        "cc1f248a-4b23-4e30-bb54-4aeb40002727"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Nothing but good, wholesome nutrition here! Each purchase comes with Rachael Ray Nutrish Just 6 Natural Lamb Meal & Brown Rice Limited Ingredient Recipe Dry Dog Food, 28-lb bag & Rachael Ray Nutrish S"
-    },
-    {
-      "product_ids": [
-        "1a7d3976-8205-4cf9-bb1d-96b46552371d"
+        "6b66aa21-f71a-40f8-aace-81cdd0e6c89b"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Flavor: Unavailable with 12.5-oz can, case of 24 BeefSee available optionsUnavailable with 12.5-oz can, case of 24 Beef & ChickenSee available optionsUnavailable with 12.5-oz can, case of 24 ChickenSe"
-    },
-    {
-      "product_ids": [
-        "aa7b7fc0-7514-4349-b544-157f147e8e7d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Winnie Lou Sweet Potato & Venison Dog Treat Crisps, 2.5 Oz"
-    },
-    {
-      "product_ids": [
-        "b6221973-7633-4030-b654-24eb1d18968f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken (Natural Source Of Chondroitin Sulfate), Chicken Broth, Chicken Liver, Oat Bran, Pea Flour, Pea Fiber, Carrots, Peas, Salt, Guar Gum, Potassium Chloride, Minerals (Zinc Amino Acid Chelate, Iro"
-    },
-    {
-      "product_ids": [
-        "ade7a4df-1c8a-4ad2-b312-d7dabc571d22"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Nulo Freestyle Lamb & Lentils Recipe Grain-Free Canned Dog Food, 13-oz, case of 12\u2014Dogs love this grain-free lamb & lentils recipe with a rich protein comibination of lamb, turkey and salmon complemen"
-    },
-    {
-      "product_ids": [
-        "ad3d42c9-fef7-4476-8242-9de08f522ef7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My dog has been eating honest kitchen for years and he loves it. I like that there isn't to much junk and I can read the ingredients.... more"
-    },
-    {
-      "product_ids": [
-        "830924d6-bd7d-4567-b229-dc33bc2b94a5"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Cage-Free Chicken Cage-Free Turkey Chicken Meal Barley Oatmeal Natural Chicken Flavor Chicken Fat (preserved with Mixed Tocopherols) Ground Flaxseed Chicken Liver Quail Guineafowl Goose Cage-Free Duck"
-    },
-    {
-      "product_ids": [
-        "b0fddd24-42e5-453d-a02e-3e2fbbdf8043"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Oatmeal Brown Rice Tomato Pomace Chicken Fat (preserved with mixed tocopherols) Brewer's Dried Yeast Potassium Chloride Choline Chloride Blueberries Raspberries Cranberries Calcium Pro"
-    },
-    {
-      "product_ids": [
-        "f25a95df-231a-43a3-b41e-8e926d3ec262"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Oatmeal Brown Rice Chicken Fat (preserved with mixed tocopherols) Lamb Meal Tomato Pomace Brewer's Dried Yeast Potassium Chloride Dicalcium Phosphate Choline Chloride Blueberries Raspb"
-    },
-    {
-      "product_ids": [
-        "2ab35b0c-9b05-4b93-b9c7-018a9283ab8d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Burbank Potato Norkotah Potato Ocean Fish Meal Tomato Pomace Chicken Fat (preserved with mixed tocopherols) Dicalcium Phosphate Choline Chloride Calcium Propionate (a preservative) Minerals (Zinc Prot"
-    },
-    {
-      "product_ids": [
-        "047ba683-1a84-4563-8e15-f6b34a7254de"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef | Beef Heart | Beef Tripe | Beef Liver | Beef Kidney | Ground Beef Bone | Broccoli | Carrot | Apple | Kale | Kelp | New Zealand Green Mussel | Honey | Rosemary | Coconut Oil | Hoki Oil | Salt | C"
-    },
-    {
-      "product_ids": [
-        "d01a6f08-8cff-4181-8edb-ae0ef9516661"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef Meal Burbank Potato Norkotah Potato Dried Yeast Chicken Fat (Preserved With Mixed Tocopherols) Tomato Pomace Pumpkin Potassium Chloride Salt Threonine DL\u2013Methionine Choline Chloride Blueberries C"
-    },
-    {
-      "product_ids": [
-        "5d7980ea-377f-4126-b106-d003c6178dc1"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken (Source Of Methionine-Cycstine, Chicken Meal, Tapioca Starch, Chicken Fat (Preserved With Mixed Tocopherols), Yeast Culture, Pumpkin Seed Flour, Turkey Meal, Duck Meal, Spray Dried Chicken Liv"
-    },
-    {
-      "product_ids": [
-        "de25c5c0-e82e-4462-bd4a-0425441c521f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Venison | Lamb | Lamb Green Tripe | Lamb Heart | Lamb Liver | Lamb Kidney | Ground Lamb Bone | Bok Choy | Carrot | Blueberries | Cranberries | Kelp | New Zealand Green Mussel | Honey | Rosemary | Coco"
-    },
-    {
-      "product_ids": [
-        "b3135c6d-8bc2-49d1-925f-695af781561b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whether you're looking to enhance your dog's current diet, add variety to mealtime, or simply stock up on high-value training rewards, this bundle gives you everything you need in one complete package"
+      "raw_preview": "and maintain Almo Nature's commitment to premium quality. The grain-free formulations work together to support cats with sensitive stomachs, while the high moisture content in both products helps prom"
     },
     {
       "product_ids": [
@@ -1032,66 +52,59 @@
     },
     {
       "product_ids": [
-        "897e4a59-d215-4401-9094-18ca3a2d197d",
-        "d2e54f28-7b3b-42fe-8640-e31fb03acc30",
-        "2bd7a935-07d6-4d34-a291-a06a36ed1f4e",
-        "0c47dc3e-245b-4584-8910-8414ae2ff683",
-        "6ea074db-a465-4e62-bb50-83de3be0b4fa",
-        "4bcd367c-601f-4165-9704-cc602291a159",
-        "8947a26e-aa2e-4311-b359-4cc21825c588",
-        "ef40979f-f4da-4243-8e53-557b0f1073cf"
+        "3703f47d-8c65-4ca2-9fc2-e3985a9a6ad0"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": ", it helps maintain overall well-being while being gentle on the stomach. The included grooming brush is designed for effortless coat maintenance, featuring an ergonomic handle for a comfortable grip "
+      "raw_preview": "Jinx Kibble Sauce Beef Bone Broth Wet Dog Food Topper, 12-fl oz bottle\u2014Made with high-quality beef and savory bone broth for a mouthwatering boost of flavor.Jinx Kibble Sauce Beef Bone Broth Wet Dog F"
     },
     {
       "product_ids": [
-        "8c0cdaee-a4cb-4455-a373-cafab66e560a"
+        "9f4b8aa2-c06f-4162-8546-0124fba21247"
       ],
       "status": "contaminated",
-      "raw_preview": "to help provide your puppy with the best start in life Wagg Complete Puppy with Chicken & Veg provides a nutritious, balanced meal for a healthy, happy puppy. We have included vitamins A, C & E and ci"
+      "raw_preview": "Temptations Classic Tasty Chicken Flavor Soft & Crunchy Cat Treats, 16-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These uni"
     },
     {
       "product_ids": [
-        "5e772cfc-362e-44ba-a299-3a432c62acef"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken hearts\u3001 Cod\u3001Chicken\u3001 Beef Liver \u3001Duck \u3001 Chicken Liver\u3001 Salmon"
-    },
-    {
-      "product_ids": [
-        "a7d73548-cbf4-45c5-9d9b-b9e9111d413d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Made With Real Ingredients: This wet dog food topper is made with 4 key ingredients, providing your dog with a premium meal topper that is easy to digest, but hard for your dog to resist"
-    },
-    {
-      "product_ids": [
-        "e2088903-a955-4274-a79d-469705ca993f"
+        "f516b501-54c0-459c-914f-7d1a64b932f0"
       ],
       "status": "contaminated",
-      "raw_preview": "into the paw print mold and place it in the oven or freezer. Even kitchen novices can easily use silicone treat molds for dogs. After use, you can hand wash the dog treat silicone baking molds directl"
+      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
     },
     {
       "product_ids": [
-        "3449e3d9-bffd-4f25-a497-547b57028d3a"
+        "0b5b7052-48ac-484e-9751-761cf8e229c0"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Potato Starch; Glycerin; Natural Flavor; Dried Turkey; Calcium Carbonate; Powdered Cellulose; Lecithin"
+      "raw_preview": "Questions & AnswersAsk a Question 5 Customer QuestionsAre there 24 cans of each flavor in this bundle?Answer by Chewy \u2022 May 30, 2021This bundle contains 24 cans of the Monterey Medley Grain-Free Natur"
     },
     {
       "product_ids": [
-        "687aaf18-d5d4-492e-b4c1-61d89a92bdef"
+        "cc1f248a-4b23-4e30-bb54-4aeb40002727"
       ],
       "status": "contaminated",
-      "raw_preview": ", ensuring that every bite is clean and healthy for your furry friend. By using this silicone dog treat mold, you can create pollution-free treats tailored to your pet's taste. Keep changing the food "
+      "raw_preview": "Nothing but good, wholesome nutrition here! Each purchase comes with Rachael Ray Nutrish Just 6 Natural Lamb Meal & Brown Rice Limited Ingredient Recipe Dry Dog Food, 28-lb bag & Rachael Ray Nutrish S"
     },
     {
       "product_ids": [
-        "29a42c91-7913-4d47-ac0b-cccd694b8a2a"
+        "e471e538-e84a-447f-917f-1a6a07dd69a3"
+      ],
+      "status": "contaminated",
+      "raw_preview": "This food surprised me with the great reaction Bandit had! He doesn't typically care much for freeze-dried food. However, after the first cautious sniff, he ate up both a bowl of Kismet and a Nug for "
+    },
+    {
+      "product_ids": [
+        "7499d127-9029-47ca-bd76-386fe5f7d71d"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Fresh Beef; Cheese; Composite Cowhide Rods; Vegetable Protein Powder; Potassium Sorbate"
+      "raw_preview": ", these treats stand out as a healthy choice for your dog, making them a great dry dog treat that supports overall health and wellness. Each small batch of treats undergoes rigorous quality control an"
+    },
+    {
+      "product_ids": [
+        "7f3a4a7f-3d4d-446a-81bc-328f6e62d3a0"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
     },
     {
       "product_ids": [
@@ -1102,52 +115,17 @@
     },
     {
       "product_ids": [
-        "81f21dd7-e2f0-4d64-97b3-0f141a20fe8f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Roast Beef: Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Rice Flour; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Natural Roast Beef Flavor; Dried Chicken; Natura"
-    },
-    {
-      "product_ids": [
-        "20c70297-b541-4b21-b5b2-63d483a42c1b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Pea Protein; Natural Flavor; Powdered Cellulose; Lecithin; Dried Chicken; Calcium Carbonate; Apple; Potato Starch; Oat Hulls; Fish Oil; Lamb Meal; Natural Bacon Flavor"
-    },
-    {
-      "product_ids": [
-        "bbf970e6-c87a-42ed-a6a5-764a0075e205"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Roast Beef: Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Rice Flour; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Natural Roast Beef Flavor; Dried Chicken; Natura"
-    },
-    {
-      "product_ids": [
-        "07f65a4b-d714-4dff-813e-ae5923bd235d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Natural Flavor; Dried Chicken; Powdered Cellulose; Lecithin; Natural Bacon Flavor"
-    },
-    {
-      "product_ids": [
-        "0fac1451-48a0-4a73-88bb-30b437884a34"
+        "8c0cdaee-a4cb-4455-a373-cafab66e560a"
       ],
       "status": "contaminated",
-      "raw_preview": ", including honey and spirulina. These dog dental CHEWS contain no artificial flavors, colors or preservatives. Dogs love the chewy texture, and our mini dog CHEWS have the delicious chicken flavor he"
+      "raw_preview": "to help provide your puppy with the best start in life Wagg Complete Puppy with Chicken & Veg provides a nutritious, balanced meal for a healthy, happy puppy. We have included vitamins A, C & E and ci"
     },
     {
       "product_ids": [
-        "88889e50-25e0-4d70-8755-23c826080c9a"
+        "09b50080-78f3-442a-977f-3cda259ca452"
       ],
       "status": "contaminated",
-      "raw_preview": ", protein variety, and uncompromising quality. This thoughtfully paired duo combines two of our most popular single-ingredient treats to deliver natural flavor, high protein, and rotational nutrition "
-    },
-    {
-      "product_ids": [
-        "ff63305c-40f1-4dfd-8fc6-eb5397204bda"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "(6 Pack) Everlasting Treat Medium Chicken Made In The Usa"
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similar500+ bought since yesterday Pure Balance Salmon Puree Gourmet Cat Treats, 0.5 oz, 4 Count $1.82Options from$182\u2013 $692Pure Balance Salmon"
     },
     {
       "product_ids": [
@@ -1155,6 +133,111 @@
       ],
       "status": "contaminated",
       "raw_preview": ". They are a digestible and rawhide-free alternative. The roasted twists also provide a tasty, low-fat treat made from pork skin. Like the rolls, these twists are more digestible than rawhide and cont"
+    },
+    {
+      "product_ids": [
+        "4bf3e2c0-4fd7-435b-9184-15aa24b0d480"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similarSpecial Kitty Ocean Whitefish and Tuna Wet Cat Food, 13 oz Can $1.22Options from$122\u2013 $1391Special Kitty Ocean Whitefish and Tuna Wet Ca"
+    },
+    {
+      "product_ids": [
+        "ebb7d9a9-82c6-4da3-a8ca-195afbc1795b"
+      ],
+      "status": "contaminated",
+      "raw_preview": "For the best in freeze-dried dog treats look no further than Chewy. Search top freeze-dried dog treat brands and flavors online with ease on Chewy. Freeze-dried dog treats are the latest dog food craz"
+    },
+    {
+      "product_ids": [
+        "a008d70e-5229-414c-9fbd-04ca8d99f5fe"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+    },
+    {
+      "product_ids": [
+        "abfabaaf-767d-44b3-8d1f-a33b3503b9e4"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "ORIJEN Original Chunks & Shreds Variety Pack Duck & Liver Wet Cat Food, 3-oz can, case of 12\u2014Promotes a healthy coat and skin with naturally occurring omega-3 and -6 fatty acids.ORIJEN Original Chunks"
+    },
+    {
+      "product_ids": [
+        "0ab764c8-a847-4ac4-994e-33a14c3d2467"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Beef Farm-Raised Pork Pork Meal Barley Oatmeal Ground Flaxseed Natural Pork Flavor Beef Liver Pork Fat (preserved with mixed tocopherols) Tomato Pomace Beef Kidney Grass-Fed Lamb Bison Free-Range Veni"
+    },
+    {
+      "product_ids": [
+        "5f531fd6-7094-4503-b850-0833ff2a131b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Natural Balance Limited Ingredient Diets Mini Rewards Chicken Formula Dog Treats, 5.3-oz jar \u2014 Turn anytime into treat time with the Natural Balance Limited Ingredient Diets Mini Rewards Soft & Chewy "
+    },
+    {
+      "product_ids": [
+        "ade7a4df-1c8a-4ad2-b312-d7dabc571d22"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Nulo Freestyle Lamb & Lentils Recipe Grain-Free Canned Dog Food, 13-oz, case of 12\u2014Dogs love this grain-free lamb & lentils recipe with a rich protein comibination of lamb, turkey and salmon complemen"
+    },
+    {
+      "product_ids": [
+        "a7d73548-cbf4-45c5-9d9b-b9e9111d413d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Made With Real Ingredients: This wet dog food topper is made with 4 key ingredients, providing your dog with a premium meal topper that is easy to digest, but hard for your dog to resist"
+    },
+    {
+      "product_ids": [
+        "5d7980ea-377f-4126-b106-d003c6178dc1"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken (Source Of Methionine-Cycstine, Chicken Meal, Tapioca Starch, Chicken Fat (Preserved With Mixed Tocopherols), Yeast Culture, Pumpkin Seed Flour, Turkey Meal, Duck Meal, Spray Dried Chicken Liv"
+    },
+    {
+      "product_ids": [
+        "ff852475-f6e9-4296-a7e5-cb5910ff7ccf"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Tuna Fillet (A Source Of Glucosamine), Fish Broth, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
+    },
+    {
+      "product_ids": [
+        "b3135c6d-8bc2-49d1-925f-695af781561b"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Whether you're looking to enhance your dog's current diet, add variety to mealtime, or simply stock up on high-value training rewards, this bundle gives you everything you need in one complete package"
+    },
+    {
+      "product_ids": [
+        "23fde7f1-5a16-48c3-a3a9-59e22facb5eb"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Turkey Meal (A Natural Source of Glucosamine and Chondroitin), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples,"
+    },
+    {
+      "product_ids": [
+        "1a7d3976-8205-4cf9-bb1d-96b46552371d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Flavor: Unavailable with 12.5-oz can, case of 24 BeefSee available optionsUnavailable with 12.5-oz can, case of 24 Beef & ChickenSee available optionsUnavailable with 12.5-oz can, case of 24 ChickenSe"
+    },
+    {
+      "product_ids": [
+        "5759a623-1a8e-4fad-a61f-50a2b6725b95"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PetAg KMR Kitten Milk Replacer Powder - 6 oz - Powdered Kitten Formula with Prebiotics, Probiotics & Vitamins for Kittens Newborn to Six Weeks Old - Easy to Digest"
+    },
+    {
+      "product_ids": [
+        "8d2aa24b-9b8f-4899-866e-3611ba6647c8"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Give your best buddy a hearty choice of meals with Pedigree Chopped Ground Dinner Variety Pack with Chicken, Filet Mignon & Beef + Variety Pack with Chicken, Beef & Bacon Wet Dog Food. Made with a gro"
     },
     {
       "product_ids": [
@@ -1166,59 +249,10 @@
     },
     {
       "product_ids": [
-        "d345e6e6-7fa2-4892-8dbb-a0dd30897c14"
-      ],
-      "status": "contaminated",
-      "raw_preview": "as sources of color. In short, Milk-Bone MaroSnacks dog snacks are delicious treats you can feel good about giving. Order now to give your dog the simple, genuine joy that your dog gives you every day"
-    },
-    {
-      "product_ids": [
-        "a7565700-ab86-4ffc-be96-0db7871724c0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "to support healthy digestion, strong teeth and gums, vibrant skin and coat, and stamina. The wet food pouches are cooked in small batches with only the finest ingredients for unmatched nutrition and t"
-    },
-    {
-      "product_ids": [
-        "6b66aa21-f71a-40f8-aace-81cdd0e6c89b"
+        "e2ac33cd-41af-4ee7-ac90-bdd6507e8135"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "and maintain Almo Nature's commitment to premium quality. The grain-free formulations work together to support cats with sensitive stomachs, while the high moisture content in both products helps prom"
-    },
-    {
-      "product_ids": [
-        "b0d6cab3-7e90-483a-b688-698739812802"
-      ],
-      "status": "contaminated",
-      "raw_preview": "you care about and the tastes cats love. Delicate sauces add flavor and moisture to every tender bite of the three adult cat food entrees, giving your cat an exciting sensory experience along with hig"
-    },
-    {
-      "product_ids": [
-        "99b31254-c86d-4986-9888-03cbe69ae3e2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Breast Bone Broth (Chicken Breast, Chicken Broth); Fish Broth with Tuna Fillet Bone Broth (Tuna Fillet, Fish Broth); Fish Bone Broth With Salmon Topper"
-    },
-    {
-      "product_ids": [
-        "5759a623-1a8e-4fad-a61f-50a2b6725b95"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PetAg KMR Kitten Milk Replacer Powder - 6 oz - Powdered Kitten Formula with Prebiotics, Probiotics & Vitamins for Kittens Newborn to Six Weeks Old - Easy to Digest"
-    },
-    {
-      "product_ids": [
-        "30c3488b-2586-4712-b955-1fe9626bb690"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Pet-Ag Goat's Milk KMR Kitten Milk Replacer Liquid - 11 oz - Liquid Kitten Formula with Vitamins, Minerals & Trace Nutrients for Kittens Newborn to Six Weeks Old - Easy to Digest"
-    },
-    {
-      "product_ids": [
-        "1f559060-2f65-4850-88f3-5be1366fb8c4"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "with Chicken & Salmon (Natural Chicken Broth, Chicken, Salmon, Modified Tapioca Starch, Natural Flavor, Guar Gum, Tuna Oil, Salmon Oil, Vitamin E(A-Tocopherol Acetate), Taurine, Green Tea Extract), wi"
+      "raw_preview": "Chicken Breast Recipe (Chicken Breast, Chicken Broth, Rice); Tuna Fillet Recipe (Tuna Fillet, Fish Broth, Rice); Ocean Fish Recipe (Mackerel, Tuna Fillet, Fish Broth, Rice)"
     },
     {
       "product_ids": [
@@ -1229,24 +263,73 @@
     },
     {
       "product_ids": [
-        "39e52816-38eb-4027-9188-75fc2fcbde88"
+        "1f559060-2f65-4850-88f3-5be1366fb8c4"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "100% freeze dried chicken and catnip"
+      "raw_preview": "with Chicken & Salmon (Natural Chicken Broth, Chicken, Salmon, Modified Tapioca Starch, Natural Flavor, Guar Gum, Tuna Oil, Salmon Oil, Vitamin E(A-Tocopherol Acetate), Taurine, Green Tea Extract), wi"
     },
     {
       "product_ids": [
-        "58e89470-3565-4f68-88c4-110a83945801"
+        "c1333326-caf4-41b9-91e2-de1cd46a4db8"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "PureBites Tuna Freeze Dried Cat Treats, 0.88Oz | 25G - Value Size"
+      "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
     },
     {
       "product_ids": [
-        "7499d127-9029-47ca-bd76-386fe5f7d71d"
+        "30c3488b-2586-4712-b955-1fe9626bb690"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": ", these treats stand out as a healthy choice for your dog, making them a great dry dog treat that supports overall health and wellness. Each small batch of treats undergoes rigorous quality control an"
+      "raw_preview": "Pet-Ag Goat's Milk KMR Kitten Milk Replacer Liquid - 11 oz - Liquid Kitten Formula with Vitamins, Minerals & Trace Nutrients for Kittens Newborn to Six Weeks Old - Easy to Digest"
+    },
+    {
+      "product_ids": [
+        "dafb8730-ce51-4efa-bcf4-a61fc4bd228f"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Cloud Star Chewy Tricky Trainers Liver Flavor Dog Treats, 14-oz bag\u2014Who says you can't teach an old dog new tricks? Young or old, dogs will flip for the amazing taste of Cloud Star's Tricky Trainers. "
+    },
+    {
+      "product_ids": [
+        "79077497-12d6-426e-8022-f70931970126"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Good 'n' Fun Triple Flavor Kabobs Chicken, Duck & Chicken Liver Dog Chews, 18 count\u2014Good 'n' Fun has created the ultimate rawhide treat with their Triple Flavor Kabobs Chicken, Duck & Chicken Liver Do"
+    },
+    {
+      "product_ids": [
+        "e1f1cf68-2172-41fb-80e6-512534ad9cef"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Help your furry friend enjoy his day! Each purchase comes with Rachael Ray Nutrish Natural Chicken & Veggies Recipe Dry Dog Food, 40-lb bag & Rachael Ray Nutrish Soup Bones Chicken & Veggies Flavor Do"
+    },
+    {
+      "product_ids": [
+        "0fac1451-48a0-4a73-88bb-30b437884a34"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", including honey and spirulina. These dog dental CHEWS contain no artificial flavors, colors or preservatives. Dogs love the chewy texture, and our mini dog CHEWS have the delicious chicken flavor he"
+    },
+    {
+      "product_ids": [
+        "87e56826-b1a7-4fdb-92fa-2b7b4ccc0f91"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+    },
+    {
+      "product_ids": [
+        "5ed24069-cb89-4ab2-aa94-0198c8695862"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "The Tiki Cat Queen Emma Luau Variety Pack Grain-Free Canned Cat Food calories per recipe is as follows: Tilapia 83 calories per can, Napili Luau Wild Salmon & Chicken 71calories per can, Hanalei Luau "
+    },
+    {
+      "product_ids": [
+        "c3dfb3b6-5737-471c-a081-6bc66bf35682"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), wheat flour, whole grain ground corn, rice bran, grain sorghum, dried plain beet pulp, chicken fat (preserved with mixed tocopherols), egg product, d"
     },
     {
       "product_ids": [
@@ -1257,45 +340,10 @@
     },
     {
       "product_ids": [
-        "e2ac33cd-41af-4ee7-ac90-bdd6507e8135"
+        "5cb05e56-e509-4c56-922e-d1edd69eb404"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Chicken Breast Recipe (Chicken Breast, Chicken Broth, Rice); Tuna Fillet Recipe (Tuna Fillet, Fish Broth, Rice); Ocean Fish Recipe (Mackerel, Tuna Fillet, Fish Broth, Rice)"
-    },
-    {
-      "product_ids": [
-        "59b83604-a21f-4774-b9c6-8dda0cb9b164"
-      ],
-      "status": "contaminated",
-      "raw_preview": "PRIOR to usage. This is a non-perishable food product. See outside of package for the exact \"best by date\", as date will vary based on date of purchase. Note that a \"best by date\" is NOT an \"expiratio"
-    },
-    {
-      "product_ids": [
-        "479585e4-3d9e-4393-809b-6d1a25627c33"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ol' Roy's Lamb \\u0026 Rice's \\u0026 Chicken \\u0026 Rice's"
-    },
-    {
-      "product_ids": [
-        "2feab907-57e2-4b5c-a395-a94af56eb34c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken with ground bone | Chicken Heart | Lamb Green Tripe | Chicken Liver | Broccoli | Carrot | Apple | Kale | Kelp | New Zealand Green Mussel | Honey | Rosemary | Coconut Oil | Hoki Oil | Salt | Ch"
-    },
-    {
-      "product_ids": [
-        "932cf0b5-1db4-44a2-a5fc-c3b95ad9cd4b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Pork. beef meal. sweet potato. peas. potatoes. pea starch. egg product. dried yeast. chicken fat. lamb meal. tapioca. beef. lamb. natural flavor. beet pulp. flaxseed. salmon oil. salt. potassium chlor"
-    },
-    {
-      "product_ids": [
-        "3605e172-3421-405b-a13b-7dd58a784259"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef | Beef Heart | Beef Tripe | Beef Liver | Beef Kidney | Ground Beef Bone | Broccoli | Carrot | Apple | Kale | Kelp | New Zealand Green Mussel | Honey | Rosemary | Coconut Oil | Hoki Oil | Salt | C"
+      "raw_preview": "Buddy Biscuits Softies with Grilled Beef Grain-Free Soft & Chewy Dog Treats, 5-oz bag\u2014Each snack is oven-baked for a bold and drool-worthy flavor.Buddy Biscuits Softies with Grilled Beef Grain-Free So"
     },
     {
       "product_ids": [
@@ -1306,6 +354,13 @@
     },
     {
       "product_ids": [
+        "13230176-c584-4c64-b112-20896461da9b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+    },
+    {
+      "product_ids": [
         "59a30ad1-87c5-4901-b9a6-7e3a86208904"
       ],
       "status": "contaminated",
@@ -1313,10 +368,81 @@
     },
     {
       "product_ids": [
-        "09b50080-78f3-442a-977f-3cda259ca452"
+        "770ade5b-a1d4-4500-aa8d-3f0821ae12c8"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Made in the USA.Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Dog treats for training and everyday treating.Pup-Peroni Original Bacon "
+    },
+    {
+      "product_ids": [
+        "e2088903-a955-4274-a79d-469705ca993f"
       ],
       "status": "contaminated",
-      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similar500+ bought since yesterday Pure Balance Salmon Puree Gourmet Cat Treats, 0.5 oz, 4 Count $1.82Options from$182\u2013 $692Pure Balance Salmon"
+      "raw_preview": "into the paw print mold and place it in the oven or freezer. Even kitchen novices can easily use silicone treat molds for dogs. After use, you can hand wash the dog treat silicone baking molds directl"
+    },
+    {
+      "product_ids": [
+        "ad15015e-5151-4d98-a38b-da7999d33342"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Breast Dinner (Chicken, Chicken Broth, Natural Flavor, Sunflower Oil, Xanthan Gum, Locust Bean Gum, Tricalcium Phosphate, Potato Starch, Choline Chloride, Taurine, Zinc Sulfate, Ferrous Sulfat"
+    },
+    {
+      "product_ids": [
+        "fa07d996-8cbc-4f50-9fdd-422a2aba2add"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
+    },
+    {
+      "product_ids": [
+        "d345e6e6-7fa2-4892-8dbb-a0dd30897c14"
+      ],
+      "status": "contaminated",
+      "raw_preview": "as sources of color. In short, Milk-Bone MaroSnacks dog snacks are delicious treats you can feel good about giving. Order now to give your dog the simple, genuine joy that your dog gives you every day"
+    },
+    {
+      "product_ids": [
+        "0151eca3-84a3-4a38-a0f8-b31e1e8420f7"
+      ],
+      "status": "contaminated",
+      "raw_preview": "The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food, 10.5-oz, case of 6 \u2014 The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food is a doggone easy wa"
+    },
+    {
+      "product_ids": [
+        "dbc61c26-5286-4721-b4e5-85b21535e484",
+        "9d12c3f2-2fd8-47fb-a297-6602588ee44b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Every Inaba product is made with yummy, high-quality ingredients including farm-raised chicken and/or wild-caught tuna.Each delicious, creamy Churu tube contains 91% moisture and only six calories, wh"
+    },
+    {
+      "product_ids": [
+        "b9cd5a94-8326-4378-82e8-05f580beb76a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls Dog Chews, 2 count\u2014Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls treat pups to a delicious combination of three favo"
+    },
+    {
+      "product_ids": [
+        "6b1b13e6-4c3d-4fa5-9ef5-b2f277b1bd9a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
+    },
+    {
+      "product_ids": [
+        "15ed778d-9e83-46ec-93ae-c93efab81b44"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+    },
+    {
+      "product_ids": [
+        "80602ba8-90ad-4660-a5d3-bf5a9deecc95"
+      ],
+      "status": "contaminated",
+      "raw_preview": "without plastics or polymers. They are edible and digestible with an irresistible taste dogs love. Raised dental ridges safely scrub the teeth clean. Can be used as a snack anytime or inside the Everl"
     },
     {
       "product_ids": [
@@ -1327,49 +453,128 @@
     },
     {
       "product_ids": [
-        "45162885-9cb7-4db1-a148-3f6f9fd513ba"
+        "d1ead04e-13b6-4fc9-b99c-2e8995dd7eae"
       ],
-      "status": "contaminated",
-      "raw_preview": "About this itemProduct detailsDelight your cat with a flavorful rotation of meals from the Special Kitty Surf & Turf Variety Pack Pate. This 40-count collection features four delicious recipes: chicke"
+      "status": "no_valid_tokens",
+      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
     },
     {
       "product_ids": [
-        "4bf3e2c0-4fd7-435b-9184-15aa24b0d480"
+        "6449b340-3317-4814-986f-c06202c24f20"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Questions & AnswersAsk a Question 4 Customer Questionswhat is the phosphorus levelAnswer by Chewy \u2022 Aug 12, 2022The Dry Matter Phosphorus levels in these options are: Beef: 4.20% Chicken: 0.47% Duck a"
+    },
+    {
+      "product_ids": [
+        "99b31254-c86d-4986-9888-03cbe69ae3e2"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Breast Bone Broth (Chicken Breast, Chicken Broth); Fish Broth with Tuna Fillet Bone Broth (Tuna Fillet, Fish Broth); Fish Bone Broth With Salmon Topper"
+    },
+    {
+      "product_ids": [
+        "395c54ab-4ccf-4806-adc8-af3ca24a982a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Solid Gold Flavorful Feast Real Tuna & Sardine Grain-Free Gravy Pate Wet Cat Food, 3-oz can, case of 3\u2014Refine your furry friend's palate with a bowl of Solid Gold Flavorful Feast in Gravy with Real Tu"
+    },
+    {
+      "product_ids": [
+        "a7565700-ab86-4ffc-be96-0db7871724c0"
       ],
       "status": "contaminated",
-      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similarSpecial Kitty Ocean Whitefish and Tuna Wet Cat Food, 13 oz Can $1.22Options from$122\u2013 $1391Special Kitty Ocean Whitefish and Tuna Wet Ca"
+      "raw_preview": "to support healthy digestion, strong teeth and gums, vibrant skin and coat, and stamina. The wet food pouches are cooked in small batches with only the finest ingredients for unmatched nutrition and t"
+    },
+    {
+      "product_ids": [
+        "def9b093-a517-4439-8ada-cace620ee349"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Salmon Meal (A Natural Source of Omega-3 Fatty Acids), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples, Blueber"
+    },
+    {
+      "product_ids": [
+        "59b83604-a21f-4774-b9c6-8dda0cb9b164"
+      ],
+      "status": "contaminated",
+      "raw_preview": "PRIOR to usage. This is a non-perishable food product. See outside of package for the exact \"best by date\", as date will vary based on date of purchase. Note that a \"best by date\" is NOT an \"expiratio"
+    },
+    {
+      "product_ids": [
+        "687aaf18-d5d4-492e-b4c1-61d89a92bdef"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", ensuring that every bite is clean and healthy for your furry friend. By using this silicone dog treat mold, you can create pollution-free treats tailored to your pet's taste. Keep changing the food "
+    },
+    {
+      "product_ids": [
+        "ec60094f-3117-4db2-aff4-7f158e0621c0"
+      ],
+      "status": "contaminated",
+      "raw_preview": "\"Temptations Seafood Medley Flavor Adult Dry Cat Food, 13.5-lb bag\u2014Your kitty will be meowing with delight when you serve her Temptations Seafood Medley Flavor Adult Dry Cat Food. This purr-fect meal "
+    },
+    {
+      "product_ids": [
+        "b0d6cab3-7e90-483a-b688-698739812802"
+      ],
+      "status": "contaminated",
+      "raw_preview": "you care about and the tastes cats love. Delicate sauces add flavor and moisture to every tender bite of the three adult cat food entrees, giving your cat an exciting sensory experience along with hig"
+    },
+    {
+      "product_ids": [
+        "86a41258-bf1c-4912-b9b3-6b2ded4bbcaa"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, rice bran, chicken fat (preserved with mixed tocopherols), meat meal (a source of glucosamine), dried yeast, dr"
+    },
+    {
+      "product_ids": [
+        "88889e50-25e0-4d70-8755-23c826080c9a"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", protein variety, and uncompromising quality. This thoughtfully paired duo combines two of our most popular single-ingredient treats to deliver natural flavor, high protein, and rotational nutrition "
+    },
+    {
+      "product_ids": [
+        "3e137ba3-cc1b-401c-b858-18e9f1329318"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken (A Source Of Glucosamine & Chondroitin Sulphate), Chicken Broth, Chicken Liver, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
+    },
+    {
+      "product_ids": [
+        "891688d1-aa97-422e-93b2-a3d94fcde89d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Mealtime is always a highlight of a hound's day, especially when you serve Pedigree Choice Cuts in Gravy Variety Pack + Chopped Ground Dinner Variety Pack Adult Wet Dog Food Pouches! Together, these v"
     }
   ],
   "dict_insert_errors": [],
   "junction_insert_errors": [],
   "summary": {
-    "products_processed": 14817,
-    "unique_formulas": 12289,
-    "total_positions": 414157,
-    "matched_positions": 407642,
-    "match_rate_pct": 98.4,
-    "new_ingredients_found": 3256,
-    "new_ingredients_inserted": 3256,
-    "pi_rows_inserted": 414105,
-    "pi_dupes_skipped": 52,
+    "products_processed": 86,
+    "unique_formulas": 77,
+    "total_positions": 0,
+    "matched_positions": 0,
+    "match_rate_pct": 0,
+    "new_ingredients_found": 0,
+    "new_ingredients_inserted": 0,
+    "pi_rows_inserted": 0,
+    "pi_dupes_skipped": 0,
     "pi_errors": 0,
     "status_breakdown": {
-      "clean": 11956,
-      "truncated": 301,
-      "contaminated": 32
+      "clean": 36,
+      "contaminated": 31,
+      "truncated": 10
     },
-    "match_tiers": {
-      "fuzzy": 16429,
-      "exact": 339931,
-      "new": 6110,
-      "empty": 26
-    },
+    "match_tiers": {},
     "v2_stats": {
-      "variety_packs_split": 689,
-      "total_recipes": 1983,
-      "tokens_rejected": 8359,
-      "conjunctions_stripped": 915,
-      "preservatives_extracted": 3395,
+      "variety_packs_split": 0,
+      "total_recipes": 0,
+      "tokens_rejected": 428,
+      "conjunctions_stripped": 15,
+      "preservatives_extracted": 6,
       "space_delimited_fixed": 0
     }
   }

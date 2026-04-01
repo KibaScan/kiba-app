@@ -1,7 +1,7 @@
-# Project Status — Last updated 2026-03-31 (session 7)
+# Project Status — Last updated 2026-03-31 (session 8)
 
 ## Active Milestone
-**M6 — Alternatives Engine** (compare flow, safe swaps, weight management, BCS reference, vet report PDF)
+**M7 — 7-Day Safe Switch Guide** (transition management, tummy check logging, daily mix ratios)
 
 ## Last Completed
 **M5 — Pantry + Appointments + HomeScreen v2** (March 26, 2026, branch `m5-complete`)
@@ -29,14 +29,15 @@
 - **Price backfill** — 15,781 products updated with price + product_size_kg from v7 dataset. 74.6% of daily food now has price data for Great Value slots.
 - **Affiliate link infrastructure (dormant)** — `AffiliateBuyButtons` component on ResultScreen (between PortionCard and Compare button). PantryCard "Reorder" button on low-stock items. `affiliateService.ts` generates Chewy/Amazon URLs from `source_url`/`chewy_sku`/`asin`/`affiliate_links` JSONB. D-020 compliant (zero scoring imports, buttons hidden when score < 50). D-053 compliant (Chewy shows estimated price, Amazon hides price). Config: `enabled: false` — flip on after affiliate program enrollment.
 - **Condition-aware feeding frequency** — auto-populate `feedings_per_day` based on pet health conditions when adding to pantry.
+- **Safe Switch Guide (M7)** — guided 7-day (dogs) / 10-day (cats) food transition with daily mix ratios (75/25 → 50/50 → 25/75 → 100%). `SafeSwitchSetupScreen` (preview + start), `SafeSwitchDetailScreen` (daily command center with proportion bar, tummy check pills, vertical timeline). `SafeSwitchBanner` on PantryScreen (day ring + mix ratio) and HomeScreen (compact status card). Entry points: "Switch to this" on Safe Swap cards, "Find a replacement" on low-scoring (<60%) daily food PantryCards. Daily notifications (9 AM mix reminder, 7 PM tummy check nudge). Upset advisory (2+ consecutive "upset" logs → informational card, D-095 compliant, no auto-action). One active switch per pet enforced at DB level (partial unique index). Free feature (no paywall gate). Migration 025.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors
 
 ## Numbers
-- **Tests:** 1249 passing / 57 suites
+- **Tests:** 1278 passing / 58 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 24 (001–024)
+- **Migrations:** 25 (001–025)
 - **Products:** 19,058
 
 ## Regression Anchors
@@ -45,9 +46,9 @@
 - Pure Balance + cardiac dog = 0 (DCM zero-out)
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
-## Up Next (M6)
+## Up Next
 - Enroll in Chewy Affiliate Partners + Amazon Associates → flip `affiliateConfig.ts` enabled: true
-- Safe Swap affiliate buy pills (deferred — separate PR, requires adding affiliate fields to candidate query)
+- M8: Kiba Index / Taste Test integration at Safe Switch completion
 
 ## Optimization Status
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
@@ -56,57 +57,47 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-03-31 (session 7)
-- **Accomplished:** Batch scoring optimization (Approach F), supplemental data fix, affiliate link integration (dormant).
-  - **Batch scoring — Approach F (Delta + Two-Phase Edge):**
-    - `CANDIDATE_POOL_SIZE` 50 → 300 in `safeSwapService.ts`. Exclusion queries (`fetchAllergenExclusions`, `fetchSeverityExclusions`, `fetchCardiacDcmExclusions`, `tagFishBased`) chunked at 100 IDs via `chunkedProductQuery()` helper to prevent 414 URI Too Long.
-    - `ORDER BY updated_at DESC` added to product queries in both `batchScoreOnDevice.ts` and Edge Function — newest products scored first instead of random disk order.
-    - **Delta scoring:** Queries `MAX(product_updated_at)` from cache + cache count + total product count. If cache is "mature" (≥80% of category products scored), only fetches new/updated products. Otherwise full batch to heal incomplete cache.
-    - **Asymmetric limits:** Edge Function limit raised to 1000 (from 200). Client fallback stays at 200. `batchScoreHybrid()` sends `limit_size: 1000` to Edge Function.
-    - **Two-Phase Edge Function:** Phase 1 scores first 200 products synchronously, returns response immediately. Phase 2 via `EdgeRuntime.waitUntil()` scores remaining ~800 in 200-product chunks with 50ms GC yields. Extracted `fetchIngredients()` and `scoreAndUpsert()` helpers to avoid duplication. Fresh Supabase client for Phase 2 background context.
-    - **Per-category rate limit:** Changed from per-pet to per-pet+category. Edge Function: `.eq('category', filterCategory)` on rate limit query. Client: in-memory key `${petId}:${category}`. Fixes bug where scoring treats blocked scoring dry food for 5 minutes.
-    - **Edge Function deployed to production** via `supabase functions deploy batch-score --no-verify-jwt`.
-    - `docs/references/batch-scoring-architecture.md` fully rewritten with Approach F documentation.
-  - **Supplemental filter hardening:**
-    - `fetchBasePool()`: Added `.eq('is_supplemental', isSupplemental)` to DB query (uses cached D-146 value). Changed client-side filter from `product.is_supplemental` (raw DB) to `row.is_supplemental` (cached, D-146 aware). Added `category = 'supplement'` guard. Added `isSupplementalByName()` runtime safety net.
-    - `supplementalClassifier.ts`: Added `/topping/i` and `/lickable/i` patterns. Did NOT add `bone broth` (false-positives on kibbles like "Merrick Bone Broth Coated" without ingredient count context).
-    - **Migration 024** (`024_fix_supplemental_data.sql`): 124 products set `is_supplemental = true` (by UPC via junction table, chewy_sku, and exact name match). 2 oils recategorized as `supplement`. AAFCO cleared for all supplemental products. Stale `pet_product_scores` cache rows deleted.
-  - **Affiliate link integration (dormant):**
-    - `src/config/affiliateConfig.ts` (NEW): Chewy + Amazon config, both `enabled: false`.
-    - `src/services/affiliateService.ts` (NEW): Link generation, zero scoring imports (D-020). Resolution: `affiliate_links` JSONB → `source_url` → `chewy_sku`/`asin`.
-    - `src/components/result/AffiliateBuyButtons.tsx` (NEW): Score < 50 → hidden (D-020). Chewy shows price, Amazon doesn't (D-053). Retailer brand accent borders.
-    - ResultScreen: `AffiliateBuyButtons` between PortionCard and Compare button.
-    - PantryCard: "Reorder on Chewy/Amazon" button on low-stock items (D-065).
-    - Product type: Added `source_url`, `chewy_sku`, `asin`, `walmart_id` to Product interface.
-    - 18 new tests in `affiliateService.test.ts`.
-  - **D-053 revised:** FTC disclosure moved from inline below buttons to About/Legal section (screen bloat).
+- **Date:** 2026-03-31 (session 8)
+- **Accomplished:** M7 Safe Switch Guide — full implementation (12 new files, 8 modified files, 29 new tests).
+  - **Database:** Migration 025 — `safe_switches` + `safe_switch_logs` tables, RLS policies, partial unique index (one active switch per pet)
+  - **Types:** `safeSwitch.ts` — `SafeSwitch`, `SafeSwitchLog`, `SafeSwitchCardData`, `TransitionDay`, `TummyCheck`
+  - **Pure helpers:** `safeSwitchHelpers.ts` — `getTransitionSchedule()`, `getMixForDay()`, `getCurrentDay()`, `getCupSplit()`, `shouldShowUpsetAdvisory()`, `getSpeciesNote()`, `getDefaultDuration()`
+  - **Service:** `safeSwitchService.ts` — CRUD (create/complete/cancel/pause/resume), `logTummyCheck()` upsert, `getActiveSwitchForPet()` composite loader
+  - **Notifications:** `safeSwitchNotificationScheduler.ts` — daily 9 AM mix reminder + 7 PM tummy check nudge, full-resync pattern
+  - **UI:** `SafeSwitchBanner.tsx` (full + compact modes), `SafeSwitchSetupScreen.tsx` (setup flow), `SafeSwitchDetailScreen.tsx` (daily command center)
+  - **Entry points:** "Switch to this" on Safe Swap cards (SafeSwapSection), "Find a replacement" on PantryCard (<60% daily food)
+  - **Navigation:** Registered SafeSwitchSetup + SafeSwitchDetail in PantryStack and HomeStack
+  - **Tests:** 29 new tests in `safeSwitchHelpers.test.ts`, `react-native-svg` Jest mock added
+  - **Bug fixes:** CTA button hidden behind tab bar (added 88px offset), hardcoded teal (#14B8A6) replaced with Colors.accent (#00B4D8)
 - **Files changed:**
-  - `src/services/batchScoreOnDevice.ts` (delta scoring, asymmetric limits, per-category rate limit)
-  - `supabase/functions/batch-score/index.ts` (full rewrite: two-phase, delta, extracted helpers)
-  - `src/services/safeSwapService.ts` (CANDIDATE_POOL_SIZE 300, chunked queries, supplemental filters)
-  - `src/utils/supplementalClassifier.ts` (topping + lickable patterns)
-  - `supabase/migrations/024_fix_supplemental_data.sql` (NEW)
-  - `docs/references/batch-scoring-architecture.md` (rewritten)
-  - `src/config/affiliateConfig.ts` (NEW)
-  - `src/services/affiliateService.ts` (NEW)
-  - `src/components/result/AffiliateBuyButtons.tsx` (NEW)
-  - `__tests__/services/affiliateService.test.ts` (NEW)
-  - `src/types/index.ts` (4 retailer fields on Product)
-  - `src/types/pantry.ts` (affiliate fields on PantryItemWithProduct)
-  - `src/screens/ResultScreen.tsx` (AffiliateBuyButtons insertion)
-  - `src/components/pantry/PantryCard.tsx` (reorder button)
-  - `DECISIONS.md` (D-053 revised)
-  - `docs/status/CURRENT.md`
+  - **Modified:**
+    - `package.json` (Jest moduleNameMapper for react-native-svg mock)
+    - `src/components/pantry/PantryCard.tsx` ("Find a replacement" link, onFindReplacement prop)
+    - `src/components/result/SafeSwapSection.tsx` ("Switch to this" CTA, onSwitchTo prop)
+    - `src/navigation/index.tsx` (SafeSwitchSetup + SafeSwitchDetail screen registration)
+    - `src/screens/HomeScreen.tsx` (compact SafeSwitchBanner insertion)
+    - `src/screens/PantryScreen.tsx` (full SafeSwitchBanner insertion, onFindReplacement wiring)
+    - `src/screens/ResultScreen.tsx` (onSwitchTo cross-tab navigation wiring)
+    - `src/types/navigation.ts` (SafeSwitchSetup + SafeSwitchDetail routes)
+  - **New:**
+    - `__mocks__/react-native-svg.js`
+    - `__tests__/utils/safeSwitchHelpers.test.ts`
+    - `src/components/pantry/SafeSwitchBanner.tsx`
+    - `src/screens/SafeSwitchSetupScreen.tsx`
+    - `src/screens/SafeSwitchDetailScreen.tsx`
+    - `src/services/safeSwitchNotificationScheduler.ts`
+    - `src/services/safeSwitchService.ts`
+    - `src/types/safeSwitch.ts`
+    - `src/utils/safeSwitchHelpers.ts`
+    - `supabase/migrations/025_safe_switches.sql`
 - **Not done yet:**
-  - Safe Swap affiliate buy pills (deferred — separate PR)
-  - Walmart affiliate (DB column exists, no enrollment)
-- **Next session should:** Run /boot. Enroll in affiliate programs when user base allows. Consider if M6 is complete enough to close.
+  - `safeSwitchService.test.ts` (deferred — needs Supabase mocking)
+  - 3 tech debt flags: hardcoded 2.4 cup split, late conflict validation UX, perpetual DAILY notification triggers
+- **Next session should:** Test full Safe Switch lifecycle on iOS simulator (create → log → complete/cancel). Address tech debt flags if time allows.
 - **Gotchas for next session:**
-  - **Affiliate buttons are dormant.** Both retailers have `enabled: false` in `src/config/affiliateConfig.ts`. Flip to `true` and replace placeholder tags after enrolling.
-  - **Edge Function is deployed with Approach F.** Two-phase scoring, delta mode, per-category rate limit. Secret is `SERVICE_ROLE_KEY` (not `SUPABASE_SERVICE_ROLE_KEY`).
-  - **`parse_ingredients.py` re-runs are slow** — script has no "only unparsed" filter, processes all 19k products. Already-parsed products hit duplicate key errors one-by-one. To fix specific products: delete their `product_ingredients` rows first, then run with `--limit`.
-  - `fetchGroupSafeSwaps()` still exists but is dead code (multi-pet moved to CompareScreen).
-  - `supplementalClassifier.ts` does NOT include `bone broth` — false-positive risk on kibbles without ingredient count context. Data patch handles bone broth products directly.
-  - Migration 024 ran on production. Cache invalidation deleted stale `pet_product_scores` rows for patched supplemental products.
-  - Prior session gotchas still apply: `life_stage_claim` is free text, price backfill had 20 transient errors, CompareScreen "Your Other Pets" resets on Product B change.
-- **D-053 revised this session:** FTC disclosure moved from inline to About/Legal section (screen bloat). No new decision numbers added.
+  - **Migration 025 applied.** `safe_switches` + `safe_switch_logs` tables live in production.
+  - **Hardcoded cup split.** `SafeSwitchDetailScreen.tsx` line 183 uses `totalCups = 2.4` placeholder. Needs wiring to actual `serving_size` from pantry assignments.
+  - **Late conflict validation.** Setup screen checks for existing active switch only on CTA press, not on mount. User can see full preview then get rejected.
+  - **Perpetual notifications.** Safe Switch notifications use `DAILY` trigger (repeats forever). If user abandons without completing/cancelling, notifications fire indefinitely. Fix: use explicit Date triggers for remaining N days.
+  - Prior session gotchas still apply: affiliate buttons dormant, Edge Function deployed with Approach F, `parse_ingredients.py` slow, `fetchGroupSafeSwaps()` is dead code, `life_stage_claim` is free text.
+- **Decision/scoring changes:** No new decisions. No scoring logic changed.

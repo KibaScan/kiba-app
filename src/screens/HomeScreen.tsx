@@ -31,6 +31,9 @@ import type { Appointment, AppointmentType } from '../types/appointment';
 import type { ScanHistoryItem } from '../types/scanHistory';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { SafeSwitchCardData } from '../types/safeSwitch';
+import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
+import { getActiveSwitchForPet } from '../services/safeSwitchService';
 
 type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
@@ -97,6 +100,7 @@ export default function HomeScreen() {
   const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
   const [appointmentLoading, setAppointmentLoading] = useState(false);
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
+  const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
   // ── Search state (local to HomeScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,6 +209,16 @@ export default function HomeScreen() {
             } catch {
               // Non-critical
             }
+          }
+
+          // Load active safe switch
+          try {
+            if (activePetId) {
+              const switchData = await getActiveSwitchForPet(activePetId);
+              if (!cancelled) setActiveSwitchData(switchData);
+            }
+          } catch {
+            // Non-critical
           }
         } catch {
           // Non-critical — skip silently
@@ -472,6 +486,15 @@ export default function HomeScreen() {
                 />
               </TouchableOpacity>
             ) : null}
+
+            {/* Safe Switch status (M7, compact) */}
+            {activeSwitchData && (
+              <SafeSwitchBanner
+                data={activeSwitchData}
+                onPress={() => navigation.navigate('SafeSwitchDetail', { switchId: activeSwitchData.switch.id })}
+                compact
+              />
+            )}
 
             {/* 6. Pantry nav row (slim) */}
             {activePet && (

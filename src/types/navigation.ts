@@ -28,6 +28,7 @@ export type HomeStackParamList = {
   RecallDetail: { productId: string };
   AppointmentDetail: { appointmentId: string };
   Compare: { productAId: string; productBId: string; petId: string };
+  SafeSwitchDetail: { switchId: string };
 };
 
 export type CommunityStackParamList = {
@@ -40,6 +41,8 @@ export type CommunityStackParamList = {
 export type PantryStackParamList = {
   PantryMain: undefined;
   EditPantryItem: { itemId: string };
+  SafeSwitchSetup: { oldProductId: string; newProductId: string; petId: string };
+  SafeSwitchDetail: { switchId: string };
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };

@@ -1,9 +1,9 @@
 {
-  "artifacts_merged": 1,
+  "artifacts_merged": 14,
   "junction_rows_remapped": 1,
-  "junk_deleted": 0,
-  "junk_junction_deleted": 0,
-  "severities_updated": 10,
+  "junk_deleted": 46,
+  "junk_junction_deleted": 104,
+  "severities_updated": 0,
   "clusters_assigned": 0,
   "errors": []
 }

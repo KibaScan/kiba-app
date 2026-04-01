@@ -33,6 +33,8 @@ interface PantryCardProps {
   onRestock: (itemId: string) => void;
   onRemove: (itemId: string) => void;
   onGaveTreat?: (itemId: string) => void;
+  /** M7: Navigate to ResultScreen to see Safe Swap alternatives. */
+  onFindReplacement?: (productId: string) => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -95,7 +97,7 @@ function getDepletionBarColor(pct: number): string {
 
 // ─── Component ──────────────────────────────────────────
 
-export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat }: PantryCardProps) {
+export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement }: PantryCardProps) {
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
@@ -290,6 +292,19 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           <Text style={styles.calorieText}>
             ~{item.calorie_context.daily_kcal} kcal/day of {item.calorie_context.target_kcal} kcal target
           </Text>
+        )}
+
+        {/* M7: Find a replacement — low-scoring daily food (score < 60) */}
+        {onFindReplacement && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
+         product.category === 'daily_food' && item.resolved_score != null && item.resolved_score < 60 && (
+          <TouchableOpacity
+            style={styles.findReplacementButton}
+            onPress={() => onFindReplacement(item.product_id)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
+            <Text style={styles.findReplacementText}>Find a replacement</Text>
+          </TouchableOpacity>
         )}
 
         {/* Gave a treat action */}
@@ -595,6 +610,23 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   reorderText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+
+  // M7: Find a replacement
+  findReplacementButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: `${Colors.accent}15`,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  findReplacementText: {
     fontSize: FontSizes.xs,
     color: Colors.accent,
     fontWeight: '600',

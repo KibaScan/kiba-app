@@ -670,6 +670,17 @@ export default function ResultScreen() {
             conditionTags={petConditions}
             petLifeStage={pet?.life_stage ?? null}
             isBypassed={!!scoredResult?.bypass}
+            onSwitchTo={pet?.id ? (newProductId: string) => {
+              // M7: Cross-navigate to Pantry stack → SafeSwitchSetup
+              (navigation.getParent() as any)?.navigate('Pantry', {
+                screen: 'SafeSwitchSetup',
+                params: {
+                  oldProductId: product.id,
+                  newProductId,
+                  petId: pet.id,
+                },
+              });
+            } : undefined}
           />
         )}
 

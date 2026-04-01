@@ -26,9 +26,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
 import { PantryCard } from '../components/pantry/PantryCard';
+import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
+import { getActiveSwitchForPet } from '../services/safeSwitchService';
 import type { PantryCardData, DietCompletenessResult } from '../types/pantry';
+import type { SafeSwitchCardData } from '../types/safeSwitch';
 import type { PantryStackParamList } from '../types/navigation';
 
 // ─── Types ──────────────────────────────────────────────
@@ -151,6 +154,7 @@ export default function PantryScreen({ navigation }: Props) {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [removeSheetItem, setRemoveSheetItem] = useState<PantryCardData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
   // ── Derived data ──
   const filteredItems = useMemo(() => filterItems(items, activeFilter), [items, activeFilter]);
@@ -165,6 +169,10 @@ export default function PantryScreen({ navigation }: Props) {
       if (!activePetId) return;
       let cancelled = false;
       loadPantry(activePetId).then(() => { if (cancelled) return; });
+      // Load active safe switch
+      getActiveSwitchForPet(activePetId).then(data => {
+        if (!cancelled) setActiveSwitchData(data);
+      });
       return () => { cancelled = true; };
     }, [activePetId, loadPantry]),
   );
@@ -398,6 +406,14 @@ export default function PantryScreen({ navigation }: Props) {
         </View>
       )}
 
+      {/* Safe Switch banner (M7) */}
+      {activeSwitchData && (
+        <SafeSwitchBanner
+          data={activeSwitchData}
+          onPress={() => navigation.navigate('SafeSwitchDetail', { switchId: activeSwitchData.switch.id })}
+        />
+      )}
+
       {/* Filter / sort bar */}
       <View style={styles.filterRow}>
         <ScrollView
@@ -460,6 +476,9 @@ export default function PantryScreen({ navigation }: Props) {
             onRestock={handleRestock}
             onRemove={handleRemove}
             onGaveTreat={handleGaveTreat}
+            onFindReplacement={(productId) => {
+              navigation.navigate('Result', { productId, petId: activePetId });
+            }}
           />
         )}
         refreshControl={

@@ -39,6 +39,8 @@ interface SafeSwapSectionProps {
   conditionTags: string[];
   petLifeStage: string | null;
   isBypassed: boolean;
+  /** M7: Callback to start a Safe Switch from a swap card. */
+  onSwitchTo?: (newProductId: string) => void;
 }
 
 // ─── Slot Icon Mapping ─────────────────────────────────
@@ -59,6 +61,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
   const {
     productId, petId, species, category, productForm, isSupplemental,
     scannedScore, petName, allergenGroups, conditionTags, petLifeStage, isBypassed,
+    onSwitchTo,
   } = props;
 
   const navigation = useNavigation<NativeStackNavigationProp<ScanStackParamList>>();
@@ -260,6 +263,17 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
             >
               <Text style={s.compareLinkText}>Compare</Text>
             </TouchableOpacity>
+
+            {/* M7: Switch to this (Safe Switch entry point) */}
+            {onSwitchTo && category === 'daily_food' && !isSupplemental && (
+              <TouchableOpacity
+                style={s.switchLink}
+                onPress={() => onSwitchTo(c.product_id)}
+              >
+                <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
+                <Text style={s.switchLinkText}>Switch to this</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         ))}
       </View>}
@@ -425,5 +439,22 @@ const s = StyleSheet.create({
   preparingText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
+  },
+
+  // ─── Switch CTA (M7) ──────────────────────────────────
+  switchLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.cardBorder,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  switchLinkText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 });

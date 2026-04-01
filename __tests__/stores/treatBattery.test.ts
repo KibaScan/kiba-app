@@ -201,6 +201,11 @@ function makeTreatItem(overrides: Partial<PantryCardData> = {}): PantryCardData 
       unit_weight_g: 8,
       aafco_statement: null,
       life_stage_claim: null,
+      source_url: null,
+      chewy_sku: null,
+      asin: null,
+      affiliate_links: null,
+      price: null,
     },
     assignments: [{
       id: 'assign-1',

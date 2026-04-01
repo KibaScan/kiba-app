@@ -16,6 +16,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     target_species: 'dog' as any,
     source: 'scraped' as any,
     aafco_statement: null,
+    aafco_inference: null,
     life_stage_claim: null,
     preservative_type: null,
     ga_protein_pct: null,
