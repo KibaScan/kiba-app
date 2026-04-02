@@ -150,7 +150,6 @@ export default function PetHubScreen({ navigation }: Props) {
 
   // ─── Medications (M6) ─────────────────────────────────
   const [medications, setMedications] = useState<PetMedication[]>([]);
-  const [showPastMeds, setShowPastMeds] = useState(false);
 
   // ─── Health records (D-163) ────────────────────────────
   const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
@@ -626,25 +625,92 @@ export default function PetHubScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
+        {/* Appointments */}
+        <View style={styles.healthRecordCard}>
+          <View style={styles.healthRecordHeader}>
+            <Text style={styles.healthRecordTitle}>Appointments</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Appointments')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+            </TouchableOpacity>
+          </View>
+          {appointments.length === 0 ? (
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('CreateAppointment')}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              {appointments.slice(0, 3).map((appt) => (
+                <SwipeableRow
+                  key={appt.id}
+                  onDelete={async () => {
+                    await deleteAppointment(appt.id);
+                    setAppointments((prev) => prev.filter((a) => a.id !== appt.id));
+                  }}
+                  deleteConfirmMessage={`Delete this appointment? This cannot be undone.`}
+                >
+                  <TouchableOpacity
+                    style={styles.healthRecordRow}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
+                  >
+                    <View style={styles.healthRecordInfo}>
+                      <Text style={styles.healthRecordName}>
+                        {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </Text>
+                      <Text style={styles.healthRecordDate}>
+                        {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                      {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                  </TouchableOpacity>
+                </SwipeableRow>
+              ))}
+
+              {/* See All link */}
+              <TouchableOpacity
+                style={styles.seeAllLink}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Appointments')}
+              >
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+
+              {/* Always-visible add link */}
+              <TouchableOpacity
+                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('CreateAppointment')}
+              >
+                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
         {/* Medications (M6) — display-only, no scoring impact */}
         <View style={styles.healthRecordCard}>
           <View style={styles.healthRecordHeader}>
             <Text style={styles.healthRecordTitle}>Medications</Text>
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate('MedicationForm', {
-                  petId: activePet.id,
-                  petName: activePet.name,
-                  conditions: conditionTags.filter((t) => t !== 'allergy'),
-                })
-              }
+              onPress={() => navigation.navigate('Medications')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
             </TouchableOpacity>
           </View>
 
-          {medications.length === 0 ? (
+          {medications.filter((m) => m.status !== 'past').length === 0 ? (
             <TouchableOpacity
               style={styles.addRecordLink}
               activeOpacity={0.7}
@@ -656,13 +722,14 @@ export default function PetHubScreen({ navigation }: Props) {
                 })
               }
             >
-              <Text style={styles.addRecordLinkText}>No medications logged yet</Text>
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Add a medication</Text>
             </TouchableOpacity>
           ) : (
             <>
-              {/* Current / As-needed medications */}
               {medications
                 .filter((m) => m.status !== 'past')
+                .slice(0, 3)
                 .map((med) => (
                   <SwipeableRow
                     key={med.id}
@@ -711,61 +778,33 @@ export default function PetHubScreen({ navigation }: Props) {
                   </SwipeableRow>
                 ))}
 
-              {/* Past medications — collapsed by default */}
-              {medications.filter((m) => m.status === 'past').length > 0 && (
-                <>
-                  <TouchableOpacity
-                    style={styles.pastMedsToggle}
-                    onPress={() => setShowPastMeds((v) => !v)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.addRecordLinkText}>
-                      {showPastMeds ? 'Hide' : 'Show'} past medications ({medications.filter((m) => m.status === 'past').length})
-                    </Text>
-                  </TouchableOpacity>
-                  {showPastMeds &&
-                    medications
-                      .filter((m) => m.status === 'past')
-                      .map((med) => (
-                        <SwipeableRow
-                          key={med.id}
-                          onDelete={async () => {
-                            await deleteMedication(med.id);
-                            getMedications(activePet.id).then(setMedications).catch(() => {});
-                          }}
-                          deleteConfirmMessage={`Delete "${med.medication_name}"? This cannot be undone.`}
-                        >
-                          <TouchableOpacity
-                            style={styles.healthRecordRow}
-                            activeOpacity={0.7}
-                            onPress={() =>
-                              navigation.navigate('MedicationForm', {
-                                petId: activePet.id,
-                                petName: activePet.name,
-                                medication: med,
-                                conditions: conditionTags.filter((t) => t !== 'allergy'),
-                              })
-                            }
-                          >
-                            <View style={styles.medicationRowInner}>
-                              <View
-                                style={[styles.medicationStatusDot, { backgroundColor: Colors.textTertiary }]}
-                              />
-                              <View style={styles.healthRecordInfo}>
-                                <Text style={styles.healthRecordNameMuted}>
-                                  {med.medication_name}
-                                </Text>
-                                {med.dosage ? (
-                                  <Text style={styles.healthRecordDate}>{med.dosage}</Text>
-                                ) : null}
-                              </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                          </TouchableOpacity>
-                        </SwipeableRow>
-                      ))}
-                </>
+              {/* See All link — only when >3 current meds */}
+              {medications.filter((m) => m.status !== 'past').length > 3 && (
+                <TouchableOpacity
+                  style={styles.seeAllLink}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('Medications')}
+                >
+                  <Text style={styles.seeAllLinkText}>See All</Text>
+                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+                </TouchableOpacity>
               )}
+
+              {/* Persistent add CTA */}
+              <TouchableOpacity
+                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigation.navigate('MedicationForm', {
+                    petId: activePet.id,
+                    petName: activePet.name,
+                    conditions: conditionTags.filter((t) => t !== 'allergy'),
+                  })
+                }
+              >
+                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                <Text style={styles.addRecordLinkText}>Add Medication</Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
@@ -842,79 +881,6 @@ export default function PetHubScreen({ navigation }: Props) {
               >
                 <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
                 <Text style={styles.addRecordLinkText}>Add Medical Record</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        {/* Appointments */}
-        <View style={styles.healthRecordCard}>
-          <View style={styles.healthRecordHeader}>
-            <Text style={styles.healthRecordTitle}>Appointments</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Appointments')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          </View>
-          {appointments.length === 0 ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('CreateAppointment')}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              {appointments.slice(0, 3).map((appt) => (
-                <SwipeableRow
-                  key={appt.id}
-                  onDelete={async () => {
-                    await deleteAppointment(appt.id);
-                    setAppointments((prev) => prev.filter((a) => a.id !== appt.id));
-                  }}
-                  deleteConfirmMessage={`Delete this appointment? This cannot be undone.`}
-                >
-                  <TouchableOpacity
-                    style={styles.healthRecordRow}
-                    activeOpacity={0.7}
-                    onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
-                  >
-                    <View style={styles.healthRecordInfo}>
-                      <Text style={styles.healthRecordName}>
-                        {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </Text>
-                      <Text style={styles.healthRecordDate}>
-                        {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </Text>
-                      {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                  </TouchableOpacity>
-                </SwipeableRow>
-              ))}
-
-              {/* See All link */}
-              <TouchableOpacity
-                style={styles.seeAllLink}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Appointments')}
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
-
-              {/* Always-visible add link */}
-              <TouchableOpacity
-                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('CreateAppointment')}
-              >
-                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-                <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
               </TouchableOpacity>
             </>
           )}

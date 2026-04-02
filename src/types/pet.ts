@@ -97,6 +97,8 @@ export interface PetMedication {
   started_at: string | null;
   ended_at: string | null;
   prescribed_for: string | null;
+  reminder_times: string[];  // ["08:00", "18:00"] — max 4
+  duration_days: number | null;  // null = ongoing
   notes: string | null;
   created_at: string;
 }

@@ -133,7 +133,7 @@ describe('deleteConditionDetail', () => {
 describe('getMedications', () => {
   it('returns medications for a pet ordered by created_at desc', async () => {
     const meds = [
-      { id: 'med-1', pet_id: 'pet-1', medication_name: 'Methimazole', status: 'current', dosage: '2.5mg twice daily', started_at: '2026-01-01', ended_at: null, prescribed_for: 'hyperthyroid', notes: null, created_at: '2026-01-01' },
+      { id: 'med-1', pet_id: 'pet-1', medication_name: 'Methimazole', status: 'current', dosage: '2.5mg twice daily', started_at: '2026-01-01', ended_at: null, prescribed_for: 'hyperthyroid', reminder_times: [], duration_days: null, notes: null, created_at: '2026-01-01' },
     ];
     const chain = mockChain({ data: meds, error: null });
     (supabase.from as jest.Mock).mockReturnValue(chain);
@@ -147,7 +147,7 @@ describe('getMedications', () => {
 
 describe('createMedication', () => {
   it('creates a medication and returns it', async () => {
-    const med = { id: 'med-1', pet_id: 'pet-1', medication_name: 'Methimazole', status: 'current' as const, dosage: '2.5mg', started_at: null, ended_at: null, prescribed_for: 'hyperthyroid', notes: null, created_at: '2026-01-01' };
+    const med = { id: 'med-1', pet_id: 'pet-1', medication_name: 'Methimazole', status: 'current' as const, dosage: '2.5mg', started_at: null, ended_at: null, prescribed_for: 'hyperthyroid', reminder_times: [], duration_days: null, notes: null, created_at: '2026-01-01' };
     const chain = mockChain({ data: med, error: null });
     (supabase.from as jest.Mock).mockReturnValue(chain);
 
@@ -158,6 +158,8 @@ describe('createMedication', () => {
       started_at: null,
       ended_at: null,
       prescribed_for: 'hyperthyroid',
+      reminder_times: [],
+      duration_days: null,
       notes: null,
     });
 
@@ -178,6 +180,8 @@ describe('createMedication', () => {
         started_at: null,
         ended_at: null,
         prescribed_for: null,
+        reminder_times: [],
+        duration_days: null,
         notes: null,
       }),
     ).rejects.toThrow('Connect to the internet');

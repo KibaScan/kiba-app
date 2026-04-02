@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-02 (session 12)
+# Project Status — Last updated 2026-04-02 (session 14)
 
 ## Active Milestone
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
@@ -11,7 +11,7 @@
 - 19,058 products (v7 reimport, Chewy + Amazon + Walmart)
 - Pet profiles, pantry (auto-deplete, budget-aware servings), treat battery
 - Appointments (CRUD, recurring, reminders, health records)
-- Push notifications (feeding, low stock, empty, recall, appointment, weight estimate, digest)
+- Push notifications (feeding, low stock, empty, recall, appointment, medication, weight estimate, digest)
 - HomeScreen v2, Community tab, Top Matches, RevenueCat paywall
 - **Health condition scoring** — 12 conditions (P0-P3), Layer 3 adjustments, cardiac+DCM zero-out
 - **Health condition UI** — expanded condition picker (mutual exclusions, sub-types), ResultScreen advisories, medication tracking
@@ -32,8 +32,11 @@
 - **Safe Switch Guide (M7)** — guided 7-day (dogs) / 10-day (cats) food transition with daily mix ratios (75/25 → 50/50 → 25/75 → 100%). `SafeSwitchSetupScreen` (preview + start), `SafeSwitchDetailScreen` (daily command center with proportion bar, tummy check pills, vertical timeline). `SafeSwitchBanner` on PantryScreen (day ring + mix ratio) and HomeScreen (compact status card). Entry points: "Switch to this" on Safe Swap cards, "Find a replacement" on low-scoring (<60%) daily food PantryCards. Daily notifications (9 AM mix reminder, 7 PM tummy check nudge). Upset advisory (2+ consecutive "upset" logs → informational card, D-095 compliant, no auto-action). One active switch per pet enforced at DB level (partial unique index). Free feature (no paywall gate). Migration 025.
 - **Vet diet data fix (migration 027)** — restored 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet`.
 - **MeScreen overhaul** — unified "Medical Records" card (vaccines + dewormings chronological, micro-icons, top 3 truncation + "See All"). `MedicalRecordsScreen` full-screen timeline. `HealthRecordDetailSheet` for edit/delete. `updateHealthRecord()` + `deleteHealthRecord()` service functions. Appointments card: persistent "+ Schedule" and "See All" links. Medication rows: chevrons. Matte Premium visual polish (`cardSurface`, `hairlineBorder` tokens). Score accuracy bar gradient.
-- **SwipeableRow component** — reusable swipe-to-reveal wrapper (`src/components/ui/SwipeableRow.tsx`). Swipe left → delete (with confirmation alert + `deleteConfirm()` haptic). Swipe right → edit. Applied to: health record rows, medication rows, appointment rows on PetHubScreen and MedicalRecordsScreen.
-- **Matte Premium design system** — `.agent/design.md` established. Tokens, card anatomy, typography, spacing, bottom sheet specs, anti-patterns, screen polish checklist.
+- **SwipeableRow component** — reusable swipe-to-reveal wrapper (`src/components/ui/SwipeableRow.tsx`). Swipe left → delete (with confirmation alert + `deleteConfirm()` haptic). Swipe right → edit. Applied to: health record rows, medication rows, appointment rows on PetHubScreen, MedicalRecordsScreen, MedicationsListScreen, and AppointmentsListScreen.
+- **MedicationsListScreen** — full-screen medication list with Current/Past segmented tabs, SwipeableRow (delete + edit), status dots. Access: PetHubScreen Medications card → chevron or "See All".
+- **PetHubScreen card reorder** — Health Conditions → Appointments → Medications → Medical Records. All three data cards follow consistent pattern: title+chevron header, truncated list (max 3), "See All" link, bottom-anchored add CTA.
+- **Medication reminders + duration** — MedicationFormScreen: up to 4 daily reminder times via DateTimePicker, duration presets (7/14/30/90 days + Ongoing + custom). `medicationNotificationScheduler.ts` (full-resync pattern, groups same-time reminders, skips expired meds). `medication_reminder` notification type + tap routing. NotificationPreferencesScreen toggle. Migration 028 (`reminder_times TEXT[]`, `duration_days INTEGER`, `medication_reminders_enabled BOOLEAN`).
+- **Matte Premium design system** — `.agent/design.md` established. Tokens, card anatomy, typography, spacing, bottom sheet specs, anti-patterns, screen polish checklist. Referenced in CLAUDE.md spec table — read before touching any screen UI.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors
@@ -41,7 +44,7 @@
 ## Numbers
 - **Tests:** 1320 passing / 61 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 27 (001–027)
+- **Migrations:** 28 (001–028)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -65,27 +68,34 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-02 (session 12)
-- **Accomplished:** M9 first pass — vet diet data fix, MeScreen overhaul review/cleanup, SwipeableRow, design system.
-  - **Vet diet fix:** Discovered `is_vet_diet` was 0 across all products (lost during v7 reimport). Migration 027 restores 483 flags via brand/name pattern matching. Fixed `import_products.py` to map `_is_vet_diet` for future imports. Repaired migration history for 021-026 (were applied but not tracked).
-  - **MeScreen cleanup (post-Gemini):** Fixed `useFocusEffect` missing dependency (`treatBatteryReset`). Replaced generic haptic with `deleteConfirm()` on health record delete. Added `console.error` logging to catch blocks. Consolidated 8 inline styles into PetHubStyles.ts (7 new named styles).
-  - **SwipeableRow:** Created reusable `src/components/ui/SwipeableRow.tsx` using `Swipeable` from `react-native-gesture-handler`. Applied to health record rows (delete + edit), medication rows (delete + edit), appointment rows (delete), and MedicalRecordsScreen rows. Updated gesture handler mock with Swipeable + RectButton.
-  - **Tests:** 7 new tests for `updateHealthRecord` and `deleteHealthRecord` (success, offline guard, error, partial update).
-  - **Design system:** Updated `.agent/design.md` — removed "no swipe-to-delete" rule, added SwipeableRow documentation (props, usage, applied screens, still-needed screens), legacy token migration guide, updated anti-patterns and checklist.
-  - **Post-review fixes:** Fixed RectButton mock (View → Pressable), added `isOnline` assertions to offline tests, aligned promise chain pattern (`.then().catch()` consistently).
-  - **Files created:** `src/components/ui/SwipeableRow.tsx`, `__tests__/services/appointmentService.health.test.ts`, `supabase/migrations/027_restore_vet_diet_flags.sql`
-  - **Files modified:** `src/screens/PetHubScreen.tsx`, `src/screens/MedicalRecordsScreen.tsx`, `src/components/appointments/HealthRecordDetailSheet.tsx`, `src/screens/pethub/PetHubStyles.ts`, `__mocks__/react-native-gesture-handler.js`, `scripts/import/import_products.py`, `.agent/design.md`, `ROADMAP.md`, `docs/status/CURRENT.md`
+- **Date:** 2026-04-02 (session 14)
+- **Accomplished:** M9 — PetHubScreen card fixes, MedicationsListScreen, medication reminders + duration, design system integration.
+  - **Medications card alignment:** Replaced header `add-circle-outline` icon with `chevron-forward` navigating to MedicationsListScreen. Added persistent bottom-anchored `+ Add Medication` CTA. Truncated current meds to 3 with "See All" link. Removed inline past meds toggle.
+  - **Card reorder:** PetHubScreen cards now: Health Conditions → Appointments → Medications → Medical Records.
+  - **MedicationsListScreen:** New `src/screens/MedicationsListScreen.tsx` — Current/Past segmented tabs, SwipeableRow (delete + edit), status dots (green/amber/gray), empty states per tab.
+  - **AppointmentsListScreen SwipeableRow:** Added SwipeableRow wrapping — swipe-left to delete, swipe-right to edit.
+  - **MedicationForm button fix:** `paddingBottom: 88` to clear tab bar scan button.
+  - **Medication reminders + duration:** Up to 4 daily reminder times via DateTimePicker (iOS spinner + Android modal). Duration presets (7/14/30/90 days, Ongoing) + custom days input. Reminders/duration only shown when status is Current or As Needed. Auto-clear on Past status.
+  - **Medication notification scheduler:** `src/services/medicationNotificationScheduler.ts` — full-resync pattern (cancel + rebuild), groups same-time reminders across pets, skips expired medications, DAILY repeating triggers.
+  - **Notification type + routing:** Added `medication_reminder` to `NotificationType`, tap routes to Me tab.
+  - **Notification preferences:** Added `medication_reminders_enabled` toggle to NotificationPreferencesScreen + UserSettings type + migration 028.
+  - **Design system integration:** Added `.agent/design.md` to CLAUDE.md spec table as mandatory pre-read for UI work. Updated SwipeableRow tables and legacy token migration lists.
+  - **Legacy token migration:** MedicationFormScreen inputs migrated from `Colors.card`/`Colors.cardBorder` to `cardSurface`/`hairlineBorder`.
+  - **Files created:** `src/screens/MedicationsListScreen.tsx`, `src/services/medicationNotificationScheduler.ts`, `supabase/migrations/028_medication_reminders.sql`
+  - **Files modified:** `src/screens/PetHubScreen.tsx`, `src/screens/MedicationFormScreen.tsx`, `src/screens/AppointmentsListScreen.tsx`, `src/screens/NotificationPreferencesScreen.tsx`, `src/types/navigation.ts`, `src/types/pet.ts`, `src/types/notifications.ts`, `src/utils/notifications.ts`, `src/navigation/index.tsx`, `App.tsx`, `CLAUDE.md`, `.agent/design.md`, `src/screens/CLAUDE.md`, `__tests__/services/petService.conditionDetails.test.ts`, `docs/status/CURRENT.md`
 - **Not done yet:**
   - Pantry polish (SwipeableRow on PantryCards, legacy token migration)
-  - Legacy token migration on remaining screens
-  - Search UX overhaul
+  - Legacy token migration on remaining screens (AppointmentsListScreen, HomeScreen, ResultScreen, CompareScreen, EditPantryItemScreen)
+  - Search UX overhaul on HomeScreen
   - Kiba Index end-to-end testing on iOS simulator
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
-- **Next session should:** Polish Pantry screen (SwipeableRow + Matte Premium tokens). Start legacy token migration across other screens. Define search UX scope.
+  - Migration 028 needs to be applied to production Supabase (3 ALTER TABLE statements)
+- **Next session should:** Apply migration 028 to Supabase. Polish Pantry screen (SwipeableRow on PantryCards + Matte Premium tokens). Migrate legacy tokens on AppointmentsListScreen. Define search UX scope.
 - **Gotchas for next session:**
-  - `.agent/design.md` is the single source of truth for visual polish — read it before touching any screen.
+  - `.agent/design.md` is now in CLAUDE.md spec table — read before touching any screen UI.
   - `Colors.card` and `Colors.cardBorder` are legacy tokens — grep and migrate when touching a screen.
-  - SwipeableRow always needs `deleteConfirmMessage` — never delete without confirmation.
+  - SwipeableRow: only PantryScreen remains in "Still Needs" table.
+  - Migration 028 adds `reminder_times TEXT[]`, `duration_days INTEGER` to `pet_medications` and `medication_reminders_enabled BOOLEAN` to `user_settings`. Must be applied before medication reminders work.
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
   - `life_stage_claim` still free text (no enum validation) — deferred as tech debt.
-- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 027 is data-only (vet diet flags).
+- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 028 is schema-only (new columns with defaults).

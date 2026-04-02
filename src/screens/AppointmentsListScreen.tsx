@@ -16,10 +16,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import { getUpcomingAppointments, getPastAppointments } from '../services/appointmentService';
+import { getUpcomingAppointments, getPastAppointments, deleteAppointment } from '../services/appointmentService';
 import { canCreateAppointment } from '../utils/permissions';
 import { supabase } from '../services/supabase';
 import { useActivePetStore } from '../stores/useActivePetStore';
+import SwipeableRow from '../components/ui/SwipeableRow';
 import type { Appointment, AppointmentType } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
 
@@ -128,31 +129,40 @@ export default function AppointmentsListScreen() {
       : formatRelativeDate(item.completed_at ?? item.scheduled_at);
 
     return (
-      <TouchableOpacity
-        style={styles.row}
-        activeOpacity={0.6}
-        onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: item.id })}
+      <SwipeableRow
+        onDelete={async () => {
+          await deleteAppointment(item.id);
+          loadData();
+        }}
+        onEdit={() => navigation.navigate('AppointmentDetail', { appointmentId: item.id })}
+        deleteConfirmMessage={`Delete this ${label.toLowerCase()}? This cannot be undone.`}
       >
-        <View style={styles.iconCircle}>
-          <Ionicons
-            name={TYPE_ICONS[item.type] as keyof typeof Ionicons.glyphMap}
-            size={20}
-            color={Colors.accent}
-          />
-        </View>
-        <View style={styles.rowContent}>
-          <Text style={styles.rowLabel}>{label}</Text>
-          <Text style={styles.rowDate}>{dateStr}</Text>
-          {petNames ? <Text style={styles.rowPets}>{petNames}</Text> : null}
-          {item.location ? <Text style={styles.rowLocation}>{item.location}</Text> : null}
-        </View>
-        {item.recurring !== 'none' && (
-          <Ionicons name="repeat-outline" size={16} color={Colors.textTertiary} style={styles.recurBadge} />
-        )}
-        <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.row}
+          activeOpacity={0.6}
+          onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: item.id })}
+        >
+          <View style={styles.iconCircle}>
+            <Ionicons
+              name={TYPE_ICONS[item.type] as keyof typeof Ionicons.glyphMap}
+              size={20}
+              color={Colors.accent}
+            />
+          </View>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowLabel}>{label}</Text>
+            <Text style={styles.rowDate}>{dateStr}</Text>
+            {petNames ? <Text style={styles.rowPets}>{petNames}</Text> : null}
+            {item.location ? <Text style={styles.rowLocation}>{item.location}</Text> : null}
+          </View>
+          {item.recurring !== 'none' && (
+            <Ionicons name="repeat-outline" size={16} color={Colors.textTertiary} style={styles.recurBadge} />
+          )}
+          <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+        </TouchableOpacity>
+      </SwipeableRow>
     );
-  }, [navigation, petMap, tab]);
+  }, [navigation, petMap, tab, loadData]);
 
   return (
     <SafeAreaView style={styles.container}>

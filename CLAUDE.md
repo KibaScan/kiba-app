@@ -31,8 +31,9 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/specs/PANTRY_SPEC.md` | M5 Pantry schema, depletion, UI, edge cases |
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
+| `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–027). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–028). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 

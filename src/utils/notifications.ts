@@ -94,6 +94,7 @@ export function setupNotificationHandlers(
           navigate('Pantry');
           break;
         case 'appointment':
+        case 'medication_reminder':
           navigate('Me');
           break;
         case 'weekly_digest':

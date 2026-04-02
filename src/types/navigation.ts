@@ -62,6 +62,7 @@ export type MeStackParamList = {
     conditions: string[];
   };
   BCSReference: { petId: string };
+  Medications: undefined;
   MedicalRecords: undefined;
   Appointments: undefined;
   CreateAppointment: undefined;

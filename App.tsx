@@ -13,6 +13,7 @@ import { registerPushToken, ensureUserSettings } from './src/services/pushServic
 import { rescheduleAllFeeding } from './src/services/feedingNotificationScheduler';
 import { rescheduleAllAppointments } from './src/services/appointmentNotificationScheduler';
 import { rescheduleAllSafeSwitchNotifications } from './src/services/safeSwitchNotificationScheduler';
+import { rescheduleAllMedications } from './src/services/medicationNotificationScheduler';
 import { supabase } from './src/services/supabase';
 import { navigationRef } from './src/navigation';
 
@@ -34,6 +35,7 @@ export default function App() {
 
       // Re-sync local notifications on launch
       rescheduleAllFeeding().catch(() => {});
+      rescheduleAllMedications().catch(() => {});
       rescheduleAllSafeSwitchNotifications().catch(() => {});
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {

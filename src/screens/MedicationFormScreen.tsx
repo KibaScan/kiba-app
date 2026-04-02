@@ -1,6 +1,7 @@
-// Kiba — Medication Form Screen (M6)
+// Kiba — Medication Form Screen (M6/M9)
 // Add/edit a medication for a pet. Display-only — does NOT influence scoring.
 // D-095: "Medications" not "Prescriptions". No prescriptive language.
+// M9: Added reminder times (up to 4 daily) and duration (preset chips + custom).
 
 import React, { useState, useRef } from 'react';
 import {
@@ -18,14 +19,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import {
   createMedication,
   updateMedication,
   deleteMedication,
 } from '../services/petService';
-import type { PetMedication } from '../types/pet';
+import { rescheduleAllMedications } from '../services/medicationNotificationScheduler';
 import type { MeStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'MedicationForm'>;
@@ -38,8 +39,34 @@ const STATUS_OPTIONS: { value: MedStatus; label: string }[] = [
   { value: 'as_needed', label: 'As Needed' },
 ];
 
+const DURATION_PRESETS = [7, 14, 30, 90] as const;
+const MAX_REMINDERS = 4;
+
+// ─── Helpers ────────────────────────────────────────────
+
+function formatTime(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m < 10 ? '0' + m : m} ${ampm}`;
+}
+
+function dateToHHMM(date: Date): string {
+  const h = date.getHours();
+  const m = date.getMinutes();
+  return `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`;
+}
+
+function hhmmToDate(hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+// ─── Component ──────────────────────────────────────────
+
 export default function MedicationFormScreen({ navigation, route }: Props) {
-  const insets = useSafeAreaInsets();
   const { petId, petName, medication, conditions } = route.params;
   const isEdit = !!medication;
 
@@ -50,6 +77,97 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
   const [notes, setNotes] = useState(medication?.notes ?? '');
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
+
+  // Reminders state
+  const [reminderTimes, setReminderTimes] = useState<string[]>(
+    medication?.reminder_times ?? [],
+  );
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
+  const [pickerDate, setPickerDate] = useState(new Date());
+
+  // Duration state
+  const initDuration = medication?.duration_days;
+  const [durationDays, setDurationDays] = useState<number | null>(initDuration ?? null);
+  const [durationMode, setDurationMode] = useState<'preset' | 'custom' | 'ongoing'>(
+    initDuration == null
+      ? 'ongoing'
+      : DURATION_PRESETS.includes(initDuration as any)
+        ? 'preset'
+        : 'custom',
+  );
+  const [customDaysText, setCustomDaysText] = useState(
+    initDuration != null && !DURATION_PRESETS.includes(initDuration as any)
+      ? String(initDuration)
+      : '',
+  );
+
+  const showReminders = status === 'current' || status === 'as_needed';
+
+  // ─── Reminder handlers ──────────────────────────────
+
+  function handleAddReminder() {
+    setEditingTimeIndex(null);
+    setPickerDate(new Date());
+    setShowTimePicker(true);
+  }
+
+  function handleEditReminder(index: number) {
+    setEditingTimeIndex(index);
+    setPickerDate(hhmmToDate(reminderTimes[index]));
+    setShowTimePicker(true);
+  }
+
+  function handleRemoveReminder(index: number) {
+    setReminderTimes((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleTimePickerChange(_: DateTimePickerEvent, date?: Date) {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (!date) return;
+    const hhmm = dateToHHMM(date);
+    setPickerDate(date);
+
+    if (editingTimeIndex != null) {
+      setReminderTimes((prev) => prev.map((t, i) => (i === editingTimeIndex ? hhmm : t)));
+    } else {
+      setReminderTimes((prev) => [...prev, hhmm]);
+    }
+    if (Platform.OS === 'ios') return;
+  }
+
+  function confirmTimePicker() {
+    setShowTimePicker(false);
+    const hhmm = dateToHHMM(pickerDate);
+    if (editingTimeIndex != null) {
+      setReminderTimes((prev) => prev.map((t, i) => (i === editingTimeIndex ? hhmm : t)));
+    } else if (reminderTimes.length < MAX_REMINDERS) {
+      setReminderTimes((prev) => [...prev, hhmm]);
+    }
+  }
+
+  // ─── Duration handlers ──────────────────────────────
+
+  function handlePresetDuration(days: number) {
+    setDurationMode('preset');
+    setDurationDays(days);
+    setCustomDaysText('');
+  }
+
+  function handleOngoing() {
+    setDurationMode('ongoing');
+    setDurationDays(null);
+    setCustomDaysText('');
+  }
+
+  function handleCustomDuration(text: string) {
+    setCustomDaysText(text);
+    setDurationMode('custom');
+    const parsed = parseInt(text, 10);
+    setDurationDays(parsed > 0 ? parsed : null);
+  }
+
+  // ─── Save / Delete ──────────────────────────────────
 
   async function handleSave() {
     if (savingRef.current) return;
@@ -69,6 +187,8 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
         started_at: medication?.started_at ?? null,
         ended_at: medication?.ended_at ?? null,
         prescribed_for: prescribedFor || null,
+        reminder_times: showReminders ? reminderTimes : [],
+        duration_days: showReminders ? durationDays : null,
         notes: notes.trim() || null,
       };
 
@@ -77,6 +197,7 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
       } else {
         await createMedication(petId, payload);
       }
+      rescheduleAllMedications().catch(() => {});
       navigation.goBack();
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
@@ -99,6 +220,7 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
           onPress: async () => {
             try {
               await deleteMedication(medication.id);
+              rescheduleAllMedications().catch(() => {});
               navigation.goBack();
             } catch (err) {
               Alert.alert('Error', (err as Error).message);
@@ -181,6 +303,119 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
             placeholderTextColor={Colors.textTertiary}
           />
 
+          {/* Reminders — only for current / as_needed */}
+          {showReminders && (
+            <>
+              <Text style={styles.label}>Reminders (optional)</Text>
+              {reminderTimes.map((time, index) => (
+                <View key={`${time}-${index}`} style={styles.reminderRow}>
+                  <TouchableOpacity
+                    style={styles.reminderTime}
+                    onPress={() => handleEditReminder(index)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="alarm-outline" size={16} color={Colors.accent} />
+                    <Text style={styles.reminderTimeText}>{formatTime(time)}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveReminder(index)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {reminderTimes.length < MAX_REMINDERS && (
+                <TouchableOpacity
+                  style={styles.addReminderLink}
+                  onPress={handleAddReminder}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                  <Text style={styles.addReminderText}>Add Reminder</Text>
+                </TouchableOpacity>
+              )}
+              {reminderTimes.length >= MAX_REMINDERS && (
+                <Text style={styles.reminderCapText}>Maximum 4 reminders</Text>
+              )}
+
+              {/* iOS inline time picker */}
+              {showTimePicker && Platform.OS === 'ios' && (
+                <View style={styles.pickerContainer}>
+                  <DateTimePicker
+                    value={pickerDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={(_e, date) => { if (date) setPickerDate(date); }}
+                    textColor={Colors.textPrimary}
+                  />
+                  <View style={styles.pickerButtons}>
+                    <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                      <Text style={styles.pickerCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={confirmTimePicker}>
+                      <Text style={styles.pickerDone}>Done</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* Duration */}
+              <Text style={styles.label}>Duration (optional)</Text>
+              <View style={styles.chipRow}>
+                {DURATION_PRESETS.map((days) => (
+                  <TouchableOpacity
+                    key={days}
+                    style={[
+                      styles.chip,
+                      durationMode === 'preset' && durationDays === days && styles.chipSelected,
+                    ]}
+                    onPress={() => handlePresetDuration(days)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        durationMode === 'preset' && durationDays === days && styles.chipTextSelected,
+                      ]}
+                    >
+                      {days} days
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[
+                    styles.chip,
+                    durationMode === 'ongoing' && styles.chipSelected,
+                  ]}
+                  onPress={handleOngoing}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      durationMode === 'ongoing' && styles.chipTextSelected,
+                    ]}
+                  >
+                    Ongoing
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.customDurationRow}>
+                <Text style={styles.customDurationLabel}>Custom:</Text>
+                <TextInput
+                  style={styles.customDurationInput}
+                  value={customDaysText}
+                  onChangeText={handleCustomDuration}
+                  placeholder="days"
+                  placeholderTextColor={Colors.textTertiary}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              </View>
+            </>
+          )}
+
           {/* Prescribed for */}
           {conditions.length > 0 && (
             <>
@@ -241,7 +476,7 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Footer */}
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={[styles.footer, { paddingBottom: 88 }]}>
           <TouchableOpacity
             style={[styles.primaryButton, saving && styles.buttonDisabled]}
             onPress={handleSave}
@@ -267,6 +502,16 @@ export default function MedicationFormScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Android time picker modal */}
+        {showTimePicker && Platform.OS === 'android' && (
+          <DateTimePicker
+            value={pickerDate}
+            mode="time"
+            display="default"
+            onChange={handleTimePickerChange}
+          />
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -301,7 +546,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.xl,
   },
   label: {
     fontSize: FontSizes.sm,
@@ -311,10 +556,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   input: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     paddingHorizontal: Spacing.md,
     paddingVertical: 14,
     fontSize: FontSizes.md,
@@ -333,9 +578,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipSelected: {
     backgroundColor: Colors.accent + '20',
@@ -350,6 +595,93 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     fontWeight: '600',
   },
+  // Reminders
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 12,
+    marginBottom: Spacing.sm,
+  },
+  reminderTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  reminderTimeText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  addReminderLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.xs,
+  },
+  addReminderText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  reminderCapText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    marginTop: Spacing.xs,
+  },
+  pickerContainer: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    marginTop: Spacing.sm,
+    overflow: 'hidden',
+  },
+  pickerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  pickerCancel: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  pickerDone: {
+    fontSize: FontSizes.md,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+  // Duration
+  customDurationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  customDurationLabel: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  customDurationInput: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: FontSizes.sm,
+    color: Colors.textPrimary,
+    width: 80,
+    textAlign: 'center',
+  },
+  // Footer
   footer: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,

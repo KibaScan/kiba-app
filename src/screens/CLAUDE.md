@@ -10,7 +10,7 @@
 - CommunityStack: CommunityMain → Result → RecallDetail
 - PantryStack: PantryMain → EditPantryItem → SafeSwitchSetup → SafeSwitchDetail → Result → RecallDetail
 - HomeStack: HomeMain → Result → RecallDetail → AppointmentDetail → SafeSwitchDetail → Compare
-- MeStack: MeMain → PetProfile → CreatePet → EditPet → HealthConditions → Appointments → CreateAppointment → AppointmentDetail → NotificationPreferences → Settings → Result → RecallDetail
+- MeStack: MeMain → PetProfile → CreatePet → EditPet → HealthConditions → Medications → Appointments → CreateAppointment → AppointmentDetail → NotificationPreferences → Settings → Result → RecallDetail
 
 ## Patterns
 - StyleSheet.create at bottom of file

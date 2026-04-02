@@ -23,6 +23,7 @@ import {
 } from '../services/pushService';
 import { rescheduleAllFeeding, cancelAllFeedingNotifications } from '../services/feedingNotificationScheduler';
 import { rescheduleAllAppointments, cancelAllAppointmentReminders } from '../services/appointmentNotificationScheduler';
+import { rescheduleAllMedications, cancelAllMedicationNotifications } from '../services/medicationNotificationScheduler';
 import { supabase } from '../services/supabase';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import type { DigestFrequency } from '../types/notifications';
@@ -53,6 +54,7 @@ export default function NotificationPreferencesScreen() {
   const [emptyEnabled, setEmptyEnabled] = useState(true);
   const [recallEnabled, setRecallEnabled] = useState(true);
   const [appointmentEnabled, setAppointmentEnabled] = useState(true);
+  const [medicationEnabled, setMedicationEnabled] = useState(true);
   const [weightEstimateEnabled, setWeightEstimateEnabled] = useState(true);
   const [digestFrequency, setDigestFrequency] = useState<DigestFrequency>('weekly');
 
@@ -73,6 +75,7 @@ export default function NotificationPreferencesScreen() {
         setEmptyEnabled(prefs.empty_alerts_enabled);
         setRecallEnabled(prefs.recall_alerts_enabled);
         setAppointmentEnabled(prefs.appointment_reminders_enabled);
+        setMedicationEnabled(prefs.medication_reminders_enabled ?? true);
         setWeightEstimateEnabled(prefs.weight_estimate_alerts_enabled ?? true);
         setDigestFrequency(prefs.digest_frequency);
         setLoading(false);
@@ -107,9 +110,11 @@ export default function NotificationPreferencesScreen() {
       // Cancel all local notifications when global is disabled
       await cancelAllFeedingNotifications();
       await cancelAllAppointmentReminders();
+      await cancelAllMedicationNotifications();
     } else {
       // Re-sync local notifications when re-enabled
       rescheduleAllFeeding().catch(() => {});
+      rescheduleAllMedications().catch(() => {});
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         rescheduleAllAppointments(session.user.id).catch(() => {});
@@ -165,6 +170,12 @@ export default function NotificationPreferencesScreen() {
     if (session?.user?.id) {
       rescheduleAllAppointments(session.user.id).catch(() => {});
     }
+  }
+
+  async function handleMedicationToggle(value: boolean) {
+    setMedicationEnabled(value);
+    await updatePref('medication_reminders_enabled', value);
+    rescheduleAllMedications().catch(() => {});
   }
 
   async function handleDigestChange(value: DigestFrequency) {
@@ -276,6 +287,17 @@ export default function NotificationPreferencesScreen() {
                 label="Appointment Reminders"
                 value={appointmentEnabled}
                 onValueChange={handleAppointmentToggle}
+                disabled={saving}
+              />
+            </View>
+
+            {/* Medications Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Medications</Text>
+              <ToggleRow
+                label="Medication Reminders"
+                value={medicationEnabled}
+                onValueChange={handleMedicationToggle}
                 disabled={saving}
               />
             </View>

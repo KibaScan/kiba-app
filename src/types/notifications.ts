@@ -13,6 +13,7 @@ export type NotificationType =
   | 'empty'
   | 'recall'
   | 'appointment'
+  | 'medication_reminder'
   | 'weight_estimate'
   | 'weekly_digest';
 
@@ -40,6 +41,7 @@ export interface UserSettings {
   empty_alerts_enabled: boolean;
   recall_alerts_enabled: boolean;
   appointment_reminders_enabled: boolean;
+  medication_reminders_enabled: boolean;
   weight_estimate_alerts_enabled: boolean;
   digest_frequency: DigestFrequency;
   created_at: string;
