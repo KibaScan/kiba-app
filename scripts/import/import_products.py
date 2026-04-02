@@ -80,6 +80,9 @@ def map_product_row(record: dict) -> dict:
     # is_supplemental: explicit flag or false
     is_supplemental = bool(record.get('is_supplemental', False))
 
+    # is_vet_diet: from scraper _is_vet_diet flag
+    is_vet_diet = bool(record.get('_is_vet_diet', False))
+
     now_ts = datetime.now(timezone.utc).isoformat()
 
     row = {
@@ -128,6 +131,7 @@ def map_product_row(record: dict) -> dict:
         'is_grain_free': is_gf,
         'is_recalled': False,
         'is_supplemental': is_supplemental,
+        'is_vet_diet': is_vet_diet,
         'score_confidence': confidence,
         'nutritional_data_source': nutritional_data_source,
         'needs_review': record.get('_ingredient_status') == 'borderline',

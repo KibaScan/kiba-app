@@ -25,6 +25,13 @@ const Gesture = {
   Exclusive: (...args) => gestureBuilder(),
 };
 
+const Swipeable = React.forwardRef(({ children }, ref) => {
+  React.useImperativeHandle(ref, () => ({ close: () => {} }));
+  return children;
+});
+const RectButton = ({ children, onPress, style }) =>
+  React.createElement('Pressable', { style, onPress }, children);
+
 module.exports = {
   GestureDetector,
   GestureHandlerRootView: ({ children }) => children,
@@ -33,5 +40,7 @@ module.exports = {
   State: {},
   PanGestureHandler: 'PanGestureHandler',
   TapGestureHandler: 'TapGestureHandler',
+  Swipeable,
+  RectButton,
   gestureHandlerRootHOC: (comp) => comp,
 };

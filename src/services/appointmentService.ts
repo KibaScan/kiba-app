@@ -313,3 +313,37 @@ export async function addManualHealthRecord(
   if (error) throw new Error(`Failed to add health record: ${error.message}`);
   return data as PetHealthRecord;
 }
+
+export async function updateHealthRecord(
+  id: string,
+  updates: {
+    treatment_name?: string;
+    administered_at?: string;
+    next_due_at?: string | null;
+    vet_name?: string | null;
+    notes?: string | null;
+  },
+): Promise<PetHealthRecord> {
+  await requireOnline();
+
+  const { data, error } = await supabase
+    .from('pet_health_records')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to update health record: ${error.message}`);
+  return data as PetHealthRecord;
+}
+
+export async function deleteHealthRecord(id: string): Promise<void> {
+  await requireOnline();
+
+  const { error } = await supabase
+    .from('pet_health_records')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(`Failed to delete health record: ${error.message}`);
+}

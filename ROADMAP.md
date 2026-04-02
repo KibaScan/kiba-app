@@ -1,12 +1,12 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: April 1, 2026
+> Updated: April 2, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M8 Complete (M0–M8 Done)
+## Current Status: M9 In Progress (M0–M8 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
@@ -688,12 +688,17 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M9: UI Polish & Search (Next)
+## M9: UI Polish & Search (In Progress)
 
 > Goal: Polish existing features and fix UX friction before adding new capabilities.
 
+- [x] **MeScreen overhaul** — unified Medical Records card (chronological, micro-icons, top 3 + "See All"), MedicalRecordsScreen full-screen timeline, HealthRecordDetailSheet (edit/delete), health record CRUD service functions, Matte Premium visual polish, appointments card improvements (persistent add/see-all links), medication chevrons
+- [x] **SwipeableRow component** — reusable swipe-to-reveal gestures on health records, medications, appointments. Swipe left → delete (with confirmation), swipe right → edit. `src/components/ui/SwipeableRow.tsx`
+- [x] **Matte Premium design system** — `.agent/design.md` established: `cardSurface`, `hairlineBorder`, `pressOverlay` tokens, card anatomy, typography, spacing, anti-patterns. Checklist for polishing any screen.
+- [x] **Vet diet data fix** — migration 027 restores 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet` for future imports.
+- [ ] Pantry polish — SwipeableRow on PantryCards, legacy token migration (`Colors.card` → `cardSurface`)
 - [ ] Search improvements (HomeScreen v2 search UX overhaul)
-- [ ] UI polish pass across existing screens
+- [ ] Legacy token migration across remaining screens (HomeScreen, ResultScreen, CompareScreen, etc.)
 - [ ] General UX friction fixes
 
 ---

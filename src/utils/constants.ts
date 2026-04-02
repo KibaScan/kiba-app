@@ -12,6 +12,11 @@ export const Colors = {
   accent: '#00B4D8',
   accentDark: '#0090AD',
 
+  // Matte Premium surfaces
+  cardSurface: '#1C1C1E',                     // plush deep card background
+  hairlineBorder: 'rgba(255,255,255,0.08)',    // crisp inner border
+  pressOverlay: 'rgba(255,255,255,0.05)',      // touch feedback underlay
+
   // Severity (D-136 unified palette)
   severityRed: '#EF4444',
   severityAmber: '#F59E0B',

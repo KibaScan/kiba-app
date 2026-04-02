@@ -57,14 +57,15 @@ export const styles = StyleSheet.create({
   carouselAvatar: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#00B4D815',
+    backgroundColor: Colors.background,
   },
   carouselAvatarActive: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 2,
     borderColor: Colors.accent,
+    padding: 3, // Story Ring cutout — 3px gap between ring and photo
   },
   carouselAvatarInactive: {
     width: 36,
@@ -76,15 +77,15 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
   },
   carouselPhoto: {
     borderRadius: 24,
   },
   carouselPhotoActive: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   carouselPhotoInactive: {
     width: 32,
@@ -121,11 +122,11 @@ export const styles = StyleSheet.create({
 
   // ─── Summary Card ──────────────────────────────────────
   summaryCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   summaryTop: {
@@ -172,7 +173,7 @@ export const styles = StyleSheet.create({
   accuracySection: {
     marginTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingTop: Spacing.md,
   },
   accuracyHeader: {
@@ -187,14 +188,15 @@ export const styles = StyleSheet.create({
   },
   accuracyTrack: {
     height: 6,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
     borderRadius: 3,
     overflow: 'hidden',
   },
   accuracyFill: {
     height: 6,
-    backgroundColor: Colors.accent,
     borderRadius: 3,
+    // Note: replaced by LinearGradient in PetHubScreen render
+    backgroundColor: Colors.accent,
   },
   accuracyHint: {
     fontSize: FontSizes.sm,
@@ -248,11 +250,13 @@ export const styles = StyleSheet.create({
   statChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   statValue: {
     fontSize: FontSizes.sm,
@@ -267,11 +271,11 @@ export const styles = StyleSheet.create({
 
   // ─── Health Card ───────────────────────────────────────
   healthCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   healthHeader: {
@@ -307,10 +311,12 @@ export const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   conditionChip: {
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.background,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   conditionChipText: {
     fontSize: FontSizes.xs,
@@ -324,11 +330,11 @@ export const styles = StyleSheet.create({
 
   // ─── Health Records (D-163) ──────────────────────────────
   healthRecordCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   healthRecordHeader: {
@@ -353,11 +359,14 @@ export const styles = StyleSheet.create({
     color: Colors.accent,
   },
   healthRecordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   healthRecordInfo: {
+    flex: 1,
     gap: 2,
   },
   healthRecordName: {
@@ -372,6 +381,19 @@ export const styles = StyleSheet.create({
   healthRecordVet: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
+  },
+  seeAllLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  seeAllLinkText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
   healthDisclaimer: {
     fontSize: FontSizes.xs,
@@ -403,7 +425,7 @@ export const styles = StyleSheet.create({
     gap: 6,
     marginTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingTop: Spacing.md,
   },
   shareLinkText: {
@@ -411,6 +433,36 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.accent,
   },
+  // ─── Consolidated inline styles ─────────────────────────
+  loadingSpinner: {
+    marginTop: Spacing.sm,
+  },
+  medicationRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  medicationStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  pastMedsToggle: {
+    marginTop: Spacing.sm,
+  },
+  healthRecordNameMuted: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  medicalRecordIcon: {
+    marginRight: Spacing.sm,
+  },
+  scrollBottomSpacer: {
+    height: Spacing.xxl,
+  },
+
   offScreen: {
     position: 'absolute',
     left: -9999,

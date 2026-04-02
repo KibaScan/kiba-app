@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-02 (session 11)
+# Project Status — Last updated 2026-04-02 (session 12)
 
 ## Active Milestone
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
@@ -30,15 +30,19 @@
 - **Affiliate link infrastructure (dormant)** — `AffiliateBuyButtons` component on ResultScreen (between PortionCard and Compare button). PantryCard "Reorder" button on low-stock items. `affiliateService.ts` generates Chewy/Amazon URLs from `source_url`/`chewy_sku`/`asin`/`affiliate_links` JSONB. D-020 compliant (zero scoring imports, buttons hidden when score < 50). D-053 compliant (Chewy shows estimated price, Amazon hides price). Config: `enabled: false` — flip on after affiliate program enrollment.
 - **Condition-aware feeding frequency** — auto-populate `feedings_per_day` based on pet health conditions when adding to pantry.
 - **Safe Switch Guide (M7)** — guided 7-day (dogs) / 10-day (cats) food transition with daily mix ratios (75/25 → 50/50 → 25/75 → 100%). `SafeSwitchSetupScreen` (preview + start), `SafeSwitchDetailScreen` (daily command center with proportion bar, tummy check pills, vertical timeline). `SafeSwitchBanner` on PantryScreen (day ring + mix ratio) and HomeScreen (compact status card). Entry points: "Switch to this" on Safe Swap cards, "Find a replacement" on low-scoring (<60%) daily food PantryCards. Daily notifications (9 AM mix reminder, 7 PM tummy check nudge). Upset advisory (2+ consecutive "upset" logs → informational card, D-095 compliant, no auto-action). One active switch per pet enforced at DB level (partial unique index). Free feature (no paywall gate). Migration 025.
+- **Vet diet data fix (migration 027)** — restored 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet`.
+- **MeScreen overhaul** — unified "Medical Records" card (vaccines + dewormings chronological, micro-icons, top 3 truncation + "See All"). `MedicalRecordsScreen` full-screen timeline. `HealthRecordDetailSheet` for edit/delete. `updateHealthRecord()` + `deleteHealthRecord()` service functions. Appointments card: persistent "+ Schedule" and "See All" links. Medication rows: chevrons. Matte Premium visual polish (`cardSurface`, `hairlineBorder` tokens). Score accuracy bar gradient.
+- **SwipeableRow component** — reusable swipe-to-reveal wrapper (`src/components/ui/SwipeableRow.tsx`). Swipe left → delete (with confirmation alert + `deleteConfirm()` haptic). Swipe right → edit. Applied to: health record rows, medication rows, appointment rows on PetHubScreen and MedicalRecordsScreen.
+- **Matte Premium design system** — `.agent/design.md` established. Tokens, card anatomy, typography, spacing, bottom sheet specs, anti-patterns, screen polish checklist.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors
 
 ## Numbers
-- **Tests:** 1313 passing / 60 suites
+- **Tests:** 1320 passing / 61 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 26 (001–026)
-- **Products:** 19,058
+- **Migrations:** 27 (001–027)
+- **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
 - Pure Balance (Dog, daily food) = 62
@@ -47,8 +51,10 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next
+- Pantry polish — SwipeableRow on PantryCards, legacy token migration
+- Legacy token migration across remaining screens (HomeScreen, ResultScreen, CompareScreen, etc.)
+- Search UX overhaul on HomeScreen
 - Enroll in Chewy Affiliate Partners + Amazon Associates → flip `affiliateConfig.ts` enabled: true
-- M9: UI polish & search UX overhaul
 - M10: Community points (XP engine, streaks, product submissions — lite scope)
 - M11: Symptom Detective (deferred — major App Store update feature)
 
@@ -59,21 +65,27 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-02 (session 11)
-- **Accomplished:** Addressed M8 carry-forward gaps.
-  - **Kiba Index service tests:** 12 tests covering `fetchKibaIndexStats`, `fetchUserVote`, `submitKibaIndexVote` (offline guard, auth check, upsert payload, partial votes, error paths). File: `__tests__/services/kibaIndexService.test.ts`.
-  - **Safe Switch service tests:** 23 tests covering all 8 exported functions — 6 offline guards, CRUD operations, `getActiveSwitchForPet` composite loading (table-dispatch mock pattern), `hasActiveSwitchForPet`. File: `__tests__/services/safeSwitchService.test.ts`.
-  - **State 5 CTA button:** Added `onAddPet` prop to `KibaIndexSection`, "Add Pet →" button in no-pet warning. ResultScreen passes callback navigating to `SpeciesSelect`.
-  - **Dead code removal:** Deleted `fetchGroupSafeSwaps`, `FetchGroupSafeSwapsParams`, `fetchGroupPantryExclusions`, `fetchGroupScanExclusions` from `safeSwapService.ts`. `intersectCandidatePools` preserved (has 9 test references).
-  - **Migration 026 applied to production** (confirmed by user at session start).
-  - **Files modified:** `src/components/result/KibaIndexSection.tsx`, `src/screens/ResultScreen.tsx`, `src/services/safeSwapService.ts`, `docs/status/CURRENT.md`
-  - **Files created:** `__tests__/services/kibaIndexService.test.ts`, `__tests__/services/safeSwitchService.test.ts`
+- **Date:** 2026-04-02 (session 12)
+- **Accomplished:** M9 first pass — vet diet data fix, MeScreen overhaul review/cleanup, SwipeableRow, design system.
+  - **Vet diet fix:** Discovered `is_vet_diet` was 0 across all products (lost during v7 reimport). Migration 027 restores 483 flags via brand/name pattern matching. Fixed `import_products.py` to map `_is_vet_diet` for future imports. Repaired migration history for 021-026 (were applied but not tracked).
+  - **MeScreen cleanup (post-Gemini):** Fixed `useFocusEffect` missing dependency (`treatBatteryReset`). Replaced generic haptic with `deleteConfirm()` on health record delete. Added `console.error` logging to catch blocks. Consolidated 8 inline styles into PetHubStyles.ts (7 new named styles).
+  - **SwipeableRow:** Created reusable `src/components/ui/SwipeableRow.tsx` using `Swipeable` from `react-native-gesture-handler`. Applied to health record rows (delete + edit), medication rows (delete + edit), appointment rows (delete), and MedicalRecordsScreen rows. Updated gesture handler mock with Swipeable + RectButton.
+  - **Tests:** 7 new tests for `updateHealthRecord` and `deleteHealthRecord` (success, offline guard, error, partial update).
+  - **Design system:** Updated `.agent/design.md` — removed "no swipe-to-delete" rule, added SwipeableRow documentation (props, usage, applied screens, still-needed screens), legacy token migration guide, updated anti-patterns and checklist.
+  - **Post-review fixes:** Fixed RectButton mock (View → Pressable), added `isOnline` assertions to offline tests, aligned promise chain pattern (`.then().catch()` consistently).
+  - **Files created:** `src/components/ui/SwipeableRow.tsx`, `__tests__/services/appointmentService.health.test.ts`, `supabase/migrations/027_restore_vet_diet_flags.sql`
+  - **Files modified:** `src/screens/PetHubScreen.tsx`, `src/screens/MedicalRecordsScreen.tsx`, `src/components/appointments/HealthRecordDetailSheet.tsx`, `src/screens/pethub/PetHubStyles.ts`, `__mocks__/react-native-gesture-handler.js`, `scripts/import/import_products.py`, `.agent/design.md`, `ROADMAP.md`, `docs/status/CURRENT.md`
 - **Not done yet:**
-  - Kiba Index end-to-end testing on iOS simulator (scan → scroll → vote → verify bar chart)
+  - Pantry polish (SwipeableRow on PantryCards, legacy token migration)
+  - Legacy token migration on remaining screens
+  - Search UX overhaul
+  - Kiba Index end-to-end testing on iOS simulator
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
-  - `life_stage_claim` still free text (deferred — tech debt, not functional gap)
-- **Next session should:** Define M9 scope (UI polish & search UX overhaul). Test Kiba Index on device.
+- **Next session should:** Polish Pantry screen (SwipeableRow + Matte Premium tokens). Start legacy token migration across other screens. Define search UX scope.
 - **Gotchas for next session:**
+  - `.agent/design.md` is the single source of truth for visual polish — read it before touching any screen.
+  - `Colors.card` and `Colors.cardBorder` are legacy tokens — grep and migrate when touching a screen.
+  - SwipeableRow always needs `deleteConfirmMessage` — never delete without confirmation.
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
   - `life_stage_claim` still free text (no enum validation) — deferred as tech debt.
-- **Decision/scoring changes:** No new decisions. No scoring logic changed.
+- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 027 is data-only (vet diet flags).

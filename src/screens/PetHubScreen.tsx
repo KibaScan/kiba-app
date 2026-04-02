@@ -33,6 +33,7 @@ import {
   getPetConditions,
   getPetAllergens,
   getMedications,
+  deleteMedication,
 } from '../services/petService';
 import { getConditionsForSpecies } from '../data/conditions';
 import { getWeightUnitPref, computePetDer } from '../utils/pantryHelpers';
@@ -41,9 +42,10 @@ import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerSheet';
-import { getHealthRecords, getUpcomingAppointments } from '../services/appointmentService';
+import { getHealthRecords, getUpcomingAppointments, deleteHealthRecord, deleteAppointment } from '../services/appointmentService';
 import { supabase } from '../services/supabase';
 import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
+import HealthRecordDetailSheet from '../components/appointments/HealthRecordDetailSheet';
 import WeightEstimateSheet from '../components/WeightEstimateSheet';
 import { KCAL_PER_LB } from '../utils/weightGoal';
 import type { Pet, PetCondition, PetAllergen, PetMedication } from '../types/pet';
@@ -57,6 +59,8 @@ import { assembleVetReportData } from '../services/vetReportService';
 import { generateVetReportHTML } from '../utils/vetReportHTML';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { LinearGradient } from 'expo-linear-gradient';
+import SwipeableRow from '../components/ui/SwipeableRow';
 
 // ─── Component ────────────────────────────────────────────
 
@@ -154,6 +158,10 @@ export default function PetHubScreen({ navigation }: Props) {
   const [defaultRecordType, setDefaultRecordType] = useState<HealthRecordType>('vaccination');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
+  // Health record detail sheet
+  const [selectedRecord, setSelectedRecord] = useState<PetHealthRecord | null>(null);
+  const [detailSheetVisible, setDetailSheetVisible] = useState(false);
+
   // ─── D-161: Weight estimate sheet ──────────────────────
   const [weightEstimateVisible, setWeightEstimateVisible] = useState(false);
 
@@ -203,7 +211,7 @@ export default function PetHubScreen({ navigation }: Props) {
       return () => {
         cancelled = true;
       };
-    }, [activePet?.id]),
+    }, [activePet?.id, treatBatteryReset]),
   );
 
   // ─── No pets state ──────────────────────────────────────
@@ -421,7 +429,10 @@ export default function PetHubScreen({ navigation }: Props) {
               </Text>
             </View>
             <View style={styles.accuracyTrack}>
-              <View
+              <LinearGradient
+                colors={['#00B4D8', '#0077B6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={[
                   styles.accuracyFill,
                   { width: `${scoreAccuracy}%` },
@@ -575,7 +586,7 @@ export default function PetHubScreen({ navigation }: Props) {
             <ActivityIndicator
               color={Colors.accent}
               size="small"
-              style={{ marginTop: Spacing.sm }}
+              style={styles.loadingSpinner}
             />
           ) : activePet.health_reviewed_at == null ? (
             <Text style={styles.healthPrompt}>
@@ -653,11 +664,13 @@ export default function PetHubScreen({ navigation }: Props) {
               {medications
                 .filter((m) => m.status !== 'past')
                 .map((med) => (
-                  <TouchableOpacity
+                  <SwipeableRow
                     key={med.id}
-                    style={styles.healthRecordRow}
-                    activeOpacity={0.7}
-                    onPress={() =>
+                    onDelete={async () => {
+                      await deleteMedication(med.id);
+                      getMedications(activePet.id).then(setMedications).catch(() => {});
+                    }}
+                    onEdit={() =>
                       navigation.navigate('MedicationForm', {
                         petId: activePet.id,
                         petName: activePet.name,
@@ -665,34 +678,44 @@ export default function PetHubScreen({ navigation }: Props) {
                         conditions: conditionTags.filter((t) => t !== 'allergy'),
                       })
                     }
+                    deleteConfirmMessage={`Delete "${med.medication_name}"? This cannot be undone.`}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: 4,
-                          backgroundColor:
-                            med.status === 'current'
-                              ? Colors.severityGreen
-                              : Colors.severityAmber,
-                        }}
-                      />
-                      <View style={styles.healthRecordInfo}>
-                        <Text style={styles.healthRecordName}>{med.medication_name}</Text>
-                        {med.dosage ? (
-                          <Text style={styles.healthRecordDate}>{med.dosage}</Text>
-                        ) : null}
+                    <TouchableOpacity
+                      style={styles.healthRecordRow}
+                      activeOpacity={0.7}
+                      onPress={() =>
+                        navigation.navigate('MedicationForm', {
+                          petId: activePet.id,
+                          petName: activePet.name,
+                          medication: med,
+                          conditions: conditionTags.filter((t) => t !== 'allergy'),
+                        })
+                      }
+                    >
+                      <View style={styles.medicationRowInner}>
+                        <View
+                          style={[
+                            styles.medicationStatusDot,
+                            { backgroundColor: med.status === 'current' ? Colors.severityGreen : Colors.severityAmber },
+                          ]}
+                        />
+                        <View style={styles.healthRecordInfo}>
+                          <Text style={styles.healthRecordName}>{med.medication_name}</Text>
+                          {med.dosage ? (
+                            <Text style={styles.healthRecordDate}>{med.dosage}</Text>
+                          ) : null}
+                        </View>
                       </View>
-                    </View>
-                  </TouchableOpacity>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                    </TouchableOpacity>
+                  </SwipeableRow>
                 ))}
 
               {/* Past medications — collapsed by default */}
               {medications.filter((m) => m.status === 'past').length > 0 && (
                 <>
                   <TouchableOpacity
-                    style={{ marginTop: Spacing.sm }}
+                    style={styles.pastMedsToggle}
                     onPress={() => setShowPastMeds((v) => !v)}
                     activeOpacity={0.7}
                   >
@@ -704,38 +727,42 @@ export default function PetHubScreen({ navigation }: Props) {
                     medications
                       .filter((m) => m.status === 'past')
                       .map((med) => (
-                        <TouchableOpacity
+                        <SwipeableRow
                           key={med.id}
-                          style={styles.healthRecordRow}
-                          activeOpacity={0.7}
-                          onPress={() =>
-                            navigation.navigate('MedicationForm', {
-                              petId: activePet.id,
-                              petName: activePet.name,
-                              medication: med,
-                              conditions: conditionTags.filter((t) => t !== 'allergy'),
-                            })
-                          }
+                          onDelete={async () => {
+                            await deleteMedication(med.id);
+                            getMedications(activePet.id).then(setMedications).catch(() => {});
+                          }}
+                          deleteConfirmMessage={`Delete "${med.medication_name}"? This cannot be undone.`}
                         >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <View
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: 4,
-                                backgroundColor: Colors.textTertiary,
-                              }}
-                            />
-                            <View style={styles.healthRecordInfo}>
-                              <Text style={[styles.healthRecordName, { color: Colors.textSecondary }]}>
-                                {med.medication_name}
-                              </Text>
-                              {med.dosage ? (
-                                <Text style={styles.healthRecordDate}>{med.dosage}</Text>
-                              ) : null}
+                          <TouchableOpacity
+                            style={styles.healthRecordRow}
+                            activeOpacity={0.7}
+                            onPress={() =>
+                              navigation.navigate('MedicationForm', {
+                                petId: activePet.id,
+                                petName: activePet.name,
+                                medication: med,
+                                conditions: conditionTags.filter((t) => t !== 'allergy'),
+                              })
+                            }
+                          >
+                            <View style={styles.medicationRowInner}>
+                              <View
+                                style={[styles.medicationStatusDot, { backgroundColor: Colors.textTertiary }]}
+                              />
+                              <View style={styles.healthRecordInfo}>
+                                <Text style={styles.healthRecordNameMuted}>
+                                  {med.medication_name}
+                                </Text>
+                                {med.dosage ? (
+                                  <Text style={styles.healthRecordDate}>{med.dosage}</Text>
+                                ) : null}
+                              </View>
                             </View>
-                          </View>
-                        </TouchableOpacity>
+                            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                          </TouchableOpacity>
+                        </SwipeableRow>
                       ))}
                 </>
               )}
@@ -743,63 +770,80 @@ export default function PetHubScreen({ navigation }: Props) {
           )}
         </View>
 
-        {/* Health Records — Vaccines (D-163) */}
+        {/* Medical Records — unified chronological timeline */}
         <View style={styles.healthRecordCard}>
-          <Text style={styles.healthRecordTitle}>Vaccines</Text>
-          {healthRecords.filter((r) => r.record_type === 'vaccination').length === 0 ? (
+          <Text style={styles.healthRecordTitle}>Medical Records</Text>
+          {healthRecords.length === 0 ? (
             <TouchableOpacity
               style={styles.addRecordLink}
               activeOpacity={0.7}
               onPress={() => { setDefaultRecordType('vaccination'); setManualRecordVisible(true); }}
             >
               <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Add a vaccine</Text>
+              <Text style={styles.addRecordLinkText}>Add a medical record</Text>
             </TouchableOpacity>
           ) : (
-            healthRecords
-              .filter((r) => r.record_type === 'vaccination')
-              .map((r) => (
-                <View key={r.id} style={styles.healthRecordRow}>
-                  <View style={styles.healthRecordInfo}>
-                    <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
-                    <Text style={styles.healthRecordDate}>
-                      {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
-                    </Text>
-                    {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
-                  </View>
-                </View>
-              ))
-          )}
-        </View>
+            <>
+              {/* Top 3 records, sorted chronologically */}
+              {[...healthRecords]
+                .sort((a, b) => b.administered_at.localeCompare(a.administered_at))
+                .slice(0, 3)
+                .map((r) => (
+                  <SwipeableRow
+                    key={r.id}
+                    onDelete={async () => {
+                      await deleteHealthRecord(r.id);
+                      getHealthRecords(activePet.id).then(setHealthRecords).catch(() => {});
+                    }}
+                    onEdit={() => { setSelectedRecord(r); setDetailSheetVisible(true); }}
+                    deleteConfirmMessage={`Delete "${r.treatment_name}"? This cannot be undone.`}
+                  >
+                    <TouchableOpacity
+                      style={styles.healthRecordRow}
+                      activeOpacity={0.7}
+                      onPress={() => { setSelectedRecord(r); setDetailSheetVisible(true); }}
+                    >
+                      <Ionicons
+                        name={r.record_type === 'vaccination' ? 'shield-checkmark-outline' : 'fitness-outline'}
+                        size={16}
+                        color={Colors.textTertiary}
+                        style={styles.medicalRecordIcon}
+                      />
+                      <View style={styles.healthRecordInfo}>
+                        <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
+                        <Text style={styles.healthRecordDate}>
+                          {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                        </Text>
+                        {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                    </TouchableOpacity>
+                  </SwipeableRow>
+                ))}
 
-        {/* Health Records — Dewormings (D-163) */}
-        <View style={styles.healthRecordCard}>
-          <Text style={styles.healthRecordTitle}>Dewormings</Text>
-          {healthRecords.filter((r) => r.record_type === 'deworming').length === 0 ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() => { setDefaultRecordType('deworming'); setManualRecordVisible(true); }}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Add a deworming record</Text>
-            </TouchableOpacity>
-          ) : (
-            healthRecords
-              .filter((r) => r.record_type === 'deworming')
-              .map((r) => (
-                <View key={r.id} style={styles.healthRecordRow}>
-                  <View style={styles.healthRecordInfo}>
-                    <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
-                    <Text style={styles.healthRecordDate}>
-                      {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
-                    </Text>
-                    {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
-                  </View>
-                </View>
-              ))
+              {/* See All link — only when >3 records exist */}
+              {healthRecords.length > 3 && (
+                <TouchableOpacity
+                  style={styles.seeAllLink}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('MedicalRecords')}
+                >
+                  <Text style={styles.seeAllLinkText}>See All</Text>
+                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+                </TouchableOpacity>
+              )}
+
+              {/* Persistent add CTA — bottom-anchored, single steering wheel */}
+              <TouchableOpacity
+                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
+                activeOpacity={0.7}
+                onPress={() => { setDefaultRecordType('vaccination'); setManualRecordVisible(true); }}
+              >
+                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                <Text style={styles.addRecordLinkText}>Add Medical Record</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -824,24 +868,55 @@ export default function PetHubScreen({ navigation }: Props) {
               <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
             </TouchableOpacity>
           ) : (
-            appointments.slice(0, 3).map((appt) => (
+            <>
+              {appointments.slice(0, 3).map((appt) => (
+                <SwipeableRow
+                  key={appt.id}
+                  onDelete={async () => {
+                    await deleteAppointment(appt.id);
+                    setAppointments((prev) => prev.filter((a) => a.id !== appt.id));
+                  }}
+                  deleteConfirmMessage={`Delete this appointment? This cannot be undone.`}
+                >
+                  <TouchableOpacity
+                    style={styles.healthRecordRow}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
+                  >
+                    <View style={styles.healthRecordInfo}>
+                      <Text style={styles.healthRecordName}>
+                        {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </Text>
+                      <Text style={styles.healthRecordDate}>
+                        {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                      {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                  </TouchableOpacity>
+                </SwipeableRow>
+              ))}
+
+              {/* See All link */}
               <TouchableOpacity
-                key={appt.id}
-                style={styles.healthRecordRow}
+                style={styles.seeAllLink}
                 activeOpacity={0.7}
-                onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
+                onPress={() => navigation.navigate('Appointments')}
               >
-                <View style={styles.healthRecordInfo}>
-                  <Text style={styles.healthRecordName}>
-                    {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </Text>
-                  <Text style={styles.healthRecordDate}>
-                    {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </Text>
-                  {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
-                </View>
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
               </TouchableOpacity>
-            ))
+
+              {/* Always-visible add link */}
+              <TouchableOpacity
+                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('CreateAppointment')}
+              >
+                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+                <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -879,7 +954,7 @@ export default function PetHubScreen({ navigation }: Props) {
           <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
         </TouchableOpacity>
 
-        <View style={{ height: Spacing.xxl }} />
+        <View style={styles.scrollBottomSpacer} />
       </ScrollView>
 
       {/* Off-screen hub share card for capture */}
@@ -914,7 +989,19 @@ export default function PetHubScreen({ navigation }: Props) {
           setManualRecordVisible(false);
           // Reload health records
           if (activePet) {
-            getHealthRecords(activePet.id).then(setHealthRecords).catch(() => {});
+            getHealthRecords(activePet.id).then(setHealthRecords).catch(() => { });
+          }
+        }}
+      />
+
+      {/* Health record detail/edit sheet */}
+      <HealthRecordDetailSheet
+        visible={detailSheetVisible}
+        record={selectedRecord}
+        onClose={() => { setDetailSheetVisible(false); setSelectedRecord(null); }}
+        onUpdated={() => {
+          if (activePet) {
+            getHealthRecords(activePet.id).then(setHealthRecords).catch(() => { });
           }
         }}
       />
