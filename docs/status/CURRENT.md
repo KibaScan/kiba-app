@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-03-31 (session 9)
+# Project Status — Last updated 2026-04-02 (session 11)
 
 ## Active Milestone
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
@@ -35,9 +35,9 @@
 - No pre-existing TS errors
 
 ## Numbers
-- **Tests:** 1278 passing / 58 suites
+- **Tests:** 1313 passing / 60 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 25 (001–025)
+- **Migrations:** 26 (001–026)
 - **Products:** 19,058
 
 ## Regression Anchors
@@ -47,7 +47,6 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next
-- Apply migration 026 to production Supabase
 - Enroll in Chewy Affiliate Partners + Amazon Associates → flip `affiliateConfig.ts` enabled: true
 - M9: UI polish & search UX overhaul
 - M10: Community points (XP engine, streaks, product submissions — lite scope)
@@ -60,25 +59,21 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-01 (session 10)
-- **Accomplished:** Reviewed Gemini's M8 Kiba Index implementation, fixed bugs and gaps.
-  - **Bug fix 1 — non-null assertion:** `KibaIndexSection.tsx:118` used unsafe `stats!` — replaced with `stats !== null &&` guard.
-  - **Bug fix 2 — optimistic double-count:** `total_votes` was bumped on every vote, even partial second-category votes that upsert the same row. Now only bumps when `prevVote` is null (new row).
-  - **Bug fix 3 — offline handling:** Added `isOnline()` check to `kibaIndexService.ts` before submitting votes. Added `Alert.alert` on vote failure instead of silent rollback.
-  - **Cleanup — stale type:** Removed pre-existing `KibaIndexVote` interface from `types/index.ts` (M0 scaffold, numeric 1-5 scores, unused — conflicted with service's string enum type).
-  - **Cleanup — hardcoded colors:** Replaced `#333333` → `Colors.cardBorder`, `#242424` → `Colors.card`, `rgba(245,158,11,...)` → `Colors.severityAmber` + hex opacity in KibaIndexSection, VoteBarChart, FeedbackCard.
-  - **Files modified:** `src/components/result/KibaIndexSection.tsx`, `src/services/kibaIndexService.ts`, `src/types/index.ts`, `src/components/result/kiba-index/VoteBarChart.tsx`, `src/components/result/kiba-index/FeedbackCard.tsx`
-  - **Files reviewed (no changes needed):** `supabase/migrations/026_kiba_index.sql`, `src/screens/ResultScreen.tsx`
+- **Date:** 2026-04-02 (session 11)
+- **Accomplished:** Addressed M8 carry-forward gaps.
+  - **Kiba Index service tests:** 12 tests covering `fetchKibaIndexStats`, `fetchUserVote`, `submitKibaIndexVote` (offline guard, auth check, upsert payload, partial votes, error paths). File: `__tests__/services/kibaIndexService.test.ts`.
+  - **Safe Switch service tests:** 23 tests covering all 8 exported functions — 6 offline guards, CRUD operations, `getActiveSwitchForPet` composite loading (table-dispatch mock pattern), `hasActiveSwitchForPet`. File: `__tests__/services/safeSwitchService.test.ts`.
+  - **State 5 CTA button:** Added `onAddPet` prop to `KibaIndexSection`, "Add Pet →" button in no-pet warning. ResultScreen passes callback navigating to `SpeciesSelect`.
+  - **Dead code removal:** Deleted `fetchGroupSafeSwaps`, `FetchGroupSafeSwapsParams`, `fetchGroupPantryExclusions`, `fetchGroupScanExclusions` from `safeSwapService.ts`. `intersectCandidatePools` preserved (has 9 test references).
+  - **Migration 026 applied to production** (confirmed by user at session start).
+  - **Files modified:** `src/components/result/KibaIndexSection.tsx`, `src/screens/ResultScreen.tsx`, `src/services/safeSwapService.ts`, `docs/status/CURRENT.md`
+  - **Files created:** `__tests__/services/kibaIndexService.test.ts`, `__tests__/services/safeSwitchService.test.ts`
 - **Not done yet:**
-  - **Migration 026 not applied to production** — must run in Supabase SQL Editor before testing.
-  - `safeSwitchService.test.ts` (deferred — needs Supabase mocking harness)
-  - Kiba Index tests not written (Gemini's plan mentioned them but didn't create them)
-  - State 5 "No Active Pet" missing CTA button (spec says `[ Add Pet → ]`, implementation only shows text — minor, rare edge case)
-- **Next session should:** Apply migration 026 to production. Test Kiba Index end-to-end on iOS simulator (scan → scroll to section → vote → verify bar chart). Consider Kiba Index tests.
+  - Kiba Index end-to-end testing on iOS simulator (scan → scroll → vote → verify bar chart)
+  - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
+  - `life_stage_claim` still free text (deferred — tech debt, not functional gap)
+- **Next session should:** Define M9 scope (UI polish & search UX overhaul). Test Kiba Index on device.
 - **Gotchas for next session:**
-  - **Migration 026 NOT yet applied.** Must run before Kiba Index works. Drops NOT NULL on taste_vote/tummy_vote, creates `get_kiba_index_stats` RPC.
-  - Gemini created all M8 Kiba Index files (uncommitted) — service, components, migration, ResultScreen integration.
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
-  - `fetchGroupSafeSwaps()` is still dead code.
-  - `life_stage_claim` is still free text (no enum validation).
+  - `life_stage_claim` still free text (no enum validation) — deferred as tech debt.
 - **Decision/scoring changes:** No new decisions. No scoring logic changed.

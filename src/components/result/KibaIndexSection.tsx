@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { FeedbackCard } from './kiba-index/FeedbackCard';
@@ -13,6 +13,7 @@ interface KibaIndexSectionProps {
   species: 'dog' | 'cat';
   petName: string | null;
   isBypassed: boolean;
+  onAddPet?: () => void;
 }
 
 export const KibaIndexSection: React.FC<KibaIndexSectionProps> = ({
@@ -21,6 +22,7 @@ export const KibaIndexSection: React.FC<KibaIndexSectionProps> = ({
   species,
   petName,
   isBypassed,
+  onAddPet,
 }) => {
   const [stats, setStats] = useState<KibaIndexStats | null>(null);
   const [userVote, setUserVote] = useState<KibaIndexVote | null>(null);
@@ -143,6 +145,12 @@ export const KibaIndexSection: React.FC<KibaIndexSectionProps> = ({
             <Text style={styles.noPetText}>
               Add a pet profile to share your pet's experience with this food.
             </Text>
+            {onAddPet && (
+              <TouchableOpacity style={styles.addPetButton} onPress={onAddPet}>
+                <Text style={styles.addPetButtonText}>Add Pet</Text>
+                <Ionicons name="arrow-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -220,6 +228,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     textAlign: 'center',
     fontFamily: 'Inter-Regular',
+  },
+  addPetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: Spacing.sm,
+  },
+  addPetButtonText: {
+    color: Colors.accent,
+    fontSize: FontSizes.sm,
+    fontFamily: 'Inter-Medium',
   },
   badgeContainer: {
     flexDirection: 'row',

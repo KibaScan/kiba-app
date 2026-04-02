@@ -872,6 +872,7 @@ export default function ResultScreen() {
             species={species}
             petName={petName}
             isBypassed={!!scoredResult?.bypass}
+            onAddPet={() => (navigation.getParent() as any)?.navigate('Me', { screen: 'SpeciesSelect' })}
           />
         )}
 
