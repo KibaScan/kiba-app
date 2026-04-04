@@ -139,6 +139,8 @@ export interface ProductSearchResult {
   image_url: string | null;
   product_form: string | null;
   category: string;
+  final_score: number | null;
+  is_supplemental: boolean;
 }
 
 /**
@@ -152,7 +154,9 @@ export async function searchProducts(
     category?: 'daily_food' | 'treat';
     productForm?: string;
     isSupplemental?: boolean;
+    isVetDiet?: boolean;
   },
+  petId?: string,
 ): Promise<ProductSearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed && !filters?.category) return [];
@@ -161,7 +165,7 @@ export async function searchProducts(
     .from('products')
     .select('id, name, brand, image_url, product_form, category, is_supplemental')
     .eq('target_species', species)
-    .eq('is_vet_diet', false)
+    .eq('is_vet_diet', filters?.isVetDiet ?? false)
     .eq('is_recalled', false)
     .eq('is_variety_pack', false)
     .neq('category', 'supplement');
@@ -195,13 +199,37 @@ export async function searchProducts(
 
   if (error || !data) return [];
 
-  return (data as Record<string, unknown>[]).map((row) => ({
+  const results = (data as Record<string, unknown>[]).map((row) => ({
     product_id: row.id as string,
     product_name: row.name as string,
     brand: row.brand as string,
     image_url: (row.image_url as string) ?? null,
     product_form: (row.product_form as string) ?? null,
     category: row.category as string,
+    is_supplemental: (row.is_supplemental as boolean) ?? false,
+    final_score: null as number | null,
   }));
+
+  // Enrich with cached scores if petId provided
+  if (petId && results.length > 0) {
+    const productIds = results.map((r) => r.product_id);
+    const { data: scores } = await supabase
+      .from('pet_product_scores')
+      .select('product_id, final_score')
+      .eq('pet_id', petId)
+      .in('product_id', productIds);
+
+    if (scores) {
+      const scoreMap = new Map<string, number>();
+      for (const s of scores as { product_id: string; final_score: number }[]) {
+        scoreMap.set(s.product_id, s.final_score);
+      }
+      for (const r of results) {
+        r.final_score = scoreMap.get(r.product_id) ?? null;
+      }
+    }
+  }
+
+  return results;
 }
 

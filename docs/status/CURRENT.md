@@ -41,7 +41,7 @@
 - **Category browse on HomeScreen** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Search bar filters by active category + sub-filter. Categories: Daily Food (Dry/Wet/Freeze-Dried/Vet Diet/Other), Toppers (Wet/Freeze-Dried/Dry), Treats (Crunchy & Biscuits/Jerky & Chews/Freeze-Dried/Lickables & Purees/Dental), Supplements (Joint & Hip/Skin & Coat/Digestive/Calming). `@shopify/flash-list` installed. Variety pack exclusion via `is_variety_pack` column (migration 029, ~1,706 flagged). `get_browse_counts` RPC for chip badge counts. `categoryBrowseService.ts` with cursor-based pagination. CategoryBrowseScreen exists but browse is inline on HomeScreen.
 
 ## What's Broken / Known Issues
-- No pre-existing TS errors
+- **Stale browse scores**: CategoryBrowseScreen reads cached scores from `pet_product_scores` which can diverge from fresh ResultScreen scores (e.g. 82 vs 79) when pet profile changes after batch scoring. Root cause: batch scoring delta check counts ALL daily food for cache maturity but fetches by specific `product_form` — cache appears mature when dry/wet fill 80%, so freeze-dried (and other minority forms) never get scored. Workaround: fallback to unscored `products` query when scored cache is empty for a form. Long-term fix: make cache maturity check form-aware in both Edge Function and `batchScoreOnDevice.ts`.
 
 ## Numbers
 - **Tests:** 1320 passing / 61 suites
@@ -70,35 +70,39 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-03 (session 16)
-- **Accomplished:** M9 — Card contrast fix, design system update, HomeScreen search overhaul with category browse.
-  - **Card contrast alignment:** `Colors.cardSurface` `#1C1C1E` → `#242424`, `Colors.hairlineBorder` `rgba(255,255,255,0.08)` → `rgba(255,255,255,0.12)`.
-  - **Design system update:** Reviewed Gemini's 11-fix MeScreen walkthrough, documented icon platters, screen headers, disclaimer placement, Featured Action Card, zero-state text, stat chip borderless fix.
-  - **HomeScreen category browse:** 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) in 2x2 grid. Tapping highlights with accent color, shows contextual sub-filter chips below search bar. Sub-filters: Daily Food (Dry/Wet/Freeze-Dried/Vet Diet/Other), Toppers (Wet/Freeze-Dried/Dry), Treats (Crunchy & Biscuits/Jerky & Chews/Freeze-Dried/Lickables & Purees/Dental), Supplements (Joint & Hip/Skin & Coat/Digestive/Calming). Filter icon platter before chip row.
-  - **Dynamic search filtering:** `searchProducts()` extended with `productForm` and `isSupplemental` filters. Search re-triggers automatically when category or sub-filter changes via `useEffect`. Text search + category + sub-filter are AND-combined.
-  - **Variety pack exclusion:** `is_variety_pack BOOLEAN` column on products (migration 029). ~1,706 products flagged via name patterns (variety pack, Bundle: prefix, sampler, assorted, multi-pack). Does NOT flag "case of" or "N-lb bundle". `searchProducts()` filters `.eq('is_variety_pack', false)`.
-  - **Browse infrastructure:** `categoryBrowseService.ts` with `fetchBrowseResults()` (scored + unscored paths, cursor-based pagination, name-pattern sub-filters for treats/supplements), `fetchBrowseCounts()` (RPC), `fetchCategoryTopPicks()` (stub). `get_browse_counts` RPC in migration 029. `@shopify/flash-list` 2.0.2 installed.
-  - **CategoryBrowseScreen:** Full-screen browse exists (header + chips + FlashList + pagination) but browse is now inline on HomeScreen. Screen kept for future Top Picks "See All".
-  - **Files created:** `supabase/migrations/029_category_browse.sql`, `src/types/categoryBrowse.ts`, `src/services/categoryBrowseService.ts`, `src/components/browse/SubFilterChipRow.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/screens/CategoryBrowseScreen.tsx`
-  - **Files modified:** `src/screens/HomeScreen.tsx`, `src/services/topMatches.ts`, `src/types/navigation.ts`, `src/navigation/index.tsx`, `src/utils/constants.ts`, `.agent/design.md`, `package.json`, `docs/status/CURRENT.md`
+- **Date:** 2026-04-04 (session 17)
+- **Accomplished:** M9 — Gemini overhaul verification, freeze-dried/vet-diet browse fixes, 6 micro-polishes, custom category icons.
+  - **Gemini 8-fix overhaul verified:** All 8 HomeScreen fixes confirmed applied (sub-filters below grid, score pills in search, brand sanitization, 1A pill contrast, solid card fills, carded pantry, 2-line product names, TopPicksCarousel).
+  - **Freeze-dried browse fix:** Root cause: batch scoring cache maturity check not form-aware — freeze-dried products never scored. Fix: dynamic overfetch (`pageSize * 50` when filtering by form/name patterns) + fallback from `fetchScoredResults` to `fetchUnscoredResults` when scored cache is empty for a form. Applied to daily_food, toppers_mixers, and treats categories.
+  - **Vet diet search fix:** `searchProducts()` hardcoded `is_vet_diet=false`. Added `isVetDiet` filter param, wired HomeScreen handler for `vet_diet` sub-filter.
+  - **6 micro-polishes from Gemini review:**
+    1. White image stage on TopPicksCarousel (`#FFFFFF` bg, `padding: 12`, `resizeMode: 'contain'`)
+    2. Black text on cyan active chips (`#111111` text, `rgba(0,0,0,0.6)` count)
+    3. Score pills replace hollow rings on BrowseProductRow (matching HomeScreen pill style)
+    4. Removed "match" text from Top Picks pills (just `94%`)
+    5. Muted rank numbers to `Colors.textTertiary` (removed cyan on top 3)
+    6. Killed wireframe borders on search bar, pet badge (HomeScreen + CategoryBrowseScreen)
+  - **Custom category icons:** Replaced Ionicons with custom PNGs from `assets/Icons/categories/`. Outline (inactive) → filled (active) swap via `CATEGORY_ICONS` / `CATEGORY_ICONS_FILLED` maps. Icon size 56px. `src/constants/iconMaps.ts` created.
+  - **Files created:** `src/constants/iconMaps.ts`
+  - **Files modified:** `src/screens/HomeScreen.tsx`, `src/components/browse/TopPicksCarousel.tsx`, `src/components/browse/SubFilterChipRow.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/screens/CategoryBrowseScreen.tsx`, `src/services/categoryBrowseService.ts`, `src/services/topMatches.ts`, `docs/status/CURRENT.md`
 - **Not done yet:**
-  - Top Picks per category/sub-filter (up to 50 per — `fetchCategoryTopPicks` stub ready, needs dedicated screen)
-  - HomeScreen visual overhaul (custom assets, layout polish)
+  - Custom icons for remaining groups (concerns, advisories, conditions, forms, treat-forms, supplement-forms) — v1 thin-stroke PNGs exist but need v2 bold re-gen
+  - 5 pending icons (joint-hip, skin-coat, calming, digestive re-gen, jerky-chews) per custom-icon-spec.md
+  - `IconPlatter` component not yet created (spec in `docs/specs/custom-icon-spec.md`)
+  - Stale browse scores: batch scoring cache maturity not form-aware (documented in Known Issues)
   - Pantry polish (SwipeableRow on PantryCards, legacy token migration)
-  - Legacy token migration on remaining screens (AppointmentsListScreen, HomeScreen, ResultScreen, CompareScreen, EditPantryItemScreen)
+  - Legacy token migration on remaining screens (AppointmentsListScreen, ResultScreen, CompareScreen, EditPantryItemScreen)
   - Kiba Index end-to-end testing on iOS simulator
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
   - Brand filter on browse (deferred — brand picker bottom sheet)
-  - Chip badge counts only show for Daily Food sub-filters (treats/supplements/toppers sub-filters use name-based detection, no RPC counts yet)
-- **Next session should:** Add Top Picks (up to 50 per category/sub-filter, dedicated screen or inline section). HomeScreen visual polish with custom assets. Consider adding chip counts for treat/supplement sub-filters.
+  - Chip badge counts only show for Daily Food sub-filters
+- **Next session should:** Continue custom icon rollout (create `IconPlatter` component, wire concern/advisory/condition icons on ResultScreen). Generate v2 bold-stroke versions of remaining icon groups. Consider pantry polish.
 - **Gotchas for next session:**
-  - Migration 028 + 029 are both applied to production Supabase.
-  - `is_variety_pack` column is live. `searchProducts()` already filters on it.
-  - `CategoryBrowseScreen` exists at `src/screens/CategoryBrowseScreen.tsx` and is registered on HomeStack — but browse is now inline on HomeScreen. The screen uses `categoryBrowseService.ts` which queries `pet_product_scores` (requires batch scoring cache). If the cache is empty for a pet, the screen shows empty. HomeScreen text search queries `products` directly (no cache needed).
-  - `@shopify/flash-list` 2.0.2 installed — FlashList v2 dropped `estimatedItemSize` prop.
-  - Sub-filter chip row has a filter icon platter at the leading edge (options-outline, 32px circle).
-  - Treat sub-filters (Crunchy & Biscuits, Jerky & Chews, Lickables & Purees, Dental) and supplement sub-filters (Joint & Hip, Skin & Coat, Digestive, Calming) use `ILIKE` name patterns, not DB columns. Patterns defined in `categoryBrowseService.ts`.
-  - `fetchCategoryTopPicks()` is a stub that delegates to `fetchBrowseResults()` with a limit override — ready for Top Picks implementation.
-  - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
-  - `life_stage_claim` still free text (no enum validation) — deferred as tech debt.
-- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 029 is schema + RPC only (new column, indexes, browse counts function).
+  - Asset directory is `assets/Icons/` (capital I), NOT `assets/icons/`. The spec file uses lowercase — Metro is case-sensitive on require paths.
+  - `iconMaps.ts` category keys must match `BrowseCategory` type values: `treat` (not `treats`), `supplement` (not `supplements`).
+  - `fetchUnscoredResults` now accepts optional `opts` param for `productFormFilter` and `isSupplemental` — used as fallback when scored cache is empty.
+  - `searchProducts()` `isVetDiet` filter: `undefined` → excludes vet diets (default `false`), `true` → only vet diets. HomeScreen clears `isSupplemental` when vet_diet sub-filter active.
+  - TopPicksCarousel image stage is white (`#FFFFFF`) — product images framed with padding + contain.
+  - BrowseProductRow now uses score pills (not rings) — same style as HomeScreen `scorePill`/`scorePillText`.
+  - `custom-icon-spec.md` updated to v2 (bold 2px stroke, filled variants, re-gen queue).
+- **Decision/scoring changes:** No new decisions. No scoring logic changed. No new migrations.

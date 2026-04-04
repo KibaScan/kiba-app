@@ -64,9 +64,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.cardSurface,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
+    backgroundColor: '#1C1C1E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -82,16 +80,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
   },
   chipInactive: {
-    backgroundColor: Colors.cardSurface,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
+    backgroundColor: '#1C1C1E',
   },
   chipText: {
     fontSize: FontSizes.sm,
     fontWeight: '600',
   },
   chipTextActive: {
-    color: '#FFFFFF',
+    color: '#111111',
   },
   chipTextInactive: {
     color: Colors.textSecondary,
@@ -101,7 +97,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   chipCountActive: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(0,0,0,0.6)',
   },
   chipCountInactive: {
     color: Colors.textTertiary,

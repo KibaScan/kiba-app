@@ -88,6 +88,18 @@ export function stripBrandFromName(brandName: string, productName: string): stri
   return remainder;
 }
 
+// ─── Brand Sanitization ──────────────────────────────────
+
+/**
+ * Sanitize brand names containing raw database delimiters.
+ * "Milk-Bone||Purina Beneful" → "Milk-Bone · Purina Beneful"
+ * Preserves all brand names for search result accuracy.
+ */
+export function sanitizeBrand(brand: string): string {
+  if (!brand || !brand.includes('||')) return brand;
+  return brand.split('||').map((b) => b.trim()).filter(Boolean).join(' · ');
+}
+
 // ─── Relative Time ────────────────────────────────────────
 
 const SHORT_MONTHS = [

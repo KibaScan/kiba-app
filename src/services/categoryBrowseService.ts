@@ -56,8 +56,7 @@ async function fetchScoredResults(
     `)
     .eq('pet_id', petId)
     .eq('category', dbCategory)
-    .order('final_score', { ascending: false })
-    .limit(pageSize * 3); // overfetch to absorb client-side filter losses
+    .order('final_score', { ascending: false });
 
   if (isSupplemental !== null) {
     q = q.eq('is_supplemental', isSupplemental);
@@ -67,6 +66,12 @@ async function fetchScoredResults(
   if (cursor) {
     q = q.or(`final_score.lt.${cursor.score},and(final_score.eq.${cursor.score},product_id.gt.${cursor.id})`);
   }
+
+  // When filtering by product form or name patterns, the target subset may be
+  // a small fraction of the category (e.g. freeze-dried = ~11% of daily food).
+  // Overfetch aggressively so the client-side filter has enough to fill a page.
+  const fetchLimit = (productFormFilter || namePatterns) ? pageSize * 50 : pageSize * 3;
+  q = q.limit(fetchLimit);
 
   const { data, error } = await q;
   if (error || !data) return { products: [], nextCursor: null };
@@ -119,7 +124,7 @@ async function fetchScoredResults(
   }
 
   // If we got a full buffer from DB, there are likely more results
-  const dbHadMore = (data as unknown[]).length >= pageSize * 3;
+  const dbHadMore = (data as unknown[]).length >= fetchLimit;
   // If we filled a page from the buffer, offer a cursor for the next page
   const last = products[products.length - 1];
   const nextCursor = (dbHadMore || products.length >= pageSize) && last
@@ -138,6 +143,7 @@ async function fetchUnscoredResults(
   namePatterns: string[] | null,
   pageSize: number,
   cursor: { brand: string; name: string; id: string } | null,
+  opts?: { productFormFilter?: string; isSupplemental?: boolean },
 ): Promise<BrowsePage> {
   let q = supabase
     .from('products')
@@ -155,6 +161,20 @@ async function fetchUnscoredResults(
   } else if (dbCategory) {
     q = q.eq('category', dbCategory);
     q = q.eq('is_vet_diet', false);
+  }
+
+  if (opts?.isSupplemental !== undefined) {
+    q = q.eq('is_supplemental', opts.isSupplemental);
+  }
+
+  if (opts?.productFormFilter) {
+    if (opts.productFormFilter === 'freeze_dried') {
+      q = q.in('product_form', ['freeze_dried', 'freeze-dried']);
+    } else if (opts.productFormFilter === 'other') {
+      q = q.not('product_form', 'in', '("dry","wet","freeze_dried","freeze-dried")');
+    } else {
+      q = q.eq('product_form', opts.productFormFilter);
+    }
   }
 
   // Name-pattern filtering via Supabase .or() for supplement sub-filters
@@ -231,20 +251,37 @@ export async function fetchBrowseResults(
       }
       const formMap: Record<string, string> = { dry: 'dry', wet: 'wet', freeze_dried: 'freeze_dried', other: 'other' };
       const form = subFilterKey ? formMap[subFilterKey] ?? null : null;
-      return fetchScoredResults(petId, species, 'daily_food', false, form, null, pageSize, parseScoredCursor(cursor));
+      const scored = await fetchScoredResults(petId, species, 'daily_food', false, form, null, pageSize, parseScoredCursor(cursor));
+      // Fallback: if batch scoring cache has no results for this form,
+      // query products directly (unscored) so the user sees something
+      if (scored.products.length === 0 && form && !cursor) {
+        return fetchUnscoredResults(species, 'daily_food', false, null, pageSize, parseUnscoredCursor(null),
+          { productFormFilter: form, isSupplemental: false });
+      }
+      return scored;
     }
 
     case 'toppers_mixers': {
       const formMap: Record<string, string> = { dry: 'dry', wet: 'wet', freeze_dried: 'freeze_dried' };
       const form = subFilterKey ? formMap[subFilterKey] ?? null : null;
-      return fetchScoredResults(petId, species, 'daily_food', true, form, null, pageSize, parseScoredCursor(cursor));
+      const scored = await fetchScoredResults(petId, species, 'daily_food', true, form, null, pageSize, parseScoredCursor(cursor));
+      if (scored.products.length === 0 && form && !cursor) {
+        return fetchUnscoredResults(species, 'daily_food', false, null, pageSize, parseUnscoredCursor(null),
+          { productFormFilter: form, isSupplemental: true });
+      }
+      return scored;
     }
 
     case 'treat': {
       const patterns = subFilterKey ? TREAT_NAME_PATTERNS[subFilterKey] ?? null : null;
       // Freeze-dried treats: also match by product_form
       if (subFilterKey === 'freeze_dried') {
-        return fetchScoredResults(petId, species, 'treat', null, 'freeze_dried', patterns, pageSize, parseScoredCursor(cursor));
+        const scored = await fetchScoredResults(petId, species, 'treat', null, 'freeze_dried', patterns, pageSize, parseScoredCursor(cursor));
+        if (scored.products.length === 0 && !cursor) {
+          return fetchUnscoredResults(species, 'treat', false, patterns, pageSize, parseUnscoredCursor(null),
+            { productFormFilter: 'freeze_dried' });
+        }
+        return scored;
       }
       return fetchScoredResults(petId, species, 'treat', null, null, patterns, pageSize, parseScoredCursor(cursor));
     }

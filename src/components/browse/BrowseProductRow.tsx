@@ -29,7 +29,7 @@ export function BrowseProductRow({ product, rank, onPress }: Props) {
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       {/* Rank */}
-      <Text style={[styles.rank, rank <= 3 && hasScore ? { color: Colors.accent } : null]}>
+      <Text style={styles.rank}>
         {rank}
       </Text>
 
@@ -56,10 +56,10 @@ export function BrowseProductRow({ product, rank, onPress }: Props) {
         </Text>
       </View>
 
-      {/* Score ring or chevron */}
+      {/* Score pill or chevron */}
       {hasScore ? (
-        <View style={[styles.scoreRing, { borderColor: scoreColor }]}>
-          <Text style={[styles.scoreText, { color: scoreColor }]}>{score}</Text>
+        <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
+          <Text style={[styles.scorePillText, { color: scoreColor }]}>{score}%</Text>
         </View>
       ) : (
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
@@ -67,8 +67,6 @@ export function BrowseProductRow({ product, rank, onPress }: Props) {
     </TouchableOpacity>
   );
 }
-
-const RING_SIZE = 40;
 
 const styles = StyleSheet.create({
   row: {
@@ -112,16 +110,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.textPrimary,
   },
-  scoreRing: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: RING_SIZE / 2,
-    borderWidth: 2.5,
-    justifyContent: 'center',
-    alignItems: 'center',
+  scorePill: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  scoreText: {
-    fontSize: FontSizes.sm,
+  scorePillText: {
+    fontSize: FontSizes.xs,
     fontWeight: '700',
   },
 });

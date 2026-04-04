@@ -258,8 +258,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
   },
   petBadgeText: {
     fontSize: FontSizes.xs,

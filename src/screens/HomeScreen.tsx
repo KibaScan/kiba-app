@@ -17,7 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing, Limits, SEVERITY_COLORS, getScoreColor } from '../utils/constants';
-import { stripBrandFromName } from '../utils/formatters';
+import { stripBrandFromName, sanitizeBrand } from '../utils/formatters';
+import { CATEGORY_ICONS, CATEGORY_ICONS_FILLED } from '../constants/iconMaps';
 import { canSearch, isPremium, getScanWindowInfo } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
@@ -33,6 +34,7 @@ import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import type { BrowseCategory } from '../types/categoryBrowse';
 import { SUB_FILTERS } from '../types/categoryBrowse';
 import { SubFilterChipRow } from '../components/browse/SubFilterChipRow';
+import { TopPicksCarousel } from '../components/browse/TopPicksCarousel';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
@@ -66,13 +68,12 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const BROWSE_CATEGORIES: readonly {
   key: import('../types/categoryBrowse').BrowseCategory;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
   tint: string;
 }[] = [
-  { key: 'daily_food', label: 'Daily Food', icon: 'nutrition-outline', tint: Colors.accent },
-  { key: 'toppers_mixers', label: 'Toppers & Mixers', icon: 'layers-outline', tint: '#14B8A6' },
-  { key: 'treat', label: 'Treats', icon: 'fish-outline', tint: Colors.severityAmber },
-  { key: 'supplement', label: 'Supplements', icon: 'flask-outline', tint: '#A78BFA' },
+  { key: 'daily_food', label: 'Daily Food', tint: Colors.accent },
+  { key: 'toppers_mixers', label: 'Toppers & Mixers', tint: '#14B8A6' },
+  { key: 'treat', label: 'Treats', tint: Colors.severityAmber },
+  { key: 'supplement', label: 'Supplements', tint: '#A78BFA' },
 ] as const;
 
 // ─── Helpers ────────────────────────────────────────────
@@ -282,10 +283,13 @@ export default function HomeScreen() {
         if (activeCategory === 'daily_food') {
           filters.category = 'daily_food';
           filters.isSupplemental = false;
-          if (activeSubFilter && activeSubFilter !== 'vet_diet' && activeSubFilter !== 'other') {
-            filters.productForm = activeSubFilter;
+          if (activeSubFilter === 'vet_diet') {
+            filters.isVetDiet = true;
+            filters.isSupplemental = undefined; // vet diets can be supplemental or not
           } else if (activeSubFilter === 'other') {
             filters.productForm = 'other';
+          } else if (activeSubFilter) {
+            filters.productForm = activeSubFilter;
           }
         } else if (activeCategory === 'toppers_mixers') {
           filters.category = 'daily_food';
@@ -296,7 +300,8 @@ export default function HomeScreen() {
           if (activeSubFilter === 'freeze_dried') filters.productForm = 'freeze_dried';
         }
         const results = await searchProducts(text, activePet.species,
-          Object.keys(filters).length > 0 ? filters : undefined);
+          Object.keys(filters).length > 0 ? filters : undefined,
+          activePetId ?? undefined);
         setSearchResults(results);
       } catch {
         setSearchResults([]);
@@ -304,7 +309,7 @@ export default function HomeScreen() {
         setSearchLoading(false);
       }
     }, 300);
-  }, [activePet, activeCategory, activeSubFilter]);
+  }, [activePet, activePetId, activeCategory, activeSubFilter]);
 
   // Re-trigger search when category or sub-filter changes while text is active
   useEffect(() => {
@@ -421,15 +426,6 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* 2b. Sub-filter chips — shown under search bar when a category is active */}
-        {activeCategory && (
-          <SubFilterChipRow
-            filters={SUB_FILTERS[activeCategory]}
-            activeKey={activeSubFilter}
-            onSelect={handleSubFilterSelect}
-          />
-        )}
-
         {/* 3. Browse categories — always visible */}
         <View style={styles.categoryGrid}>
           {BROWSE_CATEGORIES.map((cat) => {
@@ -439,17 +435,33 @@ export default function HomeScreen() {
                 key={cat.key}
                 style={[
                   styles.categoryCard,
-                  selected && { borderColor: cat.tint, borderWidth: 2 },
+                  selected && {
+                    borderColor: cat.tint,
+                    backgroundColor: `${cat.tint}26`,
+                  },
                 ]}
                 onPress={() => handleCategoryTap(cat.key)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={cat.icon} size={28} color={selected ? cat.tint : Colors.textTertiary} />
+                <Image
+                  source={selected ? CATEGORY_ICONS_FILLED[cat.key] : CATEGORY_ICONS[cat.key]}
+                  style={{ width: 56, height: 56, tintColor: selected ? cat.tint : Colors.textTertiary }}
+                  resizeMode="contain"
+                />
                 <Text style={[styles.categoryLabel, selected && { color: cat.tint }]}>{cat.label}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
+
+        {/* 3b. Sub-filter chips — shown below category grid when a category is active */}
+        {activeCategory && (
+          <SubFilterChipRow
+            filters={SUB_FILTERS[activeCategory]}
+            activeKey={activeSubFilter}
+            onSelect={handleSubFilterSelect}
+          />
+        )}
 
 
         {/* 4. Search results — shown when search active */}
@@ -472,13 +484,31 @@ export default function HomeScreen() {
                   )}
                   <View style={styles.searchResultInfo}>
                     <Text style={styles.searchResultBrand} numberOfLines={1}>
-                      {item.brand}
+                      {sanitizeBrand(item.brand)}
                     </Text>
-                    <Text style={styles.searchResultName} numberOfLines={1}>
+                    <Text style={styles.searchResultName} numberOfLines={2}>
                       {stripBrandFromName(item.brand, item.product_name)}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                  {item.final_score != null ? (
+                    <View
+                      style={[
+                        styles.scorePill,
+                        { backgroundColor: `${getScoreColor(item.final_score, item.is_supplemental)}1A` },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.scorePillText,
+                          { color: getScoreColor(item.final_score, item.is_supplemental) },
+                        ]}
+                      >
+                        {item.final_score}%
+                      </Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                  )}
                 </TouchableOpacity>
               ))
             ) : searchLoading ? (
@@ -496,7 +526,20 @@ export default function HomeScreen() {
         {/* ── Normal content (hidden when search active) ── */}
         {!isSearchActive && (
           <>
-            {/* 5. Upcoming appointment */}
+            {/* 5. Top Picks carousel — hidden for vet diets (require veterinary oversight;
+                 recommending them algorithmically is a liability) */}
+            {activePet && activePetId &&
+              activeSubFilter !== 'vet_diet' && (
+              <TopPicksCarousel
+                petId={activePetId}
+                petName={activePet.name}
+                species={activePet.species}
+                activeCategory={activeCategory}
+                activeSubFilter={activeSubFilter}
+              />
+            )}
+
+            {/* 6. Upcoming appointment */}
             {!appointmentLoading && nextAppointment && appointmentPetName ? (
               <TouchableOpacity
                 style={styles.appointmentRow}
@@ -536,7 +579,7 @@ export default function HomeScreen() {
               />
             )}
 
-            {/* 6. Pantry nav row (slim) */}
+            {/* 7. Pantry nav row (carded — matches appointment row) */}
             {activePet && (
               <TouchableOpacity
                 style={styles.pantryRow}
@@ -625,9 +668,9 @@ export default function HomeScreen() {
                       )}
                       <View style={styles.scanRowInfo}>
                         <Text style={styles.scanRowBrand} numberOfLines={1}>
-                          {scan.product.brand}
+                          {sanitizeBrand(scan.product.brand)}
                         </Text>
-                        <Text style={styles.scanRowName} numberOfLines={1}>
+                        <Text style={styles.scanRowName} numberOfLines={2}>
                           {stripBrandFromName(scan.product.brand, scan.product.name)}
                         </Text>
                       </View>
@@ -635,7 +678,7 @@ export default function HomeScreen() {
                         <View
                           style={[
                             styles.scorePill,
-                            { backgroundColor: `${scoreColor}33` },
+                            { backgroundColor: `${scoreColor}1A` },
                           ]}
                         >
                           <Text style={[styles.scorePillText, { color: scoreColor }]}>
@@ -703,7 +746,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#00B4D815',
+    backgroundColor: Colors.cardSurface,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: 20,
@@ -748,14 +791,12 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     height: 44,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
   searchInput: {
     flex: 1,
@@ -779,13 +820,13 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '48%' as unknown as number,
     flexGrow: 1,
-    backgroundColor: Colors.cardSurface,
+    backgroundColor: '#1C1C1E',
     borderRadius: 16,
     paddingVertical: Spacing.md,
     alignItems: 'center',
     gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   categoryLabel: {
     fontSize: FontSizes.sm,
@@ -809,7 +850,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   searchResultImagePlaceholder: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -841,11 +882,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   appointmentText: {
@@ -864,9 +905,13 @@ const styles = StyleSheet.create({
   pantryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 10,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    marginBottom: Spacing.md,
   },
   pantryRowAvatar: {
     width: 24,
@@ -944,7 +989,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     justifyContent: 'center',
     alignItems: 'center',
   },
