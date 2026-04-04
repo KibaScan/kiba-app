@@ -71,7 +71,8 @@ export function TopPicksCarousel({
         species,
         FETCH_LIMIT,
       );
-      setPicks(results);
+      // Only show products with actual scores — unscored fallbacks aren't "top picks"
+      setPicks(results.filter(p => p.final_score != null));
     } catch {
       setPicks([]);
     } finally {

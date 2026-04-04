@@ -70,21 +70,10 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-04 (session 17)
-- **Accomplished:** M9 — Gemini overhaul verification, freeze-dried/vet-diet browse fixes, 6 micro-polishes, custom category icons.
-  - **Gemini 8-fix overhaul verified:** All 8 HomeScreen fixes confirmed applied (sub-filters below grid, score pills in search, brand sanitization, 1A pill contrast, solid card fills, carded pantry, 2-line product names, TopPicksCarousel).
-  - **Freeze-dried browse fix:** Root cause: batch scoring cache maturity check not form-aware — freeze-dried products never scored. Fix: dynamic overfetch (`pageSize * 50` when filtering by form/name patterns) + fallback from `fetchScoredResults` to `fetchUnscoredResults` when scored cache is empty for a form. Applied to daily_food, toppers_mixers, and treats categories.
-  - **Vet diet search fix:** `searchProducts()` hardcoded `is_vet_diet=false`. Added `isVetDiet` filter param, wired HomeScreen handler for `vet_diet` sub-filter.
-  - **6 micro-polishes from Gemini review:**
-    1. White image stage on TopPicksCarousel (`#FFFFFF` bg, `padding: 12`, `resizeMode: 'contain'`)
-    2. Black text on cyan active chips (`#111111` text, `rgba(0,0,0,0.6)` count)
-    3. Score pills replace hollow rings on BrowseProductRow (matching HomeScreen pill style)
-    4. Removed "match" text from Top Picks pills (just `94%`)
-    5. Muted rank numbers to `Colors.textTertiary` (removed cyan on top 3)
-    6. Killed wireframe borders on search bar, pet badge (HomeScreen + CategoryBrowseScreen)
-  - **Custom category icons:** Replaced Ionicons with custom PNGs from `assets/Icons/categories/`. Outline (inactive) → filled (active) swap via `CATEGORY_ICONS` / `CATEGORY_ICONS_FILLED` maps. Icon size 56px. `src/constants/iconMaps.ts` created.
-  - **Files created:** `src/constants/iconMaps.ts`
-  - **Files modified:** `src/screens/HomeScreen.tsx`, `src/components/browse/TopPicksCarousel.tsx`, `src/components/browse/SubFilterChipRow.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/screens/CategoryBrowseScreen.tsx`, `src/services/categoryBrowseService.ts`, `src/services/topMatches.ts`, `docs/status/CURRENT.md`
+- **Date:** 2026-04-04 (session 18)
+- **Accomplished:** M9 — Top Picks carousel bug fix for new pets.
+  - **Top Picks unscored fallback fix:** New pets with no `pet_product_scores` cache were seeing alphabetically-first products (e.g., 9 Lives) labeled as "Top Picks" when a sub-filter was active. Root cause: `fetchBrowseResults` falls back to `fetchUnscoredResults` (alphabetical order) when scored cache is empty for a form — correct for the browse list, wrong for Top Picks. Fix: `TopPicksCarousel` now filters results to `final_score != null`, so unscored fallbacks never appear as "top picks." New pets see zero-state CTA or carousel hides silently with sub-filter active.
+  - **Files modified:** `src/components/browse/TopPicksCarousel.tsx`, `docs/status/CURRENT.md`
 - **Not done yet:**
   - Custom icons for remaining groups (concerns, advisories, conditions, forms, treat-forms, supplement-forms) — v1 thin-stroke PNGs exist but need v2 bold re-gen
   - 5 pending icons (joint-hip, skin-coat, calming, digestive re-gen, jerky-chews) per custom-icon-spec.md
@@ -105,4 +94,5 @@
   - TopPicksCarousel image stage is white (`#FFFFFF`) — product images framed with padding + contain.
   - BrowseProductRow now uses score pills (not rings) — same style as HomeScreen `scorePill`/`scorePillText`.
   - `custom-icon-spec.md` updated to v2 (bold 2px stroke, filled variants, re-gen queue).
+  - TopPicksCarousel filters out `final_score == null` products — only scored products appear as "top picks."
 - **Decision/scoring changes:** No new decisions. No scoring logic changed. No new migrations.
