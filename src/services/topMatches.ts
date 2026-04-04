@@ -148,17 +148,22 @@ export interface ProductSearchResult {
 export async function searchProducts(
   query: string,
   species: 'dog' | 'cat',
-  filters?: { category?: 'daily_food' | 'treat' },
+  filters?: {
+    category?: 'daily_food' | 'treat';
+    productForm?: string;
+    isSupplemental?: boolean;
+  },
 ): Promise<ProductSearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed && !filters?.category) return [];
 
   let q = supabase
     .from('products')
-    .select('id, name, brand, image_url, product_form, category')
+    .select('id, name, brand, image_url, product_form, category, is_supplemental')
     .eq('target_species', species)
     .eq('is_vet_diet', false)
     .eq('is_recalled', false)
+    .eq('is_variety_pack', false)
     .neq('category', 'supplement');
 
   if (trimmed) {
@@ -170,6 +175,20 @@ export async function searchProducts(
 
   if (filters?.category) {
     q = q.eq('category', filters.category);
+  }
+
+  if (filters?.productForm) {
+    if (filters.productForm === 'freeze_dried') {
+      q = q.in('product_form', ['freeze_dried', 'freeze-dried']);
+    } else if (filters.productForm === 'other') {
+      q = q.not('product_form', 'in', '("dry","wet","freeze_dried","freeze-dried")');
+    } else {
+      q = q.eq('product_form', filters.productForm);
+    }
+  }
+
+  if (filters?.isSupplemental !== undefined) {
+    q = q.eq('is_supplemental', filters.isSupplemental);
   }
 
   const { data, error } = await q;

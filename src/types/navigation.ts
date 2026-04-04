@@ -24,6 +24,7 @@ export type ScanStackParamList = {
 
 export type HomeStackParamList = {
   HomeMain: undefined;
+  CategoryBrowse: { category: import('./categoryBrowse').BrowseCategory; petId: string };
   Result: { productId: string; petId: string | null };
   RecallDetail: { productId: string };
   AppointmentDetail: { appointmentId: string };

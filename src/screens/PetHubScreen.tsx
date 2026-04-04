@@ -61,6 +61,17 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import SwipeableRow from '../components/ui/SwipeableRow';
+import type { AppointmentType } from '../types/appointment';
+
+// ─── Appointment type icons (matching drill-down) ─────────
+const APPT_ICONS: Record<AppointmentType, string> = {
+  vet_visit: 'medical-outline',
+  grooming: 'cut-outline',
+  medication: 'medkit-outline',
+  vaccination: 'shield-checkmark-outline',
+  deworming: 'fitness-outline',
+  other: 'calendar-outline',
+};
 
 // ─── Component ────────────────────────────────────────────
 
@@ -286,6 +297,12 @@ export default function PetHubScreen({ navigation }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Me</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Settings')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* (b) Multi-pet carousel or single avatar */}
@@ -629,12 +646,16 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.healthRecordCard}>
           <View style={styles.healthRecordHeader}>
             <Text style={styles.healthRecordTitle}>Appointments</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Appointments')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-            </TouchableOpacity>
+            {appointments.length > 0 && (
+              <TouchableOpacity
+                style={styles.headerSeeAll}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Appointments')}
+              >
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
           </View>
           {appointments.length === 0 ? (
             <TouchableOpacity
@@ -661,6 +682,13 @@ export default function PetHubScreen({ navigation }: Props) {
                     activeOpacity={0.7}
                     onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
                   >
+                    <View style={styles.apptIconCircle}>
+                      <Ionicons
+                        name={(APPT_ICONS[appt.type] ?? 'calendar-outline') as any}
+                        size={18}
+                        color={Colors.accent}
+                      />
+                    </View>
                     <View style={styles.healthRecordInfo}>
                       <Text style={styles.healthRecordName}>
                         {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -674,16 +702,6 @@ export default function PetHubScreen({ navigation }: Props) {
                   </TouchableOpacity>
                 </SwipeableRow>
               ))}
-
-              {/* See All link */}
-              <TouchableOpacity
-                style={styles.seeAllLink}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Appointments')}
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
 
               {/* Always-visible add link */}
               <TouchableOpacity
@@ -702,12 +720,16 @@ export default function PetHubScreen({ navigation }: Props) {
         <View style={styles.healthRecordCard}>
           <View style={styles.healthRecordHeader}>
             <Text style={styles.healthRecordTitle}>Medications</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Medications')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-            </TouchableOpacity>
+            {medications.filter((m) => m.status !== 'past').length > 0 && (
+              <TouchableOpacity
+                style={styles.headerSeeAll}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Medications')}
+              >
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {medications.filter((m) => m.status !== 'past').length === 0 ? (
@@ -778,17 +800,7 @@ export default function PetHubScreen({ navigation }: Props) {
                   </SwipeableRow>
                 ))}
 
-              {/* See All link — only when >3 current meds */}
-              {medications.filter((m) => m.status !== 'past').length > 3 && (
-                <TouchableOpacity
-                  style={styles.seeAllLink}
-                  activeOpacity={0.7}
-                  onPress={() => navigation.navigate('Medications')}
-                >
-                  <Text style={styles.seeAllLinkText}>See All</Text>
-                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-                </TouchableOpacity>
-              )}
+
 
               {/* Persistent add CTA */}
               <TouchableOpacity
@@ -811,7 +823,19 @@ export default function PetHubScreen({ navigation }: Props) {
 
         {/* Medical Records — unified chronological timeline */}
         <View style={styles.healthRecordCard}>
-          <Text style={styles.healthRecordTitle}>Medical Records</Text>
+          <View style={styles.healthRecordHeader}>
+            <Text style={styles.healthRecordTitle}>Medical Records</Text>
+            {healthRecords.length > 0 && (
+              <TouchableOpacity
+                style={styles.headerSeeAll}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('MedicalRecords')}
+              >
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
+          </View>
           {healthRecords.length === 0 ? (
             <TouchableOpacity
               style={styles.addRecordLink}
@@ -845,7 +869,7 @@ export default function PetHubScreen({ navigation }: Props) {
                       <Ionicons
                         name={r.record_type === 'vaccination' ? 'shield-checkmark-outline' : 'fitness-outline'}
                         size={16}
-                        color={Colors.textTertiary}
+                        color={Colors.accent}
                         style={styles.medicalRecordIcon}
                       />
                       <View style={styles.healthRecordInfo}>
@@ -861,18 +885,6 @@ export default function PetHubScreen({ navigation }: Props) {
                   </SwipeableRow>
                 ))}
 
-              {/* See All link — only when >3 records exist */}
-              {healthRecords.length > 3 && (
-                <TouchableOpacity
-                  style={styles.seeAllLink}
-                  activeOpacity={0.7}
-                  onPress={() => navigation.navigate('MedicalRecords')}
-                >
-                  <Text style={styles.seeAllLinkText}>See All</Text>
-                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-                </TouchableOpacity>
-              )}
-
               {/* Persistent add CTA — bottom-anchored, single steering wheel */}
               <TouchableOpacity
                 style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
@@ -886,39 +898,33 @@ export default function PetHubScreen({ navigation }: Props) {
           )}
         </View>
 
-        {/* Health disclaimer (D-163) */}
-        <Text style={styles.healthDisclaimer}>
-          Health records are for your reference. Consult your veterinarian for your pet's care schedule.
-        </Text>
-
-        {/* Vet Report (M6) */}
+        {/* Vet Report (M6) — wrapped in card to match dashboard pattern */}
         <TouchableOpacity
-          style={styles.settingsNavRow}
+          style={styles.vetReportCard}
           activeOpacity={0.7}
           onPress={handleGenerateVetReport}
           disabled={vetReportLoading}
         >
-          {vetReportLoading ? (
-            <ActivityIndicator size="small" color={Colors.accent} />
-          ) : (
-            <Ionicons name="document-text-outline" size={20} color={Colors.accent} />
-          )}
-          <Text style={[styles.settingsNavLabel, { color: Colors.accent }]}>
-            {vetReportLoading ? 'Generating Report…' : 'Generate Vet Report'}
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          <View style={styles.vetReportRow}>
+            {vetReportLoading ? (
+              <ActivityIndicator size="small" color={Colors.accent} />
+            ) : (
+              <Ionicons name="document-text-outline" size={22} color={Colors.accent} />
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.vetReportTitle}>Vet Report</Text>
+              <Text style={styles.vetReportDesc}>
+                {vetReportLoading ? 'Generating…' : 'Generate a shareable diet summary for your vet'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+          </View>
         </TouchableOpacity>
 
-        {/* Settings */}
-        <TouchableOpacity
-          style={styles.settingsNavRow}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.settingsNavLabel}>Settings</Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-        </TouchableOpacity>
+        {/* Health disclaimer (D-163) — bottom of scroll */}
+        <Text style={styles.healthDisclaimer}>
+          Health records are for your reference. Consult your veterinarian for your pet's care schedule.
+        </Text>
 
         <View style={styles.scrollBottomSpacer} />
       </ScrollView>

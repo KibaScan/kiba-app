@@ -1,7 +1,7 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: April 2, 2026
+> Updated: April 3, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
@@ -697,8 +697,13 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] **Matte Premium design system** — `.agent/design.md` established: `cardSurface`, `hairlineBorder`, `pressOverlay` tokens, card anatomy, typography, spacing, anti-patterns. Checklist for polishing any screen.
 - [x] **Vet diet data fix** — migration 027 restores 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet` for future imports.
 - [ ] Pantry polish — SwipeableRow on PantryCards, legacy token migration (`Colors.card` → `cardSurface`)
-- [ ] Search improvements (HomeScreen v2 search UX overhaul)
+- [x] **Card contrast alignment** — `cardSurface` `#1C1C1E` → `#242424`, `hairlineBorder` `rgba 0.08` → `0.12`. PetHubScreen cards now match AppointmentsListScreen.
+- [x] **Design system documentation** — icon platters, screen headers, disclaimer placement, Featured Action Card, zero-state text rules added to `.agent/design.md`.
+- [x] **HomeScreen category browse** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Dynamic search re-triggers on filter change. Variety pack exclusion (`is_variety_pack` column, migration 029, ~1,706 flagged). `@shopify/flash-list` installed. `categoryBrowseService.ts` with cursor pagination + `fetchCategoryTopPicks` stub.
+- [ ] Top Picks per category/sub-filter (up to 50, dedicated screen — stub ready)
+- [ ] HomeScreen visual overhaul (custom assets, layout polish)
 - [ ] Legacy token migration across remaining screens (HomeScreen, ResultScreen, CompareScreen, etc.)
+- [ ] Pantry polish — SwipeableRow on PantryCards, legacy token migration
 - [ ] General UX friction fixes
 
 ---

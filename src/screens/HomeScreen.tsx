@@ -30,6 +30,9 @@ import type { ProductSearchResult } from '../services/topMatches';
 import type { Appointment, AppointmentType } from '../types/appointment';
 import type { ScanHistoryItem } from '../types/scanHistory';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
+import type { BrowseCategory } from '../types/categoryBrowse';
+import { SUB_FILTERS } from '../types/categoryBrowse';
+import { SubFilterChipRow } from '../components/browse/SubFilterChipRow';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
@@ -61,13 +64,15 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const BROWSE_CATEGORIES: readonly {
-  key: 'daily_food' | 'treat';
+  key: import('../types/categoryBrowse').BrowseCategory;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   tint: string;
 }[] = [
   { key: 'daily_food', label: 'Daily Food', icon: 'nutrition-outline', tint: Colors.accent },
+  { key: 'toppers_mixers', label: 'Toppers & Mixers', icon: 'layers-outline', tint: '#14B8A6' },
   { key: 'treat', label: 'Treats', icon: 'fish-outline', tint: Colors.severityAmber },
+  { key: 'supplement', label: 'Supplements', icon: 'flask-outline', tint: '#A78BFA' },
 ] as const;
 
 // ─── Helpers ────────────────────────────────────────────
@@ -108,6 +113,11 @@ export default function HomeScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Category browse state ──
+  const [activeCategory, setActiveCategory] = useState<BrowseCategory | null>(null);
+  const [activeSubFilter, setActiveSubFilter] = useState<string | null>(null);
+
   const isSearchActive = searchQuery.trim().length > 0 || isSearchFocused;
 
   // ── Scan counter state (free users) ──
@@ -267,7 +277,26 @@ export default function HomeScreen() {
     debounceRef.current = setTimeout(async () => {
       if (!activePet) return;
       try {
-        const results = await searchProducts(text, activePet.species);
+        // Build filters from active category + sub-filter
+        const filters: Parameters<typeof searchProducts>[2] = {};
+        if (activeCategory === 'daily_food') {
+          filters.category = 'daily_food';
+          filters.isSupplemental = false;
+          if (activeSubFilter && activeSubFilter !== 'vet_diet' && activeSubFilter !== 'other') {
+            filters.productForm = activeSubFilter;
+          } else if (activeSubFilter === 'other') {
+            filters.productForm = 'other';
+          }
+        } else if (activeCategory === 'toppers_mixers') {
+          filters.category = 'daily_food';
+          filters.isSupplemental = true;
+          if (activeSubFilter) filters.productForm = activeSubFilter;
+        } else if (activeCategory === 'treat') {
+          filters.category = 'treat';
+          if (activeSubFilter === 'freeze_dried') filters.productForm = 'freeze_dried';
+        }
+        const results = await searchProducts(text, activePet.species,
+          Object.keys(filters).length > 0 ? filters : undefined);
         setSearchResults(results);
       } catch {
         setSearchResults([]);
@@ -275,27 +304,29 @@ export default function HomeScreen() {
         setSearchLoading(false);
       }
     }, 300);
-  }, [activePet]);
+  }, [activePet, activeCategory, activeSubFilter]);
 
-  const handleCategoryTap = useCallback((category: 'daily_food' | 'treat') => {
+  // Re-trigger search when category or sub-filter changes while text is active
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      handleSearchChange(searchQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, activeSubFilter]);
+
+  const handleCategoryTap = useCallback((category: BrowseCategory) => {
     if (!canSearch()) {
       (rootNav as any).navigate('Paywall', { trigger: 'search' });
       return;
     }
-    if (!activePet) return;
-    setIsSearchFocused(true);
-    setSearchLoading(true);
-    (async () => {
-      try {
-        const results = await searchProducts('', activePet.species, { category });
-        setSearchResults(results);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    })();
-  }, [activePet, rootNav]);
+    // Toggle: tap active category to deselect, tap another to switch
+    setActiveCategory((prev) => prev === category ? null : category);
+    setActiveSubFilter(null);
+  }, [rootNav]);
+
+  const handleSubFilterSelect = useCallback((key: string | null) => {
+    setActiveSubFilter(key);
+  }, []);
 
   const handleSearchResultTap = useCallback((item: ProductSearchResult) => {
     Keyboard.dismiss();
@@ -390,27 +421,36 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* 3. Browse categories — hidden when search active */}
-        {!isSearchActive && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryScrollContent}
-            style={styles.categoryScroll}
-          >
-            {BROWSE_CATEGORIES.map((cat) => (
+        {/* 2b. Sub-filter chips — shown under search bar when a category is active */}
+        {activeCategory && (
+          <SubFilterChipRow
+            filters={SUB_FILTERS[activeCategory]}
+            activeKey={activeSubFilter}
+            onSelect={handleSubFilterSelect}
+          />
+        )}
+
+        {/* 3. Browse categories — always visible */}
+        <View style={styles.categoryGrid}>
+          {BROWSE_CATEGORIES.map((cat) => {
+            const selected = activeCategory === cat.key;
+            return (
               <TouchableOpacity
                 key={cat.key}
-                style={styles.categoryCard}
+                style={[
+                  styles.categoryCard,
+                  selected && { borderColor: cat.tint, borderWidth: 2 },
+                ]}
                 onPress={() => handleCategoryTap(cat.key)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={cat.icon} size={28} color={cat.tint} />
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                <Ionicons name={cat.icon} size={28} color={selected ? cat.tint : Colors.textTertiary} />
+                <Text style={[styles.categoryLabel, selected && { color: cat.tint }]}>{cat.label}</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
+            );
+          })}
+        </View>
+
 
         {/* 4. Search results — shown when search active */}
         {isSearchActive && (
@@ -730,23 +770,22 @@ const styles = StyleSheet.create({
   },
 
   // Browse categories
-  categoryScroll: {
-    marginBottom: Spacing.md,
-    marginHorizontal: -Spacing.lg,
-  },
-  categoryScrollContent: {
-    paddingHorizontal: Spacing.lg,
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   categoryCard: {
-    width: 120,
-    backgroundColor: Colors.card,
+    width: '48%' as unknown as number,
+    flexGrow: 1,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     paddingVertical: Spacing.md,
     alignItems: 'center',
     gap: Spacing.xs,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   categoryLabel: {
     fontSize: FontSizes.sm,

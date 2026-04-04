@@ -83,7 +83,7 @@ export default function TreatBatteryGauge({
       ) : (
         <>
           {/* Budget label */}
-          <Text style={[styles.budgetLabel, { color: consumedKcal > 0 ? Colors.severityGreen : Colors.textTertiary }]}>
+          <Text style={[styles.budgetLabel, { color: consumedKcal > 0 ? Colors.severityGreen : Colors.textSecondary }]}>
             {Math.round(consumedKcal)}/{Math.round(treatBudgetKcal)} kcal
           </Text>
 
@@ -141,10 +141,12 @@ export default function TreatBatteryGauge({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
     padding: Spacing.md,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   title: {
     fontSize: FontSizes.lg,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: 28,
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 14,
     overflow: 'hidden',
     justifyContent: 'center',
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
   },
   logTreatSeparator: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
   },
   logTreatRow: {
     flexDirection: 'row',

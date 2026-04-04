@@ -38,6 +38,7 @@ import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
 import CompareScreen from '../screens/CompareScreen';
 import SafeSwitchSetupScreen from '../screens/SafeSwitchSetupScreen';
 import SafeSwitchDetailScreen from '../screens/SafeSwitchDetailScreen';
+import CategoryBrowseScreen from '../screens/CategoryBrowseScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -58,6 +59,7 @@ function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStack.Screen name="CategoryBrowse" component={CategoryBrowseScreen} />
       <HomeStack.Screen name="Result" component={ResultScreen} />
       <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />

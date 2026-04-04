@@ -13,8 +13,8 @@ export const Colors = {
   accentDark: '#0090AD',
 
   // Matte Premium surfaces
-  cardSurface: '#1C1C1E',                     // plush deep card background
-  hairlineBorder: 'rgba(255,255,255,0.08)',    // crisp inner border
+  cardSurface: '#242424',                      // elevated card background
+  hairlineBorder: 'rgba(255,255,255,0.12)',    // crisp inner border
   pressOverlay: 'rgba(255,255,255,0.05)',      // touch feedback underlay
 
   // Severity (D-136 unified palette)

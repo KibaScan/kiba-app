@@ -109,7 +109,7 @@ export default function MedicalRecordsScreen() {
             <Ionicons
               name={icon as any}
               size={18}
-              color={Colors.textTertiary}
+              color={Colors.accent}
             />
           </View>
           <View style={styles.rowContent}>
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   rowType: {
     fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
+    color: Colors.textSecondary,
     marginRight: Spacing.sm,
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

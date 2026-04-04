@@ -33,7 +33,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 | `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–028). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–029). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -58,7 +58,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). D-160: `weight_goal_level SMALLINT` (-3 to +3, default 0) — slider-based, replaces raw `weight_goal_lbs`. D-161: `caloric_accumulator` + `accumulator_last_reset_at` + `accumulator_notification_sent` (estimated weight tracking). D-162: `bcs_score` + `bcs_assessed_at` (owner-reported BCS, educational only). *(Migration 022 — all columns exist.)*
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
 - `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
-- `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring). v7 enrichment (migration 020): `ga_*_dmb_pct` (pre-computed DMB), `aafco_inference` (derivation audit trail), `chewy_sku`/`asin`/`walmart_id` (retailer dedup), `image_url`, `source_url`. 19,058 products from Chewy + Amazon + Walmart.
+- `products` — `is_supplemental`, `is_vet_diet`, `is_variety_pack` (migration 029, ~1,706 flagged), `affiliate_links` JSONB (invisible to scoring). v7 enrichment (migration 020): `ga_*_dmb_pct` (pre-computed DMB), `aafco_inference` (derivation audit trail), `chewy_sku`/`asin`/`walmart_id` (retailer dedup), `image_url`, `source_url`. 19,058 products from Chewy + Amazon + Walmart.
 - `pantry_items` — user-owned inventory (NO `pet_id`), `serving_mode` ('weight'|'unit'), `unit_label` ('servings') (D-164: collapsed from cans/pouches/units), soft-delete via `is_active`
 - `pantry_pet_assignments` — per-pet serving config, `feeding_times` is JSONB (`string[] | null`), UNIQUE(pantry_item_id, pet_id)
 - `push_tokens` — per-device Expo push tokens, UNIQUE(user_id, device_id), `is_active` flag for dead token cleanup

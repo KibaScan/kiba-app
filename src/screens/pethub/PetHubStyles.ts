@@ -11,6 +11,9 @@ export const styles = StyleSheet.create({
     paddingBottom: 88,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
@@ -250,13 +253,11 @@ export const styles = StyleSheet.create({
   statChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardSurface,
+    backgroundColor: '#2A2A2E',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
   },
   statValue: {
     fontSize: FontSizes.sm,
@@ -395,6 +396,11 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.accent,
   },
+  headerSeeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   healthDisclaimer: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
@@ -459,6 +465,15 @@ export const styles = StyleSheet.create({
   medicalRecordIcon: {
     marginRight: Spacing.sm,
   },
+  apptIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.sm,
+  },
   scrollBottomSpacer: {
     height: Spacing.xxl,
   },
@@ -467,5 +482,30 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     left: -9999,
     top: 0,
+  },
+
+  // ─── Vet Report Card (Fix 5) ──────────────────────────
+  vetReportCard: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    marginBottom: Spacing.md,
+  },
+  vetReportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  vetReportTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: Colors.accent,
+  },
+  vetReportDesc: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
 });

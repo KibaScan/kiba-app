@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-02 (session 14)
+# Project Status — Last updated 2026-04-03 (session 16)
 
 ## Active Milestone
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
@@ -37,6 +37,8 @@
 - **PetHubScreen card reorder** — Health Conditions → Appointments → Medications → Medical Records. All three data cards follow consistent pattern: title+chevron header, truncated list (max 3), "See All" link, bottom-anchored add CTA.
 - **Medication reminders + duration** — MedicationFormScreen: up to 4 daily reminder times via DateTimePicker, duration presets (7/14/30/90 days + Ongoing + custom). `medicationNotificationScheduler.ts` (full-resync pattern, groups same-time reminders, skips expired meds). `medication_reminder` notification type + tap routing. NotificationPreferencesScreen toggle. Migration 028 (`reminder_times TEXT[]`, `duration_days INTEGER`, `medication_reminders_enabled BOOLEAN`).
 - **Matte Premium design system** — `.agent/design.md` established. Tokens, card anatomy, typography, spacing, bottom sheet specs, anti-patterns, screen polish checklist. Referenced in CLAUDE.md spec table — read before touching any screen UI.
+- **Card contrast alignment** — `Colors.cardSurface` bumped `#1C1C1E` → `#242424`, `Colors.hairlineBorder` bumped `rgba(255,255,255,0.08)` → `rgba(255,255,255,0.12)`. Matches legacy token contrast.
+- **Category browse on HomeScreen** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Search bar filters by active category + sub-filter. Categories: Daily Food (Dry/Wet/Freeze-Dried/Vet Diet/Other), Toppers (Wet/Freeze-Dried/Dry), Treats (Crunchy & Biscuits/Jerky & Chews/Freeze-Dried/Lickables & Purees/Dental), Supplements (Joint & Hip/Skin & Coat/Digestive/Calming). `@shopify/flash-list` installed. Variety pack exclusion via `is_variety_pack` column (migration 029, ~1,706 flagged). `get_browse_counts` RPC for chip badge counts. `categoryBrowseService.ts` with cursor-based pagination. CategoryBrowseScreen exists but browse is inline on HomeScreen.
 
 ## What's Broken / Known Issues
 - No pre-existing TS errors
@@ -44,7 +46,7 @@
 ## Numbers
 - **Tests:** 1320 passing / 61 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 28 (001–028)
+- **Migrations:** 29 (001–029)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -68,34 +70,35 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-02 (session 14)
-- **Accomplished:** M9 — PetHubScreen card fixes, MedicationsListScreen, medication reminders + duration, design system integration.
-  - **Medications card alignment:** Replaced header `add-circle-outline` icon with `chevron-forward` navigating to MedicationsListScreen. Added persistent bottom-anchored `+ Add Medication` CTA. Truncated current meds to 3 with "See All" link. Removed inline past meds toggle.
-  - **Card reorder:** PetHubScreen cards now: Health Conditions → Appointments → Medications → Medical Records.
-  - **MedicationsListScreen:** New `src/screens/MedicationsListScreen.tsx` — Current/Past segmented tabs, SwipeableRow (delete + edit), status dots (green/amber/gray), empty states per tab.
-  - **AppointmentsListScreen SwipeableRow:** Added SwipeableRow wrapping — swipe-left to delete, swipe-right to edit.
-  - **MedicationForm button fix:** `paddingBottom: 88` to clear tab bar scan button.
-  - **Medication reminders + duration:** Up to 4 daily reminder times via DateTimePicker (iOS spinner + Android modal). Duration presets (7/14/30/90 days, Ongoing) + custom days input. Reminders/duration only shown when status is Current or As Needed. Auto-clear on Past status.
-  - **Medication notification scheduler:** `src/services/medicationNotificationScheduler.ts` — full-resync pattern (cancel + rebuild), groups same-time reminders across pets, skips expired medications, DAILY repeating triggers.
-  - **Notification type + routing:** Added `medication_reminder` to `NotificationType`, tap routes to Me tab.
-  - **Notification preferences:** Added `medication_reminders_enabled` toggle to NotificationPreferencesScreen + UserSettings type + migration 028.
-  - **Design system integration:** Added `.agent/design.md` to CLAUDE.md spec table as mandatory pre-read for UI work. Updated SwipeableRow tables and legacy token migration lists.
-  - **Legacy token migration:** MedicationFormScreen inputs migrated from `Colors.card`/`Colors.cardBorder` to `cardSurface`/`hairlineBorder`.
-  - **Files created:** `src/screens/MedicationsListScreen.tsx`, `src/services/medicationNotificationScheduler.ts`, `supabase/migrations/028_medication_reminders.sql`
-  - **Files modified:** `src/screens/PetHubScreen.tsx`, `src/screens/MedicationFormScreen.tsx`, `src/screens/AppointmentsListScreen.tsx`, `src/screens/NotificationPreferencesScreen.tsx`, `src/types/navigation.ts`, `src/types/pet.ts`, `src/types/notifications.ts`, `src/utils/notifications.ts`, `src/navigation/index.tsx`, `App.tsx`, `CLAUDE.md`, `.agent/design.md`, `src/screens/CLAUDE.md`, `__tests__/services/petService.conditionDetails.test.ts`, `docs/status/CURRENT.md`
+- **Date:** 2026-04-03 (session 16)
+- **Accomplished:** M9 — Card contrast fix, design system update, HomeScreen search overhaul with category browse.
+  - **Card contrast alignment:** `Colors.cardSurface` `#1C1C1E` → `#242424`, `Colors.hairlineBorder` `rgba(255,255,255,0.08)` → `rgba(255,255,255,0.12)`.
+  - **Design system update:** Reviewed Gemini's 11-fix MeScreen walkthrough, documented icon platters, screen headers, disclaimer placement, Featured Action Card, zero-state text, stat chip borderless fix.
+  - **HomeScreen category browse:** 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) in 2x2 grid. Tapping highlights with accent color, shows contextual sub-filter chips below search bar. Sub-filters: Daily Food (Dry/Wet/Freeze-Dried/Vet Diet/Other), Toppers (Wet/Freeze-Dried/Dry), Treats (Crunchy & Biscuits/Jerky & Chews/Freeze-Dried/Lickables & Purees/Dental), Supplements (Joint & Hip/Skin & Coat/Digestive/Calming). Filter icon platter before chip row.
+  - **Dynamic search filtering:** `searchProducts()` extended with `productForm` and `isSupplemental` filters. Search re-triggers automatically when category or sub-filter changes via `useEffect`. Text search + category + sub-filter are AND-combined.
+  - **Variety pack exclusion:** `is_variety_pack BOOLEAN` column on products (migration 029). ~1,706 products flagged via name patterns (variety pack, Bundle: prefix, sampler, assorted, multi-pack). Does NOT flag "case of" or "N-lb bundle". `searchProducts()` filters `.eq('is_variety_pack', false)`.
+  - **Browse infrastructure:** `categoryBrowseService.ts` with `fetchBrowseResults()` (scored + unscored paths, cursor-based pagination, name-pattern sub-filters for treats/supplements), `fetchBrowseCounts()` (RPC), `fetchCategoryTopPicks()` (stub). `get_browse_counts` RPC in migration 029. `@shopify/flash-list` 2.0.2 installed.
+  - **CategoryBrowseScreen:** Full-screen browse exists (header + chips + FlashList + pagination) but browse is now inline on HomeScreen. Screen kept for future Top Picks "See All".
+  - **Files created:** `supabase/migrations/029_category_browse.sql`, `src/types/categoryBrowse.ts`, `src/services/categoryBrowseService.ts`, `src/components/browse/SubFilterChipRow.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/screens/CategoryBrowseScreen.tsx`
+  - **Files modified:** `src/screens/HomeScreen.tsx`, `src/services/topMatches.ts`, `src/types/navigation.ts`, `src/navigation/index.tsx`, `src/utils/constants.ts`, `.agent/design.md`, `package.json`, `docs/status/CURRENT.md`
 - **Not done yet:**
+  - Top Picks per category/sub-filter (up to 50 per — `fetchCategoryTopPicks` stub ready, needs dedicated screen)
+  - HomeScreen visual overhaul (custom assets, layout polish)
   - Pantry polish (SwipeableRow on PantryCards, legacy token migration)
   - Legacy token migration on remaining screens (AppointmentsListScreen, HomeScreen, ResultScreen, CompareScreen, EditPantryItemScreen)
-  - Search UX overhaul on HomeScreen
   - Kiba Index end-to-end testing on iOS simulator
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
-  - Migration 028 needs to be applied to production Supabase (3 ALTER TABLE statements)
-- **Next session should:** Apply migration 028 to Supabase. Polish Pantry screen (SwipeableRow on PantryCards + Matte Premium tokens). Migrate legacy tokens on AppointmentsListScreen. Define search UX scope.
+  - Brand filter on browse (deferred — brand picker bottom sheet)
+  - Chip badge counts only show for Daily Food sub-filters (treats/supplements/toppers sub-filters use name-based detection, no RPC counts yet)
+- **Next session should:** Add Top Picks (up to 50 per category/sub-filter, dedicated screen or inline section). HomeScreen visual polish with custom assets. Consider adding chip counts for treat/supplement sub-filters.
 - **Gotchas for next session:**
-  - `.agent/design.md` is now in CLAUDE.md spec table — read before touching any screen UI.
-  - `Colors.card` and `Colors.cardBorder` are legacy tokens — grep and migrate when touching a screen.
-  - SwipeableRow: only PantryScreen remains in "Still Needs" table.
-  - Migration 028 adds `reminder_times TEXT[]`, `duration_days INTEGER` to `pet_medications` and `medication_reminders_enabled BOOLEAN` to `user_settings`. Must be applied before medication reminders work.
+  - Migration 028 + 029 are both applied to production Supabase.
+  - `is_variety_pack` column is live. `searchProducts()` already filters on it.
+  - `CategoryBrowseScreen` exists at `src/screens/CategoryBrowseScreen.tsx` and is registered on HomeStack — but browse is now inline on HomeScreen. The screen uses `categoryBrowseService.ts` which queries `pet_product_scores` (requires batch scoring cache). If the cache is empty for a pet, the screen shows empty. HomeScreen text search queries `products` directly (no cache needed).
+  - `@shopify/flash-list` 2.0.2 installed — FlashList v2 dropped `estimatedItemSize` prop.
+  - Sub-filter chip row has a filter icon platter at the leading edge (options-outline, 32px circle).
+  - Treat sub-filters (Crunchy & Biscuits, Jerky & Chews, Lickables & Purees, Dental) and supplement sub-filters (Joint & Hip, Skin & Coat, Digestive, Calming) use `ILIKE` name patterns, not DB columns. Patterns defined in `categoryBrowseService.ts`.
+  - `fetchCategoryTopPicks()` is a stub that delegates to `fetchBrowseResults()` with a limit override — ready for Top Picks implementation.
   - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment.
   - `life_stage_claim` still free text (no enum validation) — deferred as tech debt.
-- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 028 is schema-only (new columns with defaults).
+- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 029 is schema + RPC only (new column, indexes, browse counts function).

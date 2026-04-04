@@ -368,10 +368,12 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: Spacing.md,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.lg,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   headerRow: {
     flexDirection: 'row',
@@ -449,10 +451,11 @@ const styles = StyleSheet.create({
   },
   goalSection: {
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingTop: Spacing.sm,
     marginTop: Spacing.xs,
     gap: Spacing.xs,
+    paddingBottom: Spacing.sm,
   },
   bcsLink: {
     flexDirection: 'row',
