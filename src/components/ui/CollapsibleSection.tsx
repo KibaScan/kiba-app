@@ -13,7 +13,6 @@ import {
   UIManager,
   Animated,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 
@@ -73,13 +72,6 @@ export function CollapsibleSection({
         onPress={toggle}
         activeOpacity={0.7}
       >
-        {!expanded && (
-          <BlurView
-            intensity={20}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-          />
-        )}
         <View style={styles.headerContent}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{title}</Text>
@@ -109,21 +101,19 @@ export function CollapsibleSection({
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    padding: Spacing.md,
     marginBottom: Spacing.md,
-    borderRadius: 12,
     overflow: 'hidden',
   },
-  header: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: Colors.card,
-  },
+  header: {},
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
   },
   titleRow: {
     flexDirection: 'row',
@@ -141,6 +131,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   content: {
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.md,
   },
 });

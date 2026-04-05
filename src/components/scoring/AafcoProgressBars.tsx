@@ -478,7 +478,9 @@ export function AafcoProgressBars({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },

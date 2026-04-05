@@ -437,6 +437,7 @@ export default function HomeScreen() {
                   styles.categoryCard,
                   selected && {
                     borderColor: cat.tint,
+                    borderWidth: 2,
                     backgroundColor: `${cat.tint}26`,
                   },
                 ]}
@@ -820,13 +821,13 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '48%' as unknown as number,
     flexGrow: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     paddingVertical: Spacing.md,
     alignItems: 'center',
     gap: Spacing.xs,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   categoryLabel: {
     fontSize: FontSizes.sm,

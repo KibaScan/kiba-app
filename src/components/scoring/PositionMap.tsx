@@ -188,6 +188,11 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   sectionTitle: {

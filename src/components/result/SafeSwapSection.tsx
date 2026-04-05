@@ -140,7 +140,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
     <View style={s.container}>
       {/* Collapsible header */}
       <TouchableOpacity
-        style={s.headerRow}
+        style={[s.headerRow, expanded && s.headerRowExpanded]}
         activeOpacity={0.7}
         onPress={() => setExpanded(prev => !prev)}
       >
@@ -293,15 +293,18 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
 
 const s = StyleSheet.create({
   container: {
-    marginBottom: Spacing.lg,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
+  },
+  headerRowExpanded: {
     marginBottom: Spacing.md,
   },
   headerTextGroup: {
@@ -323,7 +326,7 @@ const s = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: Colors.cardSurface,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
     padding: 10,
     borderWidth: 1,
