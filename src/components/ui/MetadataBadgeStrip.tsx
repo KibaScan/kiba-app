@@ -1,11 +1,12 @@
 // MetadataBadgeStrip — Compact metadata pill badges for TL;DR zone.
 // AAFCO status + category + product form + preservative type + life stage.
 // Default: centered flex-wrap grid. Fallback: horizontal scroll via centered={false}.
+// Neutral pills use solid dark fill (#2A2A2E) — NOT transparent outlines.
 // Zero emoji (D-084).
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SEVERITY_COLORS } from '../../utils/constants';
+import { Colors, SEVERITY_COLORS } from '../../utils/constants';
 import { resolveLifeStageLabel } from '../../utils/formatters';
 
 // ─── Props ──────────────────────────────────────────────
@@ -65,14 +66,14 @@ function getCategoryBadge(category: 'daily_food' | 'treat', isSupplemental: bool
   if (category === 'treat') {
     return {
       label: 'Treat',
-      textColor: SEVERITY_COLORS.neutral,
-      bgColor: SEVERITY_COLORS.neutral + OPACITY_12,
+      textColor: Colors.textPrimary,
+      bgColor: '#2A2A2E',
     };
   }
   return {
     label: 'Daily Food',
-    textColor: SEVERITY_COLORS.neutral,
-    bgColor: SEVERITY_COLORS.neutral + OPACITY_12,
+    textColor: Colors.textPrimary,
+    bgColor: '#2A2A2E',
   };
 }
 
@@ -91,8 +92,8 @@ function getFormBadge(productForm: string | null): Badge | null {
   if (!label) return null;
   return {
     label,
-    textColor: SEVERITY_COLORS.neutral,
-    bgColor: SEVERITY_COLORS.neutral + OPACITY_12,
+    textColor: Colors.textPrimary,
+    bgColor: '#2A2A2E',
   };
 }
 
@@ -131,8 +132,8 @@ function getLifeStageBadge(
   const label = resolveLifeStageLabel(lifeStageClaim, targetSpecies);
   return {
     label,
-    textColor: SEVERITY_COLORS.neutral,
-    bgColor: SEVERITY_COLORS.neutral + OPACITY_12,
+    textColor: Colors.textPrimary,
+    bgColor: '#2A2A2E',
   };
 }
 

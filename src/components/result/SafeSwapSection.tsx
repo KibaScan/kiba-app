@@ -230,50 +230,58 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
 
             {/* Bottom-anchored section — aligns across cards */}
             <View style={s.cardBottom}>
-              {/* Score */}
-              <View style={s.scoreRow}>
+              {/* Score pill */}
+              <View style={[s.scorePill, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) + '1F' }]}>
                 <View style={[s.scoreDot, { backgroundColor: getScoreColor(c.final_score, c.is_supplemental) }]} />
-                <Text style={s.scoreText}>{Math.round(c.final_score)}% match</Text>
+                <Text style={[s.scorePillText, { color: getScoreColor(c.final_score, c.is_supplemental) }]}>
+                  {Math.round(c.final_score)}%
+                </Text>
               </View>
-              <Text style={s.scoreLabel}>for {petName}</Text>
 
-              {/* Swap reason */}
-              <Text style={s.reason} numberOfLines={2}>
-                {c.reason}
-              </Text>
+              {/* Swap reason — only when an honest reason exists (condition- or
+                  allergen-specific). Generic swaps return null from
+                  generateSwapReason to avoid misleading "Higher overall match" */}
+              {c.reason && (
+                <Text style={s.reason} numberOfLines={2}>
+                  {c.reason}
+                </Text>
+              )}
             </View>
 
-            {/* Compare link */}
-            <TouchableOpacity
-              style={s.compareLink}
-              onPress={() => {
-                if (!canCompare()) {
-                  (navigation as any).navigate('Paywall', {
-                    trigger: 'compare',
-                    petName,
-                  });
-                  return;
-                }
-                (navigation as any).navigate('Compare', {
-                  productAId: productId,
-                  productBId: c.product_id,
-                  petId,
-                });
-              }}
-            >
-              <Text style={s.compareLinkText}>Compare</Text>
-            </TouchableOpacity>
-
-            {/* M7: Switch to this (Safe Switch entry point) */}
-            {onSwitchTo && category === 'daily_food' && !isSupplemental && (
+            {/* Action buttons with proper spacing */}
+            <View style={s.actionRow}>
+              {/* Compare */}
               <TouchableOpacity
-                style={s.switchLink}
-                onPress={() => onSwitchTo(c.product_id)}
+                style={s.compareLink}
+                onPress={() => {
+                  if (!canCompare()) {
+                    (navigation as any).navigate('Paywall', {
+                      trigger: 'compare',
+                      petName,
+                    });
+                    return;
+                  }
+                  (navigation as any).navigate('Compare', {
+                    productAId: productId,
+                    productBId: c.product_id,
+                    petId,
+                  });
+                }}
               >
-                <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
-                <Text style={s.switchLinkText}>Switch to this</Text>
+                <Text style={s.compareLinkText}>Compare</Text>
               </TouchableOpacity>
-            )}
+
+              {/* M7: Switch to this (Safe Switch entry point) — daily food only */}
+              {onSwitchTo && category === 'daily_food' && !isSupplemental && (
+                <TouchableOpacity
+                  style={s.switchLink}
+                  onPress={() => onSwitchTo(c.product_id)}
+                >
+                  <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
+                  <Text style={s.switchLinkText}>Switch to this</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </TouchableOpacity>
         ))}
       </View>}
@@ -290,7 +298,7 @@ const s = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     paddingVertical: 14,
@@ -315,11 +323,11 @@ const s = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: 10,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   imageContainer: {
     width: '100%',
@@ -371,36 +379,39 @@ const s = StyleSheet.create({
     marginTop: 'auto',
     paddingTop: Spacing.sm,
   },
-  scoreRow: {
+  scorePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    alignSelf: 'flex-start',
+    gap: 5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   scoreDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  scoreText: {
-    fontSize: FontSizes.lg,
+  scorePillText: {
+    fontSize: FontSizes.md,
     fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  scoreLabel: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
   },
   reason: {
     fontSize: 10,
     fontStyle: 'italic',
     color: Colors.textTertiary,
-    marginBottom: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  actionRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.hairlineBorder,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
   },
   compareLink: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
-    paddingTop: Spacing.sm,
+    paddingVertical: 4,
   },
   compareLinkText: {
     fontSize: FontSizes.sm,
@@ -414,7 +425,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.lg,
     borderWidth: 1,
@@ -428,7 +439,7 @@ const s = StyleSheet.create({
 
   // ─── Preparing state ─────────────────────────────────
   preparingContainer: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.lg,
     flexDirection: 'row',
@@ -447,10 +458,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
-    paddingTop: Spacing.sm,
-    marginTop: Spacing.xs,
+    paddingVertical: 4,
   },
   switchLinkText: {
     fontSize: FontSizes.sm,

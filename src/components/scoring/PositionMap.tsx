@@ -160,6 +160,26 @@ export function PositionMap({ ingredients, onSegmentPress }: PositionMapProps) {
       {top10Found && top10CumulativePct < 98 && (
         <Text style={styles.top10Label}>Top 10</Text>
       )}
+
+      {/* Legend */}
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.good }]} />
+          <Text style={styles.legendLabel}>Good</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.neutral }]} />
+          <Text style={styles.legendLabel}>Neutral</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.caution }]} />
+          <Text style={styles.legendLabel}>Caution</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: SEVERITY_COLORS.danger }]} />
+          <Text style={styles.legendLabel}>Concern</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -240,5 +260,25 @@ const styles = StyleSheet.create({
   floatingLabelText: {
     color: '#FFFFFF',
     fontSize: 11,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: Spacing.sm,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendLabel: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
   },
 });

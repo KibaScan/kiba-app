@@ -483,10 +483,6 @@ export function ScoreWaterfall({
 }: ScoreWaterfallProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const rows = buildRows(scoredResult, petName, species, category);
-  const maxMagnitude = Math.max(
-    ...rows.map((r) => Math.abs(r.points)),
-    1, // avoid division by zero
-  );
   const isSupplemental = category === 'supplemental';
   const scoreColor = getScoreColor(scoredResult.finalScore, isSupplemental);
   const verdictLabel = scoredResult.finalScore >= 85 ? 'Excellent match'
@@ -539,12 +535,6 @@ export function ScoreWaterfall({
       {rows.map((row) => {
         const isExpanded = expandedKey === row.key;
         const barColor = getPointsColor(row.points);
-        const barWidthPercent = row.points === 0
-          ? 0
-          : Math.min(Math.abs(row.points) / 50, 1) * 100;
-        const barFillColor = Math.abs(row.points) >= 10
-          ? SEVERITY_COLORS.danger
-          : SEVERITY_COLORS.caution;
         const summary = getSummaryContent(row.key, scoredResult);
 
         return (
@@ -575,16 +565,20 @@ export function ScoreWaterfall({
               />
             </TouchableOpacity>
 
-            {/* Collapsed summary */}
+            {/* Collapsed summary with status dot */}
             {!isExpanded && summary.text !== '' && (
               <View style={styles.summaryRow}>
-                {summary.isGood && (
+                {summary.isGood ? (
                   <Ionicons
                     name="checkmark"
                     size={12}
                     color={SEVERITY_COLORS.good}
                     style={styles.summaryIcon}
                   />
+                ) : (
+                  <View style={[styles.statusDot, {
+                    backgroundColor: Colors.severityAmber,
+                  }]} />
                 )}
                 <Text
                   style={[
@@ -597,21 +591,6 @@ export function ScoreWaterfall({
                 </Text>
               </View>
             )}
-
-            {/* Progress bar */}
-            <View style={styles.barTrack}>
-              {barWidthPercent > 0 && (
-                <View
-                  style={[
-                    styles.barFill,
-                    {
-                      width: `${barWidthPercent}%`,
-                      backgroundColor: barFillColor,
-                    },
-                  ]}
-                />
-              )}
-            </View>
 
             {isExpanded && (
               <View style={styles.expandedContainer}>
@@ -637,7 +616,7 @@ export function ScoreWaterfall({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -654,7 +633,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   baselineLabel: {
     fontSize: FontSizes.sm,
@@ -669,7 +648,7 @@ const styles = StyleSheet.create({
   row: {
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   rowHeader: {
     flexDirection: 'row',
@@ -711,16 +690,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
   },
-  barTrack: {
-    height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 2,
-    overflow: 'hidden',
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
   },
-  barFill: {
-    height: 3,
-    borderRadius: 2,
-  },
+
   finalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -742,13 +718,13 @@ const styles = StyleSheet.create({
 
   // ─── Expanded Content ─────────────────────────────────
   expandedContainer: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     marginTop: 8,
     paddingLeft: 16,
     paddingTop: 8,
     paddingBottom: 4,
     borderLeftWidth: 2,
-    borderLeftColor: Colors.cardBorder,
+    borderLeftColor: Colors.hairlineBorder,
   },
   expandedItem: {
     marginBottom: 10,

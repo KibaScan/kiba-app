@@ -685,16 +685,6 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Share button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          activeOpacity={0.7}
-          onPress={() => captureAndShare(shareCardRef, displayName, score)}
-        >
-          <Ionicons name="share-outline" size={18} color={Colors.accent} />
-          <Text style={styles.shareButtonText}>Share Result</Text>
-        </TouchableOpacity>
-
         {/* ─── Below Fold — Collapsible Sections ─────────── */}
 
         {/* Score Breakdown OR Treat Battery */}

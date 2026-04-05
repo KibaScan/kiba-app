@@ -9,6 +9,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Switch,
   LayoutAnimation,
   Platform,
   UIManager,
@@ -119,7 +120,7 @@ function getZoneForMax(value: number, max: number): Zone {
 const ZONE_COLORS: Record<Zone, string> = {
   green: Colors.severityGreen,
   amber: Colors.severityAmber,
-  red: Colors.severityRed,
+  red: Colors.severityAmber,   // Amber — neon red reserved for FDA recalls only
 };
 
 // ─── Individual Progress Bar ────────────────────────────
@@ -211,7 +212,7 @@ const barStyles = StyleSheet.create({
   track: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
     overflow: 'visible',
     position: 'relative',
   },
@@ -333,39 +334,26 @@ export function AafcoProgressBars({
 
       {/* DMB Toggle (wet food only) */}
       {hasDmb && (
-        <TouchableOpacity
-          style={styles.dmbToggle}
-          onPress={() => setShowDmb((v) => !v)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={showDmb ? 'checkbox' : 'square-outline'}
-            size={18}
-            color={Colors.accent}
-          />
+        <View style={styles.dmbToggle}>
           <Text style={styles.dmbToggleText}>
             {showDmb ? 'Showing Dry Matter Basis' : 'Show Dry Matter Basis'}
           </Text>
-          <TouchableOpacity
-            hitSlop={12}
-            onPress={() => {/* Info handled by toggle */}}
-          >
-            <Ionicons name="information-circle-outline" size={16} color={Colors.textTertiary} />
-          </TouchableOpacity>
-        </TouchableOpacity>
+          <Switch
+            value={showDmb}
+            onValueChange={(v) => setShowDmb(v)}
+            trackColor={{ false: '#3A3A3C', true: Colors.accent }}
+            thumbColor="#FFFFFF"
+            style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+          />
+        </View>
       )}
 
       {hasDmb && showDmb && moisture_pct != null && (
         <Text style={styles.dmbExplainer}>
           Dry Matter Basis removes water content for accurate comparison.
-          This food contains {moisture_pct.toFixed(0)}% moisture.
-        </Text>
-      )}
-
-      {/* Ultra-high-moisture context note (broths, lickables >80% water) */}
-      {hasDmb && showDmb && moisture_pct != null && moisture_pct > 80 && (
-        <Text style={styles.dmbExplainer}>
-          This product is {moisture_pct.toFixed(0)}% water. DMB values appear high because the dry portion is very concentrated. This is normal for broths and lickable treats.
+          {moisture_pct > 80
+            ? ` This product is ${moisture_pct.toFixed(0)}% water \u2014 DMB values appear higher because the dry portion is concentrated.`
+            : ` This food contains ${moisture_pct.toFixed(0)}% moisture.`}
         </Text>
       )}
 
@@ -489,7 +477,7 @@ export function AafcoProgressBars({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -514,6 +502,7 @@ const styles = StyleSheet.create({
   dmbToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 6,
     marginBottom: Spacing.sm,
   },
@@ -525,14 +514,14 @@ const styles = StyleSheet.create({
   },
   dmbExplainer: {
     fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
+    color: Colors.textSecondary,
     lineHeight: 16,
     marginBottom: Spacing.sm,
   },
   standardLabel: {
     fontSize: FontSizes.xs,
     fontWeight: '600',
-    color: Colors.textTertiary,
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,

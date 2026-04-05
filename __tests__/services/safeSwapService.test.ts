@@ -362,10 +362,12 @@ describe('generateSwapReason', () => {
       .toBe('Lower fat content');
   });
 
-  it('pancreatitis cat: no reason (cat pancreatitis has no dog-specific reason)', () => {
-    // Falls through to generic since pancreatitis only has dog reason
+  it('pancreatitis cat: null (cat pancreatitis has no dog-specific reason)', () => {
+    // Falls through to null since pancreatitis only has dog reason and no
+    // allergens — generic fallback dropped to avoid misleading comparisons
+    // against partial-data products.
     expect(generateSwapReason(candidate, ['pancreatitis'], [], 'cat'))
-      .toBe('Higher overall match');
+      .toBeNull();
   });
 
   it('ckd: returns phosphorus reason', () => {
@@ -388,9 +390,11 @@ describe('generateSwapReason', () => {
       .toBe('Free from chicken ingredients');
   });
 
-  it('generic fallback when no conditions or allergens', () => {
+  it('null when no conditions or allergens (no honest comparative reason)', () => {
+    // Fallback 'Higher overall match' was dropped — partial-data products can
+    // make the comparison factually wrong. Caller hides the line on null.
     expect(generateSwapReason(candidate, [], [], 'dog'))
-      .toBe('Higher overall match');
+      .toBeNull();
   });
 
   it('multiple conditions: picks highest priority (safety-critical first)', () => {
@@ -413,6 +417,9 @@ describe('generateSwapReason', () => {
     for (const condition of allConditions) {
       for (const species of ['dog', 'cat'] as const) {
         const reason = generateSwapReason(candidate, [condition], [], species);
+        // Reason may be null when condition has no species-specific text
+        // (e.g. pancreatitis + cat) — null is trivially compliant.
+        if (reason == null) continue;
         for (const term of prohibited) {
           expect(reason.toLowerCase()).not.toContain(term);
         }

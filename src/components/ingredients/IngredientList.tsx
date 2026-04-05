@@ -131,7 +131,6 @@ export function IngredientList({
               </Text>
             )}
           </View>
-          <Text style={[styles.severityLabel, { color }]}>{label}</Text>
         </View>
         {ingredient.definition && (
           <Text style={styles.definition} numberOfLines={1}>
@@ -179,7 +178,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   row: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -191,7 +190,7 @@ const styles = StyleSheet.create({
   },
   positionNumber: {
     fontSize: FontSizes.xs,
-    color: '#737373',
+    color: Colors.textSecondary,
     marginRight: 8,
     marginTop: 2,
     minWidth: 20,
@@ -209,11 +208,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     marginTop: 1,
-  },
-  severityLabel: {
-    fontSize: FontSizes.xs,
-    fontWeight: '700',
-    flexShrink: 0,
   },
   definition: {
     fontSize: FontSizes.sm,

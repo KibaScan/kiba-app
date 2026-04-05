@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -273,19 +273,19 @@ const styles = StyleSheet.create({
   },
   citationsSection: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingTop: 12,
   },
   citationsHeader: {
     fontSize: FontSizes.xs,
     fontWeight: '600',
-    color: '#737373',
+    color: Colors.textSecondary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   citationsText: {
     fontSize: 12,
-    color: '#737373',
+    color: Colors.textSecondary,
     lineHeight: 16,
     fontStyle: 'italic',
   },

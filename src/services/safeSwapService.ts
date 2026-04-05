@@ -23,7 +23,7 @@ export interface SwapCandidate {
   product_form: string | null;
   category: string;
   is_supplemental: boolean;
-  reason: string;
+  reason: string | null;
   price_per_kg: number | null;
   is_fish_based: boolean;
   slot_label: string | null; // 'Top Pick' | 'Fish-Based' | 'Another Pick' | 'Great Value' | null
@@ -272,7 +272,7 @@ export function generateSwapReason(
   conditionTags: string[],
   allergenGroups: string[],
   species: 'dog' | 'cat',
-): string {
+): string | null {
   // Check conditions in priority order
   for (const tag of CONDITION_PRIORITY) {
     if (!conditionTags.includes(tag)) continue;
@@ -288,7 +288,9 @@ export function generateSwapReason(
     return `Free from ${first} ingredients`;
   }
 
-  return 'Higher overall match';
+  // No honest generic reason — partial-data products can make "higher overall
+  // match" factually wrong. Caller hides the reason line when null.
+  return null;
 }
 
 // ─── Fish-Based Tagging ────────────────────────────────

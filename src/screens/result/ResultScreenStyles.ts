@@ -111,7 +111,7 @@ export const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   flagChipGeneric: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
@@ -151,13 +151,13 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: Spacing.sm,
     gap: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   compareButtonText: {
     fontSize: FontSizes.md,
@@ -243,13 +243,13 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingVertical: 14,
     marginBottom: Spacing.md,
     gap: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   removeFromPantryText: {
     fontSize: FontSizes.md,
@@ -319,7 +319,7 @@ export const styles = StyleSheet.create({
 
   // ─── No Ingredient Data
   noDataCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.lg,
     alignItems: 'center',
@@ -360,7 +360,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: Spacing.lg,
@@ -379,20 +379,6 @@ export const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
     overflow: 'hidden',
-  },
-
-  // ─── Share Button
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginBottom: Spacing.md,
-  },
-  shareButtonText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.accent,
   },
 
   // ─── Off-screen Share Card
@@ -421,7 +407,7 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
