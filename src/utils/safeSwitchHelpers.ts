@@ -1,7 +1,7 @@
 // Kiba — Safe Switch Helpers (M7)
 // Pure functions for transition schedule math. No side effects, fully testable.
 
-import type { TransitionDay } from '../types/safeSwitch';
+import type { TransitionDay, SwitchOutcome, OutcomeMessage } from '../types/safeSwitch';
 
 // ─── Schedule Configuration ─────────────────────────────
 
@@ -152,6 +152,162 @@ export function shouldShowUpsetAdvisory(
     }
   }
   return false;
+}
+
+/**
+ * Counts the number of consecutive missed days (no tummy check logged)
+ * immediately before the current day, going backwards.
+ */
+export function getConsecutiveMissedDays(
+  logs: { day_number: number; tummy_check: string | null }[],
+  currentDay: number,
+): number {
+  let consecutive = 0;
+  for (let d = currentDay - 1; d >= 1; d--) {
+    const log = logs.find(l => l.day_number === d);
+    if (!log || !log.tummy_check) consecutive++;
+    else break;
+  }
+  return consecutive;
+}
+
+/**
+ * Returns true if the amber "missed days" warning should be shown.
+ * Threshold: 3+ consecutive missed days. Suppressed when currentDay <= 2
+ * (user hasn't had a chance to log anything yet).
+ * D-095 compliant — informational suggestion only.
+ */
+export function shouldShowConsecutiveMissedWarning(
+  logs: { day_number: number; tummy_check: string | null }[],
+  currentDay: number,
+): boolean {
+  if (currentDay <= 2) return false;
+  return getConsecutiveMissedDays(logs, currentDay) >= 3;
+}
+
+// ─── Completion Outcome (Phase A) ───────────────────────
+
+/**
+ * Computes the outcome summary of a completed switch from its tummy logs.
+ * Counts each tummy check category, identifies missed days, and finds the
+ * longest run of consecutive "upset" logs. Pure function — no side effects.
+ * Walks day-by-day in order so the consecutive streak is meaningful.
+ */
+export function computeSwitchOutcome(
+  logs: { day_number: number; tummy_check: string | null }[],
+  totalDays: number,
+): SwitchOutcome {
+  let perfectCount = 0;
+  let softStoolCount = 0;
+  let upsetCount = 0;
+  let loggedDays = 0;
+  let maxConsecutiveUpset = 0;
+  let currentUpsetStreak = 0;
+
+  for (let day = 1; day <= totalDays; day++) {
+    const log = logs.find(l => l.day_number === day);
+    const check = log?.tummy_check ?? null;
+
+    if (check === 'perfect') {
+      perfectCount++;
+      loggedDays++;
+      currentUpsetStreak = 0;
+    } else if (check === 'soft_stool') {
+      softStoolCount++;
+      loggedDays++;
+      currentUpsetStreak = 0;
+    } else if (check === 'upset') {
+      upsetCount++;
+      loggedDays++;
+      currentUpsetStreak++;
+      if (currentUpsetStreak > maxConsecutiveUpset) {
+        maxConsecutiveUpset = currentUpsetStreak;
+      }
+    } else {
+      // Missed day — does not break or extend the streak for the purposes
+      // of this metric; only a non-upset check resets it. We treat "missed"
+      // as a gap, not a reset, so a 2-upset / missed / 1-upset pattern still
+      // surfaces an upset signal without inflating the streak.
+    }
+  }
+
+  return {
+    totalDays,
+    loggedDays,
+    missedDays: totalDays - loggedDays,
+    perfectCount,
+    softStoolCount,
+    upsetCount,
+    maxConsecutiveUpset,
+  };
+}
+
+/**
+ * Derives the outcome card title/body/tone from a computed SwitchOutcome.
+ * D-095 compliant: uses "digestive discomfort" as a body-function reference,
+ * defers to vet, no diagnostic language, no "prevent/cure/treat/diagnose".
+ *
+ * Branches, in precedence order:
+ *   1. Upsets reported (>=1)                         → caution
+ *   2. No logs at all                                → neutral
+ *   3. Limited data (loggedDays < totalDays / 2)     → neutral
+ *   4. All logged days perfect, zero soft stool      → good
+ *   5. Otherwise (perfect + some soft stool, no upset) → neutral
+ */
+export function getOutcomeMessage(
+  outcome: SwitchOutcome,
+  petName: string,
+  newProductDisplay: string,
+): OutcomeMessage {
+  const { totalDays, loggedDays, upsetCount, softStoolCount, perfectCount } = outcome;
+
+  const title = 'Switch Complete';
+  const baseBody = `${petName} has fully transitioned to ${newProductDisplay}.`;
+
+  // 1. Upsets — highest priority, caution tone
+  if (upsetCount >= 1) {
+    const dayWord = upsetCount === 1 ? 'day' : 'days';
+    return {
+      title,
+      body: `${baseBody} You logged signs of digestive discomfort on ${upsetCount} ${dayWord}. If symptoms continue, consider checking in with ${petName}'s veterinarian.`,
+      tone: 'caution',
+    };
+  }
+
+  // 2. Zero logs across the whole transition
+  if (loggedDays === 0) {
+    return {
+      title,
+      body: `${baseBody} No tummy checks were logged during the transition.`,
+      tone: 'neutral',
+    };
+  }
+
+  // 3. Limited data — less than half the days logged
+  if (loggedDays < totalDays / 2) {
+    return {
+      title,
+      body: `${baseBody} Only ${loggedDays} of ${totalDays} days were logged — limited data on how the transition went.`,
+      tone: 'neutral',
+    };
+  }
+
+  // 4. All clean — every logged day was perfect
+  if (perfectCount === loggedDays && softStoolCount === 0) {
+    return {
+      title,
+      body: `${baseBody} No signs of digestive discomfort reported across the ${totalDays}-day transition.`,
+      tone: 'good',
+    };
+  }
+
+  // 5. Mostly smooth — some soft stool, no upset
+  const softWord = softStoolCount === 1 ? 'day' : 'days';
+  return {
+    title,
+    body: `${baseBody} ${softStoolCount} soft stool ${softWord} reported — common during transitions.`,
+    tone: 'neutral',
+  };
 }
 
 /**

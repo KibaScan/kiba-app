@@ -144,6 +144,58 @@ export async function resumeSafeSwitch(switchId: string): Promise<void> {
   if (error) throw new Error(`Failed to resume safe switch: ${error.message}`);
 }
 
+/**
+ * Restarts a switch: cancels the old row and creates a new one with the same
+ * product pair and duration. The partial unique index
+ * idx_safe_switches_one_active_per_pet (WHERE status IN ('active', 'paused'))
+ * allows this — cancelling first frees the slot for the insert.
+ */
+export async function restartSafeSwitch(switchId: string): Promise<SafeSwitch> {
+  await requireOnline();
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) throw new Error('Not authenticated');
+
+  // Fetch old switch data
+  const { data: oldSwitch, error: fetchErr } = await supabase
+    .from('safe_switches')
+    .select('pet_id, old_product_id, new_product_id, total_days')
+    .eq('id', switchId)
+    .single();
+
+  if (fetchErr || !oldSwitch) throw new Error('Failed to fetch switch for restart.');
+
+  const { pet_id, old_product_id, new_product_id, total_days } = oldSwitch as {
+    pet_id: string; old_product_id: string; new_product_id: string; total_days: number;
+  };
+
+  // Step 1: Cancel old switch
+  const { error: cancelErr } = await supabase
+    .from('safe_switches')
+    .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+    .eq('id', switchId);
+
+  if (cancelErr) throw new Error(`Failed to cancel old switch: ${cancelErr.message}`);
+
+  // Step 2: Insert new switch with same product pair
+  const { data: newSwitch, error: insertErr } = await supabase
+    .from('safe_switches')
+    .insert({
+      user_id: session.user.id,
+      pet_id,
+      old_product_id,
+      new_product_id,
+      total_days,
+      status: 'active',
+    })
+    .select()
+    .single();
+
+  if (insertErr) throw new Error(`Failed to create new switch: ${insertErr.message}`);
+
+  return newSwitch as SafeSwitch;
+}
+
 // ─── Read Functions ─────────────────────────────────────
 
 /**

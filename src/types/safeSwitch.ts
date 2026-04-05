@@ -78,3 +78,25 @@ export interface CreateSafeSwitchInput {
   new_product_id: string;
   total_days: number;
 }
+
+// ─── Completion Outcome (Phase A) ───────────────────────
+
+/** Computed outcome summary from a completed switch's tummy logs. */
+export interface SwitchOutcome {
+  totalDays: number;
+  loggedDays: number;
+  missedDays: number;
+  perfectCount: number;
+  softStoolCount: number;
+  upsetCount: number;
+  /** Longest run of consecutive "upset" logs during the transition. */
+  maxConsecutiveUpset: number;
+}
+
+/** Copy + tone for the completed-state card, derived from a SwitchOutcome. */
+export interface OutcomeMessage {
+  title: string;
+  body: string;
+  /** Visual tone hint for the completion card. */
+  tone: 'good' | 'neutral' | 'caution';
+}
