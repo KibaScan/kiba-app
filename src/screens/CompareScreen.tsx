@@ -526,10 +526,12 @@ export default function CompareScreen({ route, navigation }: Props) {
             <View style={ss.ingredientColumns}>
               <View style={ss.ingredientCol}>
                 {renderIngredientList(resultA.ingredients, pet?.species ?? 'dog')}
+                <IngredientsFooter ingredients={resultA.ingredients} species={pet?.species ?? 'dog'} />
               </View>
               <View style={ss.ingredientDivider} />
               <View style={ss.ingredientCol}>
                 {renderIngredientList(resultB.ingredients, pet?.species ?? 'dog')}
+                <IngredientsFooter ingredients={resultB.ingredients} species={pet?.species ?? 'dog'} />
               </View>
             </View>
           )}
@@ -587,7 +589,7 @@ function ProductHeader({
   species: 'dog' | 'cat';
   isPartial: boolean;
 }) {
-  const firstName = petName.split(' ')[0];
+  const firstName = petName === 'your pet' ? null : petName.split(' ')[0];
   return (
     <View style={ss.productCard}>
       <View style={ss.productImageStage}>
@@ -634,6 +636,65 @@ function renderIngredientList(ingredients: ProductIngredient[], species: 'dog' |
   ));
 }
 
+// ─── Ingredients Footer ─────────────────────────────────
+// Mini composition bar + severity tally for ingredients beyond position 10.
+// Top 10 are already listed above, so this surfaces hidden red/amber items.
+// Tally row shows [dot + count] per non-zero severity in good→danger order.
+function IngredientsFooter({
+  ingredients,
+  species,
+}: {
+  ingredients: ProductIngredient[];
+  species: 'dog' | 'cat';
+}) {
+  const beyond = ingredients
+    .filter((i) => i.position > 10)
+    .sort((a, b) => a.position - b.position);
+  if (beyond.length === 0) return null;
+
+  const sevKey = species === 'dog' ? 'dog_base_severity' : 'cat_base_severity';
+  const widthPct = 100 / beyond.length;
+
+  // Severity counts — iterate in good→neutral→caution→danger order
+  const counts: Record<string, number> = { good: 0, neutral: 0, caution: 0, danger: 0 };
+  for (const ing of beyond) {
+    const sev = ing[sevKey] ?? 'neutral';
+    counts[sev] = (counts[sev] ?? 0) + 1;
+  }
+  const tallyOrder: Array<'good' | 'neutral' | 'caution' | 'danger'> = [
+    'good',
+    'neutral',
+    'caution',
+    'danger',
+  ];
+
+  return (
+    <View style={ss.ingredientsFooter}>
+      <View style={ss.miniBar}>
+        {beyond.map((ing, idx) => {
+          const color = SEVERITY_DOT[ing[sevKey]] ?? Colors.textTertiary;
+          return (
+            <View
+              key={`${ing.position}-${idx}`}
+              style={{ width: `${widthPct}%`, height: '100%', backgroundColor: color }}
+            />
+          );
+        })}
+      </View>
+      <View style={ss.ingredientsTally}>
+        {tallyOrder.map((sev) =>
+          counts[sev] > 0 ? (
+            <View key={sev} style={ss.ingredientsTallyItem}>
+              <View style={[ss.severityDot, { backgroundColor: SEVERITY_DOT[sev] }]} />
+              <Text style={ss.ingredientsTallyCount}>{counts[sev]}</Text>
+            </View>
+          ) : null,
+        )}
+      </View>
+    </View>
+  );
+}
+
 // ─── Styles ─────────────────────────────────────────────
 
 const ss = StyleSheet.create({
@@ -648,7 +709,7 @@ const ss = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   headerTitle: {
     fontSize: FontSizes.lg,
@@ -692,16 +753,18 @@ const ss = StyleSheet.create({
   // Product headers
   productHeaders: {
     flexDirection: 'row',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   headerDivider: {
     width: Spacing.sm,
   },
   productCard: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     alignItems: 'center',
   },
   productImageStage: {
@@ -743,9 +806,14 @@ const ss = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Sections
+  // Sections — Matte Premium card anatomy (.agent/design.md)
   section: {
-    marginBottom: Spacing.lg,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    marginBottom: Spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -765,7 +833,7 @@ const ss = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.xs + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   bucketLabel: {
     flex: 1,
@@ -794,7 +862,7 @@ const ss = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.xs + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   nutritionLabel: {
     flex: 1,
@@ -830,11 +898,11 @@ const ss = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
 
-  // Key differences
+  // Key differences — sit inside the section card, so lift slightly against cardSurface
   diffCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
@@ -884,6 +952,37 @@ const ss = StyleSheet.create({
     flex: 1,
     fontSize: FontSizes.xs,
     color: Colors.textPrimary,
+  },
+
+  // Ingredients footer — mini severity bar + tally for ingredients beyond top 10
+  ingredientsFooter: {
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.hairlineBorder,
+  },
+  miniBar: {
+    flexDirection: 'row',
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  ingredientsTally: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs + 2,
+  },
+  ingredientsTallyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ingredientsTallyCount: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
 
   // Other pets

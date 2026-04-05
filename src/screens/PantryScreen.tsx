@@ -27,6 +27,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
 import { PantryCard } from '../components/pantry/PantryCard';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
+import SwipeableRow from '../components/ui/SwipeableRow';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { getActiveSwitchForPet } from '../services/safeSwitchService';
@@ -432,7 +433,7 @@ export default function PantryScreen({ navigation }: Props) {
                   styles.chip,
                   selected
                     ? { backgroundColor: accentColor }
-                    : { backgroundColor: Colors.cardBorder },
+                    : { backgroundColor: Colors.hairlineBorder },
                 ]}
                 onPress={() => setActiveFilter(chip.key)}
                 activeOpacity={0.7}
@@ -469,17 +470,25 @@ export default function PantryScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
         renderItem={({ item }) => (
-          <PantryCard
-            item={item}
-            activePet={activePet}
-            onTap={handleTap}
-            onRestock={handleRestock}
-            onRemove={handleRemove}
-            onGaveTreat={handleGaveTreat}
-            onFindReplacement={(productId) => {
-              navigation.navigate('Result', { productId, petId: activePetId });
-            }}
-          />
+          // M9 polish: swipe-left → delete (confirmation handled by handleRemove —
+          // shared items open the multi-pet sheet, single-pet items show an Alert).
+          // Swipe-right → edit (navigates to EditPantryItem or RecallDetail).
+          <SwipeableRow
+            onDelete={() => handleRemove(item.id)}
+            onEdit={() => handleTap(item.id)}
+          >
+            <PantryCard
+              item={item}
+              activePet={activePet}
+              onTap={handleTap}
+              onRestock={handleRestock}
+              onRemove={handleRemove}
+              onGaveTreat={handleGaveTreat}
+              onFindReplacement={(productId) => {
+                navigation.navigate('Result', { productId, petId: activePetId });
+              }}
+            />
+          </SwipeableRow>
         )}
         refreshControl={
           <RefreshControl
@@ -675,7 +684,7 @@ const styles = StyleSheet.create({
   carouselAvatar: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     overflow: 'hidden',
   },
   carouselAvatarActive: {
@@ -784,7 +793,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.background,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: Colors.cardBorder,
+    borderLeftColor: Colors.hairlineBorder,
   },
 
   // List
@@ -863,7 +872,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: Spacing.lg,
@@ -897,7 +906,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   modalOptionText: {
     fontSize: FontSizes.md,

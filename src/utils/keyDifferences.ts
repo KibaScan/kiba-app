@@ -166,7 +166,7 @@ function checkArtificialColorants(
   );
 
   if (aColorants.length > 0 && bColorants.length === 0) {
-    const names = aColorants.map((i) => i.canonical_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
+    const names = aColorants.map((i) => toDisplayName(i.canonical_name));
     return buildDiff({
       id: 'colorant_a',
       icon: 'warning',
@@ -180,7 +180,7 @@ function checkArtificialColorants(
   }
 
   if (bColorants.length > 0 && aColorants.length === 0) {
-    const names = bColorants.map((i) => i.canonical_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
+    const names = bColorants.map((i) => toDisplayName(i.canonical_name));
     return buildDiff({
       id: 'colorant_b',
       icon: 'warning',

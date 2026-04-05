@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`computeKeyDifferences locks structured output shape for a realistic multi-rule comparison 1`] = `
+[
+  {
+    "affectedProduct": "A",
+    "claim": "1 unnamed protein source",
+    "icon": "warning",
+    "id": "unnamed_a",
+    "severity": "negative",
+    "subject": "Generic Corn Based",
+    "text": "Generic Corn Based has 1 unnamed protein source in the top 5 ingredients",
+    "trailing": "in the top 5 ingredients",
+    "verb": "has",
+  },
+  {
+    "affectedProduct": "B",
+    "claim": "a named protein source",
+    "icon": "checkmark",
+    "id": "named_meat_b",
+    "severity": "positive",
+    "subject": "Premium Chicken & Rice",
+    "text": "Premium Chicken & Rice leads with a named protein source",
+    "verb": "leads with",
+  },
+  {
+    "affectedProduct": "B",
+    "claim": "verified AAFCO compliance",
+    "icon": "checkmark",
+    "id": "aafco_b",
+    "severity": "positive",
+    "subject": "Premium Chicken & Rice",
+    "text": "Premium Chicken & Rice has verified AAFCO compliance",
+    "verb": "has",
+  },
+  {
+    "affectedProduct": "B",
+    "claim": "natural preservatives",
+    "icon": "checkmark",
+    "id": "preservative_b",
+    "severity": "positive",
+    "subject": "Premium Chicken & Rice",
+    "text": "Premium Chicken & Rice uses natural preservatives",
+    "verb": "uses",
+  },
+]
+`;

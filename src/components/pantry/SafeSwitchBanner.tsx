@@ -38,7 +38,7 @@ function DayRing({ current, total }: { current: number; total: number }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={Colors.cardBorder}
+          stroke={Colors.hairlineBorder}
           strokeWidth={strokeWidth}
         />
         {/* Progress arc */}
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: Spacing.md,
     borderRadius: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
     borderColor: `${Colors.accent}20`,
   },
@@ -189,7 +189,7 @@ const compactStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
     borderWidth: 1,

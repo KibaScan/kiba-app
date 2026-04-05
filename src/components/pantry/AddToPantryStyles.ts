@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '85%',
@@ -91,7 +91,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   toggleText: {
     fontSize: FontSizes.md,
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
     color: Colors.textPrimary,
     minWidth: 70,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   customInput: {
     marginTop: Spacing.sm,
@@ -203,11 +203,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipSelected: {
     borderColor: Colors.accent,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   chipText: {
     fontSize: FontSizes.sm,
@@ -231,7 +231,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   stepperValue: {
     fontSize: FontSizes.xl,

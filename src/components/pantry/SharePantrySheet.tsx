@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '75%',
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   // Pet rows
   petRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   petToggleRow: {
     flexDirection: 'row',
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     minWidth: 56,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   servingUnit: {
     fontSize: FontSizes.sm,
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   stepperValue: {
     fontSize: FontSizes.md,

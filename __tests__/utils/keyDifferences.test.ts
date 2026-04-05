@@ -424,4 +424,43 @@ describe('computeKeyDifferences', () => {
     const result = computeKeyDifferences(productA, productB, [], [], 'cat');
     expect(Array.isArray(result)).toBe(true);
   });
+
+  // Test 14: Structured output snapshot — locks subject/verb/claim/trailing shape
+  // against accidental refactor of the KeyDifference contract or the 9 rule emitters.
+  // If this fails, review the diff carefully; update with:
+  //   npx jest --testPathPattern=keyDifferences -u
+  it('locks structured output shape for a realistic multi-rule comparison', () => {
+    const productA = makeProduct({
+      brand: 'Generic',
+      name: 'Generic Corn Based Senior Formula',
+      aafco_statement: null,
+      ga_protein_pct: 18,
+      ga_fat_pct: 8,
+      ga_fiber_pct: 4,
+      ga_moisture_pct: 10,
+      preservative_type: PreservativeType.Synthetic,
+    });
+    const productB = makeProduct({
+      brand: 'Premium',
+      name: 'Premium Chicken & Rice Adult Recipe',
+      aafco_statement: 'yes',
+      ga_protein_pct: 28,
+      ga_fat_pct: 15,
+      ga_fiber_pct: 4,
+      ga_moisture_pct: 10,
+      preservative_type: PreservativeType.Natural,
+    });
+
+    const ingredientsA = [
+      makeIngredient({ position: 1, canonical_name: 'corn', allergen_group: null }),
+      makeIngredient({ position: 2, canonical_name: 'meat_meal', is_unnamed_species: true }),
+    ];
+    const ingredientsB = [
+      makeIngredient({ position: 1, canonical_name: 'deboned_chicken', allergen_group: 'chicken' }),
+      makeIngredient({ position: 2, canonical_name: 'brown_rice' }),
+    ];
+
+    const result = computeKeyDifferences(productA, productB, ingredientsA, ingredientsB, 'dog');
+    expect(result).toMatchSnapshot();
+  });
 });

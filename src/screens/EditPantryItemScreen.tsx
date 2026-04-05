@@ -589,7 +589,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
                   <Switch
                     value={notificationsOn}
                     onValueChange={handleNotificationsToggle}
-                    trackColor={{ false: Colors.cardBorder, true: Colors.accent }}
+                    trackColor={{ false: Colors.hairlineBorder, true: Colors.accent }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 8,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   headerImagePlaceholder: {
     justifyContent: 'center',
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginHorizontal: Spacing.lg,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     minWidth: 80,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   unitSuffix: {
     fontSize: FontSizes.md,
@@ -897,11 +897,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipSelected: {
     borderColor: Colors.accent,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   chipText: {
     fontSize: FontSizes.sm,
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   stepperValue: {
     fontSize: FontSizes.xl,
@@ -951,7 +951,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   toggleBtnActive: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   toggleText: {
     fontSize: FontSizes.md,
@@ -1108,7 +1108,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: Spacing.lg,
@@ -1133,7 +1133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   modalOptionText: {
     fontSize: FontSizes.md,
