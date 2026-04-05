@@ -6,17 +6,44 @@
 import type { Product } from '../types';
 import type { ProductIngredient } from '../types/scoring';
 import { evaluateDcmRisk } from '../services/scoring/speciesRules';
-import { stripBrandFromName } from './formatters';
-import { toDisplayName } from './formatters';
+import { getConversationalName, toDisplayName } from './formatters';
 
 // ─── Types ──────────────────────────────────────────────
 
+/**
+ * Structured comparison sentence. The renderer (CompareScreen) bolds
+ * `subject` and `claim`, leaving `verb` and `trailing` at regular weight.
+ * `text` is the joined string, kept for tests and any legacy consumers.
+ */
 export interface KeyDifference {
   id: string;
   icon: 'warning' | 'checkmark' | 'arrow-up' | 'arrow-down';
   severity: 'positive' | 'negative' | 'neutral';
+  /** Short product name — rendered bold */
+  subject: string;
+  /** Verb phrase linking subject to claim — regular weight */
+  verb: string;
+  /** The insight itself — rendered bold */
+  claim: string;
+  /** Optional trailing qualifier, e.g. "(DMB)" — regular weight */
+  trailing?: string;
+  /** Joined sentence — "{subject} {verb} {claim}{?' ' + trailing}" */
   text: string;
   affectedProduct: 'A' | 'B' | 'both';
+}
+
+// ─── Helpers ────────────────────────────────────────────
+
+/** Build a KeyDifference from structured parts and compute joined `text`. */
+function buildDiff(
+  parts: Omit<KeyDifference, 'text'>,
+): KeyDifference {
+  const pieces = [parts.subject, parts.verb, parts.claim];
+  if (parts.trailing) pieces.push(parts.trailing);
+  return {
+    ...parts,
+    text: pieces.filter(Boolean).join(' '),
+  };
 }
 
 // ─── Constants ──────────────────────────────────────────
@@ -32,16 +59,7 @@ const UNNAMED_PROTEIN_NAMES = [
 
 const MAX_DIFFERENCES = 4;
 
-// ─── Helpers ────────────────────────────────────────────
-
-function getProductLabel(product: Product): string {
-  const stripped = stripBrandFromName(product.brand, product.name);
-  // If stripping left the full name (brand too short), use brand alone
-  if (stripped === product.name && product.brand) {
-    return product.brand;
-  }
-  return `${product.brand} ${stripped}`;
-}
+// ─── Protein DMB Helper ─────────────────────────────────
 
 function getProteinDmb(product: Product): number | null {
   if (product.ga_protein_pct == null) return null;
@@ -105,24 +123,30 @@ function checkAllergenRisk(
   if (totalA > totalB) {
     const allergens = [...new Set([...hitsA.direct, ...hitsA.possible])];
     const allergenNames = allergens.map((a) => toDisplayName(a)).join(', ');
-    return {
+    const plural = allergens.length > 1 ? 's' : '';
+    return buildDiff({
       id: 'allergen_a',
       icon: 'warning',
       severity: 'negative',
-      text: `${getProductLabel(productA)} contains ${petName}'s allergen${allergens.length > 1 ? 's' : ''}: ${allergenNames}`,
+      subject: getConversationalName(productA),
+      verb: 'contains',
+      claim: `${petName}'s allergen${plural}: ${allergenNames}`,
       affectedProduct: 'A',
-    };
+    });
   }
 
   const allergens = [...new Set([...hitsB.direct, ...hitsB.possible])];
   const allergenNames = allergens.map((a) => toDisplayName(a)).join(', ');
-  return {
+  const plural = allergens.length > 1 ? 's' : '';
+  return buildDiff({
     id: 'allergen_b',
     icon: 'warning',
     severity: 'negative',
-    text: `${getProductLabel(productB)} contains ${petName}'s allergen${allergens.length > 1 ? 's' : ''}: ${allergenNames}`,
+    subject: getConversationalName(productB),
+    verb: 'contains',
+    claim: `${petName}'s allergen${plural}: ${allergenNames}`,
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkArtificialColorants(
@@ -143,24 +167,30 @@ function checkArtificialColorants(
 
   if (aColorants.length > 0 && bColorants.length === 0) {
     const names = aColorants.map((i) => i.canonical_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
-    return {
+    return buildDiff({
       id: 'colorant_a',
       icon: 'warning',
       severity: 'negative',
-      text: `${getProductLabel(productA)} contains ${names.join(', ')} (rated Severe)`,
+      subject: getConversationalName(productA),
+      verb: 'contains',
+      claim: names.join(', '),
+      trailing: '(rated Severe)',
       affectedProduct: 'A',
-    };
+    });
   }
 
   if (bColorants.length > 0 && aColorants.length === 0) {
     const names = bColorants.map((i) => i.canonical_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
-    return {
+    return buildDiff({
       id: 'colorant_b',
       icon: 'warning',
       severity: 'negative',
-      text: `${getProductLabel(productB)} contains ${names.join(', ')} (rated Severe)`,
+      subject: getConversationalName(productB),
+      verb: 'contains',
+      claim: names.join(', '),
+      trailing: '(rated Severe)',
       affectedProduct: 'B',
-    };
+    });
   }
 
   return null;
@@ -182,22 +212,30 @@ function checkUnnamedProteins(
   if (aCount === bCount) return null;
 
   if (aCount > bCount) {
-    return {
+    const plural = aCount > 1 ? 's' : '';
+    return buildDiff({
       id: 'unnamed_a',
       icon: 'warning',
       severity: 'negative',
-      text: `${getProductLabel(productA)} has ${aCount} unnamed protein source${aCount > 1 ? 's' : ''} in the top 5 ingredients`,
+      subject: getConversationalName(productA),
+      verb: 'has',
+      claim: `${aCount} unnamed protein source${plural}`,
+      trailing: 'in the top 5 ingredients',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  const plural = bCount > 1 ? 's' : '';
+  return buildDiff({
     id: 'unnamed_b',
     icon: 'warning',
     severity: 'negative',
-    text: `${getProductLabel(productB)} has ${bCount} unnamed protein source${bCount > 1 ? 's' : ''} in the top 5 ingredients`,
+    subject: getConversationalName(productB),
+    verb: 'has',
+    claim: `${bCount} unnamed protein source${plural}`,
+    trailing: 'in the top 5 ingredients',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkNamedMeatFirst(
@@ -215,22 +253,26 @@ function checkNamedMeatFirst(
   if (aHasNamed === bHasNamed) return null;
 
   if (aHasNamed) {
-    return {
+    return buildDiff({
       id: 'named_meat_a',
       icon: 'checkmark',
       severity: 'positive',
-      text: `${getProductLabel(productA)} leads with a named protein source`,
+      subject: getConversationalName(productA),
+      verb: 'leads with',
+      claim: 'a named protein source',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  return buildDiff({
     id: 'named_meat_b',
     icon: 'checkmark',
     severity: 'positive',
-    text: `${getProductLabel(productB)} leads with a named protein source`,
+    subject: getConversationalName(productB),
+    verb: 'leads with',
+    claim: 'a named protein source',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkDcmAdvisory(
@@ -249,22 +291,26 @@ function checkDcmAdvisory(
   if (dcmA.fires === dcmB.fires) return null;
 
   if (dcmA.fires) {
-    return {
+    return buildDiff({
       id: 'dcm_a',
       icon: 'warning',
       severity: 'negative',
-      text: `${getProductLabel(productA)} triggers a DCM pulse advisory`,
+      subject: getConversationalName(productA),
+      verb: 'triggers',
+      claim: 'a DCM pulse advisory',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  return buildDiff({
     id: 'dcm_b',
     icon: 'warning',
     severity: 'negative',
-    text: `${getProductLabel(productB)} triggers a DCM pulse advisory`,
+    subject: getConversationalName(productB),
+    verb: 'triggers',
+    claim: 'a DCM pulse advisory',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkAafcoStatus(
@@ -277,22 +323,26 @@ function checkAafcoStatus(
   if (aHas === bHas) return null;
 
   if (aHas) {
-    return {
+    return buildDiff({
       id: 'aafco_a',
       icon: 'checkmark',
       severity: 'positive',
-      text: `${getProductLabel(productA)} has verified AAFCO compliance`,
+      subject: getConversationalName(productA),
+      verb: 'has',
+      claim: 'verified AAFCO compliance',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  return buildDiff({
     id: 'aafco_b',
     icon: 'checkmark',
     severity: 'positive',
-    text: `${getProductLabel(productB)} has verified AAFCO compliance`,
+    subject: getConversationalName(productB),
+    verb: 'has',
+    claim: 'verified AAFCO compliance',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkGaCompleteness(
@@ -311,22 +361,26 @@ function checkGaCompleteness(
   if (aComplete === bComplete) return null;
 
   if (aComplete) {
-    return {
+    return buildDiff({
       id: 'ga_a',
       icon: 'checkmark',
       severity: 'positive',
-      text: `${getProductLabel(productA)} has complete nutritional data`,
+      subject: getConversationalName(productA),
+      verb: 'has',
+      claim: 'complete nutritional data',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  return buildDiff({
     id: 'ga_b',
     icon: 'checkmark',
     severity: 'positive',
-    text: `${getProductLabel(productB)} has complete nutritional data`,
+    subject: getConversationalName(productB),
+    verb: 'has',
+    claim: 'complete nutritional data',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkProteinDelta(
@@ -344,22 +398,28 @@ function checkProteinDelta(
   const roundedDelta = Math.round(delta * 10) / 10;
 
   if (aDmb > bDmb) {
-    return {
+    return buildDiff({
       id: 'protein_a',
       icon: 'arrow-up',
       severity: 'neutral',
-      text: `${getProductLabel(productA)} has ${roundedDelta}% more protein (DMB)`,
+      subject: getConversationalName(productA),
+      verb: 'has',
+      claim: `${roundedDelta}% more protein`,
+      trailing: '(DMB)',
       affectedProduct: 'A',
-    };
+    });
   }
 
-  return {
+  return buildDiff({
     id: 'protein_b',
     icon: 'arrow-up',
     severity: 'neutral',
-    text: `${getProductLabel(productB)} has ${roundedDelta}% more protein (DMB)`,
+    subject: getConversationalName(productB),
+    verb: 'has',
+    claim: `${roundedDelta}% more protein`,
+    trailing: '(DMB)',
     affectedProduct: 'B',
-  };
+  });
 }
 
 function checkPreservativeType(
@@ -377,23 +437,27 @@ function checkPreservativeType(
     productB.preservative_type === 'mixed';
 
   if (aNatural && bSynthetic) {
-    return {
+    return buildDiff({
       id: 'preservative_a',
       icon: 'checkmark',
       severity: 'positive',
-      text: `${getProductLabel(productA)} uses natural preservatives`,
+      subject: getConversationalName(productA),
+      verb: 'uses',
+      claim: 'natural preservatives',
       affectedProduct: 'A',
-    };
+    });
   }
 
   if (bNatural && aSynthetic) {
-    return {
+    return buildDiff({
       id: 'preservative_b',
       icon: 'checkmark',
       severity: 'positive',
-      text: `${getProductLabel(productB)} uses natural preservatives`,
+      subject: getConversationalName(productB),
+      verb: 'uses',
+      claim: 'natural preservatives',
       affectedProduct: 'B',
-    };
+    });
   }
 
   return null;

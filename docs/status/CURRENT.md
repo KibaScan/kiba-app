@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-03 (session 16)
+# Project Status — Last updated 2026-04-04 (session 19)
 
 ## Active Milestone
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
@@ -39,14 +39,16 @@
 - **Matte Premium design system** — `.agent/design.md` established. Tokens, card anatomy, typography, spacing, bottom sheet specs, anti-patterns, screen polish checklist. Referenced in CLAUDE.md spec table — read before touching any screen UI.
 - **Card contrast alignment** — `Colors.cardSurface` bumped `#1C1C1E` → `#242424`, `Colors.hairlineBorder` bumped `rgba(255,255,255,0.08)` → `rgba(255,255,255,0.12)`. Matches legacy token contrast.
 - **Category browse on HomeScreen** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Search bar filters by active category + sub-filter. Categories: Daily Food (Dry/Wet/Freeze-Dried/Vet Diet/Other), Toppers (Wet/Freeze-Dried/Dry), Treats (Crunchy & Biscuits/Jerky & Chews/Freeze-Dried/Lickables & Purees/Dental), Supplements (Joint & Hip/Skin & Coat/Digestive/Calming). `@shopify/flash-list` installed. Variety pack exclusion via `is_variety_pack` column (migration 029, ~1,706 flagged). `get_browse_counts` RPC for chip badge counts. `categoryBrowseService.ts` with cursor-based pagination. CategoryBrowseScreen exists but browse is inline on HomeScreen.
+- **CompareScreen polish (Gemini review response)** — `getConversationalName()` utility produces short product references ("Feline Natural Chicken & Venison") for CTA buttons and `KeyDifferences` sentences instead of SEO-bloated full names. `KeyDifference` type restructured to `subject/verb/claim/trailing` with `buildDiff` helper auto-computing legacy `text` field; all 9 rules refactored to emit structured diffs rendered with bolded subject + claim. Product images framed on white 84px stage (`productImageStage`) mirroring `TopPicksCarousel` pattern. Score Breakdown heatmap: winner cyan, loser dimmed to `textSecondary`. Nutrition DMB uses bold-only differentiation (no color — respects D-094 clinical copy rule: "higher fat ≠ winner"). Center column labels dimmed to `textTertiary`. Ingredient list drops `1., 2., 3.` prefix (severity dot is sufficient ordering cue). Caption below product ring swapped from literal `{score}% match` to `getVerdictLabel()` ("Excellent match for Xhia") — matches `ResultScreen` pattern, no number echo, D-094 compliant. Global tab bar hidden on CompareScreen via `navigation.getParent().setOptions` pattern.
+- **Ingredient canonical normalization (migration 030)** — fixes legacy v7 import rows where compound ingredient names were stored without underscore separators (`meatbyproducts` instead of `meat_by_products`, 6 known variants). Collision-safe: renames in place when no proper sibling exists, merges via `product_ingredients.ingredient_id` reassignment when both exist. Fixes a real functional bug: `ConcernTags.tsx` "Unnamed Source" pill silently failed to fire on affected products because its membership check used proper snake_case forms. Includes a discovery `DO $$` block that emits `RAISE NOTICE` for any additional jammed candidates not in the fix list. Invalidates `pet_product_scores` cache for affected products. `formatters.ts` `DISPLAY_NAME_OVERRIDES` map remains as defensive fallback.
 
 ## What's Broken / Known Issues
 - **Stale browse scores**: CategoryBrowseScreen reads cached scores from `pet_product_scores` which can diverge from fresh ResultScreen scores (e.g. 82 vs 79) when pet profile changes after batch scoring. Root cause: batch scoring delta check counts ALL daily food for cache maturity but fetches by specific `product_form` — cache appears mature when dry/wet fill 80%, so freeze-dried (and other minority forms) never get scored. Workaround: fallback to unscored `products` query when scored cache is empty for a form. Long-term fix: make cache maturity check form-aware in both Edge Function and `batchScoreOnDevice.ts`.
 
 ## Numbers
-- **Tests:** 1320 passing / 61 suites
+- **Tests:** 1334 passing / 61 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 29 (001–029)
+- **Migrations:** 30 (001–030)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -56,6 +58,11 @@
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next
+- **Apply migration 030 to staging → verify discovery notices → production** — see session 19 gotchas. High user-visible value (fixes ConcernTags "Unnamed Source" pill on ~9 Lives and other affected SKUs)
+- **`'your pet'` caption bug** — `CompareScreen.tsx:590` + `ResultScreen.tsx:526` both do `petName.split(' ')[0]`; when pet is null and displayName falls back to "your pet", caption renders "Excellent match for your". Fix: detect fallback and pass `null` to `getVerdictLabel` (already handles null). One-liner, pre-existing, no risk
+- **Colorant rule title-casing** — `keyDifferences.ts:169,183` uses inline regex instead of `toDisplayName`. Means future `DISPLAY_NAME_OVERRIDES` entries for colorants wouldn't be picked up by colorant rule. One-line swap
+- **CompareScreen snapshot test** — no test suite exists for this screen. Add one to catch future visual regressions on the styling changes from session 19
+- **Visual QA on iOS simulator** — white image stage, bolded subject/claim Key Diff rendering, verdict-label caption, tab bar hidden, Score Breakdown loser dimmed, Nutrition DMB bold-only heatmap
 - Pantry polish — SwipeableRow on PantryCards, legacy token migration
 - Legacy token migration across remaining screens (HomeScreen, ResultScreen, CompareScreen, etc.)
 - Search UX overhaul on HomeScreen
@@ -70,29 +77,30 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-04 (session 18)
-- **Accomplished:** M9 — Top Picks carousel bug fix for new pets.
-  - **Top Picks unscored fallback fix:** New pets with no `pet_product_scores` cache were seeing alphabetically-first products (e.g., 9 Lives) labeled as "Top Picks" when a sub-filter was active. Root cause: `fetchBrowseResults` falls back to `fetchUnscoredResults` (alphabetical order) when scored cache is empty for a form — correct for the browse list, wrong for Top Picks. Fix: `TopPicksCarousel` now filters results to `final_score != null`, so unscored fallbacks never appear as "top picks." New pets see zero-state CTA or carousel hides silently with sub-filter active.
-  - **Files modified:** `src/components/browse/TopPicksCarousel.tsx`, `docs/status/CURRENT.md`
+- **Date:** 2026-04-04 (session 19)
+- **Accomplished:** M9 — CompareScreen polish (Gemini feedback review) + ingredient canonical normalization migration.
+  - **CompareScreen polish:** New `getConversationalName()` utility in `formatters.ts` (brand + 2 descriptor words, comma-stripped, noise-word-stripped, 34-char cap with graceful fallback; preserves `&`/`and`/`with`/`in` connectors). `KeyDifference` type restructured to `subject/verb/claim/trailing` with `buildDiff` helper auto-computing joined `text` for legacy consumers; all 9 rules refactored to emit structured diffs. `ProductHeader` now wraps image in 84px white stage mirroring `TopPicksCarousel`. Verdict-label caption (`getVerdictLabel()`) replaces literal `{score}% match` — no number echo, D-094 compliant, matches `ResultScreen`. Score Breakdown heatmap: winner cyan + loser dimmed to `textSecondary` (was full white). Nutrition DMB bold-only differentiation (no color — clinical-copy rule: "higher fat" isn't universally better). Center column labels dimmed from `textSecondary` → `textTertiary`. Ingredient list drops `{i + 1}. ` prefix. Key Differences cards render bolded subject + claim with muted verb/trailing. Global tab bar hidden on CompareScreen via `parent?.setOptions({ tabBarStyle: { display: 'none' } })` pattern.
+  - **Gemini pushback:** Rejected Gemini's suggestion to delete the caption below the score ring (hard D-094 violation — "never display a naked score"). Replaced with `getVerdictLabel()` instead, which removes the number echo while keeping score framing. Also pushed back on color-coding nutrition heatmap (would imply "higher fat = better" → clinical copy violation). Bold-only compromise.
+  - **Migration 030 (normalize jammed ingredient canonicals):** Fixes v7-import bug where compound names like "meatbyproducts" were stored without underscores. Not just cosmetic — `ConcernTags.tsx:85` uses proper snake_case forms (`meat_by_products`, `poultry_by_product_meal`) in its membership check, so the "Unnamed Source" concern pill silently failed to fire on affected products. Migration handles 6 known pairs with collision-safe rename-or-merge logic (reassigns `product_ingredients.ingredient_id` from jammed UUID to proper UUID when both exist, then deletes the jammed row). Includes discovery `DO $$` block that emits `RAISE NOTICE` for any additional jammed candidates. Invalidates `pet_product_scores` cache for affected products. `DISPLAY_NAME_OVERRIDES` map in `formatters.ts` stays as defensive fallback.
+  - **Tests:** +14 new (6 for `getConversationalName`, 4 for `DISPLAY_NAME_OVERRIDES`, 2 for structured `KeyDifference` shape, 2 extra coverage cases). 1320 → 1334 passing.
+  - **Files modified:** `src/utils/formatters.ts`, `src/utils/keyDifferences.ts`, `src/screens/CompareScreen.tsx`, `__tests__/utils/formatters.test.ts`, `__tests__/utils/keyDifferences.test.ts`, `__tests__/services/scoring/realProductScoring.test.ts` (fixture `meatbyproducts` → `meat_by_products`), `docs/status/CURRENT.md`
+  - **Files added:** `supabase/migrations/030_normalize_jammed_ingredient_canonicals.sql`
 - **Not done yet:**
-  - Custom icons for remaining groups (concerns, advisories, conditions, forms, treat-forms, supplement-forms) — v1 thin-stroke PNGs exist but need v2 bold re-gen
-  - 5 pending icons (joint-hip, skin-coat, calming, digestive re-gen, jerky-chews) per custom-icon-spec.md
-  - `IconPlatter` component not yet created (spec in `docs/specs/custom-icon-spec.md`)
-  - Stale browse scores: batch scoring cache maturity not form-aware (documented in Known Issues)
-  - Pantry polish (SwipeableRow on PantryCards, legacy token migration)
-  - Legacy token migration on remaining screens (AppointmentsListScreen, ResultScreen, CompareScreen, EditPantryItemScreen)
-  - Kiba Index end-to-end testing on iOS simulator
-  - Affiliate buttons still dormant — waiting on Chewy/Amazon enrollment
-  - Brand filter on browse (deferred — brand picker bottom sheet)
-  - Chip badge counts only show for Daily Food sub-filters
-- **Next session should:** Continue custom icon rollout (create `IconPlatter` component, wire concern/advisory/condition icons on ResultScreen). Generate v2 bold-stroke versions of remaining icon groups. Consider pantry polish.
+  - **Migration 030 deployment** — file created but NOT yet applied to staging or production. Next session should `npx supabase db push` against staging first, review the discovery `RAISE NOTICE` output for any additional jammed canonicals not in the 6-pair fix list, add them if found, then promote to prod with a `pg_dump` backup first.
+  - **`'your pet'` caption bug** — `CompareScreen.tsx:590` and `ResultScreen.tsx:526` render "Excellent match for your" when active pet is null and `displayName` falls back to `'your pet'`. Fix: pass `null` to `getVerdictLabel` on fallback (function already handles null). Pre-existing, not introduced this session. One-liner.
+  - **Colorant rule inline title-casing** — `keyDifferences.ts:169,183` uses `replace(/_/g, ' ').replace(/\b\w/g, …)` instead of `toDisplayName`. Means future `DISPLAY_NAME_OVERRIDES` entries for colorants wouldn't be picked up. One-line swap.
+  - **Same-brand disambiguation** for `getConversationalName` — not implemented. Two products sharing brand + identical first-2 descriptor words would render identical short names. Flag-later if users hit this in the wild.
+  - **Visual QA on iOS simulator** — none of the CompareScreen changes visually verified yet (image stage dimensions, bolded Key Diff rendering, tab bar hide, heatmap polish).
+  - **CompareScreen snapshot test** — no suite exists. Add one to lock in the visual changes from this session.
+  - All prior M9 items carry over: custom icon rollout (5 pending v2 bold), `IconPlatter` component, pantry polish, legacy token migration on remaining screens, stale browse scores fix, Kiba Index e2e testing, affiliate enrollment, brand filter on browse, chip badge counts for non-Daily-Food sub-filters.
+- **Next session should:** Apply migration 030 to staging + verify. High user-visible value (fixes concern tag surfacing on all affected SKUs), low risk (scoring untouched, idempotent, collision-safe). If the discovery loop surfaces new jammed canonicals, add to the fix list and re-apply before prod. Warm-up work: `'your pet'` caption fix (one-liner, both CompareScreen and ResultScreen).
 - **Gotchas for next session:**
-  - Asset directory is `assets/Icons/` (capital I), NOT `assets/icons/`. The spec file uses lowercase — Metro is case-sensitive on require paths.
-  - `iconMaps.ts` category keys must match `BrowseCategory` type values: `treat` (not `treats`), `supplement` (not `supplements`).
-  - `fetchUnscoredResults` now accepts optional `opts` param for `productFormFilter` and `isSupplemental` — used as fallback when scored cache is empty.
-  - `searchProducts()` `isVetDiet` filter: `undefined` → excludes vet diets (default `false`), `true` → only vet diets. HomeScreen clears `isSupplemental` when vet_diet sub-filter active.
-  - TopPicksCarousel image stage is white (`#FFFFFF`) — product images framed with padding + contain.
-  - BrowseProductRow now uses score pills (not rings) — same style as HomeScreen `scorePill`/`scorePillText`.
-  - `custom-icon-spec.md` updated to v2 (bold 2px stroke, filled variants, re-gen queue).
-  - TopPicksCarousel filters out `final_score == null` products — only scored products appear as "top picks."
-- **Decision/scoring changes:** No new decisions. No scoring logic changed. No new migrations.
+  - Migration 030 is **destructive on the merge path** — it `DELETE`s `ingredients_dict` rows after reassigning `product_ingredients`. Take a `pg_dump` before applying to prod. Idempotent (second run = no-op), so safe to re-apply if needed.
+  - `canonical_name` has a UNIQUE constraint. The migration handles collision by reassigning FK references first, then deleting the jammed row. This is correct because `product_ingredients` UNIQUE is `(product_id, position)` — not `(product_id, ingredient_id)` — so reassigning cannot collide.
+  - `getConversationalName` cap is **34 chars**, not 30 — chosen to admit "Brand Foo & Bar" patterns like "Feline Natural Chicken & Venison" (32). The JSDoc and tests reference 34.
+  - `KeyDifference.text` field is **auto-computed** by `buildDiff(parts)` from subject/verb/claim/trailing. Existing tests that check substrings of `text` still work because the joined form is stable. Don't set `text` manually when adding new rules — use `buildDiff`.
+  - New structured `KeyDifference` fields: tests should prefer `.subject` / `.claim` for new assertions; `.text` is legacy shim.
+  - CompareScreen still uses `stripBrandFromName` at line 602 for the 2-line product name in the card header — **intentional**, not a leftover. That text is `numberOfLines={2}` bounded inside the card, so it doesn't need aggressive shortening.
+  - Scoring engine was **not touched**. Regression anchors (Pure Balance = 62, Temptations = 9) verified unchanged.
+  - Migration 030 `Step 1` discovery regex is broad — it may flag legitimate canonicals (e.g. any 15+ char name without underscores). Review notices, don't auto-add.
+- **Decision/scoring changes:** No new decisions. No scoring logic changed. Migration 030 added (ingredient canonical normalization, display-layer concern tag fix).

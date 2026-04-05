@@ -1,6 +1,12 @@
-// Formatter utility tests — toDisplayName + stripBrandFromName + resolveLifeStageLabel + formatRelativeTime
+// Formatter utility tests — toDisplayName + stripBrandFromName + resolveLifeStageLabel + formatRelativeTime + getConversationalName
 
-import { toDisplayName, stripBrandFromName, resolveLifeStageLabel, formatRelativeTime } from '../../src/utils/formatters';
+import {
+  toDisplayName,
+  stripBrandFromName,
+  resolveLifeStageLabel,
+  formatRelativeTime,
+  getConversationalName,
+} from '../../src/utils/formatters';
 
 // ─── toDisplayName ────────────────────────────────────────
 
@@ -16,6 +22,16 @@ describe('toDisplayName', () => {
 
   test('handles numbers', () => {
     expect(toDisplayName('yellow_6')).toBe('Yellow 6');
+  });
+
+  test('routes jammed canonical names through DISPLAY_NAME_OVERRIDES', () => {
+    expect(toDisplayName('meatbyproducts')).toBe('Meat By-Products');
+    expect(toDisplayName('poultrybyproducts')).toBe('Poultry By-Products');
+    expect(toDisplayName('chickenbyproducts')).toBe('Chicken By-Products');
+  });
+
+  test('override lookup is case insensitive', () => {
+    expect(toDisplayName('MEATBYPRODUCTS')).toBe('Meat By-Products');
   });
 });
 
@@ -71,6 +87,94 @@ describe('stripBrandFromName', () => {
     expect(
       stripBrandFromName('Blue', 'Purina Blue Buffalo Life Protection Formula'),
     ).toBe('Purina Blue Buffalo Life Protection Formula');
+  });
+});
+
+// ─── getConversationalName ──────────────────────────────
+
+describe('getConversationalName', () => {
+  test('trims SEO-bloated long name to brand + 2 descriptors', () => {
+    expect(
+      getConversationalName({
+        brand: 'Feline Natural',
+        name: 'Feline Natural Chicken & Venison Feast Grain-Free Canned Cat Food, 6-oz, case of 12',
+      }),
+    ).toBe('Feline Natural Chicken & Venison');
+  });
+
+  test('keeps "&" token as one word when selecting descriptors', () => {
+    const result = getConversationalName({
+      brand: 'Feline Natural',
+      name: 'Feline Natural Chicken & Venison Feast',
+    });
+    expect(result).toBe('Feline Natural Chicken & Venison');
+  });
+
+  test('strips comma suffix (", 6-oz, case of 12")', () => {
+    const result = getConversationalName({
+      brand: '9 Lives',
+      name: '9 Lives Bites Real Chicken in Gravy Wet Cat Food, 5.5-oz, case of 24',
+    });
+    expect(result).not.toContain(',');
+    expect(result).not.toContain('5.5');
+    expect(result.startsWith('9 Lives')).toBe(true);
+  });
+
+  test('strips noise words ("Cat Food", "Canned", "Grain-Free")', () => {
+    const result = getConversationalName({
+      brand: 'Feline Natural',
+      name: 'Feline Natural Chicken & Venison Grain-Free Canned Cat Food',
+    });
+    expect(result.toLowerCase()).not.toContain('cat food');
+    expect(result.toLowerCase()).not.toContain('grain-free');
+    expect(result.toLowerCase()).not.toContain('canned');
+  });
+
+  test('keeps brand + 2 descriptors when result fits under 34 chars', () => {
+    const result = getConversationalName({
+      brand: 'Purina Pro Plan',
+      name: 'Purina Pro Plan Sensitive Skin & Stomach Adult Salmon Formula Dry Dog Food',
+    });
+    // "Purina Pro Plan Sensitive Skin" = 30 chars — passes cap
+    expect(result).toBe('Purina Pro Plan Sensitive Skin');
+  });
+
+  test('falls back to brand + 1 descriptor when brand + 2 exceeds 34 chars', () => {
+    // Long brand (24 chars) + "Salmon & Brown" descriptors = 39+ → too long.
+    // Falls back to brand + 1 descriptor = "Purina Beneful Originals Salmon" (31 chars).
+    const result = getConversationalName({
+      brand: 'Purina Beneful Originals',
+      name: 'Purina Beneful Originals Salmon & Brown Rice Recipe',
+    });
+    expect(result.length).toBeLessThanOrEqual(34);
+    expect(result.startsWith('Purina Beneful Originals')).toBe(true);
+    expect(result).toBe('Purina Beneful Originals Salmon');
+  });
+
+  test('returns brand alone when brand is already short and full name is noise', () => {
+    const result = getConversationalName({
+      brand: 'Acana',
+      name: 'Acana Dry Dog Food Canned',
+    });
+    // After brand strip + noise removal, nothing meaningful left → brand alone
+    expect(result).toBe('Acana');
+  });
+
+  test('handles missing brand gracefully', () => {
+    const result = getConversationalName({
+      brand: '',
+      name: 'Generic Chicken Recipe',
+    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.length).toBeLessThanOrEqual(30);
+  });
+
+  test('handles empty name gracefully', () => {
+    expect(getConversationalName({ brand: 'Blue Buffalo', name: '' })).toBe('Blue Buffalo');
+  });
+
+  test('handles both empty', () => {
+    expect(getConversationalName({ brand: '', name: '' })).toBe('');
   });
 });
 

@@ -126,7 +126,7 @@ const P2: Product = {
 // First recipe only (Hearty Cuts Chicken & Fish) — positions 1-35
 const P2_INGREDIENTS: ProductIngredient[] = [
   ing(1, 'water', { cat_base_severity: 'neutral' }),
-  ing(2, 'meatbyproducts', { cat_base_severity: 'neutral' }),
+  ing(2, 'meat_by_products', { cat_base_severity: 'neutral' }),
   ing(3, 'chicken', { cat_base_severity: 'good', is_protein_fat_source: true }),
   ing(4, 'fish', { cat_base_severity: 'neutral' }),
   ing(5, 'wheat_flour', { cat_base_severity: 'caution', position_reduction_eligible: true }),

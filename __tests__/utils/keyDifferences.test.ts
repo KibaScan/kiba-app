@@ -367,7 +367,52 @@ describe('computeKeyDifferences', () => {
     expect(result).toEqual([]);
   });
 
-  // Test 11: Missing data handled gracefully
+  // Test 11: Structured fields — subject is a short conversational name
+  it('returns structured diffs with short subject (not SEO-bloated full name)', () => {
+    const productA = makeProduct({
+      brand: 'Feline Natural',
+      name: 'Feline Natural Chicken & Venison Feast Grain-Free Canned Cat Food, 6-oz, case of 12',
+    });
+    const productB = makeProduct({
+      brand: '9 Lives',
+      name: '9 Lives Corn Based Filler Formula',
+    });
+
+    const ingredientsA = [makeIngredient({ position: 1, canonical_name: 'chicken', allergen_group: 'chicken' })];
+    const ingredientsB = [makeIngredient({ position: 1, canonical_name: 'corn' })];
+
+    const result = computeKeyDifferences(productA, productB, ingredientsA, ingredientsB, 'cat');
+    const named = result.find((d) => d.id === 'named_meat_a');
+    expect(named).toBeDefined();
+    expect(named!.subject).toBe('Feline Natural Chicken & Venison');
+    expect(named!.verb).toBe('leads with');
+    expect(named!.claim).toBe('a named protein source');
+    expect(named!.trailing).toBeUndefined();
+    // text field is still the joined form for legacy consumers
+    expect(named!.text).toBe('Feline Natural Chicken & Venison leads with a named protein source');
+  });
+
+  // Test 12: Protein delta carries trailing "(DMB)" qualifier
+  it('protein delta diffs have "(DMB)" in trailing field, not claim', () => {
+    const productA = makeProduct({
+      brand: 'BrandA', name: 'BrandA Low Protein Formula',
+      ga_protein_pct: 22, ga_moisture_pct: 10,
+    });
+    const productB = makeProduct({
+      brand: 'BrandB', name: 'BrandB High Protein Formula',
+      ga_protein_pct: 34, ga_moisture_pct: 10,
+    });
+
+    const result = computeKeyDifferences(productA, productB, [], [], 'dog');
+    const protein = result.find((d) => d.id === 'protein_b');
+    expect(protein).toBeDefined();
+    expect(protein!.verb).toBe('has');
+    expect(protein!.claim).toMatch(/% more protein/);
+    expect(protein!.claim).not.toContain('(DMB)');
+    expect(protein!.trailing).toBe('(DMB)');
+  });
+
+  // Test 13: Missing data handled gracefully
   it('handles null ingredients and null GA values without crashing', () => {
     const productA = makeProduct({ brand: 'BrandA', name: 'BrandA Minimal Data Product' });
     const productB = makeProduct({ brand: 'BrandB', name: 'BrandB Minimal Data Product' });

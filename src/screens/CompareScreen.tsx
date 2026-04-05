@@ -19,8 +19,8 @@ import { supabase } from '../services/supabase';
 import { scoreProduct, PipelineResult } from '../services/scoring/pipeline';
 import { computeKeyDifferences, KeyDifference } from '../utils/keyDifferences';
 import { ScoreRing, getScoreColor } from '../components/scoring/ScoreRing';
-import { Colors, FontSizes, Spacing, SCORING_WEIGHTS } from '../utils/constants';
-import { stripBrandFromName, toDisplayName } from '../utils/formatters';
+import { Colors, FontSizes, Spacing, SCORING_WEIGHTS, getVerdictLabel } from '../utils/constants';
+import { stripBrandFromName, toDisplayName, getConversationalName } from '../utils/formatters';
 import { getPetAllergens, getPetConditions } from '../services/petService';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
@@ -100,6 +100,15 @@ export default function CompareScreen({ route, navigation }: Props) {
   const [otherPetsLoading, setOtherPetsLoading] = useState(false);
 
   // ─── Premium gate (stub: implement when paywall ships) ──
+
+  // ─── Hide global tab bar while CompareScreen is focused ──
+  useEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
+    return () => {
+      parent?.setOptions({ tabBarStyle: undefined });
+    };
+  }, [navigation]);
 
   // ─── Fetch pet allergens + conditions ───────────────────
   const [petConditions, setPetConditions] = useState<string[]>([]);
@@ -220,9 +229,6 @@ export default function CompareScreen({ route, navigation }: Props) {
   const category = productA?.category === 'treat' ? 'treat' : 'daily_food';
 
   // ─── Helpers ────────────────────────────────────────────
-  const getShortName = (product: Product) =>
-    stripBrandFromName(product.brand, product.name);
-
   const getMaxBucket = (cat: string) => {
     const w = cat === 'treat' ? SCORING_WEIGHTS.treat : SCORING_WEIGHTS.daily_food;
     return {
@@ -338,14 +344,16 @@ export default function CompareScreen({ route, navigation }: Props) {
               <View key={key} style={ss.bucketRow}>
                 <Text style={[
                   ss.bucketValue,
-                  highlightA && { color: Colors.accent },
+                  highlightA && ss.bucketValueWinner,
+                  highlightB && ss.bucketValueLoser,
                 ]}>
                   {valA}/{max}
                 </Text>
                 <Text style={ss.bucketLabel}>{label}</Text>
                 <Text style={[
                   ss.bucketValue,
-                  highlightB && { color: Colors.accent },
+                  highlightB && ss.bucketValueWinner,
+                  highlightA && ss.bucketValueLoser,
                 ]}>
                   {valB}/{max}
                 </Text>
@@ -364,11 +372,29 @@ export default function CompareScreen({ route, navigation }: Props) {
               {NUTRITION_ROWS.map(({ key, label, field }) => {
                 const valA = productA[field];
                 const valB = productB[field];
+                // Clinical-copy rule (D-094): no color-coded "winner" for
+                // nutrition rows — "higher fat" isn't universally better.
+                // Use subtle bold/dim differentiation only.
+                const comparable = valA != null && valB != null;
+                const aHeavier = comparable && (valA as number) > (valB as number);
+                const bHeavier = comparable && (valB as number) > (valA as number);
                 return (
                   <View key={key} style={ss.nutritionRow}>
-                    <Text style={ss.nutritionValue}>{valA != null ? `${valA}%` : '—'}</Text>
+                    <Text style={[
+                      ss.nutritionValue,
+                      aHeavier && ss.nutritionValueHeavier,
+                      bHeavier && ss.nutritionValueLighter,
+                    ]}>
+                      {valA != null ? `${valA}%` : '—'}
+                    </Text>
                     <Text style={ss.nutritionLabel}>{label}</Text>
-                    <Text style={ss.nutritionValue}>{valB != null ? `${valB}%` : '—'}</Text>
+                    <Text style={[
+                      ss.nutritionValue,
+                      bHeavier && ss.nutritionValueHeavier,
+                      aHeavier && ss.nutritionValueLighter,
+                    ]}>
+                      {valB != null ? `${valB}%` : '—'}
+                    </Text>
                   </View>
                 );
               })}
@@ -379,11 +405,26 @@ export default function CompareScreen({ route, navigation }: Props) {
                 if (!cupA && !cupB) return null;
                 const fmtCup = (r: { kcalPerCup: number; isEstimated: boolean } | null) =>
                   r == null ? '—' : `${r.kcalPerCup.toLocaleString()}${r.isEstimated ? '*' : ''}`;
+                const comparable = cupA != null && cupB != null;
+                const aHeavier = comparable && cupA!.kcalPerCup > cupB!.kcalPerCup;
+                const bHeavier = comparable && cupB!.kcalPerCup > cupA!.kcalPerCup;
                 return (
                   <View style={ss.nutritionRow}>
-                    <Text style={ss.nutritionValue}>{fmtCup(cupA)}</Text>
+                    <Text style={[
+                      ss.nutritionValue,
+                      aHeavier && ss.nutritionValueHeavier,
+                      bHeavier && ss.nutritionValueLighter,
+                    ]}>
+                      {fmtCup(cupA)}
+                    </Text>
                     <Text style={ss.nutritionLabel}>kcal/cup</Text>
-                    <Text style={ss.nutritionValue}>{fmtCup(cupB)}</Text>
+                    <Text style={[
+                      ss.nutritionValue,
+                      bHeavier && ss.nutritionValueHeavier,
+                      aHeavier && ss.nutritionValueLighter,
+                    ]}>
+                      {fmtCup(cupB)}
+                    </Text>
                   </View>
                 );
               })()}
@@ -406,7 +447,12 @@ export default function CompareScreen({ route, navigation }: Props) {
                   color={KEY_DIFF_COLORS[diff.severity]}
                   style={ss.diffIcon}
                 />
-                <Text style={ss.diffText}>{diff.text}</Text>
+                <Text style={ss.diffText}>
+                  <Text style={ss.diffSubject}>{diff.subject}</Text>
+                  {' '}{diff.verb}{' '}
+                  <Text style={ss.diffClaim}>{diff.claim}</Text>
+                  {diff.trailing ? ` ${diff.trailing}` : ''}
+                </Text>
               </View>
             ))}
           </View>
@@ -502,8 +548,8 @@ export default function CompareScreen({ route, navigation }: Props) {
             >
               <Text style={ss.ctaText}>
                 {scoreB > scoreA
-                  ? `View ${getShortName(productB)}`
-                  : `Keep ${getShortName(productA)}`}
+                  ? `View ${getConversationalName(productB)}`
+                  : `Keep ${getConversationalName(productA)}`}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -541,15 +587,16 @@ function ProductHeader({
   species: 'dog' | 'cat';
   isPartial: boolean;
 }) {
+  const firstName = petName.split(' ')[0];
   return (
     <View style={ss.productCard}>
-      {product.image_url ? (
-        <Image source={{ uri: product.image_url }} style={ss.productImage} resizeMode="contain" />
-      ) : (
-        <View style={ss.productImagePlaceholder}>
-          <Ionicons name="cube-outline" size={28} color={Colors.textTertiary} />
-        </View>
-      )}
+      <View style={ss.productImageStage}>
+        {product.image_url ? (
+          <Image source={{ uri: product.image_url }} style={ss.productImage} resizeMode="contain" />
+        ) : (
+          <Ionicons name="cube-outline" size={32} color={Colors.textTertiary} />
+        )}
+      </View>
       <Text style={ss.productBrand} numberOfLines={1}>{product.brand}</Text>
       <Text style={ss.productName} numberOfLines={2}>
         {stripBrandFromName(product.brand, product.name)}
@@ -564,9 +611,9 @@ function ProductHeader({
           size="small"
         />
       </View>
-      <Text style={ss.matchLabel}>
-        {score}% match for {petName.split(' ')[0]}
-      </Text>
+      {/* D-094: score is always framed, but use the verdict label pattern
+          (same as ResultScreen) to avoid echoing the number from the ring. */}
+      <Text style={ss.matchLabel}>{getVerdictLabel(score, firstName)}</Text>
     </View>
   );
 }
@@ -581,7 +628,7 @@ function renderIngredientList(ingredients: ProductIngredient[], species: 'dog' |
     <View key={`${ing.canonical_name}-${i}`} style={ss.ingredientItem}>
       <View style={[ss.severityDot, { backgroundColor: SEVERITY_DOT[ing[sevKey]] ?? Colors.textTertiary }]} />
       <Text style={ss.ingredientName} numberOfLines={1}>
-        {i + 1}. {toDisplayName(ing.canonical_name)}
+        {toDisplayName(ing.canonical_name)}
       </Text>
     </View>
   ));
@@ -657,20 +704,19 @@ const ss = StyleSheet.create({
     padding: Spacing.md,
     alignItems: 'center',
   },
-  productImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
+  productImageStage: {
+    width: '100%',
+    height: 84,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: Spacing.sm + 4,
     marginBottom: Spacing.sm,
-  },
-  productImagePlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: Colors.cardBorder,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    justifyContent: 'center',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
   },
   productBrand: {
     fontSize: FontSizes.xs,
@@ -724,7 +770,7 @@ const ss = StyleSheet.create({
   bucketLabel: {
     flex: 1,
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
   },
   bucketValue: {
@@ -733,6 +779,13 @@ const ss = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
+  },
+  bucketValueWinner: {
+    color: Colors.accent,
+  },
+  bucketValueLoser: {
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
 
   // Nutrition
@@ -746,7 +799,7 @@ const ss = StyleSheet.create({
   nutritionLabel: {
     flex: 1,
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
   },
   nutritionValue: {
@@ -755,6 +808,13 @@ const ss = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
     textAlign: 'center',
+  },
+  nutritionValueHeavier: {
+    fontWeight: '800',
+  },
+  nutritionValueLighter: {
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
   partialNote: {
     fontSize: FontSizes.xs,
@@ -786,8 +846,16 @@ const ss = StyleSheet.create({
   diffText: {
     flex: 1,
     fontSize: FontSizes.sm,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
     lineHeight: 20,
+  },
+  diffSubject: {
+    color: Colors.textPrimary,
+    fontWeight: '700',
+  },
+  diffClaim: {
+    color: Colors.textPrimary,
+    fontWeight: '700',
   },
 
   // Ingredients
