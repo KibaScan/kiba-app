@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
     gap: Spacing.md,
   },
   settingsRowLast: {
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     marginTop: Spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   deleteLabel: {
     flex: 1,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   modalContent: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.lg,
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   modalActions: {

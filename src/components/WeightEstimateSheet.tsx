@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: Spacing.lg,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   secondaryButtonText: {
     fontSize: FontSizes.md,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   enterButton: {
     backgroundColor: Colors.accent,

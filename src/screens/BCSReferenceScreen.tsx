@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 10,
     padding: 3,
     marginBottom: Spacing.md,
@@ -348,12 +348,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   bcsCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     gap: Spacing.xs,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   bcsCardHeader: {
     flexDirection: 'row',
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   ruleCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginTop: Spacing.xs,
@@ -440,9 +440,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: 34,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   cancelButtonText: {
     fontSize: FontSizes.md,

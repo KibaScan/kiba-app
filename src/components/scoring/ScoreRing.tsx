@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     width: PHOTO_SIZE,
     height: PHOTO_SIZE,
     borderRadius: PHOTO_SIZE / 2,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     justifyContent: 'center',
     alignItems: 'center',
   },

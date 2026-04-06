@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: 1,
   },
   headerTitle: {
@@ -397,9 +397,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   typeChipActive: {
     backgroundColor: Colors.accent,
@@ -417,9 +417,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipActive: {
     backgroundColor: Colors.accent,
@@ -437,11 +437,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   dateButtonText: {
     fontSize: FontSizes.md,
@@ -457,10 +457,10 @@ const styles = StyleSheet.create({
     color: Colors.accent,
   },
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     overflow: 'hidden',
   },
   petRow: {
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: 1,
   },
   petPhoto: {
@@ -488,13 +488,13 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   input: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginTop: Spacing.sm,
   },
   notesInput: {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: 96,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     borderTopWidth: 1,
   },
   saveButton: {

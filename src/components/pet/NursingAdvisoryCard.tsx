@@ -30,7 +30,7 @@ export function NursingAdvisoryCard() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,

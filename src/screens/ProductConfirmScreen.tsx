@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   productCard: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.md,
     gap: Spacing.md,
@@ -246,9 +246,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     height: 52,
     borderRadius: 12,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   rejectButtonText: {
     fontSize: FontSizes.lg,
@@ -269,13 +269,13 @@ const styles = StyleSheet.create({
   manualInput: {
     width: '100%',
     height: 48,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
 
   // UPC badge
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 8,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,

@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   highlight: {
     position: 'absolute',

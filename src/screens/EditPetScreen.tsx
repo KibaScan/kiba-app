@@ -754,12 +754,12 @@ const styles = StyleSheet.create({
 
   // ── Cards ──
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
 
   // ── Fields ──
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   inputError: {
     borderColor: Colors.severityRed,
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   selectorText: {
     fontSize: FontSizes.md,
@@ -910,12 +910,12 @@ const styles = StyleSheet.create({
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     gap: Spacing.md,
   },
   linkContent: {
@@ -972,7 +972,7 @@ const styles = StyleSheet.create({
   },
   deleteModal: {
     width: '100%',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.lg,
   },
@@ -1000,7 +1000,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.md,
   },
   deleteActions: {
@@ -1015,7 +1015,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   deleteCancelText: {
     fontSize: FontSizes.md,

@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: Spacing.lg,
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipRow: {
     flexDirection: 'row',
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipActive: {
     backgroundColor: Colors.accent,
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   dateButtonText: {
     fontSize: FontSizes.md,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   petsText: {
     fontSize: FontSizes.md,

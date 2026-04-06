@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     height: 44,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   searchIcon: {
     marginRight: Spacing.sm,

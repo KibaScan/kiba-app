@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   productImage: {
     width: '100%',
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   infoSection: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -431,13 +431,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingVertical: 14,
     marginBottom: Spacing.sm,
     gap: 8,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   actionButtonTextRed: {
     fontSize: FontSizes.md,

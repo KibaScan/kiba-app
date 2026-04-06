@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
   },
   section: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     gap: Spacing.sm,

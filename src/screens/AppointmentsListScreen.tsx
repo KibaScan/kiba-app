@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: 1,
   },
   headerTitle: {
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     borderRadius: 10,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     padding: 3,
   },
   segTab: {
@@ -284,12 +284,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   iconCircle: {
     width: 40,

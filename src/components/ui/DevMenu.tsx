@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   title: {
     fontSize: FontSizes.xl,
@@ -225,11 +225,11 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: Spacing.lg,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   sectionTitle: {
     fontSize: FontSizes.sm,

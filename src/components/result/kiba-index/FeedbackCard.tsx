@@ -131,7 +131,7 @@ export const FeedbackCard: React.FC<FeedbackCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
   },

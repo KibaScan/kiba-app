@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '65%',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   treatRowDisabled: {
     opacity: 0.4,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
   },
   scanLinkText: {
     fontSize: FontSizes.md,

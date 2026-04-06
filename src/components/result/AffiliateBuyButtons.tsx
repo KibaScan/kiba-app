@@ -119,10 +119,10 @@ const s = StyleSheet.create({
     // No special styles needed for single button
   },
   button: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     borderLeftWidth: 3,
     paddingVertical: 14,
     paddingHorizontal: 14,

@@ -109,7 +109,7 @@ function ScoreBadge({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.sm,
     flexDirection: 'row',

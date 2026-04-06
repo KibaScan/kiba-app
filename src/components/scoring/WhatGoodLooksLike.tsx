@@ -89,7 +89,7 @@ export function WhatGoodLooksLike({ category, species }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     marginTop: Spacing.lg,
     overflow: 'hidden',

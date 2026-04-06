@@ -741,7 +741,7 @@ const ss = StyleSheet.create({
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
   },
   retryText: {
@@ -1002,7 +1002,7 @@ const ss = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.xs + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
+    borderBottomColor: Colors.hairlineBorder,
   },
   otherPetScoreCell: {
     width: 60,

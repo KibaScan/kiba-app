@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
 
   // Normal condition card
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
