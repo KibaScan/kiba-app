@@ -46,7 +46,7 @@ function slotLabel(slotIndex: number | null): string | null {
 // ─── Component ──────────────────────────────────────────
 
 export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
-  const { pantryItemId, newProductId, petId } = route.params;
+  const { pantryItemId, newProductId, petId, newServingSize, newServingSizeUnit, newFeedingsPerDay } = route.params;
   const insets = useSafeAreaInsets();
 
   const pets = useActivePetStore(s => s.pets);
@@ -172,6 +172,9 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         pantry_item_id: pantryItemId,
         new_product_id: newProductId,
         total_days: totalDays,
+        new_serving_size: newServingSize ?? null,
+        new_serving_size_unit: newServingSizeUnit ?? null,
+        new_feedings_per_day: newFeedingsPerDay ?? null,
       });
 
       // Schedule notifications
@@ -194,8 +197,11 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
       pantryItemId: nextAnchor.pantryItemId,
       newProductId,
       petId,
+      newServingSize,
+      newServingSizeUnit,
+      newFeedingsPerDay,
     });
-  }, [pantryItemId, newProductId, petId, navigation]);
+  }, [pantryItemId, newProductId, petId, newServingSize, newServingSizeUnit, newFeedingsPerDay, navigation]);
 
   // ── Loading ──
   if (loading || !oldProduct || !newProduct) {

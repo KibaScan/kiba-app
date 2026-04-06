@@ -19,6 +19,7 @@ import {
 } from '../utils/pantryHelpers';
 import type { Pet } from '../types/pet';
 import type { Product } from '../types';
+import { computeMealBasedServing, computeRebalancedMeals } from '../utils/pantryHelpers';
 
 // ─── Internal ───────────────────────────────────────────
 
@@ -234,6 +235,55 @@ export async function updatePetAssignment(
 
   if (error) throw new Error(`Failed to update assignment: ${error.message}`);
   return data as PantryPetAssignment;
+}
+
+/**
+ * Phase C: Rebalances an existing daily food assignment when a new daily food is added.
+ * Automatically adjusts the existing food to cover the remaining meals in the day.
+ */
+export async function rebalanceExistingFood(
+  pantryItemId: string,
+  pet: Pet,
+  newMealsCovered: number,
+  totalMealsPerDay: number,
+  product: Product,
+  isPremiumGoalWeight: boolean,
+): Promise<PantryPetAssignment> {
+  await requireOnline();
+
+  const { data: current, error: fetchErr } = await supabase
+    .from('pantry_pet_assignments')
+    .select('id')
+    .eq('pantry_item_id', pantryItemId)
+    .eq('pet_id', pet.id)
+    .single();
+
+  if (fetchErr) throw new Error(`Failed to fetch assignment: ${fetchErr.message}`);
+
+  // Calculate new target meals
+  const adjustedMeals = computeRebalancedMeals(totalMealsPerDay, newMealsCovered);
+
+  // Recalculate serving based on adjusted meals
+  const serving = computeMealBasedServing(
+    pet,
+    product,
+    adjustedMeals,
+    totalMealsPerDay,
+    isPremiumGoalWeight,
+    pet.weight_goal_level,
+  );
+
+  // If we can't compute (e.g. no kcal data), just update the feeding frequency but leave serving size alone
+  const updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency'>> = {
+    feedings_per_day: adjustedMeals,
+  };
+
+  if (serving) {
+    updates.serving_size = serving.amount;
+    updates.serving_size_unit = serving.unit;
+  }
+
+  return updatePetAssignment(current.id, updates);
 }
 
 export async function sharePantryItem(

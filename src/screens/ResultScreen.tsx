@@ -965,6 +965,24 @@ export default function ResultScreen() {
           visible={pantrySheetVisible}
           onClose={() => setPantrySheetVisible(false)}
           onAdded={() => setPantrySheetVisible(false)}
+          onStartSafeSwitch={(params) => {
+            setPantrySheetVisible(false);
+            const targetAnchor = pantryAnchors.length > 0
+              ? pickSlotForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0]
+              : null;
+            if (!targetAnchor) return;
+            (navigation.getParent() as any)?.navigate('Pantry', {
+              screen: 'SafeSwitchSetup',
+              params: {
+                pantryItemId: targetAnchor.pantryItemId,
+                newProductId: params.newProductId,
+                petId: params.petId,
+                newServingSize: params.newServingSize,
+                newServingSizeUnit: params.newServingSizeUnit,
+                newFeedingsPerDay: params.newFeedingsPerDay,
+              },
+            });
+          }}
           conditions={petConditions}
         />
       )}

@@ -129,6 +129,9 @@ export async function createSafeSwitch(
       old_product_id: typedItem.product_id,
       new_product_id: input.new_product_id,
       total_days: input.total_days,
+      new_serving_size: input.new_serving_size,
+      new_serving_size_unit: input.new_serving_size_unit,
+      new_feedings_per_day: input.new_feedings_per_day,
       status: 'active',
     })
     .select()
@@ -306,18 +309,21 @@ export async function restartSafeSwitch(switchId: string): Promise<SafeSwitch> {
   // Fetch old switch data — M9 Phase B propagates pantry_item_id to the new row
   const { data: oldSwitch, error: fetchErr } = await supabase
     .from('safe_switches')
-    .select('pet_id, old_product_id, new_product_id, total_days, pantry_item_id')
+    .select('pet_id, old_product_id, new_product_id, total_days, pantry_item_id, new_serving_size, new_serving_size_unit, new_feedings_per_day')
     .eq('id', switchId)
     .single();
 
   if (fetchErr || !oldSwitch) throw new Error('Failed to fetch switch for restart.');
 
-  const { pet_id, old_product_id, new_product_id, total_days, pantry_item_id } = oldSwitch as {
+  const { pet_id, old_product_id, new_product_id, total_days, pantry_item_id, new_serving_size, new_serving_size_unit, new_feedings_per_day } = oldSwitch as {
     pet_id: string;
     old_product_id: string;
     new_product_id: string;
     total_days: number;
     pantry_item_id: string | null;
+    new_serving_size: number | null;
+    new_serving_size_unit: string | null;
+    new_feedings_per_day: number | null;
   };
 
   // Step 1: Cancel old switch
@@ -338,6 +344,9 @@ export async function restartSafeSwitch(switchId: string): Promise<SafeSwitch> {
       old_product_id,
       new_product_id,
       total_days,
+      new_serving_size,
+      new_serving_size_unit,
+      new_feedings_per_day,
       status: 'active',
     })
     .select()

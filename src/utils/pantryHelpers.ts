@@ -571,3 +571,70 @@ export function pickSlotForSwap(
   });
   return sorted[0];
 }
+
+// ─── M9 Phase C: Meal-Based Allocation Helpers ──────────
+
+/**
+ * Computes the per-meal serving size based on how many meals this food covers.
+ * Returns null if kcal data is missing.
+ */
+export function computeMealBasedServing(
+  pet: Pet,
+  product: Product,
+  mealsThisFoodCovers: number,
+  totalMealsPerDay: number,
+  isPremiumGoalWeight: boolean,
+  weightGoalLevel?: number | null,
+): { amount: number; unit: ServingSizeUnit; dailyKcal: number } | null {
+  if (totalMealsPerDay <= 0 || mealsThisFoodCovers <= 0) return null;
+  const der = computePetDer(pet, isPremiumGoalWeight, weightGoalLevel);
+  if (der == null) return null;
+
+  const derAllocation = mealsThisFoodCovers / totalMealsPerDay;
+  const dailyKcal = der * derAllocation;
+
+  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+    const totalDailyCups = dailyKcal / product.ga_kcal_per_cup;
+    return { amount: totalDailyCups / mealsThisFoodCovers, unit: 'cups', dailyKcal };
+  }
+
+  const cal = resolveCalories(product);
+  if (cal?.kcalPerUnit && cal.kcalPerUnit > 0) {
+    const totalDailyUnits = dailyKcal / cal.kcalPerUnit;
+    return { amount: totalDailyUnits / mealsThisFoodCovers, unit: 'units', dailyKcal };
+  }
+
+  return null;
+}
+
+export function getDefaultMealsCovered(
+  dailyFoodCount: number,
+  totalMealsPerDay: number,
+): number {
+  if (dailyFoodCount === 0) return totalMealsPerDay;
+  return 1;
+}
+
+export function computeRebalancedMeals(
+  totalMealsPerDay: number,
+  newFoodMeals: number,
+): number {
+  const adjusted = totalMealsPerDay - newFoodMeals;
+  if (adjusted <= 0) return 1;
+  if (adjusted > totalMealsPerDay) return totalMealsPerDay;
+  return adjusted;
+}
+
+// Fixed standard conversions for dry food volume.
+// 1 standard measuring cup of dry kibble = ~4 oz = ~113.4 g
+const DRY_CUP_TO_OZ_RATIO = 4.0;
+const DRY_CUP_TO_G_RATIO = 113.4;
+
+export function computeServingConversions(
+  cupsPerMeal: number,
+): { oz: number; g: number } {
+  return {
+    oz: cupsPerMeal * DRY_CUP_TO_OZ_RATIO,
+    g: cupsPerMeal * DRY_CUP_TO_G_RATIO,
+  };
+}

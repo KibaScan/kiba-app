@@ -340,13 +340,15 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
             <Ionicons name="refresh-outline" size={16} color={SEVERITY_COLORS.caution} />
             <Text style={styles.actionTextRestock}>Restock</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onRemove(item.id)}
-          >
-            <Ionicons name="trash-outline" size={16} color={SEVERITY_COLORS.danger} />
-            <Text style={styles.actionTextRemove}>Remove</Text>
-          </TouchableOpacity>
+          {!isLocked && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => onRemove(item.id)}
+            >
+              <Ionicons name="trash-outline" size={16} color={SEVERITY_COLORS.danger} />
+              <Text style={styles.actionTextRemove}>Remove</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </TouchableOpacity>

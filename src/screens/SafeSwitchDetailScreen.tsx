@@ -874,14 +874,14 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     paddingHorizontal: 2,
   },
-  doneButton: {
+  completedDoneButton: {
     marginTop: 16,
     backgroundColor: Colors.accent,
     borderRadius: 16,
     paddingHorizontal: 32,
     paddingVertical: 14,
   },
-  doneButtonText: { fontSize: FontSizes.md, fontWeight: '700', color: '#FFFFFF' },
+  completedDoneButtonText: { fontSize: FontSizes.md, fontWeight: '700', color: '#FFFFFF' },
 
   // Comparison — Fix 3: image staging, Fix 4: centered score, Fix 14: token migration
   comparisonCard: {

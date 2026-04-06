@@ -278,6 +278,226 @@ export const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
 
+  // ─── Phase C Specific Styles ────────────────────────────
+
+  // Yes/No Toggle (Pill)
+  pillToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    borderRadius: 20, // pill shape
+    padding: 3,
+    marginBottom: Spacing.md,
+  },
+  pillButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 18,
+  },
+  pillButtonActive: {
+    backgroundColor: Colors.cardSurface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  pillText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+  },
+  pillTextActive: {
+    color: Colors.textPrimary,
+  },
+
+  // Safe Switch Flow
+  advisoryCard: {
+    backgroundColor: 'rgba(255, 179, 71, 0.08)',
+    borderRadius: 12,
+    padding: Spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.severityAmber,
+    marginBottom: Spacing.lg,
+  },
+  advisoryTitle: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.severityAmber,
+    marginBottom: 4,
+  },
+  advisoryText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+
+  // Meal Allocation
+  mealSentence: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  mealSentenceBold: {
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+  },
+  stepperLabel: {
+    fontSize: FontSizes.md,
+    fontWeight: '500',
+    color: Colors.textPrimary,
+  },
+  stepperDisabled: {
+    opacity: 0.3,
+  },
+
+  // Auto Computation Status
+  autoStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: Spacing.lg,
+    gap: 8,
+  },
+  autoBadge: {
+    backgroundColor: 'rgba(10, 132, 255, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  autoBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.accent,
+    textTransform: 'uppercase',
+  },
+  manualBadge: {
+    backgroundColor: 'transparent',
+    borderColor: Colors.textTertiary,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  manualBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+  },
+  autoResultValue: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  autoResultUnit: {
+    fontSize: FontSizes.lg,
+    color: Colors.textSecondary,
+  },
+  autoMathLine: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    marginTop: 4,
+  },
+  dimmedText: {
+    opacity: 0.6,
+  },
+
+  // Conversions
+  conversionToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacing.md,
+  },
+  conversionLinkText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+  },
+  conversionExpanded: {
+    marginTop: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 8,
+  },
+  conversionText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+
+  // Rebalance Note
+  rebalanceNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.md,
+    backgroundColor: 'rgba(255, 179, 71, 0.15)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  rebalanceNoteText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '500',
+    color: Colors.severityAmber,
+  },
+  stepperHintText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    marginTop: 4,
+    marginBottom: Spacing.sm,
+  },
+
+  // Collapsed Bag Size
+  bagSizeCollapsed: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.hairlineBorder,
+    marginTop: Spacing.lg,
+  },
+  bagSizeLabel: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  bagSizeValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bagSizeValue: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+
+  // Overrides / Utils
+  resetToAutoLink: {
+    marginTop: Spacing.sm,
+  },
+  resetToAutoText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
+  },
+  safeSwitchCta: {
+    backgroundColor: Colors.accent, // Cyan Morph
+  },
+
   bottomSpacer: {
     height: 34,
   },

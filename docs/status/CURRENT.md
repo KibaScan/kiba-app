@@ -1,12 +1,15 @@
 # Project Status — Last updated 2026-04-06 (session 24)
 
 ## Active Milestone
+
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
 
 ## Last Completed
+
 **M8 — Kiba Index** (April 1, 2026, branch `m5-complete`)
 
 ## What Works
+
 - Scan-to-score pipeline: barcode → 3-layer scoring (IQ/NP/FC) → result screen
 - 19,058 products (v7 reimport, Chewy + Amazon + Walmart)
 - Pet profiles, pantry (auto-deplete, budget-aware servings), treat battery
@@ -51,21 +54,25 @@
 - **Safe Switch premium UI overhaul + outcome-aware completion card (session 23)** — Gemini's 14-fix redesign shipped (recipe layout, saturated proportion gauge with inline % labels, retroactive logging bottom sheet at canonical `.agent/design.md:307-365` spec, 4-state timeline with missed-day detection, consecutive-missed warning banner, matte premium card anatomy, Pause/Cancel text links, `restartSafeSwitch()` atomic cancel→insert service function, tab bar hide matching CompareScreen pattern) — reviewed in plan file, 5 blockers + 7 improvements patched by Gemini before execution. On top of that Gemini's work, Claude shipped **Phase A completion card** — new pure helpers `computeSwitchOutcome(logs, totalDays)` + `getOutcomeMessage(outcome, petName, newProductDisplay)` in `safeSwitchHelpers.ts` with 4-branch D-095-compliant copy (good/caution/neutral-limited/neutral-mostly-smooth + no-logs edge) and precedence upsets > no-logs > limited > all-clean > mostly-smooth. Types `SwitchOutcome` + `OutcomeMessage` in `safeSwitch.ts`. `completedCard` JSX rewritten with tone-aware icon (`checkmark-circle` / `alert-circle`), tone-aware title color, outcome body, and colored stat strip (Perfect · Soft Stool · Upset · Missed, non-zero only, session 20 severity palette). 3 module-level helpers (`outcomeToneColor`, `outcomeToneIcon`, `buildOutcomeStatItems`). `handleComplete()` no longer calls `loadData()` — avoided flash-to-empty bug where `getActiveSwitchForPet()` filters completed switches and returns null. Post-ship visual polish: Today's Mix card border `1px hairline + 3px accent left` → full `2px accent` frame; proportion gauge `height 10 / 50% opacity` → `height 18 / full saturation / inline % labels / overflow hidden`; recipe brand text `numberOfLines={1} + flex: 1` for graceful truncation; Pause/Cancel text links `FontSizes.sm → md` with more padding. **`DEV +1D` header button** (stripped in prod via `__DEV__`) backdates `started_at` 1 day for testing completion scenarios without waiting 7 days.
 
 ## What's Broken / Known Issues
+
 - **Stale browse scores**: CategoryBrowseScreen reads cached scores from `pet_product_scores` which can diverge from fresh ResultScreen scores (e.g. 82 vs 79) when pet profile changes after batch scoring. Root cause: batch scoring delta check counts ALL daily food for cache maturity but fetches by specific `product_form` — cache appears mature when dry/wet fill 80%, so freeze-dried (and other minority forms) never get scored. Workaround: fallback to unscored `products` query when scored cache is empty for a form. Long-term fix: make cache maturity check form-aware in both Edge Function and `batchScoreOnDevice.ts`.
 
 ## Numbers
-- **Tests:** 1387 passing / 61 suites
+
+- **Tests:** 1395 passing / 61 suites
 - **Decisions:** 129 (D-001 through D-167, non-sequential, D-053 revised)
-- **Migrations:** 31 (001–031)
+- **Migrations:** 33 (001–033)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
+
 - Pure Balance (Dog, daily food) = 62
 - Temptations (Cat, treat) = 9
 - Pure Balance + cardiac dog = 0 (DCM zero-out)
 - Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
 
 ## Up Next
+
 - **Final visual QA pass on session 21 matte frame work** — user walked most of it during the session, but a full end-to-end scan through ResultScreen + HomeScreen category cards on a real device would close the loop. Specifically: scan one daily food, one treat, one supplement, one vet diet, one recalled product — confirm all bypass paths still render their cards cleanly (CollapsibleSection underlies Advisories, Treat Battery, Score Breakdown, Ingredients, Insights, Kiba Index).
 - **PantryScreen.tsx:435 chip-background visual review** — still a carry-over from session 20. The `cardBorder → hairlineBorder` swap at line 435 is the only non-border use (chip unselected state background). `rgba(255,255,255,0.12)` may read too faint vs `#333333`. If unselected filter chips look broken or invisible, revert that single line to a dedicated chip-surface token.
 - **17 non-border `Colors.cardBorder` uses** — need token decision for switch tracks (3), segment/chip backgrounds (6), timeline visuals (2), chart elements (2), drag handles (2), slider track (1), ScoreRing TRACK_COLOR (1). Options: `hairlineBorder`, new `chipSurface` token, `rgba(255,255,255,0.06)`, or keep `#333333`. Full list with line numbers in `.agent/workflows/legacy-token-migration.md` Step 7.
@@ -80,29 +87,38 @@
 - M11: Symptom Detective (deferred — major App Store update feature)
 
 ## Optimization Status
+
 - **All cheatsheet sections complete:** S1–S13 (S9 N/A, S11/S14 pattern guidance only)
 - **Maintenance guide complete:** scoring-details.md created, reference files audited, /audit-context + /milestone-close commands added
 - **Hooks active:** protect-scoring.sh, regression-gate.sh, quality-gate.sh
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
-- **Date:** 2026-04-06 (session 25)
-- **Accomplished:** Legacy token migration — `Colors.card` → `Colors.cardSurface` and `Colors.cardBorder` → `Colors.hairlineBorder` across 40 remaining files. `Colors.card` fully eliminated from codebase. Style-only changes, zero logic/JSX/test changes.
-  - **40 files migrated** across 8 groups: Community & onboarding (4), Compare flow (2), Pet management (2), Appointments (3), Scan/capture (4), Info cards & advisories (15), Settings/sheets/misc (10). SafeSwitchDetailScreen + SafeSwitchSetupScreen discovered already migrated (0 work needed).
-  - **17 non-border `Colors.cardBorder` uses flagged, untouched** — switch trackColors (3), segment/chip backgrounds (6), timeline visuals (2), chart elements (2), drag handles (2), slider track (1), ScoreRing `TRACK_COLOR` constant (1). These need a follow-up token decision (options: `hairlineBorder`, new `chipSurface` token, `rgba(255,255,255,0.06)`, or keep `#333333`).
-  - **3 typecheck checkpoints passed** — baseline, mid-sweep (after Group D), final. Zero new errors introduced. Same 5 pre-existing Deno TS errors throughout.
-  - **Tests:** 1387 passing / 61 suites / 3 snapshots (unchanged). Regression anchors: Pure Balance = 62 ✓, Temptations = 9 ✓. Scoring engine untouched.
-  - **Files modified:** `src/screens/CommunityScreen.tsx`, `src/screens/CommunityContributionScreen.tsx`, `src/screens/OnboardingScreen.tsx`, `src/screens/SpeciesSelectScreen.tsx`, `src/screens/CompareScreen.tsx`, `src/components/compare/CompareProductPickerSheet.tsx`, `src/screens/CreatePetScreen.tsx`, `src/screens/EditPetScreen.tsx`, `src/screens/AppointmentDetailScreen.tsx`, `src/screens/AppointmentsListScreen.tsx`, `src/screens/CreateAppointmentScreen.tsx`, `src/screens/IngredientCaptureScreen.tsx`, `src/screens/ScanScreen.tsx`, `src/screens/ProductConfirmScreen.tsx`, `src/components/ScanHistoryCard.tsx`, `src/components/result/HealthConditionAdvisories.tsx`, `src/components/result/AffiliateBuyButtons.tsx`, `src/components/result/kiba-index/FeedbackCard.tsx`, `src/components/pet/BreedContraindicationCard.tsx`, `src/components/pet/NursingAdvisoryCard.tsx`, `src/components/ingredients/DcmAdvisoryCard.tsx`, `src/components/ingredients/FlavorDeceptionCard.tsx`, `src/components/ingredients/SplittingDetectionCard.tsx`, `src/components/scoring/WhatGoodLooksLike.tsx`, `src/components/pet/AllergenSelector.tsx`, `src/components/pet/BreedSelector.tsx`, `src/components/pet/WheelPicker.tsx`, `src/components/scoring/ConcernTags.tsx`, `src/components/scoring/ScoreRing.tsx`, `src/components/ui/FormulaChangeTimeline.tsx`, `src/screens/PaywallScreen.tsx`, `src/screens/BCSReferenceScreen.tsx`, `src/screens/SettingsScreen.tsx`, `src/screens/RecallDetailScreen.tsx`, `src/screens/TermsScreen.tsx`, `src/screens/NotificationPreferencesScreen.tsx`, `src/components/appointments/HealthRecordLogSheet.tsx`, `src/components/treats/TreatQuickPickerSheet.tsx`, `src/components/WeightEstimateSheet.tsx`, `src/components/ui/DevMenu.tsx`.
+
+- **Date:** 2026-04-06 (session 26)
+- **Accomplished:** Senior review of Gemini's Phase C (Add to Pantry Redesign) + 9-fix patch + 3 runtime bug fixes found during iOS sim testing.
+  - **Gemini review:** Reviewed `m9implementation_plan.md`, `implementation_plan_review.md`, `ui_improvements_review.md`, `ADD_TO_PANTRY_REDESIGN.md`. Confirmed the Safe Switch architectural conflict is real (pantry duplication + missing serving size at completion). Endorsed Option 1 (enhance Phase B schema). Accepted all 4 UI improvements.
+  - **P0 fix — missing `new_serving_size_unit`:** Migration 033 adds `new_serving_size_unit TEXT` to `safe_switches` + overwrites `complete_safe_switch_with_pantry_swap` RPC to apply unit at completion. Without this, dry→wet Safe Switch swaps would corrupt `serving_size_unit` in `pantry_pet_assignments`. Threaded through: `SafeSwitch` type, `CreateSafeSwitchInput`, navigation params, `createSafeSwitch`, `restartSafeSwitch`, `SafeSwitchSetupScreen`, `AddToPantrySheet` callback. Migration 033 pushed and applied to production.
+  - **P1 fixes (5):** `onAdded(null as any)` → optional param; tautological condition simplified; `getDefaultMealsCovered` clarity (`Math.min(1, N)` → `return 1`); stepper max guard (`totalMeals - 1` when another food exists, removed `setTotalMealsPerDay` growth); `computeRebalancedMeals` tests added happy path.
+  - **P2 fixes (3):** Stepper ceiling hint (3s auto-dismiss); math line reframed to "daily allocation (N%)"; service test asserts `new_serving_size`/`unit`/`feedings` in insert.
+  - **Runtime fix 1 — "Safe switch not available" error:** `ResultScreen` never passed `onStartSafeSwitch` to `AddToPantrySheet`. Wired up with `pantryAnchors` + `pickSlotForSwap` + cross-stack navigation. Removed `throw` fallback — sheet now falls through to normal add when callback absent (bypass views). CTA morph + styling gated on `onStartSafeSwitch` existence.
+  - **Runtime fix 2 — PantryCard Remove button bypasses Safe Switch lock:** Empty-state "Remove" button was not guarded by `isLocked`. Added `{!isLocked && (...)}` wrapper. Restock button stays visible (safe on locked items).
+  - **Runtime fix 3 — missing `key` prop on weight unit chips:** `renderChip` in `AddToPantrySheet.tsx` renders via `.map()` but had no `key`. Added `key={label}`.
+  - **Runtime fix 4 — `totalMealsPerDay` initialized wrong:** `getSmartDefaultFeedingsPerDay` returns 1 for second daily food (designed for "feedings for this item"). Phase C reused it as "total meals the pet eats" — completely different meaning. With `totalMealsPerDay = 1`: DER allocation was 100% (not 50%), rebalance guard `1 < 1` never fired. Fixed: `totalMealsPerDay` now sums actual `feedings_per_day` from existing daily food assignments, falls back to condition-aware default (2, or 3-4 for pancreatitis).
+  - **Tests:** 1395 passing / 61 suites / 3 snapshots. Regression anchors: Pure Balance = 62, Temptations = 9. Scoring engine untouched.
+  - **Files modified (16):** `supabase/migrations/033_safe_switch_serving_unit.sql` (new), `src/types/safeSwitch.ts`, `src/types/navigation.ts`, `src/services/safeSwitchService.ts`, `src/services/pantryService.ts`, `src/stores/usePantryStore.ts`, `src/screens/SafeSwitchSetupScreen.tsx`, `src/screens/SafeSwitchDetailScreen.tsx`, `src/screens/ResultScreen.tsx`, `src/components/pantry/AddToPantrySheet.tsx`, `src/components/pantry/AddToPantryStyles.ts`, `src/components/pantry/PantryCard.tsx`, `src/utils/pantryHelpers.ts`, `__tests__/utils/pantryHelpers.test.ts`, `__tests__/services/safeSwitchService.test.ts`, `__tests__/components/pantry/AddToPantrySheet.test.ts`.
 - **Not done yet:**
-  - **17 non-border `Colors.cardBorder` uses** — need token decision for switch tracks, segment/chip backgrounds, timeline nodes, chart elements, drag handles, slider rails, ScoreRing TRACK_COLOR. See `.agent/workflows/legacy-token-migration.md` Step 7 for full list with line numbers.
-  - **Visual QA on iOS sim** — walk the QA checklist (appointments, pet forms, onboarding, BCS, paywall, settings, recall, scan flow, result advisories). Token swap is zero-delta for `card` → `cardSurface`; `cardBorder` → `hairlineBorder` is slightly softer borders.
-  - **Phase C — Add to Pantry redesign** — meals-based allocation model, "Is this new to diet?" yes/no, DER auto-serve, Safe Switch handoff. Full spec at `docs/plans/ADD_TO_PANTRY_REDESIGN.md`.
-  - **Sim QA scenarios C/D (2-slot)** — auto-pick by score and form match. Two-slot scenarios need a pet with 2 daily foods to validate.
-  - **Stale browse scores** — CategoryBrowseScreen cache maturity check isn't form-aware.
-  - **Prior M9 carry-overs:** legacy token migration, stale browse scores fix, `PantryScreen.tsx:435` chip background review, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
-- **Next session should:** Start with Phase C (Add to Pantry redesign) using `docs/plans/ADD_TO_PANTRY_REDESIGN.md` as the spec. The plan is complete — resolve the 3 open questions at the top of the session, then implement. Alternative: tackle M9 carry-overs (legacy token migration, stale browse scores) if Phase C feels too big.
+  - **EditPantryItemScreen doesn't rebalance sibling food on edit.** Phase C's add flow works correctly — 50/50 DER split fires, rebalance adjusts the existing food. But when the user opens an item in `EditPantryItemScreen` and adjusts feedings or serving size, the sibling food is NOT rebalanced. EditPantryItem still uses `computeAutoServingSize(remainingBudgetKcal)` (D-165 remaining-budget model) instead of Phase C's `computeMealBasedServing` (DER-allocation model). This causes: (1) auto-computed serving shows 0 cups when the sibling already claims the full budget, (2) manual edits to one food's meals don't adjust the other, (3) the math line shows "X kcal remaining" instead of "daily allocation (N%)". The add flow is correct — the edit flow is where it breaks. User explicitly requested "the system needs to be smart" — this is the top priority for next session.
+  - **EditPantryItemScreen migration to meal-based model.** Needs to use `computeMealBasedServing` instead of `computeAutoServingSize`, show "daily allocation (N%)" math, and trigger sibling rebalance when feedings change. Key question from Phase C spec (Q2): originally scoped as "rebalance on add only" — user now wants rebalance on edit too.
+  - **17 non-border `Colors.cardBorder` uses** — token decision still pending.
+  - **Stale browse scores** — form-aware cache maturity check.
+  - **Prior M9 carry-overs:** visual QA, chip background review, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+- **Next session should:** Fix the EditPantryItemScreen ↔ Phase C model mismatch. The add flow is correct (DER allocation + rebalance). The edit flow is where it breaks — it uses the old remaining-budget model which conflicts with meal-based allocation. Key files: `EditPantryItemScreen.tsx` (auto-serve logic + math display), `pantryHelpers.ts` (may need a `rebalanceSibling` helper), `usePantryStore.ts` (edit action needs rebalance hook). The user wants the system to automatically adjust the sibling food when one food's feedings change on the edit screen. Phase C spec Q2 originally said "only on add" — user has overridden this.
 - **Gotchas / context for next session:**
-  - **Migration 031 must be applied to Supabase before testing.** Run the SQL in the Supabase dashboard SQL Editor. Watch `RAISE NOTICE` output for slot backfill counts and switch match counts.
+  - **Migration 033 is deployed.** `new_serving_size_unit` column + updated RPC are live in production.
+  - **`getSmartDefaultFeedingsPerDay` is still used by `EditPantryItemScreen`** for its feedings stepper default. It returns 1 for pets with existing daily food — correct for "feedings for this item" but NOT for "total meals." If migrating EditPantryItem to meal-based, use the same `existingDailyFeedings` sum pattern from `AddToPantrySheet`.
+  - **`computeAutoServingSize` must stay alive** — even after EditPantryItem migration, it may be used elsewhere. Don't delete, just don't use for meal-based flows.
+  - **Gemini's Phase C code (session 25) was written by Gemini.** Claude reviewed and patched 9 issues this session. The core architecture (meal stepper, auto-compute, Safe Switch handoff) is Gemini's. The `totalMealsPerDay` initialization, `onStartSafeSwitch` wiring, lock guard, and serving unit pipeline are Claude's fixes.
   - **`handleComplete()` intentionally does NOT call `loadData()`.** Phase A fix preserved. The in-memory `data` snapshot drives the completed card. `completeSafeSwitch` now returns `{ outcome, message }` but the screen doesn't use the return value yet (still computes locally from the snapshot). Future: could use the returned value directly.
   - **`CLAUDE.md` migration count is stale** — says `001–029` but we're at `001–031`. Worth a one-line fix next session.
   - **Auto-deplete cron tolerance:** The RPC sets `quantity_remaining = 0` atomically. The cron's empty-push path at `auto-deplete/index.ts:547` requires `oldRemaining > 0` to fire, so the manual zero from the RPC won't trigger a duplicate empty notification. But this hasn't been validated with a live cron run — only code-traced.

@@ -28,6 +28,10 @@ import {
   convertWeightToCups,
   convertWeightToServings,
   pickSlotForSwap,
+  computeMealBasedServing,
+  getDefaultMealsCovered,
+  computeRebalancedMeals,
+  computeServingConversions,
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -910,3 +914,67 @@ describe('pickSlotForSwap', () => {
     expect(pickSlotForSwap([dry0, wet1, dryNull], 'dry')?.pantryItemId).toBe('pi-c');
   });
 });
+
+// ─── Phase C: Meal-Based Computations ───────────────────
+
+describe('computeMealBasedServing', () => {
+  test('returns correct serving when covering partial meals', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const pet = makePet({ weight_current_lbs: 50 });
+    const result = computeMealBasedServing(pet, product, 1, 2, false, null);
+    expect(result).not.toBeNull();
+    expect(result!.unit).toBe('cups');
+    expect(result!.dailyKcal).toBeGreaterThan(0);
+  });
+
+  test('splits budget per meal accurately', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const pet = makePet({ weight_current_lbs: 20 });
+    const result_1_of_2 = computeMealBasedServing(pet, product, 1, 2, false, null);
+    const result_2_of_2 = computeMealBasedServing(pet, product, 2, 2, false, null);
+    expect(result_1_of_2).not.toBeNull();
+    expect(result_2_of_2).not.toBeNull();
+    // 2 meals covered should have double the dailyKcal of 1 meal covered, but same per-meal amount
+    expect(result_1_of_2!.amount).toBeCloseTo(result_2_of_2!.amount, 2);
+    expect(result_1_of_2!.dailyKcal * 2).toBeCloseTo(result_2_of_2!.dailyKcal, 0);
+  });
+
+  test('no calorie data returns null', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: null });
+    const pet = makePet({ weight_current_lbs: 20 });
+    expect(computeMealBasedServing(pet, product, 1, 2, false, null)).toBeNull();
+  });
+});
+
+describe('getDefaultMealsCovered', () => {
+  test('0 existing foods -> default covers all meals', () => {
+    expect(getDefaultMealsCovered(0, 2)).toBe(2);
+  });
+  test('1+ existing food -> covers 1 meal', () => {
+    expect(getDefaultMealsCovered(1, 2)).toBe(1);
+    expect(getDefaultMealsCovered(1, 3)).toBe(1);
+    expect(getDefaultMealsCovered(2, 2)).toBe(1);
+  });
+});
+
+describe('computeRebalancedMeals', () => {
+  test('subtracts new meals from total', () => {
+    expect(computeRebalancedMeals(3, 1)).toBe(2);
+    expect(computeRebalancedMeals(4, 1)).toBe(3);
+    expect(computeRebalancedMeals(2, 1)).toBe(1);
+  });
+  test('floors at 1', () => {
+    expect(computeRebalancedMeals(2, 2)).toBe(1);
+    expect(computeRebalancedMeals(1, 2)).toBe(1);
+    expect(computeRebalancedMeals(3, 3)).toBe(1);
+  });
+});
+
+describe('computeServingConversions', () => {
+  test('1 cup equals roughly 110-115g', () => {
+    const res = computeServingConversions(1);
+    expect(res.g).toBeCloseTo(113.4, 0);
+    expect(res.oz).toBeCloseTo(4, 0);
+  });
+});
+

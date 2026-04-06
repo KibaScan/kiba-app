@@ -21,6 +21,9 @@ export interface SafeSwitch {
    * and backfill-unmatched rows. New rows enforced non-null via service layer.
    */
   pantry_item_id: string | null;
+  new_serving_size: number | null;
+  new_serving_size_unit: string | null;
+  new_feedings_per_day: number | null;
   status: SafeSwitchStatus;
   total_days: number;
   started_at: string;
@@ -90,6 +93,9 @@ export interface CreateSafeSwitchInput {
   pantry_item_id: string;
   new_product_id: string;
   total_days: number;
+  new_serving_size: number | null;
+  new_serving_size_unit: string | null;
+  new_feedings_per_day: number | null;
 }
 
 // ─── Completion Outcome (Phase A) ───────────────────────

@@ -80,8 +80,8 @@ describe('isTreat', () => {
     expect(isTreat(Category.DailyFood)).toBe(false);
   });
 
-  test('false for Supplement', () => {
-    expect(isTreat(Category.Supplement)).toBe(false);
+  test('true for Supplement', () => {
+    expect(isTreat(Category.Supplement)).toBe(true);
   });
 });
 
@@ -92,8 +92,8 @@ describe('getDefaultFeedingsPerDay', () => {
     expect(getDefaultFeedingsPerDay(Category.DailyFood)).toBe(2);
   });
 
-  test('returns 2 for supplement', () => {
-    expect(getDefaultFeedingsPerDay(Category.Supplement)).toBe(2);
+  test('returns 1 for supplement', () => {
+    expect(getDefaultFeedingsPerDay(Category.Supplement)).toBe(1);
   });
 
   test('returns 1 for treat', () => {
@@ -108,8 +108,8 @@ describe('getDefaultFeedingFrequency', () => {
     expect(getDefaultFeedingFrequency(Category.DailyFood)).toBe('daily');
   });
 
-  test('returns daily for supplement', () => {
-    expect(getDefaultFeedingFrequency(Category.Supplement)).toBe('daily');
+  test('returns as_needed for supplement', () => {
+    expect(getDefaultFeedingFrequency(Category.Supplement)).toBe('as_needed');
   });
 
   test('returns as_needed for treat', () => {

@@ -13,8 +13,10 @@ import {
   updatePantryItem,
   sharePantryItem,
   evaluateDietCompleteness,
+  rebalanceExistingFood,
 } from '../services/pantryService';
 import { useActivePetStore } from './useActivePetStore';
+import type { Product } from '../types';
 import { useTreatBatteryStore, resolveTreatKcal } from './useTreatBatteryStore';
 import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 
@@ -26,7 +28,16 @@ interface PantryState {
   _petId: string | null;
 
   loadPantry: (petId: string) => Promise<void>;
-  addItem: (input: AddToPantryInput, petId: string) => Promise<void>;
+  addItem: (
+    input: AddToPantryInput,
+    petId: string,
+    rebalanceTarget?: {
+      pantryItemId: string;
+      newMealsCovered: number;
+      totalMealsPerDay: number;
+      isPremiumGoalWeight: boolean;
+    }
+  ) => Promise<void>;
   removeItem: (itemId: string, petId?: string) => Promise<void>;
   restockItem: (itemId: string) => Promise<void>;
   updateItem: (itemId: string, updates: Parameters<typeof updatePantryItem>[1]) => Promise<void>;
@@ -61,11 +72,27 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     }
   },
 
-  addItem: async (input, petId) => {
+  addItem: async (input, petId, rebalanceTarget) => {
     set({ loading: true, error: null });
     try {
       await addToPantry(input, petId);
       const pid = get()._petId ?? petId;
+
+      if (rebalanceTarget) {
+        const pet = useActivePetStore.getState().pets.find(p => p.id === pid);
+        const existingItem = get().items.find(i => i.id === rebalanceTarget.pantryItemId);
+        if (pet && existingItem?.product) {
+          await rebalanceExistingFood(
+            rebalanceTarget.pantryItemId,
+            pet,
+            rebalanceTarget.newMealsCovered,
+            rebalanceTarget.totalMealsPerDay,
+            existingItem.product as unknown as Product,
+            rebalanceTarget.isPremiumGoalWeight
+          );
+        }
+      }
+
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),

@@ -42,7 +42,7 @@ export type CommunityStackParamList = {
 export type PantryStackParamList = {
   PantryMain: undefined;
   EditPantryItem: { itemId: string };
-  SafeSwitchSetup: { pantryItemId: string; newProductId: string; petId: string };
+  SafeSwitchSetup: { pantryItemId: string; newProductId: string; petId: string; newServingSize: number | null; newServingSizeUnit: string | null; newFeedingsPerDay: number | null };
   SafeSwitchDetail: { switchId: string };
   Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };

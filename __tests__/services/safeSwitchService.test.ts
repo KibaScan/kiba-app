@@ -131,6 +131,9 @@ const MOCK_INPUT = {
   pantry_item_id: 'pi-1',
   new_product_id: 'prod-new',
   total_days: 7,
+  new_serving_size: null,
+  new_serving_size_unit: null,
+  new_feedings_per_day: null,
 };
 
 /** A successful pantry_items join row used by createSafeSwitch validation. */
@@ -249,6 +252,9 @@ describe('createSafeSwitch', () => {
       old_product_id: 'prod-old',
       new_product_id: 'prod-new',
       total_days: 7,
+      new_serving_size: null,
+      new_serving_size_unit: null,
+      new_feedings_per_day: null,
       status: 'active',
     }));
     expect(result).toEqual(MOCK_SWITCH);
