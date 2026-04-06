@@ -102,6 +102,7 @@ function makeAssignment(overrides: Partial<PantryPetAssignment> = {}): PantryPet
     feeding_frequency: 'daily',
     feeding_times: null,
     notifications_on: false,
+    slot_index: 0,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,

@@ -71,13 +71,14 @@ import { HealthConditionAdvisories } from '../components/result/HealthConditionA
 import { SafeSwapSection } from '../components/result/SafeSwapSection';
 import { KibaIndexSection } from '../components/result/KibaIndexSection';
 import { AffiliateBuyButtons } from '../components/result/AffiliateBuyButtons';
-import { checkDuplicateUpc, restockPantryItem } from '../services/pantryService';
+import { checkDuplicateUpc, restockPantryItem, getPantryAnchor } from '../services/pantryService';
 import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBattery';
 
 import { resolveCalories, resolveKcalPerCup } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
-import { computePetDer } from '../utils/pantryHelpers';
+import { computePetDer, pickSlotForSwap } from '../utils/pantryHelpers';
+import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Navigation Types ────────────────────────────────────
@@ -90,7 +91,7 @@ type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'Result'>;
 export default function ResultScreen() {
   const navigation = useNavigation<ScreenNav>();
   const route = useRoute<ScreenRoute>();
-  const { productId, petId } = route.params;
+  const { productId, petId, pantryItemIdHint } = route.params;
 
   // ─── Store reads ────────────────────────────────────────
   const pets = useActivePetStore((s) => s.pets);
@@ -109,6 +110,22 @@ export default function ResultScreen() {
     if (!pet) return null;
     return computePetDer(pet, false, pet.weight_goal_level);
   }, [pet]);
+
+  // M9 Phase B: fetch this pet's daily-food pantry anchors on mount. Used by
+  // SafeSwapSection below to decide whether to show "Switch to this" and by
+  // pickSlotForSwap to pick the target slot on tap.
+  const [pantryAnchors, setPantryAnchors] = useState<PantryAnchor[]>([]);
+  useEffect(() => {
+    if (!pet?.id) {
+      setPantryAnchors([]);
+      return;
+    }
+    let cancelled = false;
+    getPantryAnchor(pet.id).then((anchors) => {
+      if (!cancelled) setPantryAnchors(anchors);
+    });
+    return () => { cancelled = true; };
+  }, [pet?.id]);
 
   // ─── State ──────────────────────────────────────────────
   const [product, setProduct] = useState<Product | null>(
@@ -671,12 +688,27 @@ export default function ResultScreen() {
             conditionTags={petConditions}
             petLifeStage={pet?.life_stage ?? null}
             isBypassed={!!scoredResult?.bypass}
-            onSwitchTo={pet?.id ? (newProductId: string) => {
-              // M7: Cross-navigate to Pantry stack → SafeSwitchSetup
+            onSwitchTo={pet?.id && pantryAnchors.length > 0 ? (newProductId: string, newProductForm: string | null) => {
+              // M9 Phase B: pick the slot this switch replaces, then cross-navigate
+              // to Pantry stack → SafeSwitchSetup with a pantry_item_id anchor.
+              // Priority:
+              //   1. pantryItemIdHint from route (e.g. PantryCard "Find a replacement")
+              //   2. The anchor whose product matches the scanned product (user likely
+              //      means "replace this food I'm looking at")
+              //   3. pickSlotForSwap auto-pick by form + score
+              const hintedAnchor = pantryItemIdHint
+                ? pantryAnchors.find(a => a.pantryItemId === pantryItemIdHint)
+                : null;
+              const scannedProductAnchor = !hintedAnchor && product
+                ? pantryAnchors.find(a => a.productId === product.id)
+                : null;
+              const targetAnchor =
+                hintedAnchor ?? scannedProductAnchor ?? pickSlotForSwap(pantryAnchors, newProductForm);
+              if (!targetAnchor) return;
               (navigation.getParent() as any)?.navigate('Pantry', {
                 screen: 'SafeSwitchSetup',
                 params: {
-                  oldProductId: product.id,
+                  pantryItemId: targetAnchor.pantryItemId,
                   newProductId,
                   petId: pet.id,
                 },

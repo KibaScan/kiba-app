@@ -39,8 +39,14 @@ interface SafeSwapSectionProps {
   conditionTags: string[];
   petLifeStage: string | null;
   isBypassed: boolean;
-  /** M7: Callback to start a Safe Switch from a swap card. */
-  onSwitchTo?: (newProductId: string) => void;
+  /**
+   * M7: Callback to start a Safe Switch from a swap card.
+   * M9 Phase B: parent passes this as `undefined` when the scanned product
+   * isn't anchored to one of the pet's pantry slots, which naturally hides
+   * the "Switch to this" button via the existing guard. The second arg
+   * (newProductForm) lets the parent pick the right slot via pickSlotForSwap.
+   */
+  onSwitchTo?: (newProductId: string, newProductForm: string | null) => void;
 }
 
 // ─── Slot Icon Mapping ─────────────────────────────────
@@ -271,11 +277,13 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
                 <Text style={s.compareLinkText}>Compare</Text>
               </TouchableOpacity>
 
-              {/* M7: Switch to this (Safe Switch entry point) — daily food only */}
+              {/* M7: Switch to this (Safe Switch entry point) — daily food only.
+                  M9 Phase B: parent hides this by passing onSwitchTo=undefined when
+                  the scanned product has no pantry anchor for the active pet. */}
               {onSwitchTo && category === 'daily_food' && !isSupplemental && (
                 <TouchableOpacity
                   style={s.switchLink}
-                  onPress={() => onSwitchTo(c.product_id)}
+                  onPress={() => onSwitchTo(c.product_id, c.product_form ?? null)}
                 >
                   <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
                   <Text style={s.switchLinkText}>Switch to this</Text>

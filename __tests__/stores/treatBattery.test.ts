@@ -217,6 +217,7 @@ function makeTreatItem(overrides: Partial<PantryCardData> = {}): PantryCardData 
       feeding_frequency: 'as_needed',
       feeding_times: null,
       notifications_on: false,
+      slot_index: null,
       created_at: '2026-01-01',
       updated_at: '2026-01-01',
     }],

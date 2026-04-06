@@ -163,6 +163,8 @@ export default function PantryScreen({ navigation }: Props) {
   const bannerConfig = useMemo(() => getDietBannerConfig(dietStatus), [dietStatus]);
   const recalledItems = useMemo(() => items.filter(i => i.product?.is_recalled), [items]);
   const hasMultiplePets = pets.length > 1;
+  /** M9 Phase B: pantry item anchoring the active Safe Switch — locked from swipe/removal. */
+  const lockedItemId = activeSwitchData?.switch.pantry_item_id ?? null;
 
   // ── Lifecycle ──
   useFocusEffect(
@@ -469,27 +471,34 @@ export default function PantryScreen({ navigation }: Props) {
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
-        renderItem={({ item }) => (
-          // M9 polish: swipe-left → delete (confirmation handled by handleRemove —
-          // shared items open the multi-pet sheet, single-pet items show an Alert).
-          // Swipe-right → edit (navigates to EditPantryItem or RecallDetail).
-          <SwipeableRow
-            onDelete={() => handleRemove(item.id)}
-            onEdit={() => handleTap(item.id)}
-          >
-            <PantryCard
-              item={item}
-              activePet={activePet}
-              onTap={handleTap}
-              onRestock={handleRestock}
-              onRemove={handleRemove}
-              onGaveTreat={handleGaveTreat}
-              onFindReplacement={(productId) => {
-                navigation.navigate('Result', { productId, petId: activePetId });
-              }}
-            />
-          </SwipeableRow>
-        )}
+        renderItem={({ item }) => {
+          // M9 Phase B: items anchoring an active Safe Switch are locked —
+          // no swipe actions, no "Find a replacement", with a visual badge.
+          const locked = item.id === lockedItemId;
+          return (
+            <SwipeableRow
+              onDelete={locked ? undefined : () => handleRemove(item.id)}
+              onEdit={locked ? undefined : () => handleTap(item.id)}
+            >
+              <PantryCard
+                item={item}
+                activePet={activePet}
+                onTap={handleTap}
+                onRestock={handleRestock}
+                onRemove={handleRemove}
+                onGaveTreat={handleGaveTreat}
+                isLocked={locked}
+                onFindReplacement={(productId) => {
+                  navigation.navigate('Result', {
+                    productId,
+                    petId: activePetId,
+                    pantryItemIdHint: item.id,
+                  });
+                }}
+              />
+            </SwipeableRow>
+          );
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

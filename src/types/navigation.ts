@@ -5,7 +5,7 @@
 
 export type ScanStackParamList = {
   ScanMain: undefined;
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   CommunityContribution: { scannedUpc: string };
   ProductConfirm: {
@@ -25,7 +25,7 @@ export type ScanStackParamList = {
 export type HomeStackParamList = {
   HomeMain: undefined;
   CategoryBrowse: { category: import('./categoryBrowse').BrowseCategory; petId: string; subFilter?: string };
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   AppointmentDetail: { appointmentId: string };
   Compare: { productAId: string; productBId: string; petId: string };
@@ -34,7 +34,7 @@ export type HomeStackParamList = {
 
 export type CommunityStackParamList = {
   CommunityMain: undefined;
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
 };
@@ -42,9 +42,9 @@ export type CommunityStackParamList = {
 export type PantryStackParamList = {
   PantryMain: undefined;
   EditPantryItem: { itemId: string };
-  SafeSwitchSetup: { oldProductId: string; newProductId: string; petId: string };
+  SafeSwitchSetup: { pantryItemId: string; newProductId: string; petId: string };
   SafeSwitchDetail: { switchId: string };
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
 };
@@ -70,7 +70,7 @@ export type MeStackParamList = {
   AppointmentDetail: { appointmentId: string };
   NotificationPreferences: undefined;
   Settings: undefined;
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
 };

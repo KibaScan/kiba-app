@@ -9,6 +9,7 @@ import type {
   PantryCardData,
   AddToPantryInput,
   DietCompletenessResult,
+  PantryAnchor,
 } from '../types/pantry';
 import { PantryOfflineError } from '../types/pantry';
 import {
@@ -23,6 +24,44 @@ import type { Product } from '../types';
 
 async function requireOnline(): Promise<void> {
   if (!(await isOnline())) throw new PantryOfflineError();
+}
+
+/**
+ * M9 Phase B: picks the next available slot (0 or 1) for a daily-food assignment
+ * on a given pet. Returns null when both slots are full (grandfathered 3+ case)
+ * or when the product isn't daily_food. Used by addToPantry + sharePantryItem so
+ * newly-added daily foods get a slot label automatically.
+ */
+async function pickNextSlotForPet(
+  petId: string,
+  productId: string,
+): Promise<number | null> {
+  // Only daily_food, non-supplemental, non-vet-diet get slot assignments
+  const { data: product } = await supabase
+    .from('products')
+    .select('category, is_supplemental, is_vet_diet')
+    .eq('id', productId)
+    .single();
+  const p = product as { category: string; is_supplemental: boolean | null; is_vet_diet: boolean | null } | null;
+  if (!p || p.category !== 'daily_food' || p.is_supplemental === true || p.is_vet_diet === true) {
+    return null;
+  }
+
+  // Find existing slot_index values for this pet (any category, but the partial
+  // unique index only applies when slot_index is set — so only daily_food rows
+  // have non-null slot_index in practice).
+  const { data: existing } = await supabase
+    .from('pantry_pet_assignments')
+    .select('slot_index')
+    .eq('pet_id', petId)
+    .not('slot_index', 'is', null);
+
+  const taken = new Set(
+    ((existing ?? []) as { slot_index: number }[]).map(r => r.slot_index),
+  );
+  if (!taken.has(0)) return 0;
+  if (!taken.has(1)) return 1;
+  return null; // Grandfathered 3+ case
 }
 
 // ─── Write Functions ────────────────────────────────────
@@ -52,6 +91,10 @@ export async function addToPantry(
 
   if (itemErr) throw new Error(`Failed to add pantry item: ${itemErr.message}`);
 
+  // M9 Phase B: auto-assign slot_index for daily food so newly-added items get
+  // a slot label in SafeSwitchSetupScreen and are countable as slot-anchored.
+  const slotIndex = await pickNextSlotForPet(petId, input.product_id);
+
   const { error: assignErr } = await supabase
     .from('pantry_pet_assignments')
     .insert({
@@ -62,6 +105,7 @@ export async function addToPantry(
       feedings_per_day: input.feedings_per_day,
       feeding_frequency: input.feeding_frequency,
       feeding_times: input.feeding_times ?? null,
+      slot_index: slotIndex,
     });
 
   if (assignErr) throw new Error(`Failed to assign pantry item: ${assignErr.message}`);
@@ -74,6 +118,26 @@ export async function removePantryItem(
   petId?: string,
 ): Promise<void> {
   await requireOnline();
+
+  // M9 Phase B: block deletion when an active/paused Safe Switch references this
+  // pantry item. Scoped to pet when petId is provided (removing one pet's
+  // assignment shouldn't block a switch belonging to another pet).
+  let switchQuery = supabase
+    .from('safe_switches')
+    .select('id')
+    .eq('pantry_item_id', itemId)
+    .in('status', ['active', 'paused'])
+    .limit(1);
+  if (petId) {
+    switchQuery = switchQuery.eq('pet_id', petId);
+  }
+  const { data: blockingSwitches, error: switchErr } = await switchQuery;
+  if (switchErr) {
+    throw new Error(`Failed to check active switches: ${switchErr.message}`);
+  }
+  if (blockingSwitches && blockingSwitches.length > 0) {
+    throw new Error('Cancel the active Safe Switch before removing this item.');
+  }
 
   if (petId) {
     const { error: delErr } = await supabase
@@ -201,12 +265,17 @@ export async function sharePantryItem(
     throw new Error(`Cannot share: product is for ${productSpecies}, pet is ${(pet as { species: string }).species}`);
   }
 
+  // M9 Phase B: auto-assign slot_index for the target pet
+  const productId = (item as { product_id: string }).product_id;
+  const slotIndex = await pickNextSlotForPet(petId, productId);
+
   const { data, error } = await supabase
     .from('pantry_pet_assignments')
     .insert({
       pantry_item_id: itemId,
       pet_id: petId,
       ...assignment,
+      slot_index: slotIndex,
     })
     .select()
     .single();
@@ -442,6 +511,16 @@ export async function checkDuplicateUpc(
   return data.id as string;
 }
 
+/**
+ * Returns diet completeness status for a pet's pantry.
+ *
+ * M9 Phase B note: this function is slot-compatible but not slot-aware. It
+ * still returns 'complete' when any non-supplemental daily_food assignment
+ * exists, which is a no-op for users whose slots were backfilled correctly.
+ * Slot-aware nudges ("add a second slot for mixed feeding") are a FUTURE
+ * extension — don't gate completeness on slot_index or new additions will
+ * silently drop to 'red_warning' until auto-slot-assignment runs.
+ */
 export async function evaluateDietCompleteness(
   petId: string,
   petName: string,
@@ -501,4 +580,75 @@ export async function evaluateDietCompleteness(
     status: 'red_warning',
     message: `${petName}'s pantry does not include a complete diet.`,
   };
+}
+
+/**
+ * M9 Phase B: returns every daily-food pantry anchor for a pet, hydrated with
+ * slot_index, product_form, and D-156 resolved score. Used by:
+ *  - ResultScreen to decide whether to show the "Switch to this" CTA
+ *  - pickSlotForSwap (pantryHelpers) to pick which slot a Safe Switch replaces
+ *  - SafeSwitchSetupScreen to render the slot picker bottom sheet
+ *
+ * Filters: is_active=true, category='daily_food', is_supplemental=false,
+ * is_vet_diet=false, assigned to this pet. Grandfathered rows (slot_index=null)
+ * are included — pickSlotForSwap sorts them to the back via ?? 99.
+ *
+ * Offline-graceful: returns [] on error.
+ */
+export async function getPantryAnchor(petId: string): Promise<PantryAnchor[]> {
+  try {
+    // Step 1: Get this pet's assignments with slot_index
+    const { data: assignments, error: assignErr } = await supabase
+      .from('pantry_pet_assignments')
+      .select('pantry_item_id, slot_index')
+      .eq('pet_id', petId);
+    if (assignErr || !assignments || assignments.length === 0) return [];
+
+    const typedAssignments = assignments as { pantry_item_id: string; slot_index: number | null }[];
+    const slotByItemId = new Map(typedAssignments.map(a => [a.pantry_item_id, a.slot_index]));
+    const itemIds = typedAssignments.map(a => a.pantry_item_id);
+
+    // Step 2: Fetch active items joined to products, filter daily food / non-supplemental / non-vet-diet
+    const { data: items, error: itemErr } = await supabase
+      .from('pantry_items')
+      .select('id, product_id, products(id, product_form, category, is_supplemental, is_vet_diet)')
+      .in('id', itemIds)
+      .eq('is_active', true);
+    if (itemErr || !items) return [];
+
+    const typedItems = items as unknown as Array<{
+      id: string;
+      product_id: string;
+      products: {
+        id: string;
+        product_form: string | null;
+        category: string;
+        is_supplemental: boolean | null;
+        is_vet_diet: boolean | null;
+      } | null;
+    }>;
+
+    const filtered = typedItems.filter(
+      i =>
+        i.products?.category === 'daily_food' &&
+        i.products?.is_supplemental !== true &&
+        i.products?.is_vet_diet !== true,
+    );
+    if (filtered.length === 0) return [];
+
+    // Step 3: Resolve scores via D-156 cascade (reuses the private helper)
+    const productIds = filtered.map(i => i.product_id);
+    const scoreMap = await resolveScoresForPet(petId, productIds);
+
+    return filtered.map(i => ({
+      pantryItemId: i.id,
+      productId: i.product_id,
+      productForm: i.products?.product_form ?? null,
+      slotIndex: slotByItemId.get(i.id) ?? null,
+      resolvedScore: scoreMap.get(i.product_id) ?? null,
+    }));
+  } catch (e) {
+    console.error('[getPantryAnchor] FAILED:', e);
+    return [];
+  }
 }

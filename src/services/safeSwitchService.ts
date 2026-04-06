@@ -5,7 +5,13 @@
 import { supabase } from './supabase';
 import { isOnline } from '../utils/network';
 import { PantryOfflineError } from '../types/pantry';
-import { getCurrentDay, getMixForDay, getTransitionSchedule } from '../utils/safeSwitchHelpers';
+import {
+  getCurrentDay,
+  getMixForDay,
+  getTransitionSchedule,
+  computeSwitchOutcome,
+  getOutcomeMessage,
+} from '../utils/safeSwitchHelpers';
 import type {
   SafeSwitch,
   SafeSwitchLog,
@@ -13,6 +19,8 @@ import type {
   SafeSwitchProduct,
   CreateSafeSwitchInput,
   TummyCheck,
+  SwitchOutcome,
+  OutcomeMessage,
 } from '../types/safeSwitch';
 
 // ─── Internal ───────────────────────────────────────────
@@ -26,7 +34,18 @@ const PRODUCT_SELECT = 'id, name, brand, image_url, category, is_supplemental, g
 // ─── Write Functions ────────────────────────────────────
 
 /**
- * Creates a new safe switch for a pet.
+ * Creates a new safe switch for a pet anchored to a specific pantry slot.
+ *
+ * M9 Phase B: `input.pantry_item_id` replaces the old `input.old_product_id`.
+ * The old product id is derived server-side from the pantry item's join so
+ * callers cannot create switches against phantom products they've never fed.
+ *
+ * Validation:
+ *   - Pantry item exists, is active, belongs to the user (via RLS)
+ *   - Pantry item has an assignment for input.pet_id (confirms slot ownership)
+ *   - Joined product is daily_food, non-supplemental, non-vet-diet
+ *   - New product exists and is daily_food / non-supplemental
+ *
  * Enforced at DB level: only one active/paused switch per pet.
  */
 export async function createSafeSwitch(
@@ -37,12 +56,77 @@ export async function createSafeSwitch(
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user?.id) throw new Error('Not authenticated');
 
+  // Step 1: Fetch pantry item + product + assignment for this pet
+  const { data: itemRow, error: itemErr } = await supabase
+    .from('pantry_items')
+    .select(`
+      id,
+      product_id,
+      is_active,
+      products!product_id (id, category, is_supplemental, is_vet_diet, target_species),
+      pantry_pet_assignments!inner (pet_id)
+    `)
+    .eq('id', input.pantry_item_id)
+    .eq('is_active', true)
+    .eq('pantry_pet_assignments.pet_id', input.pet_id)
+    .maybeSingle();
+
+  if (itemErr) {
+    throw new Error(`Failed to validate pantry anchor: ${itemErr.message}`);
+  }
+  if (!itemRow) {
+    throw new Error('This pantry item is no longer available for a Safe Switch.');
+  }
+
+  const typedItem = itemRow as unknown as {
+    id: string;
+    product_id: string;
+    is_active: boolean;
+    products: {
+      id: string;
+      category: string;
+      is_supplemental: boolean | null;
+      is_vet_diet: boolean | null;
+      target_species: string;
+    } | null;
+  };
+
+  const oldProduct = typedItem.products;
+  if (!oldProduct) {
+    throw new Error('Pantry item is missing product data.');
+  }
+  if (oldProduct.category !== 'daily_food') {
+    throw new Error('Safe Switch is only available for daily food.');
+  }
+  if (oldProduct.is_supplemental === true || oldProduct.is_vet_diet === true) {
+    throw new Error('Safe Switch is not available for supplemental or vet diet products.');
+  }
+
+  // Step 2: Validate new product
+  const { data: newProductRow, error: newErr } = await supabase
+    .from('products')
+    .select('id, category, is_supplemental')
+    .eq('id', input.new_product_id)
+    .maybeSingle();
+  if (newErr) {
+    throw new Error(`Failed to validate new product: ${newErr.message}`);
+  }
+  const newProduct = newProductRow as { id: string; category: string; is_supplemental: boolean | null } | null;
+  if (!newProduct) {
+    throw new Error('New product not found.');
+  }
+  if (newProduct.category !== 'daily_food' || newProduct.is_supplemental === true) {
+    throw new Error('The new product must be a daily food.');
+  }
+
+  // Step 3: Insert safe_switches row with derived old_product_id + pantry_item_id FK
   const { data, error } = await supabase
     .from('safe_switches')
     .insert({
       user_id: session.user.id,
       pet_id: input.pet_id,
-      old_product_id: input.old_product_id,
+      pantry_item_id: input.pantry_item_id,
+      old_product_id: typedItem.product_id,
       new_product_id: input.new_product_id,
       total_days: input.total_days,
       status: 'active',
@@ -52,7 +136,7 @@ export async function createSafeSwitch(
 
   if (error) {
     if (error.code === '23505') {
-      // Unique constraint violation — active switch already exists
+      // Unique constraint violation — active switch already exists for this pet
       throw new Error('An active food transition already exists for this pet. Complete or cancel it first.');
     }
     throw new Error(`Failed to create safe switch: ${error.message}`);
@@ -89,17 +173,80 @@ export async function logTummyCheck(
 }
 
 /**
- * Marks a switch as completed.
+ * Marks a switch as completed AND atomically swaps the anchored pantry item's
+ * product_id to the new product (M9 Phase B).
+ *
+ * Flow:
+ *   1. Fetch the switch with joined pet name + new product display fields + logs
+ *   2. Compute the outcome summary + message via Phase A helpers
+ *   3. Call the complete_safe_switch_with_pantry_swap RPC (single transaction)
+ *   4. Return the computed outcome + message so the screen can render without
+ *      a second fetch
+ *
+ * The caller (SafeSwitchDetailScreen.handleComplete) is responsible for
+ * cancelling notifications and rescheduling feeding reminders after this
+ * resolves — this service has no React/UI imports.
  */
-export async function completeSafeSwitch(switchId: string): Promise<void> {
+export async function completeSafeSwitch(
+  switchId: string,
+): Promise<{ outcome: SwitchOutcome; message: OutcomeMessage }> {
   await requireOnline();
 
-  const { error } = await supabase
-    .from('safe_switches')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
-    .eq('id', switchId);
+  // Step 1: Fetch switch + pet name + new product display + logs in parallel
+  const [switchRes, logsRes] = await Promise.all([
+    supabase
+      .from('safe_switches')
+      .select(`
+        id,
+        pet_id,
+        new_product_id,
+        total_days,
+        pet:pets!pet_id (name),
+        new_product:products!new_product_id (brand, name)
+      `)
+      .eq('id', switchId)
+      .single(),
+    supabase
+      .from('safe_switch_logs')
+      .select('day_number, tummy_check')
+      .eq('switch_id', switchId),
+  ]);
 
-  if (error) throw new Error(`Failed to complete safe switch: ${error.message}`);
+  if (switchRes.error || !switchRes.data) {
+    throw new Error(`Failed to load safe switch: ${switchRes.error?.message ?? 'not found'}`);
+  }
+
+  const sw = switchRes.data as unknown as {
+    id: string;
+    pet_id: string;
+    new_product_id: string;
+    total_days: number;
+    pet: { name: string } | null;
+    new_product: { brand: string; name: string } | null;
+  };
+
+  const logs = (logsRes.data ?? []) as { day_number: number; tummy_check: string | null }[];
+  const petName = sw.pet?.name ?? 'your pet';
+  const newProductDisplay = sw.new_product
+    ? `${sw.new_product.brand} ${sw.new_product.name}`.trim()
+    : 'the new food';
+
+  // Step 2: Compute outcome + message via Phase A helpers (unchanged, D-095 compliant)
+  const outcome = computeSwitchOutcome(logs, sw.total_days);
+  const message = getOutcomeMessage(outcome, petName, newProductDisplay);
+
+  // Step 3: Atomic RPC — swaps pantry product_id + flips switch status + persists outcome
+  const { error: rpcErr } = await supabase.rpc('complete_safe_switch_with_pantry_swap', {
+    p_switch_id: switchId,
+    p_outcome_summary: { outcome, message },
+  });
+
+  if (rpcErr) {
+    throw new Error(`Failed to complete safe switch: ${rpcErr.message}`);
+  }
+
+  // Step 4: Return computed values so the caller can render without a re-fetch
+  return { outcome, message };
 }
 
 /**
@@ -156,17 +303,21 @@ export async function restartSafeSwitch(switchId: string): Promise<SafeSwitch> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user?.id) throw new Error('Not authenticated');
 
-  // Fetch old switch data
+  // Fetch old switch data — M9 Phase B propagates pantry_item_id to the new row
   const { data: oldSwitch, error: fetchErr } = await supabase
     .from('safe_switches')
-    .select('pet_id, old_product_id, new_product_id, total_days')
+    .select('pet_id, old_product_id, new_product_id, total_days, pantry_item_id')
     .eq('id', switchId)
     .single();
 
   if (fetchErr || !oldSwitch) throw new Error('Failed to fetch switch for restart.');
 
-  const { pet_id, old_product_id, new_product_id, total_days } = oldSwitch as {
-    pet_id: string; old_product_id: string; new_product_id: string; total_days: number;
+  const { pet_id, old_product_id, new_product_id, total_days, pantry_item_id } = oldSwitch as {
+    pet_id: string;
+    old_product_id: string;
+    new_product_id: string;
+    total_days: number;
+    pantry_item_id: string | null;
   };
 
   // Step 1: Cancel old switch
@@ -177,12 +328,13 @@ export async function restartSafeSwitch(switchId: string): Promise<SafeSwitch> {
 
   if (cancelErr) throw new Error(`Failed to cancel old switch: ${cancelErr.message}`);
 
-  // Step 2: Insert new switch with same product pair
+  // Step 2: Insert new switch with same product pair + carry pantry_item_id anchor
   const { data: newSwitch, error: insertErr } = await supabase
     .from('safe_switches')
     .insert({
       user_id: session.user.id,
       pet_id,
+      pantry_item_id,
       old_product_id,
       new_product_id,
       total_days,
@@ -257,20 +409,17 @@ export async function getActiveSwitchForPet(
     const todayLogged = typedLogs.some(l => l.day_number === currentDay && l.tummy_check != null);
     const schedule = getTransitionSchedule(sw.total_days);
 
-    // Step 5: Resolve daily cups from pantry serving data
-    let dailyCups = 2.4; // Fallback when no pantry data exists
-    const { data: pantryItems } = await supabase
-      .from('pantry_items')
-      .select('id')
-      .eq('product_id', sw.old_product_id)
-      .eq('is_active', true)
-      .limit(1);
-
-    if (pantryItems && pantryItems.length > 0) {
+    // Step 5: Resolve daily cups from pantry serving data.
+    // M9 Phase B: prefer the direct pantry_item_id FK. Fall back to 2.4 cups
+    // for historical switches with NULL pantry_item_id — these were never
+    // anchored to a specific pantry slot.
+    let dailyCups = 2.4;
+    const pantryItemId = sw.pantry_item_id ?? null;
+    if (pantryItemId) {
       const { data: asgn } = await supabase
         .from('pantry_pet_assignments')
         .select('serving_size, serving_size_unit, feedings_per_day')
-        .eq('pantry_item_id', (pantryItems[0] as { id: string }).id)
+        .eq('pantry_item_id', pantryItemId)
         .eq('pet_id', petId)
         .maybeSingle();
 
@@ -281,7 +430,15 @@ export async function getActiveSwitchForPet(
         if (serving_size_unit === 'cups') {
           dailyCups = serving_size * feedings_per_day;
         }
+      } else if (__DEV__) {
+        console.warn(
+          `[getActiveSwitchForPet] pantry_item_id=${pantryItemId} present but no assignment for pet=${petId} — using 2.4 fallback`,
+        );
       }
+    } else if (__DEV__) {
+      console.warn(
+        `[getActiveSwitchForPet] switch=${sw.id} has null pantry_item_id (historical row) — using 2.4 fallback`,
+      );
     }
 
     // Strip relation keys, build composite

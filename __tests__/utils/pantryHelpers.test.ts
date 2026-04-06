@@ -27,8 +27,9 @@ import {
   convertFromKg,
   convertWeightToCups,
   convertWeightToServings,
+  pickSlotForSwap,
 } from '../../src/utils/pantryHelpers';
-import type { PantryPetAssignment, PantryCardData } from '../../src/types/pantry';
+import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
 import type { Pet } from '../../src/types/pet';
 import { Category, Species } from '../../src/types';
@@ -46,6 +47,7 @@ function makeAssignment(overrides: Partial<PantryPetAssignment> = {}): PantryPet
     feeding_frequency: 'daily',
     feeding_times: null,
     notifications_on: true,
+    slot_index: 0,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -829,5 +831,82 @@ describe('convertWeightToServings', () => {
 
   test('returns null when cupsPerFeeding is 0', () => {
     expect(convertWeightToServings(15, 'lbs', 3700, 376, 0)).toBeNull();
+  });
+});
+
+// ─── pickSlotForSwap (M9 Phase B) ───────────────────────
+
+describe('pickSlotForSwap', () => {
+  function makeAnchor(overrides: Partial<PantryAnchor>): PantryAnchor {
+    return {
+      pantryItemId: 'pi-1',
+      productId: 'prod-1',
+      productForm: 'dry',
+      slotIndex: 0,
+      resolvedScore: 60,
+      ...overrides,
+    };
+  }
+
+  test('returns null when there are no anchors', () => {
+    expect(pickSlotForSwap([], 'dry')).toBeNull();
+  });
+
+  test('returns the sole anchor when only one exists', () => {
+    const only = makeAnchor({ pantryItemId: 'pi-only', slotIndex: 0 });
+    expect(pickSlotForSwap([only], 'dry')).toBe(only);
+  });
+
+  test('prefers exact product_form match over score when forms differ', () => {
+    const dry = makeAnchor({ pantryItemId: 'pi-dry', productForm: 'dry', slotIndex: 0, resolvedScore: 85 });
+    const wet = makeAnchor({ pantryItemId: 'pi-wet', productForm: 'wet', slotIndex: 1, resolvedScore: 40 });
+    // New product is dry, even though wet is lower-scoring
+    expect(pickSlotForSwap([dry, wet], 'dry')?.pantryItemId).toBe('pi-dry');
+  });
+
+  test('falls back to lowest score when no form match exists', () => {
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 82 });
+    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
+    // New product is wet, neither anchor matches → pick lower score
+    expect(pickSlotForSwap([dryA, dryB], 'wet')?.pantryItemId).toBe('pi-b');
+  });
+
+  test('tie-breaks by score when multiple anchors match form', () => {
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 80 });
+    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
+    expect(pickSlotForSwap([dryA, dryB], 'dry')?.pantryItemId).toBe('pi-b');
+  });
+
+  test('prefers slot 0 over slot 1 when form and score are tied', () => {
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 60 });
+    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 60 });
+    expect(pickSlotForSwap([dryA, dryB], 'dry')?.pantryItemId).toBe('pi-a');
+  });
+
+  test('treats null product_form as no preference (score-based pick)', () => {
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 75 });
+    const wetB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'wet', slotIndex: 1, resolvedScore: 45 });
+    expect(pickSlotForSwap([dryA, wetB], null)?.pantryItemId).toBe('pi-b');
+  });
+
+  test('handles null resolvedScore by treating it as 100 (unknown = not urgent)', () => {
+    const unscored = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: null });
+    const scored = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
+    expect(pickSlotForSwap([unscored, scored], 'dry')?.pantryItemId).toBe('pi-b');
+  });
+
+  test('grandfathered null slotIndex sorts last in tie-break', () => {
+    // Both score 60 dry, one has slot 0, one has null — slot 0 wins
+    const slot0 = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 60 });
+    const nullSlot = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: null, resolvedScore: 60 });
+    expect(pickSlotForSwap([slot0, nullSlot], 'dry')?.pantryItemId).toBe('pi-a');
+  });
+
+  test('handles 3+ grandfathered anchors via form then score', () => {
+    const dry0 = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 80 });
+    const wet1 = makeAnchor({ pantryItemId: 'pi-b', productForm: 'wet', slotIndex: 1, resolvedScore: 65 });
+    const dryNull = makeAnchor({ pantryItemId: 'pi-c', productForm: 'dry', slotIndex: null, resolvedScore: 50 });
+    // New product is dry → filter to [dry0, dryNull] → lowest score = dryNull
+    expect(pickSlotForSwap([dry0, wet1, dryNull], 'dry')?.pantryItemId).toBe('pi-c');
   });
 });

@@ -40,6 +40,7 @@ import {
   restartSafeSwitch,
 } from '../services/safeSwitchService';
 import { rescheduleAllSafeSwitchNotifications, cancelAllSafeSwitchNotifications } from '../services/safeSwitchNotificationScheduler';
+import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 import { saveSuccess } from '../utils/haptics';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { supabase } from '../services/supabase';
@@ -152,9 +153,10 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
   useEffect(() => { loadData(); }, [loadData]);
 
   // ── Celebration animation when today's tummy check is logged ──
+  // Haptic now fires immediately in handleTummyCheck (optimistic); this effect
+  // only drives the dot scale animation.
   useEffect(() => {
     if (data?.todayLogged && !prevTodayLogged.current) {
-      saveSuccess();
       Animated.sequence([
         Animated.timing(dotScale, { toValue: 1.4, duration: 150, useNativeDriver: true }),
         Animated.timing(dotScale, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -166,32 +168,67 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
   const pet = data ? pets.find(p => p.id === data.switch.pet_id) : null;
   const petName = pet?.name ?? 'Your pet';
 
-  // ── Tummy check handler ──
+  // ── Tummy check handler (optimistic) ──
+  // Fires haptic + updates UI immediately, then upserts in the background.
+  // Reverts on failure so the user sees the error state.
   const handleTummyCheck = useCallback(async (check: TummyCheck, dayNumber?: number) => {
     if (!data) return;
-    setTummyLoading(true);
-    try {
-      // Retro log uses the supplied dayNumber; current day uses data.currentDay
-      await logTummyCheck(data.switch.id, dayNumber ?? data.currentDay, check);
-      await loadData(); // Refresh to show updated state
-      if (dayNumber) setRetroDay(null); // Close retro sheet
-    } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to log tummy check.');
-    } finally {
-      setTummyLoading(false);
+    const targetDay = dayNumber ?? data.currentDay;
+
+    // 1. Immediate haptic feedback
+    saveSuccess();
+
+    // 2. Optimistic state update — show the pill as selected before the server responds
+    const prevData = data;
+    const updatedLogs = [...data.logs];
+    const existingIdx = updatedLogs.findIndex(l => l.day_number === targetDay);
+    const optimisticLog = {
+      id: `optimistic-${targetDay}`,
+      switch_id: data.switch.id,
+      day_number: targetDay,
+      tummy_check: check,
+      logged_at: new Date().toISOString(),
+    };
+    if (existingIdx >= 0) {
+      updatedLogs[existingIdx] = optimisticLog;
+    } else {
+      updatedLogs.push(optimisticLog);
     }
-  }, [data, loadData]);
+    setData({
+      ...data,
+      logs: updatedLogs,
+      todayLogged: !dayNumber ? true : data.todayLogged,
+    });
+
+    // 3. Close retro sheet immediately (feels instant)
+    if (dayNumber) setRetroDay(null);
+
+    // 4. Background upsert — revert on failure
+    try {
+      await logTummyCheck(data.switch.id, targetDay, check);
+    } catch (e) {
+      setData(prevData); // Revert
+      Alert.alert('Error', (e as Error).message || 'Failed to log tummy check.');
+    }
+  }, [data]);
 
   // ── Complete handler ──
   // Do NOT call loadData() after completion: getActiveSwitchForPet filters by
   // status IN ('active', 'paused'), so reloading would return null and flash
   // the empty state over the outcome card. The in-memory `data` snapshot
   // already has everything the completed card needs (logs, products, totals).
+  //
+  // M9 Phase B: completeSafeSwitch now atomically swaps the anchored pantry
+  // item's product_id via the complete_safe_switch_with_pantry_swap RPC.
+  // We call rescheduleAllFeeding() afterwards so the existing feeding reminder
+  // scheduler picks up the new product (the pantry_item.id is unchanged, only
+  // its product_id flipped, so feeding reminders auto-resync naturally).
   const handleComplete = useCallback(async () => {
     if (!data) return;
     try {
       await completeSafeSwitch(data.switch.id);
       await cancelAllSafeSwitchNotifications();
+      await rescheduleAllFeeding();
       setIsCompleted(true);
     } catch (e) {
       Alert.alert('Error', (e as Error).message);
@@ -370,12 +407,17 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
               </View>
             )}
 
+            <Text style={styles.restockNudge}>
+              Open a new bag? Tap Restock in your Pantry to start tracking.
+            </Text>
+
             <TouchableOpacity
-              style={styles.doneButton}
+              style={styles.completeButton}
               onPress={() => navigation.goBack()}
               activeOpacity={0.7}
             >
-              <Text style={styles.doneButtonText}>Done</Text>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.completeButtonText}>Back to Pantry</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -640,12 +682,29 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
               })}
             </View>
 
-            {/* Fix 11: CTA — "Complete Switch" only on final day, text link actions */}
+            {/* Bottom actions: primary CTA + text links */}
             <View style={styles.bottomActions}>
-              {isFinalDay && todayLogged && (
+              {isFinalDay && todayLogged ? (
+                /* Final day + logged → "Complete Switch" is the primary action */
                 <TouchableOpacity style={styles.completeButton} onPress={handleComplete} activeOpacity={0.7}>
                   <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.completeButtonText}>Complete Switch</Text>
+                </TouchableOpacity>
+              ) : (
+                /* Non-final day (or final day not yet logged) → "Done" exit button.
+                   Accent when tummy check is logged (positive reinforcement),
+                   muted when not yet logged (user can still leave freely). */
+                <TouchableOpacity
+                  style={[styles.doneButton, todayLogged && styles.doneButtonActive]}
+                  onPress={() => navigation.goBack()}
+                  activeOpacity={0.7}
+                >
+                  {todayLogged && (
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+                  )}
+                  <Text style={[styles.doneButtonText, todayLogged && styles.doneButtonTextActive]}>
+                    {todayLogged ? 'Done for today' : 'Done'}
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -1041,6 +1100,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     gap: Spacing.md,
   },
+  restockNudge: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   completeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1051,6 +1118,29 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   completeButtonText: { fontSize: FontSizes.lg, fontWeight: '700', color: '#FFFFFF' },
+  doneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    backgroundColor: Colors.cardSurface,
+  },
+  doneButtonActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  doneButtonText: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  doneButtonTextActive: {
+    color: '#FFFFFF',
+  },
   textActionsRow: {
     flexDirection: 'row',
     justifyContent: 'center',

@@ -13,6 +13,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,18 +27,26 @@ import {
   getSpeciesNote,
 } from '../utils/safeSwitchHelpers';
 import { createSafeSwitch, hasActiveSwitchForPet } from '../services/safeSwitchService';
+import { getPantryAnchor } from '../services/pantryService';
 import { rescheduleAllSafeSwitchNotifications } from '../services/safeSwitchNotificationScheduler';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { supabase } from '../services/supabase';
 import type { PantryStackParamList } from '../types/navigation';
 import type { SafeSwitchProduct } from '../types/safeSwitch';
+import type { PantryAnchor } from '../types/pantry';
 
 type Props = NativeStackScreenProps<PantryStackParamList, 'SafeSwitchSetup'>;
+
+function slotLabel(slotIndex: number | null): string | null {
+  if (slotIndex === 0) return 'Primary slot';
+  if (slotIndex === 1) return 'Secondary slot';
+  return null;
+}
 
 // ─── Component ──────────────────────────────────────────
 
 export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
-  const { oldProductId, newProductId, petId } = route.params;
+  const { pantryItemId, newProductId, petId } = route.params;
   const insets = useSafeAreaInsets();
 
   const pets = useActivePetStore(s => s.pets);
@@ -52,24 +61,73 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
   // ── State ──
   const [oldProduct, setOldProduct] = useState<SafeSwitchProduct | null>(null);
   const [newProduct, setNewProduct] = useState<SafeSwitchProduct | null>(null);
+  const [slotIndex, setSlotIndex] = useState<number | null>(null);
   const [oldScore, setOldScore] = useState<number | null>(null);
   const [newScore, setNewScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [hasExisting, setHasExisting] = useState(false);
+  /** All this pet's daily-food anchors — used for the slot picker modal. */
+  const [allAnchors, setAllAnchors] = useState<PantryAnchor[]>([]);
+  const [slotPickerVisible, setSlotPickerVisible] = useState(false);
 
-  // ── Load products ──
+  // ── Load pantry anchor (old product via join) + new product + scores ──
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const productFields = 'id, name, brand, image_url, category, is_supplemental, ga_kcal_per_cup, ga_kcal_per_kg';
-      const [oldRes, newRes] = await Promise.all([
-        supabase.from('products').select(productFields).eq('id', oldProductId).single(),
-        supabase.from('products').select(productFields).eq('id', newProductId).single(),
+      setLoading(true);
+
+      // M9 Phase B: load old product via pantry_items join. This validates the
+      // anchor exists, is active, and belongs to this pet in one round-trip.
+      const [itemRes, newRes, anchorList] = await Promise.all([
+        supabase
+          .from('pantry_items')
+          .select(`
+            id,
+            product_id,
+            is_active,
+            products!product_id (id, name, brand, image_url, category, is_supplemental, ga_kcal_per_cup, ga_kcal_per_kg),
+            pantry_pet_assignments!inner (pet_id, slot_index)
+          `)
+          .eq('id', pantryItemId)
+          .eq('is_active', true)
+          .eq('pantry_pet_assignments.pet_id', petId)
+          .maybeSingle(),
+        supabase
+          .from('products')
+          .select('id, name, brand, image_url, category, is_supplemental, ga_kcal_per_cup, ga_kcal_per_kg')
+          .eq('id', newProductId)
+          .single(),
+        getPantryAnchor(petId),
       ]);
 
       if (cancelled) return;
-      if (oldRes.data) setOldProduct(oldRes.data as SafeSwitchProduct);
+
+      if (itemRes.error || !itemRes.data) {
+        Alert.alert('Item not found', 'This pantry item is no longer available for a Safe Switch.');
+        navigation.goBack();
+        return;
+      }
+
+      const item = itemRes.data as unknown as {
+        id: string;
+        product_id: string;
+        is_active: boolean;
+        products: SafeSwitchProduct | null;
+        pantry_pet_assignments: { pet_id: string; slot_index: number | null }[];
+      };
+
+      if (!item.products) {
+        Alert.alert('Item not found', 'This pantry item is missing product data.');
+        navigation.goBack();
+        return;
+      }
+
+      setOldProduct(item.products);
+      const asgn = item.pantry_pet_assignments.find(a => a.pet_id === petId);
+      setSlotIndex(asgn?.slot_index ?? null);
+      setAllAnchors(anchorList);
+
       if (newRes.data) setNewProduct(newRes.data as SafeSwitchProduct);
 
       // Resolve scores for active pet
@@ -77,11 +135,11 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         .from('pet_product_scores')
         .select('product_id, final_score')
         .eq('pet_id', petId)
-        .in('product_id', [oldProductId, newProductId]);
+        .in('product_id', [item.product_id, newProductId]);
 
       if (!cancelled && scores) {
         for (const row of scores as { product_id: string; final_score: number }[]) {
-          if (row.product_id === oldProductId) setOldScore(row.final_score);
+          if (row.product_id === item.product_id) setOldScore(row.final_score);
           if (row.product_id === newProductId) setNewScore(row.final_score);
         }
       }
@@ -92,7 +150,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [oldProductId, newProductId, petId]);
+  }, [pantryItemId, newProductId, petId, navigation]);
 
   // ── Start switch ──
   const handleStart = useCallback(async () => {
@@ -111,7 +169,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
 
       const sw = await createSafeSwitch({
         pet_id: petId,
-        old_product_id: oldProductId,
+        pantry_item_id: pantryItemId,
         new_product_id: newProductId,
         total_days: totalDays,
       });
@@ -126,7 +184,18 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [petId, petName, oldProductId, newProductId, totalDays, navigation]);
+  }, [petId, petName, pantryItemId, newProductId, totalDays, navigation]);
+
+  // ── Slot picker: swap anchor to a different pantry slot ──
+  const handlePickSlot = useCallback((nextAnchor: PantryAnchor) => {
+    setSlotPickerVisible(false);
+    if (nextAnchor.pantryItemId === pantryItemId) return;
+    navigation.replace('SafeSwitchSetup', {
+      pantryItemId: nextAnchor.pantryItemId,
+      newProductId,
+      petId,
+    });
+  }, [pantryItemId, newProductId, petId, navigation]);
 
   // ── Loading ──
   if (loading || !oldProduct || !newProduct) {
@@ -165,7 +234,13 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         showsVerticalScrollIndicator={false}
       >
         {/* Switching From */}
-        <Text style={styles.sectionLabel}>SWITCHING FROM</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>SWITCHING FROM</Text>
+          {/* M9 Phase B: slot indicator + Change link (only for 2+ slot pets). */}
+          {slotLabel(slotIndex) && (
+            <Text style={styles.slotLabel}>{slotLabel(slotIndex)}</Text>
+          )}
+        </View>
         <View style={[styles.productCard, { borderLeftColor: Colors.severityAmber }]}>
           {oldProduct.image_url && (
             <Image source={{ uri: oldProduct.image_url }} style={styles.productImage} />
@@ -182,6 +257,16 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
             <Text style={styles.productSub}>Currently in {petName}'s pantry</Text>
           </View>
         </View>
+        {allAnchors.length >= 2 && (
+          <TouchableOpacity
+            style={styles.changeSlotLink}
+            onPress={() => setSlotPickerVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="swap-vertical-outline" size={14} color={Colors.accent} />
+            <Text style={styles.changeSlotText}>Replace a different food</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Arrow */}
         <View style={styles.arrowContainer}>
@@ -278,6 +363,55 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* M9 Phase B: slot picker modal — 2-slot pets override the auto-picked anchor */}
+      <Modal
+        visible={slotPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSlotPickerVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalSheet, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Replace which food?</Text>
+            <Text style={styles.modalSubtitle}>
+              Pick the daily food slot {petName}'s Safe Switch should replace.
+            </Text>
+            {allAnchors.map((anchor) => {
+              const isCurrent = anchor.pantryItemId === pantryItemId;
+              return (
+                <TouchableOpacity
+                  key={anchor.pantryItemId}
+                  style={[styles.slotOption, isCurrent && styles.slotOptionCurrent]}
+                  onPress={() => handlePickSlot(anchor)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.slotOptionInfo}>
+                    <Text style={styles.slotOptionLabel}>
+                      {slotLabel(anchor.slotIndex) ?? 'Daily food'}
+                    </Text>
+                    <Text style={styles.slotOptionScore}>
+                      {anchor.resolvedScore != null ? `${anchor.resolvedScore}% match` : 'Not yet scored'}
+                      {anchor.productForm ? ` · ${anchor.productForm}` : ''}
+                    </Text>
+                  </View>
+                  {isCurrent && (
+                    <Ionicons name="checkmark" size={20} color={Colors.accent} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setSlotPickerVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -308,6 +442,13 @@ const styles = StyleSheet.create({
   },
 
   // Section labels
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '600',
@@ -315,6 +456,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
     marginTop: Spacing.md,
+  },
+  slotLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.accent,
+    letterSpacing: 0.3,
+  },
+  changeSlotLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.sm,
+    paddingVertical: 4,
+  },
+  changeSlotText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 
   // Product card
@@ -470,5 +630,79 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  // Slot picker modal (M9 Phase B)
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: Colors.cardSurface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderColor: Colors.hairlineBorder,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.hairlineBorder,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+    lineHeight: 20,
+  },
+  slotOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    marginBottom: Spacing.sm,
+  },
+  slotOptionCurrent: {
+    borderColor: Colors.accent,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  slotOptionInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  slotOptionLabel: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  slotOptionScore: {
+    fontSize: 12,
+    color: Colors.textTertiary,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  modalCancelText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
 });

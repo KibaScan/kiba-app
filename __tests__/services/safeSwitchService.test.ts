@@ -8,6 +8,7 @@ import {
   cancelSafeSwitch,
   pauseSafeSwitch,
   resumeSafeSwitch,
+  restartSafeSwitch,
   getActiveSwitchForPet,
   hasActiveSwitchForPet,
 } from '../../src/services/safeSwitchService';
@@ -21,6 +22,7 @@ jest.mock('../../src/utils/network', () => ({
 jest.mock('../../src/services/supabase', () => ({
   supabase: {
     from: jest.fn(),
+    rpc: jest.fn(),
     auth: {
       getSession: jest.fn().mockResolvedValue({
         data: { session: { user: { id: 'user-1' } } },
@@ -35,6 +37,20 @@ jest.mock('../../src/utils/safeSwitchHelpers', () => ({
   getTransitionSchedule: jest.fn().mockReturnValue([
     { day: 1, oldPct: 75, newPct: 25, phase: '75% old / 25% new' },
   ]),
+  computeSwitchOutcome: jest.fn().mockReturnValue({
+    totalDays: 7,
+    loggedDays: 7,
+    missedDays: 0,
+    perfectCount: 7,
+    softStoolCount: 0,
+    upsetCount: 0,
+    maxConsecutiveUpset: 0,
+  }),
+  getOutcomeMessage: jest.fn().mockReturnValue({
+    title: 'Switch Complete',
+    body: 'Luna has fully transitioned to NewBrand New Kibble.',
+    tone: 'good',
+  }),
 }));
 
 import { isOnline } from '../../src/utils/network';
@@ -69,11 +85,13 @@ const MOCK_SWITCH = {
   pet_id: 'pet-1',
   old_product_id: 'prod-old',
   new_product_id: 'prod-new',
+  pantry_item_id: 'pi-1',
   status: 'active',
   total_days: 7,
   started_at: '2026-03-25T00:00:00Z',
   completed_at: null,
   cancelled_at: null,
+  outcome_summary: null,
   created_at: '2026-03-25T00:00:00Z',
   updated_at: '2026-03-25T00:00:00Z',
 };
@@ -110,9 +128,31 @@ const MOCK_LOG = {
 
 const MOCK_INPUT = {
   pet_id: 'pet-1',
-  old_product_id: 'prod-old',
+  pantry_item_id: 'pi-1',
   new_product_id: 'prod-new',
   total_days: 7,
+};
+
+/** A successful pantry_items join row used by createSafeSwitch validation. */
+const MOCK_PANTRY_JOIN = {
+  id: 'pi-1',
+  product_id: 'prod-old',
+  is_active: true,
+  products: {
+    id: 'prod-old',
+    category: 'daily_food',
+    is_supplemental: false,
+    is_vet_diet: false,
+    target_species: 'dog',
+  },
+  pantry_pet_assignments: [{ pet_id: 'pet-1' }],
+};
+
+/** A successful new product lookup row used by createSafeSwitch validation. */
+const MOCK_NEW_PRODUCT_LOOKUP = {
+  id: 'prod-new',
+  category: 'daily_food',
+  is_supplemental: false,
 };
 
 // ─── Setup ──────────────────────────────────────────────
@@ -160,19 +200,52 @@ describe('offline guards', () => {
   });
 });
 
-// ─── createSafeSwitch ───────────────────────────────────
+// ─── createSafeSwitch (M9 Phase B) ──────────────────────
 
 describe('createSafeSwitch', () => {
-  test('inserts and returns switch data on success', async () => {
-    const chain = mockChain({ data: MOCK_SWITCH, error: null });
-    (supabase.from as jest.Mock).mockReturnValue(chain);
+  /**
+   * Helper that wires the three supabase.from calls createSafeSwitch makes:
+   *   1. pantry_items (join validation)
+   *   2. products (new product validation)
+   *   3. safe_switches (insert)
+   */
+  function wirePantryAndInsert(opts: {
+    pantryData: unknown;
+    pantryError?: unknown;
+    /** Pass `null` explicitly to simulate "new product not found". Undefined → default. */
+    newProductData?: unknown;
+    newProductError?: unknown;
+    insertData?: unknown;
+    insertError?: unknown;
+  }) {
+    const pantryChain = mockChain({ data: opts.pantryData, error: opts.pantryError ?? null });
+    const newProductChain = mockChain({
+      // Use `'newProductData' in opts` so explicit null survives (not coalesced to default)
+      data: 'newProductData' in opts ? opts.newProductData : MOCK_NEW_PRODUCT_LOOKUP,
+      error: opts.newProductError ?? null,
+    });
+    const insertChain = mockChain({
+      data: opts.insertData ?? MOCK_SWITCH,
+      error: opts.insertError ?? null,
+    });
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'pantry_items') return pantryChain;
+      if (table === 'products') return newProductChain;
+      if (table === 'safe_switches') return insertChain;
+      return mockChain({ data: null, error: null });
+    });
+    return { pantryChain, newProductChain, insertChain };
+  }
+
+  test('validates pantry anchor, derives old_product_id, and inserts successfully', async () => {
+    const { insertChain } = wirePantryAndInsert({ pantryData: MOCK_PANTRY_JOIN });
 
     const result = await createSafeSwitch(MOCK_INPUT);
 
-    expect(supabase.from).toHaveBeenCalledWith('safe_switches');
-    expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({
+    expect(insertChain.insert).toHaveBeenCalledWith(expect.objectContaining({
       user_id: 'user-1',
       pet_id: 'pet-1',
+      pantry_item_id: 'pi-1',
       old_product_id: 'prod-old',
       new_product_id: 'prod-new',
       total_days: 7,
@@ -181,18 +254,89 @@ describe('createSafeSwitch', () => {
     expect(result).toEqual(MOCK_SWITCH);
   });
 
+  test('rejects when pantry item is not found (orphan switch attempt)', async () => {
+    wirePantryAndInsert({ pantryData: null });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow(
+      'This pantry item is no longer available',
+    );
+  });
+
+  test('rejects when joined product is not daily_food', async () => {
+    wirePantryAndInsert({
+      pantryData: {
+        ...MOCK_PANTRY_JOIN,
+        products: { ...MOCK_PANTRY_JOIN.products, category: 'treat' },
+      },
+    });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow(
+      'Safe Switch is only available for daily food',
+    );
+  });
+
+  test('rejects when joined product is supplemental', async () => {
+    wirePantryAndInsert({
+      pantryData: {
+        ...MOCK_PANTRY_JOIN,
+        products: { ...MOCK_PANTRY_JOIN.products, is_supplemental: true },
+      },
+    });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow(
+      'Safe Switch is not available for supplemental',
+    );
+  });
+
+  test('rejects when joined product is vet diet', async () => {
+    wirePantryAndInsert({
+      pantryData: {
+        ...MOCK_PANTRY_JOIN,
+        products: { ...MOCK_PANTRY_JOIN.products, is_vet_diet: true },
+      },
+    });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow(
+      'Safe Switch is not available for supplemental or vet diet',
+    );
+  });
+
+  test('rejects when new product does not exist', async () => {
+    wirePantryAndInsert({
+      pantryData: MOCK_PANTRY_JOIN,
+      newProductData: null,
+    });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow('New product not found');
+  });
+
+  test('rejects when new product is not daily_food', async () => {
+    wirePantryAndInsert({
+      pantryData: MOCK_PANTRY_JOIN,
+      newProductData: { ...MOCK_NEW_PRODUCT_LOOKUP, category: 'treat' },
+    });
+
+    await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow('The new product must be a daily food');
+  });
+
   test('throws specific error on unique constraint violation (23505)', async () => {
-    const chain = mockChain({ data: null, error: { code: '23505', message: 'duplicate' } });
-    (supabase.from as jest.Mock).mockReturnValue(chain);
+    wirePantryAndInsert({
+      pantryData: MOCK_PANTRY_JOIN,
+      insertData: null,
+      insertError: { code: '23505', message: 'duplicate' },
+    });
 
     await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow(
       'An active food transition already exists for this pet',
     );
   });
 
-  test('throws generic error on other failures', async () => {
-    const chain = mockChain({ data: null, error: { code: '42000', message: 'unknown error' } });
-    (supabase.from as jest.Mock).mockReturnValue(chain);
+  test('throws generic error on other insert failures', async () => {
+    wirePantryAndInsert({
+      pantryData: MOCK_PANTRY_JOIN,
+      insertData: null,
+      insertError: { code: '42000', message: 'unknown error' },
+    });
 
     await expect(createSafeSwitch(MOCK_INPUT)).rejects.toThrow('Failed to create safe switch');
   });
@@ -225,25 +369,72 @@ describe('logTummyCheck', () => {
 
 // ─── Status Updates ─────────────────────────────────────
 
-describe('completeSafeSwitch', () => {
-  test('updates status to completed with timestamp', async () => {
-    const chain = mockChain({ data: null, error: null });
-    (supabase.from as jest.Mock).mockReturnValue(chain);
+describe('completeSafeSwitch (M9 Phase B — atomic RPC)', () => {
+  /**
+   * Helper: wires the two parallel fetches (safe_switches + safe_switch_logs)
+   * and the rpc call. The service computes outcome + message via mocked helpers.
+   */
+  function wireCompletion(opts: {
+    switchData?: unknown;
+    switchError?: unknown;
+    logsData?: unknown;
+    rpcError?: unknown;
+  }) {
+    const switchRow = opts.switchData ?? {
+      id: 'sw-1',
+      pet_id: 'pet-1',
+      new_product_id: 'prod-new',
+      total_days: 7,
+      pet: { name: 'Luna' },
+      new_product: { brand: 'NewBrand', name: 'New Kibble' },
+    };
+    const switchChain = mockChain({ data: switchRow, error: opts.switchError ?? null });
+    const logsChain = mockChain({ data: opts.logsData ?? [], error: null });
 
-    await completeSafeSwitch('sw-1');
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'safe_switches') return switchChain;
+      if (table === 'safe_switch_logs') return logsChain;
+      return mockChain({ data: null, error: null });
+    });
 
-    expect(supabase.from).toHaveBeenCalledWith('safe_switches');
-    expect(chain.update).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'completed',
-    }));
-    // Verify completed_at is included
-    const updatePayload = (chain.update as jest.Mock).mock.calls[0][0];
-    expect(updatePayload.completed_at).toBeDefined();
+    (supabase.rpc as jest.Mock).mockResolvedValue({
+      data: null,
+      error: opts.rpcError ?? null,
+    });
+
+    return { switchChain, logsChain };
+  }
+
+  test('calls complete_safe_switch_with_pantry_swap RPC with outcome_summary', async () => {
+    wireCompletion({});
+
+    const result = await completeSafeSwitch('sw-1');
+
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'complete_safe_switch_with_pantry_swap',
+      expect.objectContaining({
+        p_switch_id: 'sw-1',
+        p_outcome_summary: expect.objectContaining({
+          outcome: expect.objectContaining({ totalDays: 7 }),
+          message: expect.objectContaining({ title: 'Switch Complete', tone: 'good' }),
+        }),
+      }),
+    );
+    expect(result).toEqual({
+      outcome: expect.objectContaining({ totalDays: 7, perfectCount: 7 }),
+      message: expect.objectContaining({ title: 'Switch Complete' }),
+    });
   });
 
-  test('throws on error', async () => {
-    const chain = mockChain({ data: null, error: { message: 'fail' } });
-    (supabase.from as jest.Mock).mockReturnValue(chain);
+  test('throws when the switch row cannot be loaded', async () => {
+    wireCompletion({ switchData: null, switchError: { message: 'not found' } });
+
+    await expect(completeSafeSwitch('sw-1')).rejects.toThrow('Failed to load safe switch');
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  test('throws when the RPC call fails', async () => {
+    wireCompletion({ rpcError: { message: 'rpc failed' } });
 
     await expect(completeSafeSwitch('sw-1')).rejects.toThrow('Failed to complete safe switch');
   });
@@ -300,30 +491,29 @@ describe('getActiveSwitchForPet', () => {
     expect(result).toBeNull();
   });
 
-  test('returns assembled SafeSwitchCardData on success', async () => {
+  test('returns assembled SafeSwitchCardData using direct pantry_item_id join (Phase B)', async () => {
     const switchRow = {
       ...MOCK_SWITCH,
       old_product: MOCK_PRODUCT_OLD,
       new_product: MOCK_PRODUCT_NEW,
     };
 
-    // Table-dispatch mock: different results per table
     const switchChain = mockChain({ data: switchRow, error: null });
     const logsChain = mockChain({ data: [MOCK_LOG], error: null });
     const scoresChain = mockChain({ data: [
       { product_id: 'prod-old', final_score: 45 },
       { product_id: 'prod-new', final_score: 72 },
     ], error: null });
-    const pantryChain = mockChain({ data: [{ id: 'pi-1' }], error: null });
-    const asgnChain = mockChain({ data: { serving_size: 1.2, serving_size_unit: 'cups', feedings_per_day: 2 }, error: null });
+    // Phase B: direct join on pantry_pet_assignments via pantry_item_id (no intermediate pantry_items fetch)
+    const asgnChain = mockChain({
+      data: { serving_size: 1.2, serving_size_unit: 'cups', feedings_per_day: 2 },
+      error: null,
+    });
 
-    let fromCallCount = 0;
     (supabase.from as jest.Mock).mockImplementation((table: string) => {
-      fromCallCount++;
       if (table === 'safe_switches') return switchChain;
       if (table === 'safe_switch_logs') return logsChain;
       if (table === 'pet_product_scores') return scoresChain;
-      if (table === 'pantry_items') return pantryChain;
       if (table === 'pantry_pet_assignments') return asgnChain;
       return mockChain({ data: null, error: null });
     });
@@ -340,9 +530,9 @@ describe('getActiveSwitchForPet', () => {
     expect(result!.currentDay).toBe(3);
     expect(result!.todayMix).toEqual({ oldPct: 50, newPct: 50 });
     expect(result!.dailyCups).toBe(2.4); // 1.2 cups × 2 feedings
+    // Verify the fragile product_id string-match path is NOT used — Phase B drops it
+    expect(asgnChain.eq).toHaveBeenCalledWith('pantry_item_id', 'pi-1');
     expect(getCurrentDay).toHaveBeenCalledWith(MOCK_SWITCH.started_at, 7);
-    expect(getMixForDay).toHaveBeenCalledWith(3, 7);
-    expect(getTransitionSchedule).toHaveBeenCalledWith(7);
   });
 
   test('returns null gracefully on Supabase error', async () => {
@@ -354,23 +544,23 @@ describe('getActiveSwitchForPet', () => {
     expect(result).toBeNull();
   });
 
-  test('falls back to 2.4 dailyCups when no pantry data', async () => {
-    const switchRow = {
+  test('falls back to 2.4 dailyCups for historical rows with null pantry_item_id', async () => {
+    // Phase B: historical switches created before migration 031 have no anchor.
+    const historicalSwitch = {
       ...MOCK_SWITCH,
+      pantry_item_id: null,
       old_product: MOCK_PRODUCT_OLD,
       new_product: MOCK_PRODUCT_NEW,
     };
 
-    const switchChain = mockChain({ data: switchRow, error: null });
+    const switchChain = mockChain({ data: historicalSwitch, error: null });
     const logsChain = mockChain({ data: [], error: null });
     const scoresChain = mockChain({ data: [], error: null });
-    const pantryChain = mockChain({ data: [], error: null });
 
     (supabase.from as jest.Mock).mockImplementation((table: string) => {
       if (table === 'safe_switches') return switchChain;
       if (table === 'safe_switch_logs') return logsChain;
       if (table === 'pet_product_scores') return scoresChain;
-      if (table === 'pantry_items') return pantryChain;
       return mockChain({ data: null, error: null });
     });
 
@@ -378,6 +568,47 @@ describe('getActiveSwitchForPet', () => {
 
     expect(result).not.toBeNull();
     expect(result!.dailyCups).toBe(2.4);
+  });
+});
+
+// ─── restartSafeSwitch (M9 Phase B — anchor propagation) ──
+
+describe('restartSafeSwitch', () => {
+  test('propagates pantry_item_id from the old switch to the new row', async () => {
+    const oldSwitchRow = {
+      pet_id: 'pet-1',
+      old_product_id: 'prod-old',
+      new_product_id: 'prod-new',
+      total_days: 7,
+      pantry_item_id: 'pi-1',
+    };
+    const fetchChain = mockChain({ data: oldSwitchRow, error: null });
+    const cancelChain = mockChain({ data: null, error: null });
+    const insertChain = mockChain({ data: { ...MOCK_SWITCH, id: 'sw-2' }, error: null });
+
+    let fromCall = 0;
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      fromCall++;
+      if (table === 'safe_switches') {
+        // First call: SELECT for fetch. Second: UPDATE for cancel. Third: INSERT for new row.
+        if (fromCall === 1) return fetchChain;
+        if (fromCall === 2) return cancelChain;
+        return insertChain;
+      }
+      return mockChain({ data: null, error: null });
+    });
+
+    const result = await restartSafeSwitch('sw-1');
+
+    expect(insertChain.insert).toHaveBeenCalledWith(expect.objectContaining({
+      pet_id: 'pet-1',
+      pantry_item_id: 'pi-1', // <-- the key Phase B assertion
+      old_product_id: 'prod-old',
+      new_product_id: 'prod-new',
+      total_days: 7,
+      status: 'active',
+    }));
+    expect(result.id).toBe('sw-2');
   });
 });
 

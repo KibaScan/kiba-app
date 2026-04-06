@@ -8,18 +8,26 @@ export type TummyCheck = 'perfect' | 'soft_stool' | 'upset';
 
 // ─── DB Interfaces ──────────────────────────────────────
 
-/** Matches safe_switches table exactly. */
+/** Matches safe_switches table exactly. Migration 031 added pantry_item_id + outcome_summary. */
 export interface SafeSwitch {
   id: string;
   user_id: string;
   pet_id: string;
   old_product_id: string;
   new_product_id: string;
+  /**
+   * M9 Phase B: anchors the switch to a specific pantry_items row so completion
+   * can atomically swap that row's product_id. Nullable for historical rows
+   * and backfill-unmatched rows. New rows enforced non-null via service layer.
+   */
+  pantry_item_id: string | null;
   status: SafeSwitchStatus;
   total_days: number;
   started_at: string;
   completed_at: string | null;
   cancelled_at: string | null;
+  /** M9 Phase B: persisted SwitchOutcome + OutcomeMessage at completion time. */
+  outcome_summary: { outcome: SwitchOutcome; message: OutcomeMessage } | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,10 +79,15 @@ export interface SafeSwitchCardData {
   dailyCups: number;
 }
 
-/** Input for creating a new safe switch. */
+/**
+ * Input for creating a new safe switch.
+ * M9 Phase B: `pantry_item_id` replaces `old_product_id`. The service derives
+ * old_product_id server-side from the anchored pantry item's product_id, so
+ * callers cannot create switches against phantom products.
+ */
 export interface CreateSafeSwitchInput {
   pet_id: string;
-  old_product_id: string;
+  pantry_item_id: string;
   new_product_id: string;
   total_days: number;
 }

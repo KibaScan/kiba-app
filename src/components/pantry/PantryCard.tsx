@@ -35,6 +35,8 @@ interface PantryCardProps {
   onGaveTreat?: (itemId: string) => void;
   /** M7: Navigate to ResultScreen to see Safe Swap alternatives. */
   onFindReplacement?: (productId: string) => void;
+  /** M9 Phase B: true when this item is the anchor of an active/paused Safe Switch. */
+  isLocked?: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -97,7 +99,7 @@ function getDepletionBarColor(pct: number): string {
 
 // ─── Component ──────────────────────────────────────────
 
-export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement }: PantryCardProps) {
+export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement, isLocked }: PantryCardProps) {
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
@@ -294,8 +296,16 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           </Text>
         )}
 
-        {/* M7: Find a replacement — low-scoring daily food (score < 60) */}
-        {onFindReplacement && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
+        {/* M9 Phase B: locked badge when this item is anchoring an active Safe Switch */}
+        {isLocked && (
+          <View style={styles.lockedBadge}>
+            <Ionicons name="swap-horizontal-outline" size={12} color={Colors.accent} />
+            <Text style={styles.lockedBadgeText}>In Safe Switch</Text>
+          </View>
+        )}
+
+        {/* M7: Find a replacement — low-scoring daily food (score < 60). Hidden when locked. */}
+        {!isLocked && onFindReplacement && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
          product.category === 'daily_food' && item.resolved_score != null && item.resolved_score < 60 && (
           <TouchableOpacity
             style={styles.findReplacementButton}
@@ -627,6 +637,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   findReplacementText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+  lockedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    backgroundColor: `${Colors.accent}15`,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  lockedBadgeText: {
     fontSize: FontSizes.xs,
     color: Colors.accent,
     fontWeight: '600',

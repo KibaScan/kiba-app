@@ -27,7 +27,7 @@ export interface PantryItem {
   updated_at: string;
 }
 
-/** Matches pantry_pet_assignments table exactly (11 columns). */
+/** Matches pantry_pet_assignments table exactly. Migration 031 added slot_index. */
 export interface PantryPetAssignment {
   id: string;
   pantry_item_id: string;
@@ -38,8 +38,24 @@ export interface PantryPetAssignment {
   feeding_frequency: FeedingFrequency;
   feeding_times: string[] | null;
   notifications_on: boolean;
+  /** M9 Phase B: 0 = primary slot, 1 = secondary slot, null = grandfathered or non-daily-food */
+  slot_index: number | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Lightweight "where does this daily food live?" lookup result.
+ * Populated by pantryService.getPantryAnchor. Used by ResultScreen to decide
+ * whether to show "Switch to this" and by pickSlotForSwap to pick which slot
+ * a Safe Switch should replace on 2-slot pets.
+ */
+export interface PantryAnchor {
+  pantryItemId: string;
+  productId: string;
+  productForm: string | null;
+  slotIndex: number | null;
+  resolvedScore: number | null;
 }
 
 // ─── Composite / Computed Interfaces ────────────────────

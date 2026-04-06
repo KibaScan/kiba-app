@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   PantryPetAssignment,
   PantryCardData,
+  PantryAnchor,
   ServingMode,
   ServingSizeUnit,
   QuantityUnit,
@@ -529,4 +530,44 @@ export function defaultServingMode(productForm: string | null): ServingMode {
     default:
       return 'weight';
   }
+}
+
+// ─── Safe Switch slot resolution (M9 Phase B) ───────────
+
+/**
+ * Picks the pantry anchor (slot) that a Safe Switch should replace.
+ *
+ * Rules (in priority order):
+ *   1. Zero anchors → null (caller should hide the "Switch to this" CTA).
+ *   2. One anchor → that anchor.
+ *   3. Multiple anchors:
+ *      a. Prefer exact product_form match (dry↔dry, wet↔wet). If newProductForm
+ *         is null, no form preference is applied.
+ *      b. Tie-break by lowest resolvedScore (most urgent to replace).
+ *      c. Final tie-break: prefer slot 0 (primary) over slot 1 (secondary).
+ *         Grandfathered null slots sort last via `?? 99`.
+ *
+ * Pure, side-effect free. Used by ResultScreen at tap time.
+ */
+export function pickSlotForSwap(
+  anchors: PantryAnchor[],
+  newProductForm: string | null,
+): PantryAnchor | null {
+  if (anchors.length === 0) return null;
+  if (anchors.length === 1) return anchors[0];
+
+  // 3a: exact form match preferred
+  const formMatches = newProductForm
+    ? anchors.filter(a => a.productForm === newProductForm)
+    : [];
+  const candidates = formMatches.length > 0 ? formMatches : anchors;
+
+  // 3b + 3c: lowest score wins, then slot 0 beats slot 1
+  const sorted = [...candidates].sort((a, b) => {
+    const sa = a.resolvedScore ?? 100;
+    const sb = b.resolvedScore ?? 100;
+    if (sa !== sb) return sa - sb;
+    return (a.slotIndex ?? 99) - (b.slotIndex ?? 99);
+  });
+  return sorted[0];
 }
