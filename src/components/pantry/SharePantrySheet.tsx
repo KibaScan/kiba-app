@@ -33,7 +33,7 @@ import {
   resolveScoreForPets,
 } from '../../services/pantryService';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
-import { computePetDer, computeAutoServingSize } from '../../utils/pantryHelpers';
+import { computeMealBasedServing } from '../../utils/pantryHelpers';
 import { canUseGoalWeight } from '../../utils/permissions';
 import { chipToggle } from '../../utils/haptics';
 
@@ -109,13 +109,17 @@ export function SharePantrySheet({
         let servingSize = source?.serving_size ?? 1;
         let servingSizeUnit = source?.serving_size_unit ?? 'cups';
 
-        const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
-        if (petDer != null) {
-          const auto = computeAutoServingSize(petDer, feedingsPerDay, item.product as Product);
-          if (auto) {
-            servingSize = Math.round(auto.amount * 100) / 100;
-            servingSizeUnit = auto.unit;
-          }
+        const auto = computeMealBasedServing(
+          pet,
+          item.product as unknown as Product,
+          feedingsPerDay,
+          feedingsPerDay, // Assumes 100% allocation for shared pet initial assignment
+          canUseGoalWeight(),
+          pet.weight_goal_level
+        );
+        if (auto) {
+          servingSize = Math.round(auto.amount * 100) / 100;
+          servingSizeUnit = auto.unit;
         }
 
         const newAssign = await sharePantryItem(item.id, pet.id, {
@@ -168,13 +172,17 @@ export function SharePantrySheet({
     let newServing = assign.serving_size;
     let newUnit = assign.serving_size_unit;
     if (pet) {
-      const petDer = computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level);
-      if (petDer != null) {
-        const auto = computeAutoServingSize(petDer, next, item.product as Product);
-        if (auto) {
-          newServing = Math.round(auto.amount * 100) / 100;
-          newUnit = auto.unit;
-        }
+      const auto = computeMealBasedServing(
+        pet,
+        item.product as unknown as Product,
+        next,
+        next, // Assumes 100% allocation when editing from this sheet
+        canUseGoalWeight(),
+        pet.weight_goal_level
+      );
+      if (auto) {
+        newServing = Math.round(auto.amount * 100) / 100;
+        newUnit = auto.unit;
       }
     }
 

@@ -92,6 +92,7 @@ export interface CalorieContext {
   daily_kcal: number;
   target_kcal: number;
   source: 'label' | 'estimated' | null;
+  allocation_pct?: number;
 }
 
 export interface PantryCardData extends PantryItemWithProduct {

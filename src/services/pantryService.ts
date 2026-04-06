@@ -600,10 +600,18 @@ export async function evaluateDietCompleteness(
 
   const typedItems = items as unknown as { id: string; products: { is_supplemental: boolean; category: string } | null }[];
 
-  const hasCompleteFood = typedItems.some(
+  const completeFoods = typedItems.filter(
     i => i.products?.is_supplemental === false && i.products?.category === 'daily_food',
   );
-  if (hasCompleteFood) {
+  
+  if (completeFoods.length > 2) {
+    return {
+      status: 'red_warning',
+      message: 'You have too many daily foods active. Please remove a legacy food.',
+    };
+  }
+
+  if (completeFoods.length > 0) {
     return { status: 'complete', message: null };
   }
 

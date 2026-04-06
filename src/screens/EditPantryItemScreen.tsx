@@ -207,19 +207,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const canAutoCalc = autoServingResult != null;
   const effectiveAutoMode = autoMode && canAutoCalc;
 
-  // Auto-sync serving size when auto mode is active
-  useEffect(() => {
-    if (!effectiveAutoMode || !autoServingResult || !myAssignment) return;
-    const rounded = Math.round(autoServingResult.amount * 100) / 100;
-    setServingSize(String(rounded));
-    updatePetAssignment(myAssignment.id, {
-      serving_size: rounded,
-      serving_size_unit: autoServingResult.unit,
-    } as Parameters<typeof updatePetAssignment>[1]).catch((e) => {
-      if (e instanceof PantryOfflineError) Alert.alert('Offline', e.message);
-    });
-  }, [effectiveAutoMode, autoServingResult]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Card opacity helpers ──
   const feedingOpacity = isRecalled ? 0.4 : isEmpty ? 0.6 : 1;
   const scheduleOpacity = isRecalled ? 0.4 : isEmpty ? 0.6 : 1;
@@ -260,8 +247,16 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     }
     if (!isAuto && autoServingResult) {
       setServingSize(String(Math.round(autoServingResult.amount * 100) / 100));
+    } else if (isAuto && autoServingResult) {
+      const rounded = Math.round(autoServingResult.amount * 100) / 100;
+      setServingSize(String(rounded));
+      saveAssignmentField({ 
+        serving_size: rounded, 
+        serving_size_unit: autoServingResult.unit 
+      });
     }
-  }, [autoServingResult, manualKey]);
+  }, [autoServingResult, manualKey, saveAssignmentField]);
+
 
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
@@ -281,8 +276,15 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   }, [servingSize, saveAssignmentField]);
 
   const handleFeedingsChange = useCallback(async (delta: number) => {
-    const next = Math.max(1, Math.min(5, feedingsPerDay + delta));
+    const hasSibling = !isTreat && siblingItem;
+    const currentTotalMeals = hasSibling ? feedingsPerDay + siblingFeedings : feedingsPerDay;
+    const maxMeals = hasSibling ? Math.max(1, currentTotalMeals - 1) : 5;
+
+    let next = feedingsPerDay + delta;
+    if (next < 1) next = 1;
+    if (next > maxMeals) return;
     if (next === feedingsPerDay) return;
+
     chipToggle();
     setFeedingsPerDay(next);
 
@@ -293,10 +295,31 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       setFeedingTimes(trimmedTimes);
     }
 
-    // 1. Save this item's assignment
+    let nextAmount = Number(servingSize);
+    let nextUnit = isUnitMode ? 'units' : 'cups';
+
+    if (autoMode && product && activePet && !isTreat) {
+       const res = computeMealBasedServing(
+         activePet,
+         product as unknown as Product,
+         next,
+         currentTotalMeals,
+         canUseGoalWeight(),
+         activePet.weight_goal_level
+       );
+       if (res) {
+          nextAmount = Math.round(res.amount * 100) / 100;
+          nextUnit = res.unit;
+          setServingSize(String(nextAmount));
+       }
+    }
+
+    // 1. Save this item's assignment synchronously
     try {
       await saveAssignmentField({
         feedings_per_day: next,
+        serving_size: nextAmount,
+        serving_size_unit: nextUnit,
         ...(trimmedTimes !== feedingTimes ? { feeding_times: trimmedTimes } : {}),
       });
     } catch {
@@ -304,22 +327,19 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     }
 
     // 2. Rebalance sibling serving (daily food with a sibling only)
-    // Total grows/shrinks with this food's feedings — sibling keeps its feedings,
-    // but its serving is recalculated for the new allocation percentage.
-    if (!isTreat && siblingItem && activePet) {
+    if (hasSibling && activePet) {
       const siblingProduct = siblingItem.product as unknown as Product;
-      const newTotal = next + siblingFeedings;
       try {
         await rebalanceExistingFood(
           siblingItem.id,
           activePet,
-          next,
-          newTotal,
+          next, // The meals THIS food covers (stealing from total)
+          currentTotalMeals,
           siblingProduct,
           canUseGoalWeight(),
         );
 
-        const siblingPct = Math.round(siblingFeedings / newTotal * 100);
+        const siblingPct = Math.round((currentTotalMeals - next) / currentTotalMeals * 100);
         const siblingName = stripBrandFromName(siblingProduct.brand, siblingProduct.name);
         setRebalanceNote(`Updated ${siblingName} to ${siblingPct}% allocation`);
         if (rebalanceNoteTimer.current) clearTimeout(rebalanceNoteTimer.current);
@@ -329,12 +349,11 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
         if (activePetId) loadPantry(activePetId);
       } catch (e) {
         if (e instanceof PantryOfflineError) Alert.alert('Offline', (e as PantryOfflineError).message);
-        // Non-critical: primary save already succeeded
       }
     }
 
     rescheduleAllFeeding().catch(() => {});
-  }, [feedingsPerDay, feedingTimes, siblingFeedings, isTreat, siblingItem, activePet, activePetId, saveAssignmentField, loadPantry]);
+  }, [feedingsPerDay, feedingTimes, siblingFeedings, isTreat, siblingItem, activePet, activePetId, saveAssignmentField, loadPantry, autoMode, product, isUnitMode, servingSize]);
 
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
@@ -484,6 +503,26 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             <View style={styles.headerInfo}>
               <Text style={styles.headerBrand} numberOfLines={1}>{product.brand}</Text>
               <Text style={styles.headerName} numberOfLines={1}>{displayName}</Text>
+              
+              {!isTreat && product.category === 'daily_food' && !product.is_supplemental && !product.is_vet_diet && (
+                <>
+                  {myAssignment?.slot_index === 0 && (
+                    <View style={styles.primaryBadge}>
+                      <Text style={styles.primaryBadgeText}>Primary (Main)</Text>
+                    </View>
+                  )}
+                  {myAssignment?.slot_index === 1 && (
+                    <View style={styles.secondaryBadge}>
+                      <Text style={styles.secondaryBadgeText}>Secondary (Mix-in)</Text>
+                    </View>
+                  )}
+                  {myAssignment?.slot_index == null && (
+                    <View style={styles.legacyBadge}>
+                      <Text style={styles.legacyBadgeText}>Legacy (Unassigned)</Text>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
             {product.image_url ? (
               <Image source={{ uri: product.image_url }} style={styles.headerImage} />
@@ -871,6 +910,45 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: '600',
     color: Colors.textPrimary,
+  },
+  primaryBadge: {
+    backgroundColor: 'rgba(88, 86, 214, 0.12)', // Indigo tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  primaryBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#5856D6',
+    fontWeight: '600',
+  },
+  secondaryBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)', // Orange tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  secondaryBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#FF9500',
+    fontWeight: '600',
+  },
+  legacyBadge: {
+    backgroundColor: 'rgba(255, 59, 48, 0.12)', // Red tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  legacyBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#FF3B30',
+    fontWeight: '600',
   },
   headerImage: {
     width: 44,

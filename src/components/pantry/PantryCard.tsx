@@ -175,6 +175,26 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
                   <Text style={styles.supplementalBadgeText}>Supplemental</Text>
                 </View>
               )}
+              {/* Slot Indicator */}
+              {!isTreat && product.category === 'daily_food' && !product.is_supplemental && !isVetDiet && (
+                <>
+                  {myAssignment?.slot_index === 0 && (
+                    <View style={styles.primaryBadge}>
+                      <Text style={styles.primaryBadgeText}>Primary</Text>
+                    </View>
+                  )}
+                  {myAssignment?.slot_index === 1 && (
+                    <View style={styles.secondaryBadge}>
+                      <Text style={styles.secondaryBadgeText}>Secondary</Text>
+                    </View>
+                  )}
+                  {myAssignment?.slot_index == null && (
+                    <View style={styles.legacyBadge}>
+                      <Text style={styles.legacyBadgeText}>Legacy</Text>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
 
             <Text style={styles.feedingSummary} numberOfLines={1}>{feedingSummary}</Text>
@@ -291,9 +311,23 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
 
         {/* Calorie context */}
         {!isTreat && item.calorie_context && (
-          <Text style={styles.calorieText}>
-            ~{item.calorie_context.daily_kcal} kcal/day of {item.calorie_context.target_kcal} kcal target
-          </Text>
+           (() => {
+             const isLegacy = product.category === 'daily_food' && !product.is_supplemental && !isVetDiet && myAssignment?.slot_index == null;
+             if (isLegacy) {
+               return (
+                 <Text style={styles.legacyCalorieText}>
+                   Over budget — conflicts with active slots
+                 </Text>
+               );
+             }
+             return (
+               <Text style={styles.calorieText}>
+                 {item.calorie_context.allocation_pct != null
+                   ? `${item.calorie_context.allocation_pct}% of daily target (~${item.calorie_context.daily_kcal} kcal)`
+                   : `~${item.calorie_context.daily_kcal} kcal/day of ${item.calorie_context.target_kcal} kcal target`}
+               </Text>
+             );
+           })()
         )}
 
         {/* M9 Phase B: locked badge when this item is anchoring an active Safe Switch */}
@@ -490,6 +524,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  primaryBadge: {
+    backgroundColor: 'rgba(88, 86, 214, 0.12)', // Indigo tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  primaryBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#5856D6',
+    fontWeight: '600',
+  },
+  secondaryBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)', // Orange tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  secondaryBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#FF9500',
+    fontWeight: '600',
+  },
+  legacyBadge: {
+    backgroundColor: 'rgba(255, 59, 48, 0.12)', // Red tint
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  legacyBadgeText: {
+    fontSize: FontSizes.xs,
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
+  legacyCalorieText: {
+    fontSize: FontSizes.sm,
+    color: '#FF3B30',
+    marginTop: 4,
   },
 
   // Right column

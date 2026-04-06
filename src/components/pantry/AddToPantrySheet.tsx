@@ -35,7 +35,6 @@ import {
   calculateDepletionBreakdown,
   computePetDer,
   computeExistingPantryKcal,
-  computeAutoServingSize,
   computeBudgetWarning,
   getSmartDefaultFeedingsPerDay,
   getConditionFeedingsPerDay,

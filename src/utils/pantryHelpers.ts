@@ -426,6 +426,7 @@ export function getCalorieContext(
   servingSize: number,
   servingSizeUnit: ServingSizeUnit,
   feedingsPerDay: number,
+  isPremiumGoalWeight: boolean = false,
 ): CalorieContext | null {
   const cal = resolveCalories(product);
   if (!cal) return null;
@@ -441,12 +442,14 @@ export function getCalorieContext(
   }
 
   // D-160: Use computePetDer which respects weight_goal_level
-  const targetKcal = computePetDer(pet, false, pet.weight_goal_level) ?? 0;
+  const targetKcal = computePetDer(pet, isPremiumGoalWeight, pet.weight_goal_level) ?? 0;
+  const allocation_pct = targetKcal > 0 ? Math.round((dailyKcal / targetKcal) * 100) : undefined;
 
   return {
     daily_kcal: Math.round(dailyKcal),
     target_kcal: targetKcal,
     source: cal.source,
+    allocation_pct,
   };
 }
 

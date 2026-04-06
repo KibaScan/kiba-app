@@ -5,6 +5,10 @@
 import { supabase } from './supabase';
 import { isOnline } from '../utils/network';
 import { PantryOfflineError } from '../types/pantry';
+import { rebalanceExistingFood } from './pantryService';
+import { canUseGoalWeight } from '../utils/permissions';
+import type { Pet } from '../types/pet';
+import type { Product } from '../types';
 import {
   getCurrentDay,
   getMixForDay,
@@ -202,9 +206,11 @@ export async function completeSafeSwitch(
       .select(`
         id,
         pet_id,
+        pantry_item_id,
+        new_feedings_per_day,
         new_product_id,
         total_days,
-        pet:pets!pet_id (name),
+        pet:pets!pet_id (*),
         new_product:products!new_product_id (brand, name)
       `)
       .eq('id', switchId)
@@ -222,9 +228,11 @@ export async function completeSafeSwitch(
   const sw = switchRes.data as unknown as {
     id: string;
     pet_id: string;
+    pantry_item_id: string | null;
+    new_feedings_per_day: number | null;
     new_product_id: string;
     total_days: number;
-    pet: { name: string } | null;
+    pet: Pet | null;
     new_product: { brand: string; name: string } | null;
   };
 
@@ -248,7 +256,40 @@ export async function completeSafeSwitch(
     throw new Error(`Failed to complete safe switch: ${rpcErr.message}`);
   }
 
-  // Step 4: Return computed values so the caller can render without a re-fetch
+  // Step 4: Rebalance sibling if it exists
+  if (sw.pet && sw.pantry_item_id && sw.new_feedings_per_day != null) {
+    const { data: siblingQuery, error: siblingErr } = await supabase
+      .from('pantry_pet_assignments')
+      .select('pantry_item_id, feedings_per_day, pantry_items!inner(is_active, products!inner(*))')
+      .eq('pet_id', sw.pet_id)
+      .neq('pantry_item_id', sw.pantry_item_id)
+      .eq('pantry_items.is_active', true)
+      .eq('pantry_items.products.category', 'daily_food')
+      .neq('pantry_items.products.is_supplemental', true)
+      .neq('pantry_items.products.is_vet_diet', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (siblingQuery && !siblingErr) {
+      const siblingProduct = (siblingQuery as any).pantry_items.products as Product;
+      const totalMeals = sw.new_feedings_per_day + siblingQuery.feedings_per_day;
+      
+      try {
+        await rebalanceExistingFood(
+          siblingQuery.pantry_item_id,
+          sw.pet,
+          sw.new_feedings_per_day, // meals the new food covers
+          totalMeals,
+          siblingProduct,
+          canUseGoalWeight()
+        );
+      } catch (e) {
+        console.warn('[completeSafeSwitch] Failed to rebalance sibling:', e);
+      }
+    }
+  }
+
+  // Step 5: Return computed values so the caller can render without a re-fetch
   return { outcome, message };
 }
 
