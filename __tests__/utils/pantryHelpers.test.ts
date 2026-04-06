@@ -944,6 +944,27 @@ describe('computeMealBasedServing', () => {
     const pet = makePet({ weight_current_lbs: 20 });
     expect(computeMealBasedServing(pet, product, 1, 2, false, null)).toBeNull();
   });
+
+  test('edit scenario: changing meals at fixed total adjusts allocation proportionally', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const pet = makePet({ weight_current_lbs: 30 });
+    // Simulate edit: food covers 1 of 3 meals, then user bumps to 2 of 3
+    const before = computeMealBasedServing(pet, product, 1, 3, false, null);
+    const after = computeMealBasedServing(pet, product, 2, 3, false, null);
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    // dailyKcal should double (1/3 -> 2/3 of DER)
+    expect(after!.dailyKcal).toBeCloseTo(before!.dailyKcal * 2, 0);
+    // Per-meal amount stays the same (more meals but proportionally more kcal)
+    expect(after!.amount).toBeCloseTo(before!.amount, 2);
+  });
+
+  test('returns null for zero or negative inputs', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const pet = makePet({ weight_current_lbs: 20 });
+    expect(computeMealBasedServing(pet, product, 0, 2, false, null)).toBeNull();
+    expect(computeMealBasedServing(pet, product, 1, 0, false, null)).toBeNull();
+  });
 });
 
 describe('getDefaultMealsCovered', () => {

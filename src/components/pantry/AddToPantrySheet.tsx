@@ -246,7 +246,9 @@ export function AddToPantrySheet({
     if (!val && !bagValid) setBagCollapsed(false);
   };
 
-  const maxMealsCovered = numDailyFoods > 0 ? Math.max(1, totalMealsPerDay - 1) : totalMealsPerDay;
+  // With existing daily foods, cap at totalMealsPerDay - 1 (sibling keeps at least 1).
+  // Without existing foods, allow up to 5 (health conditions, small breeds, etc.).
+  const maxMealsCovered = numDailyFoods > 0 ? Math.max(1, totalMealsPerDay - 1) : 5;
 
   const adjustMealsCovered = (delta: number) => {
     chipToggle();
@@ -262,6 +264,10 @@ export function AddToPantrySheet({
         return prev;
       }
       setStepperHint(false);
+      // When first/only food, totalMealsPerDay tracks the stepper (100% allocation)
+      if (numDailyFoods === 0) {
+        setTotalMealsPerDay(next);
+      }
       return next;
     });
   };
@@ -472,7 +478,10 @@ export function AddToPantrySheet({
                           </View>
                           {autoMode && autoServingResult ? (
                             <View style={{flex:1}}>
-                              <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit}</Text></Text>
+                              <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit} per meal</Text></Text>
+                              {mealsCovered > 1 && (
+                                <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.amount * mealsCovered * 100) / 100} {autoServingResult.unit}/day ({mealsCovered} meals)</Text></Text>
+                              )}
                               <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.dailyKcal)} kcal daily allocation ({Math.round(mealsCovered / totalMealsPerDay * 100)}%)</Text></Text>
                             </View>
                           ) : (

@@ -34,12 +34,11 @@ import { useActivePetStore } from '../stores/useActivePetStore';
 import {
   updatePantryItem,
   updatePetAssignment,
+  rebalanceExistingFood,
 } from '../services/pantryService';
 import {
   calculateDepletionBreakdown,
-  computePetDer,
-  computeExistingPantryKcal,
-  computeAutoServingSize,
+  computeMealBasedServing,
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName } from '../utils/formatters';
@@ -122,6 +121,16 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     }).catch(() => {});
   }, [manualKey]);
 
+  // ── Rebalance note (auto-dismiss after 3s) ──
+  const [rebalanceNote, setRebalanceNote] = useState<string | null>(null);
+  const rebalanceNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (rebalanceNoteTimer.current) clearTimeout(rebalanceNoteTimer.current);
+    };
+  }, []);
+
   // ── Modals ──
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
@@ -138,6 +147,32 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const isUnitMode = item?.serving_mode === 'unit';
   const displayName = product ? stripBrandFromName(product.brand, product.name) : '';
   const isShared = (item?.assignments?.length ?? 0) > 1;
+
+  // ── Meal-based model (Phase C) ──
+  const isTreat = product?.category === 'treat' || product?.is_supplemental === true;
+
+  // Sibling daily food (for rebalancing)
+  const siblingItem = useMemo(() => {
+    if (!activePet || isTreat) return null;
+    return items.find(i =>
+      i.id !== itemId &&
+      i.product.category === 'daily_food' &&
+      !i.is_empty &&
+      !i.product.is_supplemental &&
+      i.assignments.some(a => a.pet_id === activePet.id && a.feeding_frequency === 'daily')
+    ) ?? null;
+  }, [items, activePet, itemId, isTreat]);
+
+  // Total meals: this food's feedings + sibling's feedings (reactive, not frozen)
+  // Single food → total always equals feedingsPerDay → 100% DER allocation
+  // Two foods → total = sum of both → proportional split
+  const siblingFeedings = useMemo(() => {
+    if (!siblingItem || !activePet) return 0;
+    const asg = siblingItem.assignments.find(a => a.pet_id === activePet.id && a.feeding_frequency === 'daily');
+    return asg?.feedings_per_day ?? 0;
+  }, [siblingItem, activePet]);
+
+  const totalMealsPerDay = feedingsPerDay + siblingFeedings;
 
   // ── Derived: depletion ──
   const depletion = useMemo(() => {
@@ -156,41 +191,34 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     );
   }, [item, myAssignment, product, isRecalled, qtyRemaining, servingSize, isUnitMode, feedingsPerDay]);
 
-  // ── Auto-serving (D-165 parity) ──
-  const isTreat = product?.category === 'treat';
+  // ── Auto-serving (Phase C meal-based model) ──
+  const autoServingResult = useMemo(() => {
+    if (!product || isTreat || !activePet) return null;
+    return computeMealBasedServing(
+      activePet,
+      product as Product,
+      feedingsPerDay,
+      totalMealsPerDay,
+      canUseGoalWeight(),
+      activePet.weight_goal_level,
+    );
+  }, [product, isTreat, activePet, feedingsPerDay, totalMealsPerDay]);
 
-  const petDer = useMemo(() => {
-    if (!activePet || isTreat) return null;
-    return computePetDer(activePet, canUseGoalWeight(), activePet.weight_goal_level);
-  }, [activePet, isTreat]);
-
-  const existingKcal = useMemo(() => {
-    if (!activePet) return 0;
-    return computeExistingPantryKcal(items, activePet.id, itemId);
-  }, [items, activePet, itemId]);
-
-  const remainingBudget = petDer != null ? Math.max(0, petDer - existingKcal) : null;
-
-  const autoServing = useMemo(() => {
-    if (!product || isTreat || remainingBudget == null) return null;
-    return computeAutoServingSize(remainingBudget, feedingsPerDay, product as Product);
-  }, [product, isTreat, remainingBudget, feedingsPerDay]);
-
-  const canAutoCalc = autoServing != null;
+  const canAutoCalc = autoServingResult != null;
   const effectiveAutoMode = autoMode && canAutoCalc;
 
   // Auto-sync serving size when auto mode is active
   useEffect(() => {
-    if (!effectiveAutoMode || !autoServing || !myAssignment) return;
-    const rounded = Math.round(autoServing.amount * 100) / 100;
+    if (!effectiveAutoMode || !autoServingResult || !myAssignment) return;
+    const rounded = Math.round(autoServingResult.amount * 100) / 100;
     setServingSize(String(rounded));
     updatePetAssignment(myAssignment.id, {
       serving_size: rounded,
-      serving_size_unit: autoServing.unit,
+      serving_size_unit: autoServingResult.unit,
     } as Parameters<typeof updatePetAssignment>[1]).catch((e) => {
       if (e instanceof PantryOfflineError) Alert.alert('Offline', e.message);
     });
-  }, [effectiveAutoMode, autoServing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [effectiveAutoMode, autoServingResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Card opacity helpers ──
   const feedingOpacity = isRecalled ? 0.4 : isEmpty ? 0.6 : 1;
@@ -230,10 +258,10 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
       if (isAuto) AsyncStorage.removeItem(manualKey).catch(() => {});
       else AsyncStorage.setItem(manualKey, 'true').catch(() => {});
     }
-    if (!isAuto && autoServing) {
-      setServingSize(String(Math.round(autoServing.amount * 100) / 100));
+    if (!isAuto && autoServingResult) {
+      setServingSize(String(Math.round(autoServingResult.amount * 100) / 100));
     }
-  }, [autoServing, manualKey]);
+  }, [autoServingResult, manualKey]);
 
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
@@ -252,21 +280,61 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     if (!isNaN(val) && val > 0) saveAssignmentField({ serving_size: val });
   }, [servingSize, saveAssignmentField]);
 
-  const handleFeedingsChange = useCallback((delta: number) => {
+  const handleFeedingsChange = useCallback(async (delta: number) => {
     const next = Math.max(1, Math.min(5, feedingsPerDay + delta));
     if (next === feedingsPerDay) return;
     chipToggle();
     setFeedingsPerDay(next);
+
     // Trim excess feeding times when decreasing
+    let trimmedTimes = feedingTimes;
     if (feedingTimes.length > next) {
-      const trimmed = feedingTimes.slice(0, next);
-      setFeedingTimes(trimmed);
-      saveAssignmentField({ feedings_per_day: next, feeding_times: trimmed });
-      rescheduleAllFeeding().catch(() => {});
-    } else {
-      saveAssignmentField({ feedings_per_day: next });
+      trimmedTimes = feedingTimes.slice(0, next);
+      setFeedingTimes(trimmedTimes);
     }
-  }, [feedingsPerDay, feedingTimes, saveAssignmentField]);
+
+    // 1. Save this item's assignment
+    try {
+      await saveAssignmentField({
+        feedings_per_day: next,
+        ...(trimmedTimes !== feedingTimes ? { feeding_times: trimmedTimes } : {}),
+      });
+    } catch {
+      return; // saveAssignmentField already shows Alert
+    }
+
+    // 2. Rebalance sibling serving (daily food with a sibling only)
+    // Total grows/shrinks with this food's feedings — sibling keeps its feedings,
+    // but its serving is recalculated for the new allocation percentage.
+    if (!isTreat && siblingItem && activePet) {
+      const siblingProduct = siblingItem.product as unknown as Product;
+      const newTotal = next + siblingFeedings;
+      try {
+        await rebalanceExistingFood(
+          siblingItem.id,
+          activePet,
+          next,
+          newTotal,
+          siblingProduct,
+          canUseGoalWeight(),
+        );
+
+        const siblingPct = Math.round(siblingFeedings / newTotal * 100);
+        const siblingName = stripBrandFromName(siblingProduct.brand, siblingProduct.name);
+        setRebalanceNote(`Updated ${siblingName} to ${siblingPct}% allocation`);
+        if (rebalanceNoteTimer.current) clearTimeout(rebalanceNoteTimer.current);
+        rebalanceNoteTimer.current = setTimeout(() => setRebalanceNote(null), 3000);
+
+        // Refresh store to pick up sibling changes
+        if (activePetId) loadPantry(activePetId);
+      } catch (e) {
+        if (e instanceof PantryOfflineError) Alert.alert('Offline', (e as PantryOfflineError).message);
+        // Non-critical: primary save already succeeded
+      }
+    }
+
+    rescheduleAllFeeding().catch(() => {});
+  }, [feedingsPerDay, feedingTimes, siblingFeedings, isTreat, siblingItem, activePet, activePetId, saveAssignmentField, loadPantry]);
 
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
@@ -492,26 +560,27 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               </>
             )}
 
-            {/* Auto mode: read-only display */}
-            {effectiveAutoMode && autoServing && (
+            {/* Auto mode: read-only display (Phase C meal-based) */}
+            {effectiveAutoMode && autoServingResult && (
               <>
                 <Text style={styles.label}>Amount per feeding</Text>
                 <View style={styles.autoServingDisplay}>
                   <Text style={styles.autoServingValue}>
-                    {Math.round(autoServing.amount * 100) / 100}
+                    {Math.round(autoServingResult.amount * 100) / 100}
                   </Text>
                   <Text style={styles.autoServingUnit}>
-                    {autoServing.unit} per feeding
+                    {autoServingResult.unit} per feeding
                   </Text>
                 </View>
-                {remainingBudget != null && petDer != null && (
+                {feedingsPerDay > 1 && (
                   <Text style={styles.autoServingMath}>
-                    {existingKcal > 0
-                      ? `${remainingBudget} kcal remaining of ${petDer} kcal budget`
-                      : `${petDer} kcal daily budget`}
-                    {` \u00F7 ${feedingsPerDay} feeding${feedingsPerDay > 1 ? 's' : ''}`}
+                    {Math.round(autoServingResult.amount * feedingsPerDay * 100) / 100} {autoServingResult.unit}/day ({feedingsPerDay} feedings)
                   </Text>
                 )}
+                <Text style={styles.autoServingMath}>
+                  {Math.round(autoServingResult.dailyKcal)} kcal daily allocation
+                  {' '}({Math.round(feedingsPerDay / totalMealsPerDay * 100)}%)
+                </Text>
               </>
             )}
 
@@ -554,6 +623,14 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
                 <Ionicons name="add" size={20} color={feedingsPerDay >= 5 ? Colors.textTertiary : Colors.textPrimary} />
               </TouchableOpacity>
             </View>
+
+            {/* Rebalance note (auto-dismiss after 3s) */}
+            {rebalanceNote && (
+              <View style={styles.rebalanceNoteRow}>
+                <Ionicons name="information-circle" size={16} color={Colors.severityAmber} />
+                <Text style={styles.rebalanceNoteText}>{rebalanceNote}</Text>
+              </View>
+            )}
           </View>
 
           {/* ── Schedule Card ── */}
@@ -1155,4 +1232,22 @@ const styles = StyleSheet.create({
   },
 
   bottomSpacer: { height: 88 },
+
+  // Rebalance note
+  rebalanceNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.md,
+    backgroundColor: 'rgba(255, 179, 71, 0.15)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  rebalanceNoteText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '500',
+    color: Colors.severityAmber,
+  },
 });

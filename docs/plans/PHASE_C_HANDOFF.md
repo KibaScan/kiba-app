@@ -56,44 +56,29 @@ Two different mental models for the same data:
 
 The D-165 model works fine for a single food. It breaks with 2+ foods because it treats the sibling's allocation as fixed, creating a zero-sum competition for the "remaining" budget.
 
-## What Needs to Happen (Next Session)
+## What Was Done (Session 27)
 
-### 1. Migrate EditPantryItemScreen to meal-based model
-- Replace `computeAutoServingSize(remainingBudget, ...)` with `computeMealBasedServing(pet, product, feedingsPerDay, totalMealsForPet, ...)`
-- `totalMealsForPet` = sum of `feedings_per_day` across all daily food assignments for the pet
-- Replace math line: "daily allocation (N%)" pattern
-- Keep manual override path (AUTO/MANUAL badge pattern from AddToPantrySheet)
+### 1. EditPantryItemScreen migrated to meal-based model -- DONE
+- Replaced `computeAutoServingSize(remainingBudget, ...)` with `computeMealBasedServing(pet, product, feedingsPerDay, totalMealsPerDay, ...)`
+- `totalMealsPerDay` is reactive: `feedingsPerDay + siblingFeedings` (useMemo, not frozen useState)
+- Math line: "X kcal daily allocation (N%)" pattern
+- Daily total line: "X cups/day (N feedings)" when feedings > 1
+- AUTO/MANUAL badge preserved, references updated to `autoServingResult`
 
-### 2. Auto-rebalance sibling on feedings change
-- When user changes `feedings_per_day` on EditPantryItem → rebalance the sibling food(s)
-- Call `rebalanceExistingFood` (already exists in `pantryService.ts`) or a similar function
-- Show inline note: "Adjusted {sibling} to {N} meals." (same pattern as AddToPantrySheet rebalance note)
+### 2. Auto-rebalance sibling on feedings change -- DONE
+- `handleFeedingsChange` calls `rebalanceExistingFood()` on sibling after saving this item
+- Inline amber note: "Updated {sibling} to N% allocation" (3s auto-dismiss)
+- Sibling feedings_per_day stays unchanged — only serving_size recalculated
 - Only fires for daily food, not treats/supplements
+- Non-critical failure: if rebalance fails (offline), primary save already succeeded
 
-### 3. User expectation (from session 26)
-> "this should be automatic the system needs to be smart"
+### 3. Stepper max unlocked -- DONE
+- EditPantryItemScreen: max 5 for all food types
+- AddToPantrySheet: max 5 for first/only food (`totalMealsPerDay` tracks stepper). With existing foods, max stays `totalMealsPerDay - 1`.
 
-Phase C spec Q2 originally said "rebalance on add only." User has overridden this — rebalance on edit is now required.
+## What Remains
 
-## Key Files
-
-| File | Role |
-|------|------|
-| `src/screens/EditPantryItemScreen.tsx` | Main target — needs meal-based migration |
-| `src/utils/pantryHelpers.ts` | `computeMealBasedServing` (reuse), `computeAutoServingSize` (keep alive) |
-| `src/services/pantryService.ts` | `rebalanceExistingFood` (reuse or extend) |
-| `src/stores/usePantryStore.ts` | Edit action needs rebalance hook |
-| `src/components/pantry/AddToPantrySheet.tsx` | Reference implementation for meal-based model |
-
-## Existing Helpers to Reuse
-
-- `computeMealBasedServing(pet, product, mealsThisFoodCovers, totalMealsPerDay, isPremiumGoalWeight, weightGoalLevel)` — `pantryHelpers.ts:581`
-- `computeRebalancedMeals(totalMealsPerDay, newFoodMeals)` — `pantryHelpers.ts:618`
-- `rebalanceExistingFood(pantryItemId, pet, newMealsCovered, totalMealsPerDay, product, isPremiumGoalWeight)` — `pantryService.ts:244`
-- `getConditionFeedingsPerDay(conditions)` — `pantryHelpers.ts:279`
-
-## Gotchas
-
-- `getSmartDefaultFeedingsPerDay` returns 1 for second daily food — correct for "feedings for this item" but NOT for "total meals." Use `existingDailyFeedings` sum pattern from AddToPantrySheet instead.
-- `computeAutoServingSize` must stay alive — other code paths may use it. Don't delete.
-- `PantryCardData.product` includes `ga_kcal_per_cup` (verified in type at `pantry.ts:76`) — the `as unknown as Product` cast in the store is safe for `computeMealBasedServing`.
+- **EditPantryItemScreen visual polish** — card anatomy doesn't fully match AddToPantrySheet's matte premium styling (Phase C styles in `AddToPantryStyles.ts` are more polished than EditPantryItem's inline `StyleSheet.create`)
+- **`computeAutoServingSize` cleanup** — no longer imported by EditPantryItemScreen. Grep for remaining imports; if zero, safe to delete.
+- **17 non-border `Colors.cardBorder` uses** — token decision pending
+- **Stale browse scores** — form-aware cache maturity check
