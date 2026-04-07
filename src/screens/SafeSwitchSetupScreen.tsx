@@ -37,9 +37,9 @@ import type { PantryAnchor } from '../types/pantry';
 
 type Props = NativeStackScreenProps<PantryStackParamList, 'SafeSwitchSetup'>;
 
-function slotLabel(slotIndex: number | null): string | null {
-  if (slotIndex === 0) return 'Primary slot';
-  if (slotIndex === 1) return 'Secondary slot';
+function roleLabel(feedingRole: string | null): string | null {
+  if (feedingRole === 'base') return 'Base food';
+  if (feedingRole === 'rotational') return 'Rotational';
   return null;
 }
 
@@ -61,7 +61,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
   // ── State ──
   const [oldProduct, setOldProduct] = useState<SafeSwitchProduct | null>(null);
   const [newProduct, setNewProduct] = useState<SafeSwitchProduct | null>(null);
-  const [slotIndex, setSlotIndex] = useState<number | null>(null);
+  const [feedingRole, setFeedingRole] = useState<string | null>(null);
   const [oldScore, setOldScore] = useState<number | null>(null);
   const [newScore, setNewScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
             product_id,
             is_active,
             products!product_id (id, name, brand, image_url, category, is_supplemental, ga_kcal_per_cup, ga_kcal_per_kg),
-            pantry_pet_assignments!inner (pet_id, slot_index)
+            pantry_pet_assignments!inner (pet_id, feeding_role)
           `)
           .eq('id', pantryItemId)
           .eq('is_active', true)
@@ -114,7 +114,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         product_id: string;
         is_active: boolean;
         products: SafeSwitchProduct | null;
-        pantry_pet_assignments: { pet_id: string; slot_index: number | null }[];
+        pantry_pet_assignments: { pet_id: string; feeding_role: string | null }[];
       };
 
       if (!item.products) {
@@ -125,7 +125,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
 
       setOldProduct(item.products);
       const asgn = item.pantry_pet_assignments.find(a => a.pet_id === petId);
-      setSlotIndex(asgn?.slot_index ?? null);
+      setFeedingRole(asgn?.feeding_role ?? null);
       setAllAnchors(anchorList);
 
       if (newRes.data) setNewProduct(newRes.data as SafeSwitchProduct);
@@ -243,8 +243,8 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>SWITCHING FROM</Text>
           {/* M9 Phase B: slot indicator + Change link (only for 2+ slot pets). */}
-          {slotLabel(slotIndex) && (
-            <Text style={styles.slotLabel}>{slotLabel(slotIndex)}</Text>
+          {roleLabel(feedingRole) && (
+            <Text style={styles.slotLabel}>{roleLabel(feedingRole)}</Text>
           )}
         </View>
         <View style={[styles.productCard, { borderLeftColor: Colors.severityAmber }]}>
@@ -382,7 +382,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Replace which food?</Text>
             <Text style={styles.modalSubtitle}>
-              Pick the daily food slot {petName}'s Safe Switch should replace.
+              Pick the base food {petName}'s Safe Switch should replace.
             </Text>
             {allAnchors.map((anchor) => {
               const isCurrent = anchor.pantryItemId === pantryItemId;
@@ -395,7 +395,7 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
                 >
                   <View style={styles.slotOptionInfo}>
                     <Text style={styles.slotOptionLabel}>
-                      {slotLabel(anchor.slotIndex) ?? 'Daily food'}
+                      {roleLabel(anchor.feedingRole) ?? 'Base food'}
                     </Text>
                     <Text style={styles.slotOptionScore}>
                       {anchor.resolvedScore != null ? `${anchor.resolvedScore}% match` : 'Not yet scored'}

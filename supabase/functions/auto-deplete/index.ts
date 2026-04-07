@@ -273,6 +273,8 @@ interface AssignmentRow {
   serving_size_unit: string;
   feedings_per_day: number;
   notifications_on: boolean;
+  feeding_role: string | null;
+  auto_deplete_enabled: boolean;
   pantry_items: {
     id: string;
     user_id: string;
@@ -359,13 +361,13 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error: queryError } = await supabase
     .from('pantry_pet_assignments')
     .select(
-      'pet_id, serving_size, serving_size_unit, feedings_per_day, notifications_on, ' +
+      'pet_id, serving_size, serving_size_unit, feedings_per_day, notifications_on, feeding_role, auto_deplete_enabled, ' +
         'pantry_items!inner(id, user_id, quantity_remaining, quantity_unit, serving_mode, unit_label, last_deducted_at, ' +
         'products(name, brand, ga_kcal_per_cup, ga_kcal_per_kg)), ' +
         'pets(name, species, weight_current_lbs, is_neutered, activity_level, life_stage, date_of_birth, ' +
         'weight_goal_level, caloric_accumulator, accumulator_notification_sent)',
     )
-    .eq('feeding_frequency', 'daily')
+    .or('feeding_frequency.eq.daily,auto_deplete_enabled.eq.true')
     .eq('pantry_items.is_active', true);
 
   if (queryError) {
@@ -455,7 +457,7 @@ Deno.serve(async (req: Request) => {
     });
 
     // D-161: Accumulate this pet's daily kcal from this assignment
-    if (row.pets?.weight_current_lbs != null) {
+    if (row.pets?.weight_current_lbs != null && row.feeding_role !== 'rotational') {
       const product = item.products;
       let assignmentKcal = 0;
       if (row.serving_size_unit === 'cups' || row.serving_size_unit === 'scoops') {
@@ -481,6 +483,27 @@ Deno.serve(async (req: Request) => {
             pet: row.pets,
           });
         }
+      }
+    }
+  }
+
+  // Also query `feeding_log` for today and add rotational logs to the pets' daily intake context
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCHours(23, 59, 59, 999);
+
+  const activePetIds = Array.from(petIntake.keys());
+  if (activePetIds.length > 0) {
+    const { data: logs } = await supabase
+      .from('feeding_log')
+      .select('pet_id, kcal_fed')
+      .gte('fed_at', todayStartISO)
+      .lte('fed_at', todayEnd.toISOString())
+      .in('pet_id', activePetIds);
+
+    if (logs && logs.length > 0) {
+      for (const log of logs) {
+        const existing = petIntake.get(log.pet_id) as PetAccumData;
+        existing.dailyKcal += (log.kcal_fed || 0);
       }
     }
   }

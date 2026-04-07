@@ -33,7 +33,6 @@ jest.mock('expo-haptics', () => ({
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 
 import {
-  FRACTIONAL_CHIPS,
   isTreat,
   getDefaultFeedingsPerDay,
   getDefaultFeedingFrequency,
@@ -41,33 +40,6 @@ import {
   buildAddToPantryInput,
 } from '../../../src/components/pantry/AddToPantrySheet';
 import { Category } from '../../../src/types';
-
-// ─── FRACTIONAL_CHIPS ───────────────────────────────────
-
-describe('FRACTIONAL_CHIPS', () => {
-  test('has 8 entries', () => {
-    expect(FRACTIONAL_CHIPS).toHaveLength(8);
-  });
-
-  test('all values are positive numbers', () => {
-    for (const chip of FRACTIONAL_CHIPS) {
-      expect(typeof chip.value).toBe('number');
-      expect(chip.value).toBeGreaterThan(0);
-    }
-  });
-
-  test('all labels are non-empty strings', () => {
-    for (const chip of FRACTIONAL_CHIPS) {
-      expect(typeof chip.label).toBe('string');
-      expect(chip.label.length).toBeGreaterThan(0);
-    }
-  });
-
-  test('contains expected fraction values', () => {
-    const values = FRACTIONAL_CHIPS.map((c) => c.value);
-    expect(values).toEqual([0.25, 0.333, 0.5, 0.667, 0.75, 1, 1.5, 2]);
-  });
-});
 
 // ─── isTreat ────────────────────────────────────────────
 
@@ -88,8 +60,8 @@ describe('isTreat', () => {
 // ─── getDefaultFeedingsPerDay ───────────────────────────
 
 describe('getDefaultFeedingsPerDay', () => {
-  test('returns 2 for daily food', () => {
-    expect(getDefaultFeedingsPerDay(Category.DailyFood)).toBe(2);
+  test('returns 1 for daily food (legacy, unused in behavioral)', () => {
+    expect(getDefaultFeedingsPerDay(Category.DailyFood)).toBe(1);
   });
 
   test('returns 1 for supplement', () => {

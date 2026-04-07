@@ -13,9 +13,10 @@ import type {
   CalorieContext,
   DepletionBreakdown,
   BudgetWarning,
+  FeedingRole,
 } from '../types/pantry';
 import type { Product } from '../types';
-import type { Pet } from '../types/pet';
+import type { Pet, FeedingStyle } from '../types/pet';
 import { Category } from '../types';
 import { resolveCalories } from './calorieEstimation';
 import { lbsToKg, calculateRER, getDerMultiplier } from '../services/portionCalculator';
@@ -99,6 +100,21 @@ function getAgeMonths(dateOfBirth: string | null): number | undefined {
   if (isNaN(dob.getTime())) return undefined;
   const ref = new Date();
   return (ref.getFullYear() - dob.getFullYear()) * 12 + (ref.getMonth() - dob.getMonth());
+}
+
+/**
+ * Midnight Reset Helper: Gets today's start/end boundaries in the device's local timezone.
+ * Returns { start, end } as Date objects representing midnight-to-midnight local time.
+ *
+ * Used for feeding_log daily aggregation queries (WHERE fed_at >= start AND fed_at < end).
+ * Uses device timezone — the app runs on the user's phone, so device tz = user tz.
+ */
+export function getTodayBounds(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
 }
 
 // ─── D-165: Budget-Aware Helpers ────────────────────────
@@ -241,6 +257,144 @@ export function computeBudgetWarning(params: {
       level: 'under',
       message: `${params.petName}'s pantry items cover ~${pctOfAdjusted}% of daily calorie needs.`,
       pct: pctOfAdjusted,
+    };
+  }
+
+  return null;
+}
+
+// ─── Behavioral Feeding (M9 Phase D) Math ───────────────
+
+export function getWetFoodKcal(product: Product): { kcal: number; source: 'label' | 'estimated' | 'size_fallback' } | null {
+  const resolved = resolveCalories(product);
+  if (resolved?.kcalPerUnit && resolved.kcalPerUnit > 0) {
+    return { kcal: resolved.kcalPerUnit, source: resolved.source === 'label' ? 'label' : 'estimated' };
+  }
+
+  // Tier 3: Size fallback (detect "3 oz" or "5.5 oz" or similar)
+  const sizeParsed = parseProductSize(product.name);
+  if (sizeParsed && sizeParsed.quantity > 0) {
+    let weightGrams = 0;
+    if (sizeParsed.unit === 'oz') weightGrams = sizeParsed.quantity * 28.3495;
+    else if (sizeParsed.unit === 'g') weightGrams = sizeParsed.quantity;
+    else if (sizeParsed.unit === 'kg') weightGrams = sizeParsed.quantity * 1000;
+    else if (sizeParsed.unit === 'lbs') weightGrams = sizeParsed.quantity * 453.592;
+
+    if (weightGrams > 0) {
+      // Generic wet food average = ~1 kcal/gram
+      return { kcal: Math.round(weightGrams), source: 'size_fallback' };
+    }
+  }
+
+  return null;
+}
+
+export function computeBehavioralServing(params: {
+  pet: Pet;
+  product: Product;
+  feedingRole: FeedingRole;
+  dailyWetFedKcal: number;
+  dryFoodSplitPct: number;
+  isPremiumGoalWeight: boolean;
+  isInTransition?: boolean;
+}): { amount: number; unit: ServingSizeUnit; basisKcal: number } | null {
+  const { pet, product, feedingRole, dailyWetFedKcal, dryFoodSplitPct, isPremiumGoalWeight, isInTransition } = params;
+  if (isInTransition) return null; // Safe Switch hands off to detail view
+  
+  const der = computePetDer(pet, isPremiumGoalWeight, pet.weight_goal_level);
+  if (der == null) return null;
+
+  const style = pet.feeding_style as FeedingStyle;
+  const wetReserve = pet.wet_reserve_kcal || 0;
+
+  let budgetedKcal = 0;
+
+  if (style === 'dry_only') {
+    budgetedKcal = der;
+  } else if (style === 'dry_and_wet') {
+    if (feedingRole === 'base') {
+      const wetActual = dailyWetFedKcal > 0 ? dailyWetFedKcal : wetReserve;
+      budgetedKcal = Math.max(0, der - wetActual);
+    } else {
+      // Rotational food holds no active budget display (it's "Fed This Today" tracking only)
+      return null;
+    }
+  } else if (style === 'wet_only') {
+    budgetedKcal = Math.max(0, der - dailyWetFedKcal);
+  } else if (style === 'custom') {
+    return null; // Deferred
+  }
+
+  // Apply split PCT to budget
+  const finalKcal = budgetedKcal * (dryFoodSplitPct / 100);
+
+  // Convert to unit
+  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+    return { amount: finalKcal / product.ga_kcal_per_cup, unit: 'cups', basisKcal: finalKcal };
+  }
+
+  const cal = resolveCalories(product);
+  if (cal?.kcalPerUnit && cal.kcalPerUnit > 0) {
+    return { amount: finalKcal / cal.kcalPerUnit, unit: 'units', basisKcal: finalKcal };
+  }
+
+  // Final fallback to getWetFoodKcal for wet units
+  const wetCal = getWetFoodKcal(product);
+  if (wetCal && wetCal.kcal > 0) {
+    return { amount: finalKcal / wetCal.kcal, unit: 'units', basisKcal: finalKcal };
+  }
+
+  return null;
+}
+
+export function computeBehavioralBudgetWarning(params: {
+  feedingRole: FeedingRole;
+  feedingStyle: FeedingStyle;
+  totalBaseKcal: number;
+  maintenanceDer: number;
+  wetReserveKcal: number;
+  petName: string;
+}): BudgetWarning | null {
+  const { feedingRole, feedingStyle, totalBaseKcal, maintenanceDer, wetReserveKcal, petName } = params;
+
+  // Rotational items never budget warn individually
+  if (feedingRole === 'rotational') return null;
+
+  let maxBudget = maintenanceDer;
+  if (feedingStyle === 'dry_and_wet') {
+    maxBudget = Math.max(0, maintenanceDer - wetReserveKcal);
+  }
+
+  // Prevent div by zero
+  if (maxBudget === 0 && totalBaseKcal > 0) {
+    return {
+      level: 'significantly_over',
+      message: `${petName}'s base foods total ${Math.round(totalBaseKcal)} kcal/day, but their wet reserve takes up all ${maintenanceDer} kcal.`,
+      pct: 999,
+    };
+  } else if (maxBudget === 0) {
+    return null;
+  }
+
+  const pct = Math.round((totalBaseKcal / maxBudget) * 100);
+
+  if (pct > 120) {
+    return {
+      level: 'significantly_over',
+      message: `${petName}'s base intake is ${pct}% of the ${maxBudget} kcal base budget.`,
+      pct,
+    };
+  } else if (pct > 100) {
+    return {
+      level: 'over',
+      message: `${petName}'s base intake is ${pct}% of the ${maxBudget} kcal base budget.`,
+      pct,
+    };
+  } else if (pct < 80) {
+    return {
+      level: 'under',
+      message: `${petName}'s base foods cover ~${pct}% of their ${maxBudget} kcal base budget.`,
+      pct,
     };
   }
 
@@ -552,7 +706,7 @@ export function defaultServingMode(productForm: string | null): ServingMode {
  *
  * Pure, side-effect free. Used by ResultScreen at tap time.
  */
-export function pickSlotForSwap(
+export function pickBaseForSwap(
   anchors: PantryAnchor[],
   newProductForm: string | null,
 ): PantryAnchor | null {
@@ -565,79 +719,11 @@ export function pickSlotForSwap(
     : [];
   const candidates = formMatches.length > 0 ? formMatches : anchors;
 
-  // 3b + 3c: lowest score wins, then slot 0 beats slot 1
+  // 3b: lowest score wins
   const sorted = [...candidates].sort((a, b) => {
     const sa = a.resolvedScore ?? 100;
     const sb = b.resolvedScore ?? 100;
-    if (sa !== sb) return sa - sb;
-    return (a.slotIndex ?? 99) - (b.slotIndex ?? 99);
+    return sa - sb;
   });
   return sorted[0];
-}
-
-// ─── M9 Phase C: Meal-Based Allocation Helpers ──────────
-
-/**
- * Computes the per-meal serving size based on how many meals this food covers.
- * Returns null if kcal data is missing.
- */
-export function computeMealBasedServing(
-  pet: Pet,
-  product: Product,
-  mealsThisFoodCovers: number,
-  totalMealsPerDay: number,
-  isPremiumGoalWeight: boolean,
-  weightGoalLevel?: number | null,
-): { amount: number; unit: ServingSizeUnit; dailyKcal: number } | null {
-  if (totalMealsPerDay <= 0 || mealsThisFoodCovers <= 0) return null;
-  const der = computePetDer(pet, isPremiumGoalWeight, weightGoalLevel);
-  if (der == null) return null;
-
-  const derAllocation = mealsThisFoodCovers / totalMealsPerDay;
-  const dailyKcal = der * derAllocation;
-
-  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
-    const totalDailyCups = dailyKcal / product.ga_kcal_per_cup;
-    return { amount: totalDailyCups / mealsThisFoodCovers, unit: 'cups', dailyKcal };
-  }
-
-  const cal = resolveCalories(product);
-  if (cal?.kcalPerUnit && cal.kcalPerUnit > 0) {
-    const totalDailyUnits = dailyKcal / cal.kcalPerUnit;
-    return { amount: totalDailyUnits / mealsThisFoodCovers, unit: 'units', dailyKcal };
-  }
-
-  return null;
-}
-
-export function getDefaultMealsCovered(
-  dailyFoodCount: number,
-  totalMealsPerDay: number,
-): number {
-  if (dailyFoodCount === 0) return totalMealsPerDay;
-  return 1;
-}
-
-export function computeRebalancedMeals(
-  totalMealsPerDay: number,
-  newFoodMeals: number,
-): number {
-  const adjusted = totalMealsPerDay - newFoodMeals;
-  if (adjusted <= 0) return 1;
-  if (adjusted > totalMealsPerDay) return totalMealsPerDay;
-  return adjusted;
-}
-
-// Fixed standard conversions for dry food volume.
-// 1 standard measuring cup of dry kibble = ~4 oz = ~113.4 g
-const DRY_CUP_TO_OZ_RATIO = 4.0;
-const DRY_CUP_TO_G_RATIO = 113.4;
-
-export function computeServingConversions(
-  cupsPerMeal: number,
-): { oz: number; g: number } {
-  return {
-    oz: cupsPerMeal * DRY_CUP_TO_OZ_RATIO,
-    g: cupsPerMeal * DRY_CUP_TO_G_RATIO,
-  };
 }

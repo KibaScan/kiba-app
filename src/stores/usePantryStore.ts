@@ -13,7 +13,6 @@ import {
   updatePantryItem,
   sharePantryItem,
   evaluateDietCompleteness,
-  rebalanceExistingFood,
 } from '../services/pantryService';
 import { useActivePetStore } from './useActivePetStore';
 import type { Product } from '../types';
@@ -31,13 +30,7 @@ interface PantryState {
   loadPantry: (petId: string) => Promise<void>;
   addItem: (
     input: AddToPantryInput,
-    petId: string,
-    rebalanceTarget?: {
-      pantryItemId: string;
-      newMealsCovered: number;
-      totalMealsPerDay: number;
-      isPremiumGoalWeight: boolean;
-    }
+    petId: string
   ) => Promise<void>;
   removeItem: (itemId: string, petId?: string) => Promise<void>;
   restockItem: (itemId: string) => Promise<void>;
@@ -73,26 +66,11 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     }
   },
 
-  addItem: async (input, petId, rebalanceTarget) => {
+  addItem: async (input, petId) => {
     set({ loading: true, error: null });
     try {
       await addToPantry(input, petId);
       const pid = get()._petId ?? petId;
-
-      if (rebalanceTarget) {
-        const pet = useActivePetStore.getState().pets.find(p => p.id === pid);
-        const existingItem = get().items.find(i => i.id === rebalanceTarget.pantryItemId);
-        if (pet && existingItem?.product) {
-          await rebalanceExistingFood(
-            rebalanceTarget.pantryItemId,
-            pet,
-            rebalanceTarget.newMealsCovered,
-            rebalanceTarget.totalMealsPerDay,
-            existingItem.product as unknown as Product,
-            rebalanceTarget.isPremiumGoalWeight
-          );
-        }
-      }
 
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),
@@ -114,40 +92,7 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
          throw new Error('No pet ID available for removal.');
       }
 
-      // Identify the item being removed to see if we need to reverse-rebalance
-      const itemsBefore = get().items;
-      const itemToRemove = itemsBefore.find(i => i.id === itemId);
-      let siblingToRebalance: PantryCardData | undefined;
-
-      if (itemToRemove && itemToRemove.product?.category === 'daily_food') {
-        const siblings = itemsBefore.filter(
-          i => i.id !== itemId &&
-               i.product?.category === 'daily_food' &&
-               i.assignments.some(a => a.pet_id === pid)
-        );
-        // Only rebalance if exactly one sibling remains
-        if (siblings.length === 1) {
-          siblingToRebalance = siblings[0];
-        }
-      }
-
       await removePantryItem(itemId, petId);
-
-      // Apply the reverse-rebalance to the surviving sibling
-      if (siblingToRebalance && siblingToRebalance.product) {
-        const pet = useActivePetStore.getState().pets.find(p => p.id === pid);
-        const siblingAssignment = siblingToRebalance.assignments.find(a => a.pet_id === pid);
-        if (pet && siblingAssignment) {
-          await rebalanceExistingFood(
-            siblingToRebalance.id,
-            pet,
-            0, // newMealsCovered is 0 since the removed food covers nothing now
-            siblingAssignment.feedings_per_day, // treat its feedings as the whole day
-            siblingToRebalance.product as unknown as Product,
-            canUseGoalWeight()
-          );
-        }
-      }
 
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),

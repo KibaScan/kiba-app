@@ -113,6 +113,9 @@ describe('offline guards', () => {
         serving_size_unit: 'cups',
         feedings_per_day: 2,
         feeding_frequency: 'daily',
+        feeding_role: 'base',
+        auto_deplete_enabled: false,
+        calorie_share_pct: 100,
       }),
     ).rejects.toThrow(PantryOfflineError);
     expect(supabase.from).not.toHaveBeenCalled();
@@ -160,7 +163,7 @@ describe('getPantryAnchor', () => {
 
   test('returns [] when the assignments exist but no items match daily_food filter', async () => {
     wireAnchor({
-      assignments: [{ pantry_item_id: 'pi-1', slot_index: 0 }],
+      assignments: [{ pantry_item_id: 'pi-1', feeding_role: 'base' }],
       items: [{
         id: 'pi-1',
         product_id: 'prod-treat',
@@ -174,9 +177,9 @@ describe('getPantryAnchor', () => {
   test('excludes supplemental and vet diet products', async () => {
     wireAnchor({
       assignments: [
-        { pantry_item_id: 'pi-1', slot_index: 0 },
-        { pantry_item_id: 'pi-2', slot_index: 1 },
-        { pantry_item_id: 'pi-3', slot_index: null },
+        { pantry_item_id: 'pi-1', feeding_role: 'base' },
+        { pantry_item_id: 'pi-2', feeding_role: 'base' },
+        { pantry_item_id: 'pi-3', feeding_role: null },
       ],
       items: [
         { id: 'pi-1', product_id: 'prod-dry', products: { id: 'prod-dry', product_form: 'dry', category: 'daily_food', is_supplemental: false, is_vet_diet: false } },
@@ -188,7 +191,7 @@ describe('getPantryAnchor', () => {
     const result = await getPantryAnchor('pet-1');
     expect(result).toHaveLength(1);
     expect(result[0].pantryItemId).toBe('pi-1');
-    expect(result[0].slotIndex).toBe(0);
+    expect(result[0].feedingRole).toBe('base');
     expect(result[0].productForm).toBe('dry');
     expect(result[0].resolvedScore).toBe(65);
   });
@@ -196,8 +199,8 @@ describe('getPantryAnchor', () => {
   test('returns both slots for a 2-slot pet with scores hydrated from pet_product_scores', async () => {
     wireAnchor({
       assignments: [
-        { pantry_item_id: 'pi-1', slot_index: 0 },
-        { pantry_item_id: 'pi-2', slot_index: 1 },
+        { pantry_item_id: 'pi-1', feeding_role: 'base' },
+        { pantry_item_id: 'pi-2', feeding_role: 'base' },
       ],
       items: [
         { id: 'pi-1', product_id: 'prod-a', products: { id: 'prod-a', product_form: 'dry', category: 'daily_food', is_supplemental: false, is_vet_diet: false } },
@@ -210,8 +213,8 @@ describe('getPantryAnchor', () => {
     });
     const result = await getPantryAnchor('pet-1');
     expect(result).toHaveLength(2);
-    expect(result.find(a => a.slotIndex === 0)?.resolvedScore).toBe(58);
-    expect(result.find(a => a.slotIndex === 1)?.resolvedScore).toBe(82);
+    expect(result.find(a => a.pantryItemId === 'pi-1')?.resolvedScore).toBe(58);
+    expect(result.find(a => a.pantryItemId === 'pi-2')?.resolvedScore).toBe(82);
   });
 
   test('returns [] gracefully on Supabase error', async () => {

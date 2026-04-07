@@ -34,11 +34,9 @@ import { useActivePetStore } from '../stores/useActivePetStore';
 import {
   updatePantryItem,
   updatePetAssignment,
-  rebalanceExistingFood,
 } from '../services/pantryService';
 import {
   calculateDepletionBreakdown,
-  computeMealBasedServing,
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName } from '../utils/formatters';
@@ -95,8 +93,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   // D-164: unitLabel always 'servings'
 
   // ── Assignment fields (local state) ──
-  const [servingSize, setServingSize] = useState(() => String(myAssignment?.serving_size ?? 1));
-  const [feedingsPerDay, setFeedingsPerDay] = useState(() => myAssignment?.feedings_per_day ?? 2);
   const [feedingFrequency, setFeedingFrequency] = useState<FeedingFrequency>(
     () => myAssignment?.feeding_frequency ?? 'daily',
   );
@@ -106,30 +102,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const [notificationsOn, setNotificationsOn] = useState(
     () => myAssignment?.notifications_on ?? false,
   );
-
-  // ── Auto/Manual serving (D-165 parity) ──
-  // Persisted per-assignment via AsyncStorage so manual choice is remembered.
-  const manualKey = myAssignment ? `kiba-manual-serving-${myAssignment.id}` : null;
-  const [autoMode, setAutoMode] = useState(true);
-  const autoModeLoaded = useRef(false);
-
-  useEffect(() => {
-    if (!manualKey || autoModeLoaded.current) return;
-    autoModeLoaded.current = true;
-    AsyncStorage.getItem(manualKey).then(val => {
-      if (val === 'true') setAutoMode(false);
-    }).catch(() => {});
-  }, [manualKey]);
-
-  // ── Rebalance note (auto-dismiss after 3s) ──
-  const [rebalanceNote, setRebalanceNote] = useState<string | null>(null);
-  const rebalanceNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (rebalanceNoteTimer.current) clearTimeout(rebalanceNoteTimer.current);
-    };
-  }, []);
 
   // ── Modals ──
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
@@ -148,64 +120,21 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const displayName = product ? stripBrandFromName(product.brand, product.name) : '';
   const isShared = (item?.assignments?.length ?? 0) > 1;
 
-  // ── Meal-based model (Phase C) ──
-  const isTreat = product?.category === 'treat' || product?.is_supplemental === true;
-
-  // Sibling daily food (for rebalancing)
-  const siblingItem = useMemo(() => {
-    if (!activePet || isTreat) return null;
-    return items.find(i =>
-      i.id !== itemId &&
-      i.product.category === 'daily_food' &&
-      !i.is_empty &&
-      !i.product.is_supplemental &&
-      i.assignments.some(a => a.pet_id === activePet.id && a.feeding_frequency === 'daily')
-    ) ?? null;
-  }, [items, activePet, itemId, isTreat]);
-
-  // Total meals: this food's feedings + sibling's feedings (reactive, not frozen)
-  // Single food → total always equals feedingsPerDay → 100% DER allocation
-  // Two foods → total = sum of both → proportional split
-  const siblingFeedings = useMemo(() => {
-    if (!siblingItem || !activePet) return 0;
-    const asg = siblingItem.assignments.find(a => a.pet_id === activePet.id && a.feeding_frequency === 'daily');
-    return asg?.feedings_per_day ?? 0;
-  }, [siblingItem, activePet]);
-
-  const totalMealsPerDay = feedingsPerDay + siblingFeedings;
-
   // ── Derived: depletion ──
   const depletion = useMemo(() => {
     if (!item || !myAssignment || !product || isRecalled || product.category === 'treat') return null;
     const qty = parseFloat(qtyRemaining);
-    const srv = parseFloat(servingSize);
-    if (isNaN(qty) || qty < 0 || isNaN(srv) || srv <= 0) return null;
+    if (isNaN(qty) || qty < 0) return null;
     return calculateDepletionBreakdown(
-      srv,
+      myAssignment.serving_size,
       isUnitMode ? 'units' : myAssignment.serving_size_unit,
-      feedingsPerDay,
+      myAssignment.feedings_per_day,
       qty,
       isUnitMode ? 'units' : item.quantity_unit,
       isUnitMode ? 'servings' : null,
       product as unknown as Product,
     );
-  }, [item, myAssignment, product, isRecalled, qtyRemaining, servingSize, isUnitMode, feedingsPerDay]);
-
-  // ── Auto-serving (Phase C meal-based model) ──
-  const autoServingResult = useMemo(() => {
-    if (!product || isTreat || !activePet) return null;
-    return computeMealBasedServing(
-      activePet,
-      product as Product,
-      feedingsPerDay,
-      totalMealsPerDay,
-      canUseGoalWeight(),
-      activePet.weight_goal_level,
-    );
-  }, [product, isTreat, activePet, feedingsPerDay, totalMealsPerDay]);
-
-  const canAutoCalc = autoServingResult != null;
-  const effectiveAutoMode = autoMode && canAutoCalc;
+  }, [item, myAssignment, product, isRecalled, qtyRemaining, isUnitMode]);
 
   // ── Card opacity helpers ──
   const feedingOpacity = isRecalled ? 0.4 : isEmpty ? 0.6 : 1;
@@ -238,26 +167,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
 
   // ── Field handlers ──
 
-  const handleAutoManualToggle = useCallback((isAuto: boolean) => {
-    chipToggle();
-    setAutoMode(isAuto);
-    if (manualKey) {
-      if (isAuto) AsyncStorage.removeItem(manualKey).catch(() => {});
-      else AsyncStorage.setItem(manualKey, 'true').catch(() => {});
-    }
-    if (!isAuto && autoServingResult) {
-      setServingSize(String(Math.round(autoServingResult.amount * 100) / 100));
-    } else if (isAuto && autoServingResult) {
-      const rounded = Math.round(autoServingResult.amount * 100) / 100;
-      setServingSize(String(rounded));
-      saveAssignmentField({ 
-        serving_size: rounded, 
-        serving_size_unit: autoServingResult.unit 
-      });
-    }
-  }, [autoServingResult, manualKey, saveAssignmentField]);
-
-
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
     if (!isNaN(val) && val >= 0) saveItemField('quantity_remaining', val);
@@ -269,91 +178,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   }, [qtyOriginal, saveItemField]);
 
   // D-164: handleUnitLabelChange removed — unit label is always 'servings'
-
-  const handleServingSizeBlur = useCallback(() => {
-    const val = parseFloat(servingSize);
-    if (!isNaN(val) && val > 0) saveAssignmentField({ serving_size: val });
-  }, [servingSize, saveAssignmentField]);
-
-  const handleFeedingsChange = useCallback(async (delta: number) => {
-    const hasSibling = !isTreat && siblingItem;
-    const currentTotalMeals = hasSibling ? feedingsPerDay + siblingFeedings : feedingsPerDay;
-    const maxMeals = hasSibling ? Math.max(1, currentTotalMeals - 1) : 5;
-
-    let next = feedingsPerDay + delta;
-    if (next < 1) next = 1;
-    if (next > maxMeals) return;
-    if (next === feedingsPerDay) return;
-
-    chipToggle();
-    setFeedingsPerDay(next);
-
-    // Trim excess feeding times when decreasing
-    let trimmedTimes = feedingTimes;
-    if (feedingTimes.length > next) {
-      trimmedTimes = feedingTimes.slice(0, next);
-      setFeedingTimes(trimmedTimes);
-    }
-
-    let nextAmount = Number(servingSize);
-    let nextUnit = isUnitMode ? 'units' : 'cups';
-
-    if (autoMode && product && activePet && !isTreat) {
-       const res = computeMealBasedServing(
-         activePet,
-         product as unknown as Product,
-         next,
-         currentTotalMeals,
-         canUseGoalWeight(),
-         activePet.weight_goal_level
-       );
-       if (res) {
-          nextAmount = Math.round(res.amount * 100) / 100;
-          nextUnit = res.unit;
-          setServingSize(String(nextAmount));
-       }
-    }
-
-    // 1. Save this item's assignment synchronously
-    try {
-      await saveAssignmentField({
-        feedings_per_day: next,
-        serving_size: nextAmount,
-        serving_size_unit: nextUnit,
-        ...(trimmedTimes !== feedingTimes ? { feeding_times: trimmedTimes } : {}),
-      });
-    } catch {
-      return; // saveAssignmentField already shows Alert
-    }
-
-    // 2. Rebalance sibling serving (daily food with a sibling only)
-    if (hasSibling && activePet) {
-      const siblingProduct = siblingItem.product as unknown as Product;
-      try {
-        await rebalanceExistingFood(
-          siblingItem.id,
-          activePet,
-          next, // The meals THIS food covers (stealing from total)
-          currentTotalMeals,
-          siblingProduct,
-          canUseGoalWeight(),
-        );
-
-        const siblingPct = Math.round((currentTotalMeals - next) / currentTotalMeals * 100);
-        const siblingName = stripBrandFromName(siblingProduct.brand, siblingProduct.name);
-        setRebalanceNote(`Updated ${siblingName} to ${siblingPct}% allocation`);
-        if (rebalanceNoteTimer.current) clearTimeout(rebalanceNoteTimer.current);
-        rebalanceNoteTimer.current = setTimeout(() => setRebalanceNote(null), 3000);
-
-        // Refresh store to pick up sibling changes
-        if (activePetId) loadPantry(activePetId);
-      } catch (e) {
-        if (e instanceof PantryOfflineError) Alert.alert('Offline', (e as PantryOfflineError).message);
-      }
-    }
-
-    rescheduleAllFeeding().catch(() => {});
-  }, [feedingsPerDay, feedingTimes, siblingFeedings, isTreat, siblingItem, activePet, activePetId, saveAssignmentField, loadPantry, autoMode, product, isUnitMode, servingSize]);
 
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
@@ -503,26 +327,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             <View style={styles.headerInfo}>
               <Text style={styles.headerBrand} numberOfLines={1}>{product.brand}</Text>
               <Text style={styles.headerName} numberOfLines={1}>{displayName}</Text>
-              
-              {!isTreat && product.category === 'daily_food' && !product.is_supplemental && !product.is_vet_diet && (
-                <>
-                  {myAssignment?.slot_index === 0 && (
-                    <View style={styles.primaryBadge}>
-                      <Text style={styles.primaryBadgeText}>Primary (Main)</Text>
-                    </View>
-                  )}
-                  {myAssignment?.slot_index === 1 && (
-                    <View style={styles.secondaryBadge}>
-                      <Text style={styles.secondaryBadgeText}>Secondary (Mix-in)</Text>
-                    </View>
-                  )}
-                  {myAssignment?.slot_index == null && (
-                    <View style={styles.legacyBadge}>
-                      <Text style={styles.legacyBadgeText}>Legacy (Unassigned)</Text>
-                    </View>
-                  )}
-                </>
-              )}
             </View>
             {product.image_url ? (
               <Image source={{ uri: product.image_url }} style={styles.headerImage} />
@@ -568,108 +372,34 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             {/* D-164: Unit type picker removed — always 'servings' */}
           </View>
 
-          {/* ── Feeding Card ── */}
+          {/* ── Feeding Details ── */}
           <View style={[styles.card, { opacity: feedingOpacity }]} pointerEvents={feedingDisabled ? 'none' : 'auto'}>
-            <Text style={styles.cardTitle}>Feeding</Text>
-
-            {/* Auto/Manual toggle (D-165 parity) */}
-            {canAutoCalc && !isTreat && (
-              <>
-                <Text style={styles.label}>Serving calculation</Text>
-                <View style={styles.toggleRow}>
-                  <TouchableOpacity
-                    style={[styles.toggleBtn, autoMode && styles.toggleBtnActive]}
-                    onPress={() => handleAutoManualToggle(true)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.toggleText, autoMode && styles.toggleTextActive]}>
-                      Auto
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.toggleBtn, !autoMode && styles.toggleBtnActive]}
-                    onPress={() => handleAutoManualToggle(false)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.toggleText, !autoMode && styles.toggleTextActive]}>
-                      Manual
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-
-            {/* Auto mode: read-only display (Phase C meal-based) */}
-            {effectiveAutoMode && autoServingResult && (
-              <>
-                <Text style={styles.label}>Amount per feeding</Text>
-                <View style={styles.autoServingDisplay}>
-                  <Text style={styles.autoServingValue}>
-                    {Math.round(autoServingResult.amount * 100) / 100}
-                  </Text>
-                  <Text style={styles.autoServingUnit}>
-                    {autoServingResult.unit} per feeding
-                  </Text>
-                </View>
-                {feedingsPerDay > 1 && (
-                  <Text style={styles.autoServingMath}>
-                    {Math.round(autoServingResult.amount * feedingsPerDay * 100) / 100} {autoServingResult.unit}/day ({feedingsPerDay} feedings)
-                  </Text>
-                )}
-                <Text style={styles.autoServingMath}>
-                  {Math.round(autoServingResult.dailyKcal)} kcal daily allocation
-                  {' '}({Math.round(feedingsPerDay / totalMealsPerDay * 100)}%)
+            <Text style={styles.cardTitle}>Feeding Configuration</Text>
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Role</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {myAssignment.feeding_role === 'base' ? 'Base Diet' : myAssignment.feeding_role === 'rotational' ? 'Rotational Food' : 'Treat / Supplement'}
                 </Text>
-              </>
-            )}
-
-            {/* Manual mode: editable input (existing behavior) */}
-            {!effectiveAutoMode && (
-              <>
-                <Text style={styles.label}>Amount per feeding</Text>
-                <View style={styles.inputRow}>
-                  <TextInput
-                    style={styles.numberInput}
-                    keyboardType="decimal-pad"
-                    value={servingSize}
-                    onChangeText={setServingSize}
-                    onBlur={handleServingSizeBlur}
-                  />
-                  <Text style={styles.unitSuffix}>
-                    {isUnitMode ? 'servings' : myAssignment.serving_size_unit}
-                  </Text>
-                </View>
-              </>
-            )}
-
-            <Text style={styles.label}>Feedings per day</Text>
-            <View style={styles.stepperRow}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => handleFeedingsChange(-1)}
-                disabled={feedingsPerDay <= 1}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="remove" size={20} color={feedingsPerDay <= 1 ? Colors.textTertiary : Colors.textPrimary} />
-              </TouchableOpacity>
-              <Text style={styles.stepperValue}>{feedingsPerDay}</Text>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => handleFeedingsChange(1)}
-                disabled={feedingsPerDay >= 5}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={20} color={feedingsPerDay >= 5 ? Colors.textTertiary : Colors.textPrimary} />
-              </TouchableOpacity>
+              </View>
             </View>
 
-            {/* Rebalance note (auto-dismiss after 3s) */}
-            {rebalanceNote && (
-              <View style={styles.rebalanceNoteRow}>
-                <Ionicons name="information-circle" size={16} color={Colors.severityAmber} />
-                <Text style={styles.rebalanceNoteText}>{rebalanceNote}</Text>
+            {myAssignment.feeding_role === 'base' && myAssignment.calorie_share_pct != null && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Calorie Share</Text>
+                <Text style={styles.infoValue}>{myAssignment.calorie_share_pct}%</Text>
               </View>
             )}
+
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Auto-Deplete</Text>
+              <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
+            </View>
+            
+            <Text style={styles.infoSubtext}>
+               To update roles and behavioral settings, remove this item and add it again.
+            </Text>
           </View>
 
           {/* ── Schedule Card ── */}
@@ -722,7 +452,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
                           </TouchableOpacity>
                         </View>
                       ))}
-                      {feedingTimes.length < feedingsPerDay && (
+                      {feedingTimes.length < myAssignment.feedings_per_day && (
                         <TouchableOpacity
                           style={styles.addTimeBtn}
                           onPress={() => setTimePickerVisible(true)}
@@ -911,45 +641,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
-  primaryBadge: {
-    backgroundColor: 'rgba(88, 86, 214, 0.12)', // Indigo tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  primaryBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#5856D6',
-    fontWeight: '600',
-  },
-  secondaryBadge: {
-    backgroundColor: 'rgba(255, 149, 0, 0.12)', // Orange tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  secondaryBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#FF9500',
-    fontWeight: '600',
-  },
-  legacyBadge: {
-    backgroundColor: 'rgba(255, 59, 48, 0.12)', // Red tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  legacyBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#FF3B30',
-    fontWeight: '600',
-  },
   headerImage: {
     width: 44,
     height: 44,
@@ -993,6 +684,42 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
     marginTop: Spacing.sm,
+  },
+
+  // Behavioral Info
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.hairlineBorder,
+  },
+  infoLabel: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: FontSizes.md,
+    color: Colors.textPrimary,
+    fontWeight: '500',
+  },
+  infoSubtext: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    marginTop: Spacing.sm,
+    fontStyle: 'italic',
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: `${Colors.accent}1A`,
+  },
+  badgeText: {
+    fontSize: FontSizes.sm,
+    color: Colors.accent,
+    fontWeight: '600',
   },
 
   // Inputs

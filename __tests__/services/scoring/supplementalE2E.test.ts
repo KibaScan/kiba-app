@@ -161,6 +161,9 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       weight_goal_level: null, caloric_accumulator: null,
       accumulator_last_reset_at: null, accumulator_notification_sent: null,
       bcs_score: null, bcs_assessed_at: null,
+      feeding_style: 'dry_only' as const,
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
       created_at: '2026-01-01', updated_at: '2026-01-01',
     };
 
@@ -202,6 +205,9 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       weight_goal_level: null, caloric_accumulator: null,
       accumulator_last_reset_at: null, accumulator_notification_sent: null,
       bcs_score: null, bcs_assessed_at: null,
+      feeding_style: 'dry_only' as const,
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
       created_at: '2026-01-01', updated_at: '2026-01-01',
     };
 

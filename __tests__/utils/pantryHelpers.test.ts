@@ -27,11 +27,11 @@ import {
   convertFromKg,
   convertWeightToCups,
   convertWeightToServings,
-  pickSlotForSwap,
-  computeMealBasedServing,
-  getDefaultMealsCovered,
-  computeRebalancedMeals,
-  computeServingConversions,
+  pickBaseForSwap,
+  getTodayBounds,
+  getWetFoodKcal,
+  computeBehavioralServing,
+  computeBehavioralBudgetWarning,
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -51,7 +51,9 @@ function makeAssignment(overrides: Partial<PantryPetAssignment> = {}): PantryPet
     feeding_frequency: 'daily',
     feeding_times: null,
     notifications_on: true,
-    slot_index: 0,
+    feeding_role: 'base',
+    auto_deplete_enabled: false,
+    calorie_share_pct: 100,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -134,7 +136,10 @@ function makePet(overrides: Partial<Pet> = {}): Pet {
     sex: null,
     photo_url: null,
     life_stage: 'adult',
-    breed_size: null,
+    breed_size: 'medium',
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
     health_reviewed_at: null,
     weight_goal_level: null,
     caloric_accumulator: null,
@@ -838,164 +843,201 @@ describe('convertWeightToServings', () => {
   });
 });
 
-// ─── pickSlotForSwap (M9 Phase B) ───────────────────────
+// ─── pickBaseForSwap (M9 Phase D) ───────────────────────
 
-describe('pickSlotForSwap', () => {
+describe('pickBaseForSwap', () => {
   function makeAnchor(overrides: Partial<PantryAnchor>): PantryAnchor {
     return {
       pantryItemId: 'pi-1',
       productId: 'prod-1',
       productForm: 'dry',
-      slotIndex: 0,
+      feedingRole: 'base',
       resolvedScore: 60,
       ...overrides,
     };
   }
 
   test('returns null when there are no anchors', () => {
-    expect(pickSlotForSwap([], 'dry')).toBeNull();
+    expect(pickBaseForSwap([], 'dry')).toBeNull();
   });
 
   test('returns the sole anchor when only one exists', () => {
-    const only = makeAnchor({ pantryItemId: 'pi-only', slotIndex: 0 });
-    expect(pickSlotForSwap([only], 'dry')).toBe(only);
+    const only = makeAnchor({ pantryItemId: 'pi-only', feedingRole: 'base' });
+    expect(pickBaseForSwap([only], 'dry')).toBe(only);
   });
 
   test('prefers exact product_form match over score when forms differ', () => {
-    const dry = makeAnchor({ pantryItemId: 'pi-dry', productForm: 'dry', slotIndex: 0, resolvedScore: 85 });
-    const wet = makeAnchor({ pantryItemId: 'pi-wet', productForm: 'wet', slotIndex: 1, resolvedScore: 40 });
+    const dry = makeAnchor({ pantryItemId: 'pi-dry', productForm: 'dry', feedingRole: 'base', resolvedScore: 85 });
+    const wet = makeAnchor({ pantryItemId: 'pi-wet', productForm: 'wet', feedingRole: 'rotational', resolvedScore: 40 });
     // New product is dry, even though wet is lower-scoring
-    expect(pickSlotForSwap([dry, wet], 'dry')?.pantryItemId).toBe('pi-dry');
+    expect(pickBaseForSwap([dry, wet], 'dry')?.pantryItemId).toBe('pi-dry');
   });
 
   test('falls back to lowest score when no form match exists', () => {
-    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 82 });
-    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', feedingRole: 'base', resolvedScore: 82 });
+    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', feedingRole: 'rotational', resolvedScore: 55 });
     // New product is wet, neither anchor matches → pick lower score
-    expect(pickSlotForSwap([dryA, dryB], 'wet')?.pantryItemId).toBe('pi-b');
+    expect(pickBaseForSwap([dryA, dryB], 'wet')?.pantryItemId).toBe('pi-b');
   });
 
   test('tie-breaks by score when multiple anchors match form', () => {
-    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 80 });
-    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
-    expect(pickSlotForSwap([dryA, dryB], 'dry')?.pantryItemId).toBe('pi-b');
-  });
-
-  test('prefers slot 0 over slot 1 when form and score are tied', () => {
-    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 60 });
-    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 60 });
-    expect(pickSlotForSwap([dryA, dryB], 'dry')?.pantryItemId).toBe('pi-a');
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', feedingRole: 'base', resolvedScore: 80 });
+    const dryB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', feedingRole: 'rotational', resolvedScore: 55 });
+    expect(pickBaseForSwap([dryA, dryB], 'dry')?.pantryItemId).toBe('pi-b');
   });
 
   test('treats null product_form as no preference (score-based pick)', () => {
-    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 75 });
-    const wetB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'wet', slotIndex: 1, resolvedScore: 45 });
-    expect(pickSlotForSwap([dryA, wetB], null)?.pantryItemId).toBe('pi-b');
+    const dryA = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', feedingRole: 'base', resolvedScore: 75 });
+    const wetB = makeAnchor({ pantryItemId: 'pi-b', productForm: 'wet', feedingRole: 'rotational', resolvedScore: 45 });
+    expect(pickBaseForSwap([dryA, wetB], null)?.pantryItemId).toBe('pi-b');
   });
 
   test('handles null resolvedScore by treating it as 100 (unknown = not urgent)', () => {
-    const unscored = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: null });
-    const scored = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: 1, resolvedScore: 55 });
-    expect(pickSlotForSwap([unscored, scored], 'dry')?.pantryItemId).toBe('pi-b');
-  });
-
-  test('grandfathered null slotIndex sorts last in tie-break', () => {
-    // Both score 60 dry, one has slot 0, one has null — slot 0 wins
-    const slot0 = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 60 });
-    const nullSlot = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', slotIndex: null, resolvedScore: 60 });
-    expect(pickSlotForSwap([slot0, nullSlot], 'dry')?.pantryItemId).toBe('pi-a');
-  });
-
-  test('handles 3+ grandfathered anchors via form then score', () => {
-    const dry0 = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', slotIndex: 0, resolvedScore: 80 });
-    const wet1 = makeAnchor({ pantryItemId: 'pi-b', productForm: 'wet', slotIndex: 1, resolvedScore: 65 });
-    const dryNull = makeAnchor({ pantryItemId: 'pi-c', productForm: 'dry', slotIndex: null, resolvedScore: 50 });
-    // New product is dry → filter to [dry0, dryNull] → lowest score = dryNull
-    expect(pickSlotForSwap([dry0, wet1, dryNull], 'dry')?.pantryItemId).toBe('pi-c');
+    const unscored = makeAnchor({ pantryItemId: 'pi-a', productForm: 'dry', feedingRole: 'base', resolvedScore: null });
+    const scored = makeAnchor({ pantryItemId: 'pi-b', productForm: 'dry', feedingRole: 'rotational', resolvedScore: 55 });
+    expect(pickBaseForSwap([unscored, scored], 'dry')?.pantryItemId).toBe('pi-b');
   });
 });
 
-// ─── Phase C: Meal-Based Computations ───────────────────
+// ─── Behavioral Feeding Math (M9 Phase D) ───────────────
 
-describe('computeMealBasedServing', () => {
-  test('returns correct serving when covering partial meals', () => {
+describe('getWetFoodKcal', () => {
+  test('returns kcalPerUnit when available', () => {
+    const product = makeProduct({ product_form: 'wet', kcal_per_unit: 85, ga_kcal_per_kg: null, unit_weight_g: null });
+    expect(getWetFoodKcal(product)).toEqual({ kcal: 85, source: 'label' });
+  });
+
+  test('falls back to calculation when kcal_per_unit is null', () => {
+    const product = makeProduct({ product_form: 'wet', kcal_per_unit: null, ga_kcal_per_kg: 1000, unit_weight_g: 85 });
+    expect(getWetFoodKcal(product)).toEqual({ kcal: 85, source: 'label' });
+  });
+
+  test('uses size fallback when no calorie data exists', () => {
+    const product = makeProduct({
+      name: 'Wet food 3 oz can',
+      product_form: 'wet',
+      kcal_per_unit: null,
+      ga_kcal_per_kg: null,
+      unit_weight_g: null
+    });
+    // 3 oz = 3 * 28.3495 = 85.0485 => ~85 grams => ~85 kcal
+    expect(getWetFoodKcal(product)).toEqual({ kcal: 85, source: 'size_fallback' });
+  });
+
+  test('returns null when no data and no size string', () => {
+    const product = makeProduct({ name: 'Wet food can', product_form: 'wet', kcal_per_unit: null, ga_kcal_per_kg: null, unit_weight_g: null });
+    expect(getWetFoodKcal(product)).toBeNull();
+  });
+});
+
+describe('computeBehavioralServing', () => {
+  const defaultPet = makePet(); // 50lbs dog -> ~1018 DER
+
+  test('dry_only uses full budget', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_only' as const };
     const product = makeProduct({ ga_kcal_per_cup: 400 });
-    const pet = makePet({ weight_current_lbs: 50 });
-    const result = computeMealBasedServing(pet, product, 1, 2, false, null);
-    expect(result).not.toBeNull();
-    expect(result!.unit).toBe('cups');
-    expect(result!.dailyKcal).toBeGreaterThan(0);
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // 1018 / 400 = 2.545 cups
+    expect(result?.amount).toBeCloseTo(2.545);
+    expect(result?.unit).toBe('cups');
+    expect(result?.basisKcal).toBe(1018);
   });
 
-  test('splits budget per meal accurately', () => {
+  test('dry_and_wet base deducts wet actual', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_and_wet' as const, wet_reserve_kcal: 200 };
     const product = makeProduct({ ga_kcal_per_cup: 400 });
-    const pet = makePet({ weight_current_lbs: 20 });
-    const result_1_of_2 = computeMealBasedServing(pet, product, 1, 2, false, null);
-    const result_2_of_2 = computeMealBasedServing(pet, product, 2, 2, false, null);
-    expect(result_1_of_2).not.toBeNull();
-    expect(result_2_of_2).not.toBeNull();
-    // 2 meals covered should have double the dailyKcal of 1 meal covered, but same per-meal amount
-    expect(result_1_of_2!.amount).toBeCloseTo(result_2_of_2!.amount, 2);
-    expect(result_1_of_2!.dailyKcal * 2).toBeCloseTo(result_2_of_2!.dailyKcal, 0);
+    // Wet actual is 300 (logs beat reserve) -> Budget 1018 - 300 = 718
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 300, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    expect(result?.basisKcal).toBe(718);
+    expect(result?.amount).toBeCloseTo(718 / 400);
   });
 
-  test('no calorie data returns null', () => {
-    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: null });
-    const pet = makePet({ weight_current_lbs: 20 });
-    expect(computeMealBasedServing(pet, product, 1, 2, false, null)).toBeNull();
-  });
-
-  test('edit scenario: changing meals at fixed total adjusts allocation proportionally', () => {
+  test('dry_and_wet base defaults to wet reserve when logs are 0', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_and_wet' as const, wet_reserve_kcal: 200 };
     const product = makeProduct({ ga_kcal_per_cup: 400 });
-    const pet = makePet({ weight_current_lbs: 30 });
-    // Simulate edit: food covers 1 of 3 meals, then user bumps to 2 of 3
-    const before = computeMealBasedServing(pet, product, 1, 3, false, null);
-    const after = computeMealBasedServing(pet, product, 2, 3, false, null);
-    expect(before).not.toBeNull();
-    expect(after).not.toBeNull();
-    // dailyKcal should double (1/3 -> 2/3 of DER)
-    expect(after!.dailyKcal).toBeCloseTo(before!.dailyKcal * 2, 0);
-    // Per-meal amount stays the same (more meals but proportionally more kcal)
-    expect(after!.amount).toBeCloseTo(before!.amount, 2);
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // 1018 - 200 = 818
+    expect(result?.basisKcal).toBe(818);
+    expect(result?.amount).toBeCloseTo(818 / 400);
   });
 
-  test('returns null for zero or negative inputs', () => {
+  test('dry_and_wet rotational returns null', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_and_wet' as const };
+    const product = makeProduct({ product_form: 'wet', kcal_per_unit: 100 });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'rotational', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    expect(result).toBeNull();
+  });
+
+  test('wet_only uses remaining budget for all items', () => {
+    const pet = { ...defaultPet, feeding_style: 'wet_only' as const };
+    const product = makeProduct({ product_form: 'wet', kcal_per_unit: 100, ga_kcal_per_cup: null });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'rotational', dailyWetFedKcal: 300, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // 1018 - 300 = 718
+    expect(result?.basisKcal).toBe(718);
+    expect(result?.amount).toBeCloseTo(718 / 100);
+  });
+
+  test('isInTransition flag bypasses calculation', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_only' as const };
     const product = makeProduct({ ga_kcal_per_cup: 400 });
-    const pet = makePet({ weight_current_lbs: 20 });
-    expect(computeMealBasedServing(pet, product, 0, 2, false, null)).toBeNull();
-    expect(computeMealBasedServing(pet, product, 1, 0, false, null)).toBeNull();
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false, isInTransition: true
+    });
+    expect(result).toBeNull();
   });
 });
 
-describe('getDefaultMealsCovered', () => {
-  test('0 existing foods -> default covers all meals', () => {
-    expect(getDefaultMealsCovered(0, 2)).toBe(2);
+describe('computeBehavioralBudgetWarning', () => {
+  test('rotational items never warn', () => {
+    const warning = computeBehavioralBudgetWarning({
+      feedingRole: 'rotational', feedingStyle: 'dry_and_wet', totalBaseKcal: 2000, maintenanceDer: 1000, wetReserveKcal: 0, petName: 'Buddy'
+    });
+    expect(warning).toBeNull();
   });
-  test('1+ existing food -> covers 1 meal', () => {
-    expect(getDefaultMealsCovered(1, 2)).toBe(1);
-    expect(getDefaultMealsCovered(1, 3)).toBe(1);
-    expect(getDefaultMealsCovered(2, 2)).toBe(1);
+
+  test('dry_only compares to full maintenance DER', () => {
+    const warning = computeBehavioralBudgetWarning({
+      feedingRole: 'base', feedingStyle: 'dry_only', totalBaseKcal: 1100, maintenanceDer: 1000, wetReserveKcal: 0, petName: 'Buddy'
+    });
+    expect(warning?.level).toBe('over');
+  });
+
+  test('dry_and_wet compares to maintenance minus reserve', () => {
+    const warning = computeBehavioralBudgetWarning({
+      feedingRole: 'base', feedingStyle: 'dry_and_wet', totalBaseKcal: 900, maintenanceDer: 1000, wetReserveKcal: 200, petName: 'Buddy'
+    });
+    // Target is 800. 900 / 800 = 112% => 'over'
+    expect(warning?.level).toBe('over');
+  });
+
+  test('warns significantly_over when reserve takes whole budget', () => {
+    const warning = computeBehavioralBudgetWarning({
+      feedingRole: 'base', feedingStyle: 'dry_and_wet', totalBaseKcal: 100, maintenanceDer: 1000, wetReserveKcal: 1200, petName: 'Buddy'
+    });
+    expect(warning?.level).toBe('significantly_over');
   });
 });
 
-describe('computeRebalancedMeals', () => {
-  test('subtracts new meals from total', () => {
-    expect(computeRebalancedMeals(3, 1)).toBe(2);
-    expect(computeRebalancedMeals(4, 1)).toBe(3);
-    expect(computeRebalancedMeals(2, 1)).toBe(1);
-  });
-  test('floors at 1', () => {
-    expect(computeRebalancedMeals(2, 2)).toBe(1);
-    expect(computeRebalancedMeals(1, 2)).toBe(1);
-    expect(computeRebalancedMeals(3, 3)).toBe(1);
+describe('getTodayBounds', () => {
+  test('returns start at midnight and end exactly 24h later', () => {
+    const bounds = getTodayBounds();
+    expect(bounds.start).toBeInstanceOf(Date);
+    expect(bounds.end).toBeInstanceOf(Date);
+    expect(bounds.start.getHours()).toBe(0);
+    expect(bounds.start.getMinutes()).toBe(0);
+    expect(bounds.start.getSeconds()).toBe(0);
+    expect(bounds.end.getTime() - bounds.start.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 });
 
-describe('computeServingConversions', () => {
-  test('1 cup equals roughly 110-115g', () => {
-    const res = computeServingConversions(1);
-    expect(res.g).toBeCloseTo(113.4, 0);
-    expect(res.oz).toBeCloseTo(4, 0);
-  });
-});
 

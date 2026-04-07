@@ -37,6 +37,7 @@ interface PantryCardProps {
   onFindReplacement?: (productId: string) => void;
   /** M9 Phase B: true when this item is the anchor of an active/paused Safe Switch. */
   isLocked?: boolean;
+  onLogFeeding?: (item: PantryCardData) => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -99,7 +100,7 @@ function getDepletionBarColor(pct: number): string {
 
 // ─── Component ──────────────────────────────────────────
 
-export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement, isLocked }: PantryCardProps) {
+export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement, isLocked, onLogFeeding }: PantryCardProps) {
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
@@ -107,6 +108,9 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
 
   const myAssignment = item.assignments.find(a => a.pet_id === activePet.id)
     ?? item.assignments[0];
+
+  const isRotational = myAssignment?.feeding_role === 'rotational';
+  const isFedToday = item.last_deducted_at ? new Date(item.last_deducted_at).toDateString() === new Date().toDateString() : false;
 
   const displayName = stripBrandFromName(product.brand, product.name);
   const remaining = getRemainingText(item, isTreat);
@@ -174,26 +178,6 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
                 <View style={styles.supplementalBadge}>
                   <Text style={styles.supplementalBadgeText}>Supplemental</Text>
                 </View>
-              )}
-              {/* Slot Indicator */}
-              {!isTreat && product.category === 'daily_food' && !product.is_supplemental && !isVetDiet && (
-                <>
-                  {myAssignment?.slot_index === 0 && (
-                    <View style={styles.primaryBadge}>
-                      <Text style={styles.primaryBadgeText}>Primary</Text>
-                    </View>
-                  )}
-                  {myAssignment?.slot_index === 1 && (
-                    <View style={styles.secondaryBadge}>
-                      <Text style={styles.secondaryBadgeText}>Secondary</Text>
-                    </View>
-                  )}
-                  {myAssignment?.slot_index == null && (
-                    <View style={styles.legacyBadge}>
-                      <Text style={styles.legacyBadgeText}>Legacy</Text>
-                    </View>
-                  )}
-                </>
               )}
             </View>
 
@@ -311,23 +295,11 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
 
         {/* Calorie context */}
         {!isTreat && item.calorie_context && (
-           (() => {
-             const isLegacy = product.category === 'daily_food' && !product.is_supplemental && !isVetDiet && myAssignment?.slot_index == null;
-             if (isLegacy) {
-               return (
-                 <Text style={styles.legacyCalorieText}>
-                   Over budget — conflicts with active slots
-                 </Text>
-               );
-             }
-             return (
-               <Text style={styles.calorieText}>
-                 {item.calorie_context.allocation_pct != null
-                   ? `${item.calorie_context.allocation_pct}% of daily target (~${item.calorie_context.daily_kcal} kcal)`
-                   : `~${item.calorie_context.daily_kcal} kcal/day of ${item.calorie_context.target_kcal} kcal target`}
-               </Text>
-             );
-           })()
+          <Text style={styles.calorieText}>
+            {item.calorie_context.allocation_pct != null
+              ? `${item.calorie_context.allocation_pct}% of daily target (~${item.calorie_context.daily_kcal} kcal)`
+              : `~${item.calorie_context.daily_kcal} kcal/day of ${item.calorie_context.target_kcal} kcal target`}
+          </Text>
         )}
 
         {/* M9 Phase B: locked badge when this item is anchoring an active Safe Switch */}
@@ -349,6 +321,26 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
             <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
             <Text style={styles.findReplacementText}>Find a replacement</Text>
           </TouchableOpacity>
+        )}
+
+        {/* Behavioral Rotational Food action */}
+        {isRotational && !item.is_empty && onLogFeeding && !isFedToday && (
+          <TouchableOpacity
+            style={styles.gaveTreatButton}
+            onPress={() => onLogFeeding(item)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="restaurant-outline" size={16} color={Colors.accent} />
+            <Text style={styles.gaveTreatText}>Log feeding</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Behavioral Fed Today Badge */}
+        {isRotational && !item.is_empty && isFedToday && (
+          <View style={[styles.lockedBadge, { backgroundColor: `${SEVERITY_COLORS.good}1A` }]}>
+            <Ionicons name="checkmark-circle" size={12} color={SEVERITY_COLORS.good} />
+            <Text style={[styles.lockedBadgeText, { color: SEVERITY_COLORS.good }]}>Fed today</Text>
+          </View>
         )}
 
         {/* Gave a treat action */}
@@ -524,44 +516,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
-  },
-  primaryBadge: {
-    backgroundColor: 'rgba(88, 86, 214, 0.12)', // Indigo tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  primaryBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#5856D6',
-    fontWeight: '600',
-  },
-  secondaryBadge: {
-    backgroundColor: 'rgba(255, 149, 0, 0.12)', // Orange tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  secondaryBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#FF9500',
-    fontWeight: '600',
-  },
-  legacyBadge: {
-    backgroundColor: 'rgba(255, 59, 48, 0.12)', // Red tint
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  legacyBadgeText: {
-    fontSize: FontSizes.xs,
-    color: '#FF3B30',
-    fontWeight: '600',
-  },
-  legacyCalorieText: {
-    fontSize: FontSizes.sm,
-    color: '#FF3B30',
-    marginTop: 4,
   },
 
   // Right column

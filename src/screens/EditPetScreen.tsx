@@ -26,6 +26,8 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
 import { synthesizeDob, formatLocalDate, parseDateString } from '../utils/lifeStage';
 import { updatePet, deletePet, getPetConditions, getPetAllergens } from '../services/petService';
+import { FeedingStyleSetupSheet } from '../components/pantry/FeedingStyleSetupSheet';
+import type { FeedingStyle } from '../types/pet';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
 import { convertToKg, convertFromKg, getWeightUnitPref, setWeightUnitPref } from '../utils/pantryHelpers';
@@ -75,6 +77,8 @@ export default function EditPetScreen({ navigation, route }: Props) {
   const [weight, setWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate');
   const [isNeutered, setIsNeutered] = useState(true);
+  const [feedingStyle, setFeedingStyle] = useState<FeedingStyle>('dry_only');
+  const [showFeedingStyleSheet, setShowFeedingStyleSheet] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [breedSelectorVisible, setBreedSelectorVisible] = useState(false);
   const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
@@ -134,6 +138,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
     setBreed(pet.breed);
     setActivityLevel(pet.activity_level);
     setIsNeutered(pet.is_neutered);
+    setFeedingStyle(pet.feeding_style ?? 'dry_only');
     setPhotoUri(pet.photo_url);
 
     if (pet.weight_current_lbs != null) {
@@ -264,6 +269,7 @@ export default function EditPetScreen({ navigation, route }: Props) {
         dob_is_approximate: dobIsApproximate,
         activity_level: activityLevel,
         is_neutered: isNeutered,
+        feeding_style: feedingStyle,
         sex,
         photo_url: photoUri,
       });
@@ -579,6 +585,21 @@ export default function EditPetScreen({ navigation, route }: Props) {
               ))}
             </View>
 
+            {/* Feeding Style */}
+            <Text style={styles.fieldLabel}>Feeding Style</Text>
+            <TouchableOpacity
+              style={styles.linkRow}
+              activeOpacity={0.6}
+              onPress={() => setShowFeedingStyleSheet(true)}
+            >
+              <Text style={styles.switchLabel}>
+                {feedingStyle === 'dry_only' ? 'Dry food only' :
+                 feedingStyle === 'dry_and_wet' ? 'Dry + wet food' :
+                 feedingStyle === 'wet_only' ? 'Wet food only' : 'Dry food only'}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+            </TouchableOpacity>
+
             {/* Neutered */}
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Spayed / Neutered</Text>
@@ -712,6 +733,17 @@ export default function EditPetScreen({ navigation, route }: Props) {
           </View>
         </View>
       </Modal>
+
+      {/* Feeding Style Sheet */}
+      <FeedingStyleSetupSheet
+        isVisible={showFeedingStyleSheet}
+        petName={pet.name}
+        onSelect={(style: FeedingStyle) => {
+          setFeedingStyle(style);
+          setShowFeedingStyleSheet(false);
+        }}
+        onDismiss={() => setShowFeedingStyleSheet(false)}
+      />
     </SafeAreaView>
   );
 }

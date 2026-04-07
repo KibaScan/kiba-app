@@ -7,6 +7,7 @@ export type QuantityUnit = 'lbs' | 'oz' | 'kg' | 'g' | 'units';
 export type ServingSizeUnit = 'cups' | 'scoops' | 'units';
 export type FeedingFrequency = 'daily' | 'as_needed';
 export type UnitLabel = 'servings';
+export type FeedingRole = 'base' | 'rotational' | null;
 
 // ─── DB Interfaces ──────────────────────────────────────
 
@@ -27,7 +28,7 @@ export interface PantryItem {
   updated_at: string;
 }
 
-/** Matches pantry_pet_assignments table exactly. Migration 031 added slot_index. */
+/** Matches pantry_pet_assignments table exactly. Migration 034 added behavioral feeding fields. */
 export interface PantryPetAssignment {
   id: string;
   pantry_item_id: string;
@@ -38,23 +39,26 @@ export interface PantryPetAssignment {
   feeding_frequency: FeedingFrequency;
   feeding_times: string[] | null;
   notifications_on: boolean;
-  /** M9 Phase B: 0 = primary slot, 1 = secondary slot, null = grandfathered or non-daily-food */
-  slot_index: number | null;
+  
+  // Behavioral Feeding Base Setup
+  feeding_role: FeedingRole;
+  auto_deplete_enabled: boolean;
+  calorie_share_pct: number;
+  
   created_at: string;
   updated_at: string;
 }
 
 /**
  * Lightweight "where does this daily food live?" lookup result.
- * Populated by pantryService.getPantryAnchor. Used by ResultScreen to decide
- * whether to show "Switch to this" and by pickSlotForSwap to pick which slot
- * a Safe Switch should replace on 2-slot pets.
+ * populated by pantryService.getPantryAnchor. Used by Safe Switch functionality
+ * to decide whether to show "Switch to this" and pick which item to swap.
  */
 export interface PantryAnchor {
   pantryItemId: string;
   productId: string;
   productForm: string | null;
-  slotIndex: number | null;
+  feedingRole: FeedingRole;
   resolvedScore: number | null;
 }
 
@@ -121,6 +125,9 @@ export interface AddToPantryInput {
   feedings_per_day: number;
   feeding_frequency: FeedingFrequency;
   feeding_times?: string[];
+  feeding_role?: FeedingRole;
+  auto_deplete_enabled?: boolean;
+  calorie_share_pct?: number;
 }
 
 export interface DepletionBreakdown {

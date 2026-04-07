@@ -5,7 +5,6 @@
 import { supabase } from './supabase';
 import { isOnline } from '../utils/network';
 import { PantryOfflineError } from '../types/pantry';
-import { rebalanceExistingFood } from './pantryService';
 import { canUseGoalWeight } from '../utils/permissions';
 import type { Pet } from '../types/pet';
 import type { Product } from '../types';
@@ -256,39 +255,8 @@ export async function completeSafeSwitch(
     throw new Error(`Failed to complete safe switch: ${rpcErr.message}`);
   }
 
-  // Step 4: Rebalance sibling if it exists
-  if (sw.pet && sw.pantry_item_id && sw.new_feedings_per_day != null) {
-    const { data: siblingQuery, error: siblingErr } = await supabase
-      .from('pantry_pet_assignments')
-      .select('pantry_item_id, feedings_per_day, pantry_items!inner(is_active, products!inner(*))')
-      .eq('pet_id', sw.pet_id)
-      .neq('pantry_item_id', sw.pantry_item_id)
-      .eq('pantry_items.is_active', true)
-      .eq('pantry_items.products.category', 'daily_food')
-      .neq('pantry_items.products.is_supplemental', true)
-      .neq('pantry_items.products.is_vet_diet', true)
-      .limit(1)
-      .maybeSingle();
-
-    if (siblingQuery && !siblingErr) {
-      const siblingProduct = (siblingQuery as any).pantry_items.products as Product;
-      const totalMeals = sw.new_feedings_per_day + siblingQuery.feedings_per_day;
-      
-      try {
-        await rebalanceExistingFood(
-          siblingQuery.pantry_item_id,
-          sw.pet,
-          sw.new_feedings_per_day, // meals the new food covers
-          totalMeals,
-          siblingProduct,
-          canUseGoalWeight()
-        );
-      } catch (e) {
-        console.warn('[completeSafeSwitch] Failed to rebalance sibling:', e);
-      }
-    }
-  }
-
+  // Step 4: (M9 Phase C) Rebalancing siblings is obsolete in behavioral feeding
+  
   // Step 5: Return computed values so the caller can render without a re-fetch
   return { outcome, message };
 }

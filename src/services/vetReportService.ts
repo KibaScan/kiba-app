@@ -7,7 +7,7 @@ import { isOnline } from '../utils/network';
 import { getPetConditions, getPetAllergens, getMedications, getConditionDetails } from './petService';
 import { getHealthRecords } from './appointmentService';
 import { getUpcomingAppointments } from './appointmentService';
-import { computePetDer } from '../utils/pantryHelpers';
+import { computePetDer, getWetFoodKcal } from '../utils/pantryHelpers';
 import { useTreatBatteryStore, getTodayStr } from '../stores/useTreatBatteryStore';
 import { getOwnerDietaryCards, detectConflicts } from '../data/ownerDietaryCards';
 
@@ -111,8 +111,14 @@ export async function assembleVetReportData(
   const conditionNotes = generateConditionNotes(conditionTags, combinedNutrition, dietItems, pet);
   const treatSummary = computeTreatSummary(petId, pantryCards);
   const adjustedDER = computePetDer(pet, true, pet.weight_goal_level) ?? 0;
-  const totalDailyKcal = dietItems.reduce((sum, d) => sum + d.dailyKcal, 0)
-    + (treatSummary?.avgDailyKcal ?? 0);
+  
+  const baseKcal = dietItems.reduce((sum, d) => sum + d.dailyKcal, 0);
+  const treatKcal = treatSummary?.avgDailyKcal ?? 0;
+  
+  // Under behavioral feeding, rotational items are 0 dailyKcal, so their allotment comes from wet_reserve_kcal
+  const wetReserve = pet.feeding_style === 'dry_and_wet' ? (pet.wet_reserve_kcal ?? 0) : 0;
+  const totalDailyKcal = baseKcal + treatKcal + wetReserve;
+  
   const caloricBalance = totalDailyKcal - adjustedDER;
   const weightTracking = buildWeightTracking(pet);
   const ownerDietaryCards = getOwnerDietaryCards(conditionTags, allergenNames.length, pet.species);
@@ -139,6 +145,7 @@ export async function assembleVetReportData(
     weightTracking,
     adjustedDER,
     caloricBalance,
+    wetReserveKcal: pet.wet_reserve_kcal ?? null,
     ownerDietaryCards,
     conditionConflicts,
     generatedAt: new Date().toISOString(),
@@ -196,7 +203,7 @@ export function buildDietItems(
 
     // Build serving display
     const servingDisplay = assignment
-      ? formatServing(assignment)
+      ? formatServing(assignment, product as unknown as import('../types/index').Product)
       : 'As needed';
 
     // Determine form label
@@ -207,7 +214,7 @@ export function buildDietItems(
       brand: product.brand,
       form: formLabel,
       servingDisplay,
-      dailyKcal,
+      dailyKcal: assignment?.feeding_role === 'rotational' ? 0 : dailyKcal,
       category: product.category,
       isSupplemental: product.is_supplemental,
       isRecalled: product.is_recalled,
@@ -225,7 +232,16 @@ export function buildDietItems(
   });
 }
 
-export function formatServing(assignment: PantryPetAssignment): string {
+export function formatServing(assignment: PantryPetAssignment, product?: import('../types/index').Product): string {
+  if (assignment.feeding_role === 'rotational') {
+    const unitLabel = assignment.serving_size_unit || 'unit';
+    if (!product) return `Rotational (~kcal per ${unitLabel})`;
+    
+    const kcalRes = getWetFoodKcal(product);
+    const kcalStr = kcalRes ? `${kcalRes.kcal} kcal` : '~kcal';
+    return `Rotational (${kcalStr} per ${unitLabel})`;
+  }
+
   const size = assignment.serving_size;
   const unit = assignment.serving_size_unit;
   const freq = assignment.feedings_per_day;

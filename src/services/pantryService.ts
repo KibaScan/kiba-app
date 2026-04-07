@@ -16,10 +16,10 @@ import {
   calculateDaysRemaining,
   isLowStock,
   getCalorieContext,
+  getWetFoodKcal,
 } from '../utils/pantryHelpers';
 import type { Pet } from '../types/pet';
 import type { Product } from '../types';
-import { computeMealBasedServing, computeRebalancedMeals } from '../utils/pantryHelpers';
 
 // ─── Internal ───────────────────────────────────────────
 
@@ -27,43 +27,6 @@ async function requireOnline(): Promise<void> {
   if (!(await isOnline())) throw new PantryOfflineError();
 }
 
-/**
- * M9 Phase B: picks the next available slot (0 or 1) for a daily-food assignment
- * on a given pet. Returns null when both slots are full (grandfathered 3+ case)
- * or when the product isn't daily_food. Used by addToPantry + sharePantryItem so
- * newly-added daily foods get a slot label automatically.
- */
-async function pickNextSlotForPet(
-  petId: string,
-  productId: string,
-): Promise<number | null> {
-  // Only daily_food, non-supplemental, non-vet-diet get slot assignments
-  const { data: product } = await supabase
-    .from('products')
-    .select('category, is_supplemental, is_vet_diet')
-    .eq('id', productId)
-    .single();
-  const p = product as { category: string; is_supplemental: boolean | null; is_vet_diet: boolean | null } | null;
-  if (!p || p.category !== 'daily_food' || p.is_supplemental === true || p.is_vet_diet === true) {
-    return null;
-  }
-
-  // Find existing slot_index values for this pet (any category, but the partial
-  // unique index only applies when slot_index is set — so only daily_food rows
-  // have non-null slot_index in practice).
-  const { data: existing } = await supabase
-    .from('pantry_pet_assignments')
-    .select('slot_index')
-    .eq('pet_id', petId)
-    .not('slot_index', 'is', null);
-
-  const taken = new Set(
-    ((existing ?? []) as { slot_index: number }[]).map(r => r.slot_index),
-  );
-  if (!taken.has(0)) return 0;
-  if (!taken.has(1)) return 1;
-  return null; // Grandfathered 3+ case
-}
 
 // ─── Write Functions ────────────────────────────────────
 
@@ -92,10 +55,6 @@ export async function addToPantry(
 
   if (itemErr) throw new Error(`Failed to add pantry item: ${itemErr.message}`);
 
-  // M9 Phase B: auto-assign slot_index for daily food so newly-added items get
-  // a slot label in SafeSwitchSetupScreen and are countable as slot-anchored.
-  const slotIndex = await pickNextSlotForPet(petId, input.product_id);
-
   const { error: assignErr } = await supabase
     .from('pantry_pet_assignments')
     .insert({
@@ -106,10 +65,14 @@ export async function addToPantry(
       feedings_per_day: input.feedings_per_day,
       feeding_frequency: input.feeding_frequency,
       feeding_times: input.feeding_times ?? null,
-      slot_index: slotIndex,
+      feeding_role: input.feeding_role ?? null,
+      auto_deplete_enabled: input.auto_deplete_enabled ?? false,
+      calorie_share_pct: input.calorie_share_pct ?? 100,
     });
 
   if (assignErr) throw new Error(`Failed to assign pantry item: ${assignErr.message}`);
+
+  await refreshWetReserve(petId);
 
   return item as PantryItem;
 }
@@ -162,7 +125,16 @@ export async function removePantryItem(
         .eq('id', itemId);
       if (deactErr) throw new Error(`Failed to deactivate item: ${deactErr.message}`);
     }
+    
+    await refreshWetReserve(petId);
   } else {
+    // Collect affected pet IDs before deleting assignments
+    const { data: affected } = await supabase
+      .from('pantry_pet_assignments')
+      .select('pet_id')
+      .eq('pantry_item_id', itemId);
+    const affectedPetIds = [...new Set((affected ?? []).map(a => a.pet_id))];
+
     // Delete all assignments first, then soft-delete the item
     const { error: delAssignErr } = await supabase
       .from('pantry_pet_assignments')
@@ -175,6 +147,10 @@ export async function removePantryItem(
       .update({ is_active: false })
       .eq('id', itemId);
     if (error) throw new Error(`Failed to remove pantry item: ${error.message}`);
+
+    for (const pid of affectedPetIds) {
+      await refreshWetReserve(pid);
+    }
   }
 }
 
@@ -234,62 +210,17 @@ export async function updatePetAssignment(
     .single();
 
   if (error) throw new Error(`Failed to update assignment: ${error.message}`);
+  
+  await refreshWetReserve(data.pet_id);
+  
   return data as PantryPetAssignment;
 }
 
-/**
- * Phase C: Rebalances an existing daily food assignment when a new daily food is added.
- * Automatically adjusts the existing food to cover the remaining meals in the day.
- */
-export async function rebalanceExistingFood(
-  pantryItemId: string,
-  pet: Pet,
-  newMealsCovered: number,
-  totalMealsPerDay: number,
-  product: Product,
-  isPremiumGoalWeight: boolean,
-): Promise<PantryPetAssignment> {
-  await requireOnline();
-
-  const { data: current, error: fetchErr } = await supabase
-    .from('pantry_pet_assignments')
-    .select('id')
-    .eq('pantry_item_id', pantryItemId)
-    .eq('pet_id', pet.id)
-    .single();
-
-  if (fetchErr) throw new Error(`Failed to fetch assignment: ${fetchErr.message}`);
-
-  // Calculate new target meals
-  const adjustedMeals = computeRebalancedMeals(totalMealsPerDay, newMealsCovered);
-
-  // Recalculate serving based on adjusted meals
-  const serving = computeMealBasedServing(
-    pet,
-    product,
-    adjustedMeals,
-    totalMealsPerDay,
-    isPremiumGoalWeight,
-    pet.weight_goal_level,
-  );
-
-  // If we can't compute (e.g. no kcal data), just update the feeding frequency but leave serving size alone
-  const updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency'>> = {
-    feedings_per_day: adjustedMeals,
-  };
-
-  if (serving) {
-    updates.serving_size = serving.amount;
-    updates.serving_size_unit = serving.unit;
-  }
-
-  return updatePetAssignment(current.id, updates);
-}
 
 export async function sharePantryItem(
   itemId: string,
   petId: string,
-  assignment: Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency'>,
+  assignment: Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency' | 'feeding_role' | 'auto_deplete_enabled' | 'calorie_share_pct'>,
 ): Promise<PantryPetAssignment> {
   await requireOnline();
 
@@ -315,22 +246,20 @@ export async function sharePantryItem(
     throw new Error(`Cannot share: product is for ${productSpecies}, pet is ${(pet as { species: string }).species}`);
   }
 
-  // M9 Phase B: auto-assign slot_index for the target pet
-  const productId = (item as { product_id: string }).product_id;
-  const slotIndex = await pickNextSlotForPet(petId, productId);
-
   const { data, error } = await supabase
     .from('pantry_pet_assignments')
     .insert({
       pantry_item_id: itemId,
       pet_id: petId,
       ...assignment,
-      slot_index: slotIndex,
     })
     .select()
     .single();
 
   if (error) throw new Error(`Failed to share pantry item: ${error.message}`);
+  
+  await refreshWetReserve(petId);
+  
   return data as PantryPetAssignment;
 }
 
@@ -563,31 +492,33 @@ export async function checkDuplicateUpc(
 
 /**
  * Returns diet completeness status for a pet's pantry.
- *
- * M9 Phase B note: this function is slot-compatible but not slot-aware. It
- * still returns 'complete' when any non-supplemental daily_food assignment
- * exists, which is a no-op for users whose slots were backfilled correctly.
- * Slot-aware nudges ("add a second slot for mixed feeding") are a FUTURE
- * extension — don't gate completeness on slot_index or new additions will
- * silently drop to 'red_warning' until auto-slot-assignment runs.
+ * Feeding-style-aware: checks for base foods (dry_only, dry_and_wet) or any
+ * daily foods (wet_only, custom) depending on the pet's feeding style.
  */
 export async function evaluateDietCompleteness(
   petId: string,
   petName: string,
 ): Promise<DietCompletenessResult> {
-  // Step 1: Get item IDs for this pet
-  const { data: assignments, error: assignErr } = await supabase
-    .from('pantry_pet_assignments')
-    .select('pantry_item_id')
-    .eq('pet_id', petId);
+  const [assignRes, petRes] = await Promise.all([
+    supabase
+      .from('pantry_pet_assignments')
+      .select('pantry_item_id, feeding_role')
+      .eq('pet_id', petId),
+    supabase
+      .from('pets')
+      .select('feeding_style')
+      .eq('id', petId)
+      .single()
+  ]);
 
-  if (assignErr || !assignments || assignments.length === 0) {
+  if (assignRes.error || !assignRes.data || assignRes.data.length === 0) {
     return { status: 'empty', message: null };
   }
 
-  const itemIds = (assignments as { pantry_item_id: string }[]).map(a => a.pantry_item_id);
+  const feedingStyle = petRes.data?.feeding_style ?? 'dry_only';
+  const itemIds = assignRes.data.map(a => a.pantry_item_id);
+  const roleMap = new Map(assignRes.data.map(a => [a.pantry_item_id, a.feeding_role]));
 
-  // Step 2: Fetch items with product info
   const { data: items, error: itemErr } = await supabase
     .from('pantry_items')
     .select('id, products(is_supplemental, category)')
@@ -598,21 +529,30 @@ export async function evaluateDietCompleteness(
     return { status: 'empty', message: null };
   }
 
+  // Find daily foods
   const typedItems = items as unknown as { id: string; products: { is_supplemental: boolean; category: string } | null }[];
 
-  const completeFoods = typedItems.filter(
+  const dailyFoods = typedItems.filter(
     i => i.products?.is_supplemental === false && i.products?.category === 'daily_food',
   );
-  
-  if (completeFoods.length > 2) {
-    return {
-      status: 'red_warning',
-      message: 'You have too many daily foods active. Please remove a legacy food.',
-    };
-  }
 
-  if (completeFoods.length > 0) {
-    return { status: 'complete', message: null };
+  const baseFoodsCount = dailyFoods.filter(i => roleMap.get(i.id) === 'base').length;
+  const hasBase = baseFoodsCount > 0;
+  const hasAnyDaily = dailyFoods.length > 0;
+
+  // evaluate completeness based on feeding style
+  if (feedingStyle === 'dry_only' || feedingStyle === 'dry_and_wet') {
+    if (hasBase) {
+      return { status: 'complete', message: null };
+    }
+  } else if (feedingStyle === 'wet_only') {
+    if (hasAnyDaily) {
+      return { status: 'complete', message: null };
+    }
+  } else if (feedingStyle === 'custom') {
+    if (hasAnyDaily) {
+      return { status: 'complete', message: null };
+    }
   }
 
   const nonTreatItems = typedItems.filter(i => i.products?.category !== 'treat');
@@ -641,29 +581,83 @@ export async function evaluateDietCompleteness(
 }
 
 /**
- * M9 Phase B: returns every daily-food pantry anchor for a pet, hydrated with
- * slot_index, product_form, and D-156 resolved score. Used by:
+ * Recalculates and persists wet_reserve_kcal for a pet.
+ */
+export async function refreshWetReserve(petId: string): Promise<void> {
+  try {
+    const { data: pet } = await supabase.from('pets').select('feeding_style').eq('id', petId).single();
+    if (pet?.feeding_style !== 'dry_and_wet') return;
+
+    const { data: assignments } = await supabase
+      .from('pantry_pet_assignments')
+      .select('feeding_role, pantry_items(quantity_remaining, products(*))')
+      .eq('pet_id', petId)
+      .eq('feeding_role', 'rotational')
+      .eq('pantry_items.is_active', true)
+      .eq('pantry_items.products.category', 'daily_food')
+      .eq('pantry_items.products.is_supplemental', false)
+      .eq('pantry_items.products.is_vet_diet', false);
+
+    if (!assignments || assignments.length === 0) {
+      await supabase.from('pets').update({ wet_reserve_kcal: 0, wet_reserve_source: null }).eq('id', petId);
+      return;
+    }
+
+    let totalKcal = 0;
+    let totalWeight = 0;
+    const sourceCounts = new Map<string, number>();
+
+    for (const a of assignments) {
+      const item = a.pantry_items as unknown as { quantity_remaining: number | null; products: any } | null;
+      if (!item || !item.products) continue;
+      const qtyContext = item.quantity_remaining && item.quantity_remaining > 0 ? item.quantity_remaining : 1;
+      const kcalRes = getWetFoodKcal(item.products);
+      if (kcalRes) {
+        totalKcal += kcalRes.kcal * qtyContext;
+        totalWeight += qtyContext;
+        sourceCounts.set(kcalRes.source, (sourceCounts.get(kcalRes.source) ?? 0) + qtyContext);
+      }
+    }
+
+    const newReserve = totalWeight > 0 ? Math.round(totalKcal / totalWeight) : 0;
+    let newSource: string | null = null;
+    if (sourceCounts.size === 1) {
+      newSource = [...sourceCounts.keys()][0];
+    } else if (sourceCounts.size > 1) {
+      newSource = 'blended';
+    }
+
+    await supabase.from('pets').update({ wet_reserve_kcal: newReserve, wet_reserve_source: newSource }).eq('id', petId);
+  } catch (e) {
+    console.error('[refreshWetReserve] Failed (non-blocking):', e);
+  }
+}
+
+/**
+ * M9 Phase D: returns every daily-food pantry anchor for a pet, hydrated with
+ * feeding_role, product_form, and D-156 resolved score. Used by:
  *  - ResultScreen to decide whether to show the "Switch to this" CTA
- *  - pickSlotForSwap (pantryHelpers) to pick which slot a Safe Switch replaces
- *  - SafeSwitchSetupScreen to render the slot picker bottom sheet
+ *  - pickBaseForSwap (pantryHelpers) to pick which base food a Safe Switch replaces
+ *  - SafeSwitchSetupScreen to render the base food picker bottom sheet
  *
  * Filters: is_active=true, category='daily_food', is_supplemental=false,
- * is_vet_diet=false, assigned to this pet. Grandfathered rows (slot_index=null)
- * are included — pickSlotForSwap sorts them to the back via ?? 99.
+ * is_vet_diet=false, assigned to this pet.
  *
  * Offline-graceful: returns [] on error.
  */
 export async function getPantryAnchor(petId: string): Promise<PantryAnchor[]> {
   try {
-    // Step 1: Get this pet's assignments with slot_index
+    // Step 1: Get this pet's assignments with feeding_role
     const { data: assignments, error: assignErr } = await supabase
       .from('pantry_pet_assignments')
-      .select('pantry_item_id, slot_index')
+      .select('pantry_item_id, feeding_role')
       .eq('pet_id', petId);
     if (assignErr || !assignments || assignments.length === 0) return [];
 
-    const typedAssignments = assignments as { pantry_item_id: string; slot_index: number | null }[];
-    const slotByItemId = new Map(typedAssignments.map(a => [a.pantry_item_id, a.slot_index]));
+    let typedAssignments = assignments as { pantry_item_id: string; feeding_role: 'base' | 'rotational' | null }[];
+    typedAssignments = typedAssignments.filter(a => a.feeding_role !== 'rotational');
+    if (typedAssignments.length === 0) return [];
+    const roleByItemId = new Map(typedAssignments.map(a => [a.pantry_item_id, a.feeding_role]));
     const itemIds = typedAssignments.map(a => a.pantry_item_id);
 
     // Step 2: Fetch active items joined to products, filter daily food / non-supplemental / non-vet-diet
@@ -702,11 +696,57 @@ export async function getPantryAnchor(petId: string): Promise<PantryAnchor[]> {
       pantryItemId: i.id,
       productId: i.product_id,
       productForm: i.products?.product_form ?? null,
-      slotIndex: slotByItemId.get(i.id) ?? null,
+      feedingRole: roleByItemId.get(i.id) ?? null,
       resolvedScore: scoreMap.get(i.product_id) ?? null,
     }));
   } catch (e) {
     console.error('[getPantryAnchor] FAILED:', e);
     return [];
+  }
+}
+
+// ─── M9 Phase D: Behavioral Feeding RPCs ────────────────
+
+export async function logWetFeeding(params: {
+  petId: string;
+  pantryItemId: string;
+  kcalFed: number;
+  quantityFed: number;
+}): Promise<{ logId: string; error: null | string }> {
+  try {
+    await requireOnline();
+    const { data, error } = await supabase.rpc('log_wet_feeding_atomic', {
+      p_pet_id: params.petId,
+      p_pantry_item_id: params.pantryItemId,
+      p_kcal_fed: params.kcalFed,
+      p_quantity_fed: params.quantityFed,
+    });
+
+    if (error) {
+      console.error('[logWetFeeding] RPC Failed:', error);
+      return { logId: '', error: error.message };
+    }
+
+    return { logId: data as string, error: null };
+  } catch (e: any) {
+    console.error('[logWetFeeding] Service Error:', e);
+    return { logId: '', error: e.message || 'Network error' };
+  }
+}
+
+export async function undoWetFeeding(logId: string): Promise<{ success: boolean; error: null | string }> {
+  try {
+    await requireOnline();
+    const { error } = await supabase.rpc('undo_wet_feeding_atomic', { p_log_id: logId });
+
+    if (error) {
+      console.error('[undoWetFeeding] RPC Failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (e: any) {
+    console.error('[undoWetFeeding] Service Error:', e);
+    return { success: false, error: e.message || 'Network error' };
   }
 }

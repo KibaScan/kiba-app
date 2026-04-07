@@ -8,6 +8,7 @@ import {
   View,
   Text,
   FlatList,
+  SectionList,
   TouchableOpacity,
   Image,
   Alert,
@@ -26,6 +27,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants';
 import { PantryCard } from '../components/pantry/PantryCard';
+import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import SwipeableRow from '../components/ui/SwipeableRow';
 import { useActivePetStore } from '../stores/useActivePetStore';
@@ -34,6 +36,7 @@ import { getActiveSwitchForPet } from '../services/safeSwitchService';
 import type { PantryCardData, DietCompletenessResult } from '../types/pantry';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import type { PantryStackParamList } from '../types/navigation';
+import type { Product } from '../types';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -154,12 +157,43 @@ export default function PantryScreen({ navigation }: Props) {
   const [activeSort, setActiveSort] = useState<SortOption>('default');
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [removeSheetItem, setRemoveSheetItem] = useState<PantryCardData | null>(null);
+  const [logFeedingItem, setLogFeedingItem] = useState<PantryCardData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
   // ── Derived data ──
   const filteredItems = useMemo(() => filterItems(items, activeFilter), [items, activeFilter]);
   const displayItems = useMemo(() => sortItems(filteredItems, activeSort), [filteredItems, activeSort]);
+
+  const sections = useMemo(() => {
+    if (!activePetId) return [];
+    
+    // Base Foods
+    const base = displayItems.filter(i => {
+      const assignment = i.assignments.find(a => a.pet_id === activePetId);
+      return assignment?.feeding_role === 'base';
+    });
+
+    // Rotational Wet
+    const rotational = displayItems.filter(i => {
+      const assignment = i.assignments.find(a => a.pet_id === activePetId);
+      return assignment?.feeding_role === 'rotational';
+    });
+
+    // Treats & Supplements (catch-all for non role-assigned items)
+    const treats = displayItems.filter(i => {
+      const assignment = i.assignments.find(a => a.pet_id === activePetId);
+      return !assignment?.feeding_role; // null/undefined -> treat/supplement
+    });
+
+    const res = [];
+    if (base.length > 0) res.push({ title: 'Base Diet', data: base, type: 'base' });
+    if (rotational.length > 0) res.push({ title: 'Rotational Foods', data: rotational, type: 'rotational' });
+    if (treats.length > 0) res.push({ title: 'Treats & Supplements', data: treats, type: 'treats' });
+    
+    return res;
+  }, [displayItems, activePetId]);
+
   const bannerConfig = useMemo(() => getDietBannerConfig(dietStatus), [dietStatus]);
   const recalledItems = useMemo(() => items.filter(i => i.product?.is_recalled), [items]);
   const hasMultiplePets = pets.length > 1;
@@ -466,11 +500,16 @@ export default function PantryScreen({ navigation }: Props) {
       </View>
 
       {/* Item list */}
-      <FlatList
-        data={displayItems}
+      <SectionList
+        sections={sections}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{title}</Text>
+          </View>
+        )}
         renderItem={({ item }) => {
           // M9 Phase B: items anchoring an active Safe Switch are locked —
           // no swipe actions, no "Find a replacement", with a visual badge.
@@ -487,6 +526,7 @@ export default function PantryScreen({ navigation }: Props) {
                 onRestock={handleRestock}
                 onRemove={handleRemove}
                 onGaveTreat={handleGaveTreat}
+                onLogFeeding={(i) => setLogFeedingItem(i)}
                 isLocked={locked}
                 onFindReplacement={(productId) => {
                   navigation.navigate('Result', {
@@ -619,6 +659,21 @@ export default function PantryScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      {/* Fed This Today Sheet */}
+      <FedThisTodaySheet
+        isVisible={logFeedingItem !== null}
+        petId={activePetId}
+        pantryItem={logFeedingItem}
+        product={logFeedingItem?.product as unknown as Product}
+        onDismiss={() => setLogFeedingItem(null)}
+        onSuccess={() => {
+          setLogFeedingItem(null);
+          if (activePetId) {
+             loadPantry(activePetId);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -629,6 +684,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  sectionHeader: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.background,
+  },
+  sectionHeaderText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // Header

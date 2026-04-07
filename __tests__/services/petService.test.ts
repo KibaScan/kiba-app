@@ -83,6 +83,9 @@ function fakePet(overrides: Partial<Pet> = {}): Pet {
     accumulator_notification_sent: null,
     bcs_score: null,
     bcs_assessed_at: null,
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -128,6 +131,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     expect(result).toEqual(returned);
@@ -182,6 +188,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -221,6 +230,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -255,6 +267,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -289,6 +304,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -320,6 +338,9 @@ describe('createPet', () => {
         accumulator_notification_sent: null,
         bcs_score: null,
         bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
       }),
     ).rejects.toThrow('Pet name is required');
   });
@@ -349,6 +370,9 @@ describe('createPet', () => {
         accumulator_notification_sent: null,
         bcs_score: null,
         bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
       }),
     ).rejects.toThrow('Pet name must be 20 characters or fewer');
   });
@@ -381,6 +405,9 @@ describe('createPet', () => {
       accumulator_notification_sent: null,
       bcs_score: null,
       bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];

@@ -1,7 +1,7 @@
 // AddToPantrySheet — Bottom sheet for adding a product to a pet's pantry.
 // Phase C Redesign: Meal-based UX, Safe Switch handoff, auto-serving calculation.
-// D-165: Budget-aware auto/manual serving recommendations.
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+// Phase D Redesign: Behavioral Feeding, dynamic remaining budget.
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Pressable, // eslint-disable-line @typescript-eslint/no-unused-vars
+  Pressable,
   Image,
   Alert,
 } from 'react-native';
@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import type { Product } from '../../types';
 import { Category } from '../../types';
-import type { Pet } from '../../types/pet';
+import type { Pet, FeedingStyle } from '../../types/pet';
 import type {
   PantryItem,
   AddToPantryInput,
@@ -27,53 +27,31 @@ import type {
   ServingMode,
   ServingSizeUnit,
   FeedingFrequency,
+  FeedingRole,
 } from '../../types/pantry';
-import { PantryOfflineError } from '../../types/pantry';
-import { addToPantry } from '../../services/pantryService';
+import { updatePet } from '../../services/petService';
 import {
   defaultServingMode,
-  calculateDepletionBreakdown,
-  computePetDer,
-  computeExistingPantryKcal,
-  computeBudgetWarning,
-  getSmartDefaultFeedingsPerDay,
-  getConditionFeedingsPerDay,
   parseProductSize,
-  convertToKg,
-  convertFromKg,
-  convertWeightToCups,
-  computeMealBasedServing,
-  getDefaultMealsCovered,
-  computeRebalancedMeals,
-  computeServingConversions,
+  computePetDer,
+  computeBehavioralServing,
 } from '../../utils/pantryHelpers';
 import { usePantryStore } from '../../stores/usePantryStore';
-import { useActivePetStore } from '../../stores/useActivePetStore';
 import { canUseGoalWeight } from '../../utils/permissions';
 import { chipToggle, saveSuccess } from '../../utils/haptics';
 import { stripBrandFromName } from '../../utils/formatters';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { styles } from './AddToPantryStyles';
+import { FeedingStyleSetupSheet } from './FeedingStyleSetupSheet';
 
 // ─── Exported Pure Helpers ──────────────────────────────
-
-export const FRACTIONAL_CHIPS = [
-  { label: '\u00BC', value: 0.25 },
-  { label: '\u2153', value: 0.333 },
-  { label: '\u00BD', value: 0.5 },
-  { label: '\u2154', value: 0.667 },
-  { label: '\u00BE', value: 0.75 },
-  { label: '1', value: 1 },
-  { label: '1\u00BD', value: 1.5 },
-  { label: '2', value: 2 },
-];
 
 export function isTreat(category: Category): boolean {
   return category === Category.Treat || category === Category.Supplement;
 }
 
 export function getDefaultFeedingsPerDay(category: Category): number {
-  return isTreat(category) ? 1 : 2;
+  return isTreat(category) ? 1 : 1; // Unused for behavioral feeding daily_food
 }
 
 export function getDefaultFeedingFrequency(category: Category): FeedingFrequency {
@@ -96,6 +74,7 @@ export function buildAddToPantryInput(params: {
   servingSizeUnit: ServingSizeUnit;
   feedingsPerDay: number;
   feedingFrequency: FeedingFrequency;
+  feedingRole?: FeedingRole;
 }): AddToPantryInput {
   return {
     product_id: params.productId,
@@ -107,6 +86,7 @@ export function buildAddToPantryInput(params: {
     serving_size_unit: params.servingSizeUnit,
     feedings_per_day: params.feedingsPerDay,
     feeding_frequency: params.feedingFrequency,
+    feeding_role: params.feedingRole,
   };
 }
 
@@ -146,13 +126,12 @@ export function AddToPantrySheet({
   const numDailyFoods = dailyFoodItems.length;
 
   // Local State
+  const [showStyleSetup, setShowStyleSetup] = useState(false);
+  const [hasSeenStyleSetup, setHasSeenStyleSetup] = useState(false);
   const [isNewToDiet, setIsNewToDiet] = useState<boolean | null>(null);
-  const [totalMealsPerDay, setTotalMealsPerDay] = useState(2);
-  const [mealsCovered, setMealsCovered] = useState(1);
   const [autoMode, setAutoMode] = useState(true);
   
-  // Advanced Conversions / Manual overrides
-  const [conversionsExpanded, setConversionsExpanded] = useState(false);
+  // Manual overrides
   const [manualServingSize, setManualServingSize] = useState(1);
   const [manualServingUnit, setManualServingUnit] = useState<ServingSizeUnit>('cups');
 
@@ -164,35 +143,22 @@ export function AddToPantrySheet({
   
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stepperHint, setStepperHint] = useState(false);
-  const stepperHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Budgets
-  const petDer = useMemo(() => computePetDer(pet, canUseGoalWeight(), pet.weight_goal_level), [pet]);
-  const existKcal = useMemo(() => computeExistingPantryKcal(pantryItems, pet.id), [pantryItems, pet.id]);
+  // Behavioral Feeding Base Setup
+  useEffect(() => {
+    if (visible && !treat && numDailyFoods === 0 && !hasSeenStyleSetup && pet.feeding_style === 'dry_only') {
+      setShowStyleSetup(true);
+    }
+  }, [visible, treat, numDailyFoods, hasSeenStyleSetup, pet.feeding_style]);
 
   // Reset & Init
   useEffect(() => {
     if (!visible) return;
     setIsNewToDiet(null);
-    setConversionsExpanded(false);
     setAutoMode(true);
     setSubmitting(false);
     setError(null);
-    setStepperHint(false);
-    if (stepperHintTimer.current) clearTimeout(stepperHintTimer.current);
     setBagCollapsed(false);
-
-    // Total meals = sum of existing daily food feedings, or condition-aware default
-    const existingDailyFeedings = pantryItems.reduce((sum, item) => {
-      if (item.product.category !== 'daily_food' || item.is_empty || item.product.is_supplemental) return sum;
-      const asg = item.assignments.find(a => a.pet_id === pet.id && a.feeding_frequency === 'daily');
-      return sum + (asg?.feedings_per_day ?? 0);
-    }, 0);
-    const conditionMeals = conditions ? getConditionFeedingsPerDay(conditions) : null;
-    const baseMeals = existingDailyFeedings > 0 ? existingDailyFeedings : (conditionMeals ?? 2);
-    setTotalMealsPerDay(baseMeals);
-    setMealsCovered(treat ? 1 : getDefaultMealsCovered(numDailyFoods, baseMeals));
 
     const mode = treat ? 'unit' : defaultServingMode(product.product_form);
     setServingMode(mode);
@@ -214,28 +180,50 @@ export function AddToPantrySheet({
     }
   }, [visible, product, pet, treat]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto Computation
+  // Behavioral Feeding Role Inference
+  const inferredRole: FeedingRole = useMemo(() => {
+    if (treat) return null;
+    if (pet.feeding_style === 'wet_only') return 'rotational';
+    if (pet.feeding_style === 'dry_and_wet' && product.product_form === 'wet') return 'rotational';
+    return 'base';
+  }, [treat, pet.feeding_style, product.product_form]);
+
+  const feedingFrequency: FeedingFrequency = treat ? 'as_needed' : (inferredRole === 'rotational' ? 'as_needed' : 'daily');
+
+  // Auto Computation (Behavioral Math)
   const autoServingResult = useMemo(() => {
-    if (treat || !autoMode) return null;
-    return computeMealBasedServing(pet, product, mealsCovered, totalMealsPerDay, canUseGoalWeight(), pet.weight_goal_level);
-  }, [treat, autoMode, pet, product, mealsCovered, totalMealsPerDay]);
+    if (treat || !autoMode || !inferredRole) return null;
+    return computeBehavioralServing({
+      pet,
+      product,
+      feedingRole: inferredRole,
+      dailyWetFedKcal: 0, // Fresh addition, no actuals
+      dryFoodSplitPct: 100, // Safe default
+      isPremiumGoalWeight: canUseGoalWeight(),
+      isInTransition: isNewToDiet === true,
+    });
+  }, [treat, autoMode, inferredRole, pet, product, isNewToDiet]);
 
   const canAutoCalc = useMemo(() => {
-    return computeMealBasedServing(pet, product, 1, 1, false, null) != null;
+    return computeBehavioralServing({
+      pet,
+      product,
+      feedingRole: 'base', // Try with base just to see if kcal exists
+      dailyWetFedKcal: 0,
+      dryFoodSplitPct: 100,
+      isPremiumGoalWeight: false,
+    }) != null;
   }, [pet, product]);
 
   const effectiveServingSize = autoMode && autoServingResult ? autoServingResult.amount : manualServingSize;
   const effectiveServingUnit = autoMode && autoServingResult ? autoServingResult.unit : manualServingUnit;
 
-  // Rebalance existing logic
-  const showsRebalanceNote = !treat && !isNewToDiet && numDailyFoods > 0;
-  
   // Validation
   const bagValid = quantityValue.trim() !== '' && parseFloat(quantityValue) > 0;
-  const ctaReady = treat || isNewToDiet === null 
+  const ctaReady = treat || inferredRole === 'rotational' || isNewToDiet === null 
     ? bagValid 
     : isNewToDiet === true 
-      ? true // Safe switch just needs meal config
+      ? true 
       : bagValid;
 
   // Handlers
@@ -243,32 +231,6 @@ export function AddToPantrySheet({
     chipToggle();
     setIsNewToDiet(val);
     if (!val && !bagValid) setBagCollapsed(false);
-  };
-
-  // With existing daily foods, cap at totalMealsPerDay - 1 (sibling keeps at least 1).
-  // Without existing foods, allow up to 5 (health conditions, small breeds, etc.).
-  const maxMealsCovered = numDailyFoods > 0 ? Math.max(1, totalMealsPerDay - 1) : 5;
-
-  const adjustMealsCovered = (delta: number) => {
-    chipToggle();
-    setMealsCovered(prev => {
-      const next = prev + delta;
-      if (next < 1) return 1;
-      if (next > maxMealsCovered) {
-        if (delta > 0 && numDailyFoods > 0) {
-          setStepperHint(true);
-          if (stepperHintTimer.current) clearTimeout(stepperHintTimer.current);
-          stepperHintTimer.current = setTimeout(() => setStepperHint(false), 3000);
-        }
-        return prev;
-      }
-      setStepperHint(false);
-      // When first/only food, totalMealsPerDay tracks the stepper (100% allocation)
-      if (numDailyFoods === 0) {
-        setTotalMealsPerDay(next);
-      }
-      return next;
-    });
   };
 
   const handleCTA = async () => {
@@ -285,12 +247,12 @@ export function AddToPantrySheet({
           servingMode,
           servingSize: manualServingSize,
           servingSizeUnit: manualServingUnit,
-          feedingsPerDay: mealsCovered,
+          feedingsPerDay: 1,
           feedingFrequency: 'as_needed',
         });
-        const item = await addToPantry(input, pet.id);
+        await addItemWithRebalance(input, pet.id);
         saveSuccess();
-        onAdded(item);
+        onAdded();
         onClose();
       } catch (e) {
         setError((e as Error).message);
@@ -300,44 +262,33 @@ export function AddToPantrySheet({
       return;
     }
 
-    // Phase C Daily Food
+    // Daily Food Path (Behavioral)
     try {
-      if (isNewToDiet === true && onStartSafeSwitch) { // SAFE SWITCH HANDOFF
+      // Safe switch strictly for BASE role transitions
+      if (isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch) {
         onStartSafeSwitch({
           newProductId: product.id,
           petId: pet.id,
           newServingSize: effectiveServingSize,
           newServingSizeUnit: effectiveServingUnit,
-          newFeedingsPerDay: mealsCovered,
+          newFeedingsPerDay: 1, // Deprecated, Safe Switch doesn't use it anymore either
         });
-        onClose(); // Parent (ResultScreen) will navigate
-      } else { // DIRECT PANTRY ADD
+        onClose();
+      } else {
         const input = buildAddToPantryInput({
           productId: product.id,
           quantityValue,
           quantityUnit: servingMode === 'unit' ? 'units' : quantityUnit,
           servingMode,
-          servingSize: effectiveServingSize,
-          servingSizeUnit: effectiveServingUnit,
-          feedingsPerDay: mealsCovered,
-          feedingFrequency: 'daily',
+          servingSize: effectiveServingSize || 1,
+          servingSizeUnit: effectiveServingUnit || 'cups',
+          feedingsPerDay: 1,
+          feedingFrequency,
+          feedingRole: inferredRole,
         });
-        
-        let rebalanceTarget;
-        if (numDailyFoods === 1 && mealsCovered < totalMealsPerDay) {
-          rebalanceTarget = {
-            pantryItemId: dailyFoodItems[0].id,
-            newMealsCovered: mealsCovered,
-            totalMealsPerDay,
-            isPremiumGoalWeight: canUseGoalWeight(),
-          };
-        }
 
-        await addItemWithRebalance(input, pet.id, rebalanceTarget);
+        await addItemWithRebalance(input, pet.id);
         saveSuccess();
-        // Since addItem doesn't return the item anymore (we mapped it over to the store function which returns void),
-        // we'll just call onAdded with a fake item or null, the store already refreshed. Wait, ResultScreen needs it.
-        // Let's just pass null as any. The only thing ResultScreen uses it for is maybe a toast or navigating away.
         onAdded();
         onClose();
       }
@@ -355,6 +306,29 @@ export function AddToPantrySheet({
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </TouchableOpacity>
   );
+
+  // Show Loading if Style Setup Intercepts
+  if (showStyleSetup) {
+    return (
+      <FeedingStyleSetupSheet
+        isVisible={true}
+        petName={pet.name}
+        onSelect={async (style) => {
+          try {
+            await updatePet(pet.id, { feeding_style: style });
+          } catch (e) {
+            // fail silently, proceed
+          }
+          setHasSeenStyleSetup(true);
+          setShowStyleSetup(false);
+        }}
+        onDismiss={() => {
+          setHasSeenStyleSetup(true);
+          setShowStyleSetup(false);
+        }}
+      />
+    );
+  }
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -401,128 +375,97 @@ export function AddToPantrySheet({
               ) : (
                 /* DAILY FOOD PATH */
                 <>
-                  <Text style={styles.label}>Is this new to {pet.name}'s diet?</Text>
-                  <View style={styles.pillToggleRow}>
-                    <TouchableOpacity style={[styles.pillButton, isNewToDiet === true && styles.pillButtonActive]} onPress={() => handlePillSwitch(true)} activeOpacity={0.7}>
-                      <Text style={[styles.pillText, isNewToDiet === true && styles.pillTextActive]}>Yes</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.pillButton, isNewToDiet === false && styles.pillButtonActive]} onPress={() => handlePillSwitch(false)} activeOpacity={0.7}>
-                      <Text style={[styles.pillText, isNewToDiet === false && styles.pillTextActive]}>No</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {isNewToDiet !== null && (
+                  {/* Rotational wet foods do not need Safe Switch (Base only) */}
+                  {inferredRole === 'base' && (
                     <>
-                      {isNewToDiet === true && (
-                        <View style={styles.advisoryCard}>
-                          <Text style={styles.advisoryTitle}>Safe Switch Recommended</Text>
-                          <Text style={styles.advisoryText}>Sudden diet changes can cause stomach upset. We recommend a 7-day transition.</Text>
-                        </View>
-                      )}
-
-                      {isNewToDiet === false && (
-                        <View style={styles.section}>
-                          <Text style={styles.label}>Bag Size</Text>
-                          <View style={styles.inputRow}>
-                            <TextInput style={styles.numberInput} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={quantityValue} onChangeText={setQuantityValue} />
-                            <View style={styles.chipRow}>
-                              {WEIGHT_UNITS.map((u) => renderChip(u, quantityUnit === u, () => { chipToggle(); setQuantityUnit(u); }))}
-                            </View>
-                          </View>
-                        </View>
-                      )}
-                      
-                      {isNewToDiet === false && bagValid && bagCollapsed && (
-                        <TouchableOpacity style={styles.bagSizeCollapsed} onPress={() => { chipToggle(); setBagCollapsed(false); }} activeOpacity={0.7}>
-                          <Text style={styles.bagSizeLabel}>Bag Size</Text>
-                          <View style={styles.bagSizeValueRow}>
-                            <Text style={styles.bagSizeValue}>{quantityValue} {quantityUnit}</Text>
-                            <Ionicons name="chevron-down" size={16} color={Colors.textTertiary} />
-                          </View>
+                      <Text style={styles.label}>Is this new to {pet.name}'s diet?</Text>
+                      <View style={styles.pillToggleRow}>
+                        <TouchableOpacity style={[styles.pillButton, isNewToDiet === true && styles.pillButtonActive]} onPress={() => handlePillSwitch(true)} activeOpacity={0.7}>
+                          <Text style={[styles.pillText, isNewToDiet === true && styles.pillTextActive]}>Yes</Text>
                         </TouchableOpacity>
-                      )}
-
-                      <Text style={styles.label}>Daily feeding routine</Text>
-                      <Text style={styles.mealSentence}>How many meals per day will {pet.name} eat <Text style={styles.mealSentenceBold}>this food</Text>?</Text>
-                      
-                      <View style={styles.stepperContainer}>
-                        <Text style={styles.stepperLabel}>{mealsCovered} meal{mealsCovered !== 1 ? 's' : ''}</Text>
-                        <View style={styles.stepperRow}>
-                          <TouchableOpacity style={styles.stepperButton} onPress={() => adjustMealsCovered(-1)} disabled={mealsCovered <= 1}>
-                            <Ionicons name="remove" size={20} color={mealsCovered <= 1 ? Colors.textTertiary : Colors.textPrimary} />
-                          </TouchableOpacity>
-                          <Text style={styles.stepperValue}>{mealsCovered}</Text>
-                          <TouchableOpacity style={styles.stepperButton} onPress={() => adjustMealsCovered(1)} disabled={mealsCovered >= maxMealsCovered}>
-                            <Ionicons name="add" size={20} color={mealsCovered >= maxMealsCovered ? Colors.textTertiary : Colors.textPrimary} />
-                          </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity style={[styles.pillButton, isNewToDiet === false && styles.pillButtonActive]} onPress={() => handlePillSwitch(false)} activeOpacity={0.7}>
+                          <Text style={[styles.pillText, isNewToDiet === false && styles.pillTextActive]}>No</Text>
+                        </TouchableOpacity>
                       </View>
-
-                      {stepperHint && (
-                        <Text style={styles.stepperHintText}>To replace this food entirely, select "Yes" above to start a Safe Switch.</Text>
-                      )}
-
-                      {showsRebalanceNote && mealsCovered < totalMealsPerDay && (
-                        <View style={styles.rebalanceNoteRow}>
-                          <Ionicons name="information-circle" size={16} color={Colors.severityAmber} />
-                          <Text style={styles.rebalanceNoteText}>Existing foods will cover the other {totalMealsPerDay - mealsCovered} meal{totalMealsPerDay - mealsCovered > 1 ? 's' : ''}.</Text>
-                        </View>
-                      )}
-
-                      {/* Auto Math Block */}
-                      {canAutoCalc && (
-                        <View style={styles.autoStatusRow}>
-                          <View style={autoMode ? styles.autoBadge : styles.manualBadge}>
-                            <Text style={autoMode ? styles.autoBadgeText : styles.manualBadgeText}>{autoMode ? 'Auto' : 'Manual'}</Text>
-                          </View>
-                          {autoMode && autoServingResult ? (
-                            <View style={{flex:1}}>
-                              <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit} per meal</Text></Text>
-                              {mealsCovered > 1 && (
-                                <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.amount * mealsCovered * 100) / 100} {autoServingResult.unit}/day ({mealsCovered} meals)</Text></Text>
-                              )}
-                              <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.dailyKcal)} kcal daily allocation ({Math.round(mealsCovered / totalMealsPerDay * 100)}%)</Text></Text>
-                            </View>
-                          ) : (
-                            <View style={styles.inputRow}>
-                              <TextInput style={styles.numberInput} keyboardType="decimal-pad" value={String(manualServingSize)} onChangeText={(t) => setManualServingSize(parseFloat(t) || 0)} />
-                              <Text style={styles.unitSuffix}>{manualServingUnit}</Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-
-                      {autoMode && canAutoCalc && autoServingResult && autoServingResult.unit === 'cups' && (
-                        <View style={styles.conversionToggle}>
-                          <TouchableOpacity onPress={() => { chipToggle(); setConversionsExpanded(!conversionsExpanded); }} style={{flexDirection: 'row', alignItems: 'center', gap: 4}} activeOpacity={0.7}>
-                            <Text style={styles.conversionLinkText}>See conversions & manual override</Text>
-                            <Ionicons name={conversionsExpanded ? "chevron-up" : "chevron-down"} size={16} color={Colors.textTertiary} />
-                          </TouchableOpacity>
-                        </View>
-                      )}
-
-                      {conversionsExpanded && canAutoCalc && autoServingResult && (
-                        <View style={styles.conversionExpanded}>
-                          {(() => {
-                            const conv = computeServingConversions(effectiveServingSize);
-                            return (
-                              <Text style={styles.conversionText}>Equivalent to ~{Math.round(conv.g)}g or ~{Math.round(conv.oz)}oz per meal.</Text>
-                            );
-                          })()}
-                          <TouchableOpacity onPress={() => { chipToggle(); setAutoMode(false); setManualServingSize(Math.round(autoServingResult!.amount * 100) / 100); setConversionsExpanded(false); }} style={styles.resetToAutoLink}>
-                            <Text style={[styles.resetToAutoText, {color: Colors.textSecondary}]}>Switch to Manual Edit</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-
-                      {!autoMode && canAutoCalc && (
-                        <TouchableOpacity onPress={() => { chipToggle(); setAutoMode(true); }} style={styles.resetToAutoLink}>
-                          <Text style={styles.resetToAutoText}>Reset to Auto Math</Text>
-                        </TouchableOpacity>
-                      )}
-
                     </>
                   )}
+
+                  {isNewToDiet === true && inferredRole === 'base' && (
+                    <View style={styles.advisoryCard}>
+                      <Text style={styles.advisoryTitle}>Safe Switch Recommended</Text>
+                      <Text style={styles.advisoryText}>Sudden diet changes can cause stomach upset. We recommend a 7-day transition.</Text>
+                    </View>
+                  )}
+
+                  {(inferredRole === 'rotational' || isNewToDiet === false) && (
+                    <View style={styles.section}>
+                      <Text style={styles.label}>{servingMode === 'weight' ? 'Bag Size' : 'Quantity'}</Text>
+                      <View style={styles.inputRow}>
+                        <TextInput style={styles.numberInput} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={quantityValue} onChangeText={setQuantityValue} />
+                        <View style={styles.chipRow}>
+                          {servingMode === 'weight'
+                            ? WEIGHT_UNITS.map((u) => renderChip(u, quantityUnit === u, () => { chipToggle(); setQuantityUnit(u); }))
+                            : <Text style={styles.unitSuffix}>{quantityUnit}</Text>
+                          }
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                  
+                  {isNewToDiet === false && bagValid && bagCollapsed && inferredRole === 'base' && (
+                    <TouchableOpacity style={styles.bagSizeCollapsed} onPress={() => { chipToggle(); setBagCollapsed(false); }} activeOpacity={0.7}>
+                      <Text style={styles.bagSizeLabel}>Bag Size</Text>
+                      <View style={styles.bagSizeValueRow}>
+                        <Text style={styles.bagSizeValue}>{quantityValue} {quantityUnit}</Text>
+                        <Ionicons name="chevron-down" size={16} color={Colors.textTertiary} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+
+                  <View style={{ marginTop: Spacing.md }} />
+
+                  {/* Role Summary Badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.cardSurface, padding: Spacing.md, borderRadius: 12, marginBottom: Spacing.lg }}>
+                    <Ionicons name={inferredRole === 'rotational' ? "sync" : "nutrition"} size={20} color={inferredRole === 'rotational' ? Colors.accent : Colors.textSecondary} style={{ marginRight: Spacing.sm }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: FontSizes.sm, fontWeight: '600', color: Colors.textPrimary, marginBottom: 2 }}>
+                        {inferredRole === 'rotational' ? 'Rotational Food' : 'Base Food'}
+                      </Text>
+                      <Text style={{ fontSize: FontSizes.xs, color: Colors.textSecondary }}>
+                        {inferredRole === 'rotational' ? 'Logged manually as fed via "Fed This Today".' : 'Daily caloric anchor.'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Auto Math Block */}
+                  {inferredRole === 'base' && canAutoCalc && (
+                    <View style={styles.autoStatusRow}>
+                      <View style={autoMode ? styles.autoBadge : styles.manualBadge}>
+                        <Text style={autoMode ? styles.autoBadgeText : styles.manualBadgeText}>{autoMode ? 'Auto' : 'Manual'}</Text>
+                      </View>
+                      {autoMode && autoServingResult ? (
+                        <View style={{flex:1}}>
+                          <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit} / day</Text></Text>
+                          {pet.feeding_style === 'dry_and_wet' && (
+                             <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Budget excludes wet food allowance ({pet.wet_reserve_kcal || 0} kcal)</Text></Text>
+                          )}
+                          <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.basisKcal)} kcal daily allowance</Text></Text>
+                        </View>
+                      ) : (
+                        <View style={styles.inputRow}>
+                          <TextInput style={styles.numberInput} keyboardType="decimal-pad" value={String(manualServingSize)} onChangeText={(t) => setManualServingSize(parseFloat(t) || 0)} />
+                          <Text style={styles.unitSuffix}>{manualServingUnit}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {!autoMode && inferredRole === 'base' && canAutoCalc && (
+                    <TouchableOpacity onPress={() => { chipToggle(); setAutoMode(true); }} style={styles.resetToAutoLink}>
+                      <Text style={styles.resetToAutoText}>Reset to Auto Math</Text>
+                    </TouchableOpacity>
+                  )}
+
                 </>
               )}
 
@@ -531,7 +474,7 @@ export function AddToPantrySheet({
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  isNewToDiet === true && onStartSafeSwitch && styles.safeSwitchCta,
+                  isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch && styles.safeSwitchCta,
                   (!ctaReady || submitting) && styles.confirmButtonDisabled
                 ]}
                 onPress={handleCTA}
@@ -539,7 +482,7 @@ export function AddToPantrySheet({
                 activeOpacity={0.7}
               >
                 <Text style={styles.confirmButtonText}>
-                  {submitting ? 'Please wait...' : isNewToDiet === true && onStartSafeSwitch ? 'Continue to Safe Switch' : `Add to ${pet.name}'s Pantry`}
+                  {submitting ? 'Please wait...' : isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch ? 'Continue to Safe Switch' : `Add to ${pet.name}'s Pantry`}
                 </Text>
               </TouchableOpacity>
               

@@ -77,7 +77,7 @@ import { calculateTreatBudget, calculateTreatsPerDay } from '../services/treatBa
 import { resolveCalories, resolveKcalPerCup } from '../utils/calorieEstimation';
 import { stripBrandFromName } from '../utils/formatters';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
-import { computePetDer, pickSlotForSwap } from '../utils/pantryHelpers';
+import { computePetDer, pickBaseForSwap } from '../utils/pantryHelpers';
 import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
@@ -113,7 +113,7 @@ export default function ResultScreen() {
 
   // M9 Phase B: fetch this pet's daily-food pantry anchors on mount. Used by
   // SafeSwapSection below to decide whether to show "Switch to this" and by
-  // pickSlotForSwap to pick the target slot on tap.
+  // pickBaseForSwap to pick the target slot on tap.
   const [pantryAnchors, setPantryAnchors] = useState<PantryAnchor[]>([]);
   useEffect(() => {
     if (!pet?.id) {
@@ -695,7 +695,7 @@ export default function ResultScreen() {
               //   1. pantryItemIdHint from route (e.g. PantryCard "Find a replacement")
               //   2. The anchor whose product matches the scanned product (user likely
               //      means "replace this food I'm looking at")
-              //   3. pickSlotForSwap auto-pick by form + score
+              //   3. pickBaseForSwap auto-pick by form + score
               const hintedAnchor = pantryItemIdHint
                 ? pantryAnchors.find(a => a.pantryItemId === pantryItemIdHint)
                 : null;
@@ -703,7 +703,7 @@ export default function ResultScreen() {
                 ? pantryAnchors.find(a => a.productId === product.id)
                 : null;
               const targetAnchor =
-                hintedAnchor ?? scannedProductAnchor ?? pickSlotForSwap(pantryAnchors, newProductForm);
+                hintedAnchor ?? scannedProductAnchor ?? pickBaseForSwap(pantryAnchors, newProductForm);
               if (!targetAnchor) return;
               (navigation.getParent() as any)?.navigate('Pantry', {
                 screen: 'SafeSwitchSetup',
@@ -968,7 +968,7 @@ export default function ResultScreen() {
           onStartSafeSwitch={(params) => {
             setPantrySheetVisible(false);
             const targetAnchor = pantryAnchors.length > 0
-              ? pickSlotForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0]
+              ? pickBaseForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0]
               : null;
             if (!targetAnchor) return;
             (navigation.getParent() as any)?.navigate('Pantry', {

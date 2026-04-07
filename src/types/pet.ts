@@ -22,6 +22,8 @@ export type Sex = 'male' | 'female';
 
 export type Species = 'dog' | 'cat';
 
+export type FeedingStyle = 'dry_only' | 'dry_and_wet' | 'wet_only' | 'custom';
+
 // ─── Pet Entity ───────────────────────────────────────────
 
 /** Matches `pets` table after migration 022. */
@@ -53,6 +55,11 @@ export interface Pet {
   // D-162: BCS self-assessment (owner-reported, educational only)
   bcs_score: number | null;
   bcs_assessed_at: string | null;
+
+  // Behavioral Feeding Base Setup
+  feeding_style: FeedingStyle;
+  wet_reserve_kcal: number;
+  wet_reserve_source: string | null;
 
   created_at: string;
   updated_at: string;

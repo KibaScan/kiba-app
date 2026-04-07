@@ -54,7 +54,10 @@ import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
 import { canExportVetReport } from '../utils/permissions';
-import { getPantryForPet } from '../services/pantryService';
+import { getPantryForPet, refreshWetReserve } from '../services/pantryService';
+import { updatePet } from '../services/petService';
+import { FeedingStyleSetupSheet } from '../components/pantry/FeedingStyleSetupSheet';
+import type { FeedingStyle } from '../types/pet';
 import { assembleVetReportData } from '../services/vetReportService';
 import { generateVetReportHTML } from '../utils/vetReportHTML';
 import * as Print from 'expo-print';
@@ -71,6 +74,12 @@ const APPT_ICONS: Record<AppointmentType, string> = {
   vaccination: 'shield-checkmark-outline',
   deworming: 'fitness-outline',
   other: 'calendar-outline',
+};
+
+const FEEDING_STYLE_LABELS: Record<string, string> = {
+  dry_only: 'Dry only',
+  dry_and_wet: 'Dry + wet',
+  wet_only: 'Wet only',
 };
 
 // ─── Component ────────────────────────────────────────────
@@ -177,6 +186,7 @@ export default function PetHubScreen({ navigation }: Props) {
 
   // ─── Treat quick picker (D-124 revised) ────────────────
   const [treatPickerVisible, setTreatPickerVisible] = useState(false);
+  const [feedingStyleSheetVisible, setFeedingStyleSheetVisible] = useState(false);
   const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>('lbs');
 
   // ─── Load conditions/allergens on focus or active pet change ──
@@ -555,6 +565,17 @@ export default function PetHubScreen({ navigation }: Props) {
                 : 'Not set'}
             </Text>
           </View>
+          <TouchableOpacity
+            style={styles.statChip}
+            activeOpacity={0.6}
+            onPress={() => setFeedingStyleSheetVisible(true)}
+          >
+            <Ionicons name="nutrition-outline" size={16} color={Colors.accent} />
+            <Text style={styles.statValue}>
+              {FEEDING_STYLE_LABELS[activePet.feeding_style] ?? 'Dry only'}
+            </Text>
+            <Ionicons name="chevron-down" size={12} color={Colors.textTertiary} />
+          </TouchableOpacity>
         </View>
 
         {/* Portion card — daily calorie summary */}
@@ -977,6 +998,24 @@ export default function PetHubScreen({ navigation }: Props) {
           }
         }}
       />
+
+      {/* Feeding style picker */}
+      {activePet && (
+        <FeedingStyleSetupSheet
+          isVisible={feedingStyleSheetVisible}
+          petName={activePet.name}
+          onSelect={async (style: FeedingStyle) => {
+            const prev = activePet.feeding_style;
+            await updatePet(activePet.id, { feeding_style: style });
+            useActivePetStore.getState().loadPets();
+            setFeedingStyleSheetVisible(false);
+            if (style === 'dry_and_wet' || prev === 'dry_and_wet') {
+              refreshWetReserve(activePet.id).catch(() => {});
+            }
+          }}
+          onDismiss={() => setFeedingStyleSheetVisible(false)}
+        />
+      )}
 
       {/* D-161: Weight estimate sheet */}
       <WeightEstimateSheet

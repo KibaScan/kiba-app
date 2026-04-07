@@ -33,8 +33,6 @@ import {
   resolveScoreForPets,
 } from '../../services/pantryService';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
-import { computeMealBasedServing } from '../../utils/pantryHelpers';
-import { canUseGoalWeight } from '../../utils/permissions';
 import { chipToggle } from '../../utils/haptics';
 
 // ─── Props ──────────────────────────────────────────────
@@ -103,30 +101,15 @@ export function SharePantrySheet({
       } else {
         const source = localAssignments.find(a => a.pet_id === activePetId)
           ?? localAssignments[0];
-        const feedingsPerDay = source?.feedings_per_day ?? 2;
-
-        // Calculate DER-based serving for the TARGET pet
-        let servingSize = source?.serving_size ?? 1;
-        let servingSizeUnit = source?.serving_size_unit ?? 'cups';
-
-        const auto = computeMealBasedServing(
-          pet,
-          item.product as unknown as Product,
-          feedingsPerDay,
-          feedingsPerDay, // Assumes 100% allocation for shared pet initial assignment
-          canUseGoalWeight(),
-          pet.weight_goal_level
-        );
-        if (auto) {
-          servingSize = Math.round(auto.amount * 100) / 100;
-          servingSizeUnit = auto.unit;
-        }
 
         const newAssign = await sharePantryItem(item.id, pet.id, {
-          serving_size: servingSize,
-          serving_size_unit: servingSizeUnit,
-          feedings_per_day: feedingsPerDay,
+          serving_size: source?.serving_size ?? 1,
+          serving_size_unit: source?.serving_size_unit ?? 'cups',
+          feedings_per_day: source?.feedings_per_day ?? 2,
           feeding_frequency: source?.feeding_frequency ?? 'daily',
+          feeding_role: source?.feeding_role ?? null,
+          auto_deplete_enabled: source?.auto_deplete_enabled ?? false,
+          calorie_share_pct: source?.calorie_share_pct ?? 100,
         });
         setLocalAssignments(prev => [...prev, newAssign]);
       }
@@ -142,66 +125,7 @@ export function SharePantrySheet({
     }
   }, [item.id, activePetId, localAssignments, getAssignment, onChanged]);
 
-  // ── Inline serving size save (onBlur) ──
 
-  const handleServingSizeBlur = useCallback(async (petId: string, text: string) => {
-    const val = parseFloat(text);
-    if (isNaN(val) || val <= 0) return;
-    const assign = getAssignment(petId);
-    if (!assign || assign.serving_size === val) return;
-
-    try {
-      await updatePetAssignment(assign.id, { serving_size: val });
-    } catch {
-      Alert.alert('Error', 'Failed to update serving size.');
-    }
-  }, [getAssignment]);
-
-  // ── Inline feedings per day ──
-
-  const handleFeedingsChange = useCallback(async (petId: string, delta: number) => {
-    const assign = getAssignment(petId);
-    if (!assign) return;
-    const next = Math.max(1, Math.min(5, assign.feedings_per_day + delta));
-    if (next === assign.feedings_per_day) return;
-
-    chipToggle();
-
-    // Recalculate serving size from pet's DER with new feedings count
-    const pet = pets.find(p => p.id === petId);
-    let newServing = assign.serving_size;
-    let newUnit = assign.serving_size_unit;
-    if (pet) {
-      const auto = computeMealBasedServing(
-        pet,
-        item.product as unknown as Product,
-        next,
-        next, // Assumes 100% allocation when editing from this sheet
-        canUseGoalWeight(),
-        pet.weight_goal_level
-      );
-      if (auto) {
-        newServing = Math.round(auto.amount * 100) / 100;
-        newUnit = auto.unit;
-      }
-    }
-
-    setLocalAssignments(prev =>
-      prev.map(a => a.pet_id === petId
-        ? { ...a, feedings_per_day: next, serving_size: newServing, serving_size_unit: newUnit }
-        : a),
-    );
-
-    try {
-      await updatePetAssignment(assign.id, {
-        feedings_per_day: next,
-        serving_size: newServing,
-        serving_size_unit: newUnit,
-      });
-    } catch {
-      Alert.alert('Error', 'Failed to update feedings.');
-    }
-  }, [getAssignment, pets, item.product]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -275,44 +199,6 @@ export function SharePantrySheet({
                           </View>
                         )}
                       </TouchableOpacity>
-
-                      {/* Inline serving editor for assigned pets */}
-                      {assigned && assign && (
-                        <View style={styles.servingEditor}>
-                          <View style={styles.servingRow}>
-                            <Text style={styles.servingLabel}>Serving</Text>
-                            <View style={styles.servingInputRow}>
-                              <TextInput
-                                style={styles.servingInput}
-                                keyboardType="numeric"
-                                defaultValue={String(Math.round(assign.serving_size * 100) / 100)}
-                                onEndEditing={(e) => handleServingSizeBlur(pet.id, e.nativeEvent.text)}
-                              />
-                              <Text style={styles.servingUnit}>{assign.serving_size_unit}</Text>
-                            </View>
-                          </View>
-                          <View style={styles.servingRow}>
-                            <Text style={styles.servingLabel}>Feedings/day</Text>
-                            <View style={styles.stepperRow}>
-                              <TouchableOpacity
-                                style={styles.stepperBtn}
-                                onPress={() => handleFeedingsChange(pet.id, -1)}
-                                disabled={assign.feedings_per_day <= 1}
-                              >
-                                <Ionicons name="remove" size={16} color={assign.feedings_per_day <= 1 ? Colors.textTertiary : Colors.textPrimary} />
-                              </TouchableOpacity>
-                              <Text style={styles.stepperValue}>{assign.feedings_per_day}</Text>
-                              <TouchableOpacity
-                                style={styles.stepperBtn}
-                                onPress={() => handleFeedingsChange(pet.id, 1)}
-                                disabled={assign.feedings_per_day >= 5}
-                              >
-                                <Ionicons name="add" size={16} color={assign.feedings_per_day >= 5 ? Colors.textTertiary : Colors.textPrimary} />
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        </View>
-                      )}
                     </View>
                   );
                 })
@@ -446,64 +332,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
   },
 
-  // Inline serving editor
-  servingEditor: {
-    paddingBottom: 12,
-    paddingLeft: 52,
-    gap: 8,
-  },
-  servingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  servingLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  servingInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  servingInput: {
-    backgroundColor: Colors.background,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: FontSizes.sm,
-    color: Colors.textPrimary,
-    minWidth: 56,
-    textAlign: 'center',
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-  },
-  servingUnit: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepperBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-  },
-  stepperValue: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    minWidth: 18,
-    textAlign: 'center',
-  },
 
   bottomSpacer: { height: 34 },
 });

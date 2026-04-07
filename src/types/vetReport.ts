@@ -24,6 +24,7 @@ export interface VetReportData {
   weightTracking: WeightTrackingData;
   adjustedDER: number;
   caloricBalance: number;               // actual intake - adjusted DER
+  wetReserveKcal: number | null;        // Behavioral feeding: allotted wet reserve
   ownerDietaryCards: OwnerDietaryCard[];
   conditionConflicts: ConflictNote[];
   generatedAt: string;

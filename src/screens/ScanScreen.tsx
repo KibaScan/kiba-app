@@ -214,6 +214,9 @@ export default function ScanScreen() {
         accumulator_notification_sent: null,
         bcs_score: null,
         bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
       });
 
       setShowPetModal(false);
