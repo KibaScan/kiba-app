@@ -967,13 +967,15 @@ describe('computeBehavioralServing', () => {
     expect(result?.amount).toBeCloseTo(818 / 400);
   });
 
-  test('dry_and_wet rotational returns null', () => {
-    const pet = { ...defaultPet, feeding_style: 'dry_and_wet' as const };
+  test('dry_and_wet rotational uses wet reserve budget', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_and_wet' as const, wet_reserve_kcal: 200 };
     const product = makeProduct({ product_form: 'wet', kcal_per_unit: 100 });
     const result = computeBehavioralServing({
       pet, product, feedingRole: 'rotational', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
     });
-    expect(result).toBeNull();
+    // Rotational budget = wet_reserve_kcal = 200, ga_kcal_per_cup = 400
+    expect(result?.basisKcal).toBe(200);
+    expect(result?.amount).toBeCloseTo(200 / 400);
   });
 
   test('wet_only uses remaining budget for all items', () => {
@@ -987,13 +989,16 @@ describe('computeBehavioralServing', () => {
     expect(result?.amount).toBeCloseTo(718 / 100);
   });
 
-  test('isInTransition flag bypasses calculation', () => {
+  test('isInTransition still computes target serving', () => {
     const pet = { ...defaultPet, feeding_style: 'dry_only' as const };
     const product = makeProduct({ ga_kcal_per_cup: 400 });
     const result = computeBehavioralServing({
       pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false, isInTransition: true
     });
-    expect(result).toBeNull();
+    // Target serving shown in Add Sheet even during transition — SS detail handles day-by-day
+    expect(result).not.toBeNull();
+    expect(result?.basisKcal).toBe(1018);
+    expect(result?.amount).toBeCloseTo(1018 / 400);
   });
 
   test('custom mode uses full DER times calorie_share_pct', () => {

@@ -198,14 +198,19 @@ export function AddToPantrySheet({
   // Behavioral Feeding Role Inference
   const inferredRole: FeedingRole = useMemo(() => {
     if (treat) return null;
-    if (pet.feeding_style === 'wet_only') return 'rotational';
+    if (pet.feeding_style === 'wet_only') return 'base';
     if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') return 'rotational';
     return 'base';
   }, [treat, pet.feeding_style, product.product_form]);
 
   const feedingFrequency: FeedingFrequency = treat ? 'as_needed' : (inferredRole === 'rotational' ? 'as_needed' : 'daily');
 
-  // Auto Computation (Behavioral Math)
+  // Discrete units (cans, pouches, trays) can't be mixed — no Safe Switch math.
+  // Bulk/mixable forms (dry, fresh, raw, freeze-dried) support gradual mixing.
+  const DISCRETE_FORMS = ['wet'];
+  const isMixable = !DISCRETE_FORMS.includes(product.product_form ?? '');
+
+  // Auto Computation (Behavioral Math) — always compute target serving, even during transition
   const autoServingResult = useMemo(() => {
     if (treat || !autoMode || !inferredRole) return null;
     return computeBehavioralServing({
@@ -215,9 +220,8 @@ export function AddToPantrySheet({
       dailyWetFedKcal: 0, // Fresh addition, no actuals
       dryFoodSplitPct: 100, // Safe default
       isPremiumGoalWeight: canUseGoalWeight(),
-      isInTransition: isNewToDiet === true,
     });
-  }, [treat, autoMode, inferredRole, pet, product, isNewToDiet]);
+  }, [treat, autoMode, inferredRole, pet, product]);
 
   const canAutoCalc = useMemo(() => {
     return computeBehavioralServing({
@@ -235,10 +239,11 @@ export function AddToPantrySheet({
 
   // Validation
   const bagValid = quantityValue.trim() !== '' && parseFloat(quantityValue) > 0;
-  const ctaReady = treat || inferredRole === 'rotational' || isNewToDiet === null 
-    ? bagValid 
-    : isNewToDiet === true 
-      ? true 
+  const isSafeSwitchPath = isNewToDiet === true && inferredRole === 'base' && isMixable && !!onStartSafeSwitch;
+  const ctaReady = treat || inferredRole === 'rotational' || isNewToDiet === null
+    ? bagValid
+    : isSafeSwitchPath
+      ? true  // Safe Switch screen handles bag/quantity
       : bagValid;
 
   // Handlers
@@ -279,8 +284,8 @@ export function AddToPantrySheet({
 
     // Daily Food Path (Behavioral)
     try {
-      // Safe switch strictly for BASE role transitions
-      if (isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch && pet.feeding_style !== 'custom') {
+      // Safe Switch: only for base, mixable (non-discrete) food, non-custom style
+      if (isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch && pet.feeding_style !== 'custom') {
         onStartSafeSwitch({
           newProductId: product.id,
           petId: pet.id,
@@ -390,10 +395,10 @@ export function AddToPantrySheet({
               ) : (
                 /* DAILY FOOD PATH */
                 <>
-                  {/* Rotational wet foods do not need Safe Switch (Base only) */}
+                  {/* Diet switch question — base food only (rotational is variety by nature) */}
                   {inferredRole === 'base' && (
                     <>
-                      <Text style={styles.label}>Is this new to {pet.name}'s diet?</Text>
+                      <Text style={styles.label}>Switching {pet.name}'s diet?</Text>
                       <View style={styles.pillToggleRow}>
                         <TouchableOpacity style={[styles.pillButton, isNewToDiet === true && styles.pillButtonActive]} onPress={() => handlePillSwitch(true)} activeOpacity={0.7}>
                           <Text style={[styles.pillText, isNewToDiet === true && styles.pillTextActive]}>Yes</Text>
@@ -405,10 +410,19 @@ export function AddToPantrySheet({
                     </>
                   )}
 
-                  {isNewToDiet === true && inferredRole === 'base' && (
+                  {/* Mixable base food (dry, fresh, raw, freeze-dried): full Safe Switch */}
+                  {isNewToDiet === true && inferredRole === 'base' && isMixable && (
                     <View style={styles.advisoryCard}>
                       <Text style={styles.advisoryTitle}>Safe Switch Recommended</Text>
                       <Text style={styles.advisoryText}>Sudden diet changes can cause stomach upset. We recommend a 7-day transition.</Text>
+                    </View>
+                  )}
+
+                  {/* Discrete base food (cans, pouches): lighter vet tip, no Safe Switch */}
+                  {isNewToDiet === true && inferredRole === 'base' && !isMixable && (
+                    <View style={[styles.advisoryCard, { borderLeftColor: Colors.accent }]}>
+                      <Text style={[styles.advisoryTitle, { color: Colors.accent }]}>Vet Tip</Text>
+                      <Text style={styles.advisoryText}>Introduce new wet foods gradually over a few days. Start with small portions alongside the current food.</Text>
                     </View>
                   )}
 
@@ -453,7 +467,7 @@ export function AddToPantrySheet({
                   </View>
 
                   {/* Auto Math Block */}
-                  {inferredRole === 'base' && canAutoCalc && (
+                  {inferredRole !== null && canAutoCalc && (
                     <View style={styles.autoStatusRow}>
                       <View style={autoMode ? styles.autoBadge : styles.manualBadge}>
                         <Text style={autoMode ? styles.autoBadgeText : styles.manualBadgeText}>{autoMode ? 'Auto' : 'Manual'}</Text>
@@ -461,8 +475,14 @@ export function AddToPantrySheet({
                       {autoMode && autoServingResult ? (
                         <View style={{flex:1}}>
                           <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit} / day</Text></Text>
-                          {pet.feeding_style === 'dry_and_wet' && (
+                          {isNewToDiet === true && inferredRole === 'base' && isMixable && (
+                             <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Target serving (after transition)</Text></Text>
+                          )}
+                          {pet.feeding_style === 'dry_and_wet' && inferredRole === 'base' && !isNewToDiet && (
                              <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Budget excludes wet food allowance ({pet.wet_reserve_kcal || 0} kcal)</Text></Text>
+                          )}
+                          {pet.feeding_style === 'dry_and_wet' && inferredRole === 'rotational' && (
+                             <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Wet food portion of daily budget</Text></Text>
                           )}
                           <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>{Math.round(autoServingResult.basisKcal)} kcal daily allowance</Text></Text>
                         </View>
@@ -475,7 +495,7 @@ export function AddToPantrySheet({
                     </View>
                   )}
 
-                  {!autoMode && inferredRole === 'base' && canAutoCalc && (
+                  {!autoMode && inferredRole !== null && canAutoCalc && (
                     <TouchableOpacity onPress={() => { chipToggle(); setAutoMode(true); }} style={styles.resetToAutoLink}>
                       <Text style={styles.resetToAutoText}>Reset to Auto Math</Text>
                     </TouchableOpacity>
@@ -489,7 +509,7 @@ export function AddToPantrySheet({
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch && styles.safeSwitchCta,
+                  isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch && styles.safeSwitchCta,
                   (!ctaReady || submitting) && styles.confirmButtonDisabled
                 ]}
                 onPress={handleCTA}
@@ -497,7 +517,7 @@ export function AddToPantrySheet({
                 activeOpacity={0.7}
               >
                 <Text style={styles.confirmButtonText}>
-                  {submitting ? 'Please wait...' : isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch ? 'Continue to Safe Switch' : `Add to ${pet.name}'s Pantry`}
+                  {submitting ? 'Please wait...' : isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch ? 'Continue to Safe Switch' : `Add to ${pet.name}'s Pantry`}
                 </Text>
               </TouchableOpacity>
               

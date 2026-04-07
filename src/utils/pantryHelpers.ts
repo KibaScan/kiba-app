@@ -299,7 +299,8 @@ export function computeBehavioralServing(params: {
   isInTransition?: boolean;
 }): { amount: number; unit: ServingSizeUnit; basisKcal: number } | null {
   const { pet, product, feedingRole, dailyWetFedKcal, dryFoodSplitPct, isPremiumGoalWeight, isInTransition } = params;
-  if (isInTransition) return null; // Safe Switch hands off to detail view
+  // Always compute the target serving — even during transition, the user should see
+  // what the final serving will be. Safe Switch detail screen handles the day-by-day mix.
   
   const der = computePetDer(pet, isPremiumGoalWeight, pet.weight_goal_level);
   if (der == null) return null;
@@ -316,8 +317,8 @@ export function computeBehavioralServing(params: {
       const wetActual = dailyWetFedKcal > 0 ? dailyWetFedKcal : wetReserve;
       budgetedKcal = Math.max(0, der - wetActual);
     } else {
-      // Rotational food holds no active budget display (it's "Fed This Today" tracking only)
-      return null;
+      // Rotational wet food: budget is the wet portion of DER
+      budgetedKcal = wetReserve > 0 ? wetReserve : Math.round(der * 0.25);
     }
   } else if (style === 'wet_only') {
     budgetedKcal = Math.max(0, der - dailyWetFedKcal);

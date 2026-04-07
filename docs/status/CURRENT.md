@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-07 (session 29)
+# Project Status — Last updated 2026-04-07 (session 30)
 
 ## Active Milestone
 
@@ -98,37 +98,43 @@
 ## Last Session
 
 - **Date:** 2026-04-07 (session 30)
-- **Accomplished:** Fixed all 3 pre-launch edge cases (EC-1, EC-2, EC-3), improved diet completeness banner UX, committed session 29 work, updated stale docs.
-  - **EC-1 fix (custom mode overfeeding):** `addToPantry()` now queries `pets.feeding_style` and defaults `calorie_share_pct` to 0 for custom mode (was 100). Safe — shows "0 cups" until user configures splits via `CustomFeedingStyleScreen`.
-  - **EC-2 fix (bulk kcal spike):** `refreshWetReserve` caps per-unit kcal at `MAX_SERVING_KCAL = 500` before the weighted average. Prevents 5lb freeze-dried bags (~10,000 kcal/unit) from zeroing out dry food servings.
-  - **EC-3 fix (supplement false positive):** `!product.is_supplemental` guard added to mismatch detection in `AddToPantrySheet`. Salmon oil / liquid probiotics no longer trigger "Change your feeding style?"
-  - **Diet completeness banner overhaul:** New `'info'` status tier in `DietCompletenessResult`. Feeding-style-specific messages (e.g., "Wilson is set to mixed feeding but has no base dry food"). `info` banners use muted gray (`Colors.textSecondary`), info icon, and are dismissible (X button). Red reserved for recalls/critical. Generic catch-all fallthrough dropped from `red_warning` to `amber_warning`.
-  - **Docs sync:** CLAUDE.md migrations `001–029` → `001–034`. ROADMAP.md M9 checklist updated with 6 completed items. DECISIONS.md date synced. `BEHAVIORAL_FEEDING_IMPLEMENTED.md` Section 8 edge cases marked as FIXED with implementation details.
-  - **Session 29 committed:** All prior uncommitted work (custom feeding style, behavioral feeding expansion) committed and pushed as `59a69dc`.
-- **Files changed (7 modified, 0 new):**
-  - `src/services/pantryService.ts` (EC-1 custom default, EC-2 kcal cap, info status tier, feeding-style-specific messages)
-  - `src/components/pantry/AddToPantrySheet.tsx` (EC-3 supplement guard)
-  - `src/screens/PantryScreen.tsx` (dismissible info banner, icon swap, close button, dismiss state)
-  - `src/types/pantry.ts` (`'info'` added to `DietCompletenessResult` status union)
-  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC-1/2/3 marked FIXED, evaluateDietCompleteness docs updated)
-  - `CLAUDE.md` (migration count fix)
-  - `ROADMAP.md` (M9 checklist + date), `DECISIONS.md` (date sync)
-- **Tests:** 1398 passing / 61 suites. Unchanged — no new tests added.
+- **Accomplished:** Fixed EC-1/2/3 edge cases, diet completeness banner overhaul, Add-to-Pantry UX overhaul (mixability gate, intent-based copy, serving fix), wet_only role inference fix, rotational serving computation, V2 vision doc. Committed session 29 backlog.
+  - **EC-1/2/3 fixes:** Custom mode 0% default, bulk kcal 500 cap, supplement mismatch guard.
+  - **Diet completeness banner:** New `'info'` tier (muted, dismissible) for feeding-style mismatch. Feeding-style-specific messages. Red reserved for critical. Catch-all dropped to amber.
+  - **wet_only role inference fix:** `AddToPantrySheet:201` — wet food in `wet_only` mode now gets `'base'` role (was `'rotational'`). Restores "Switching diet?" prompt + auto serving computation.
+  - **Rotational serving computation:** `computeBehavioralServing` now returns a wet-budget-based serving for rotational food in `dry_and_wet` mode (was null). Uses `wetReserve` or 25% DER fallback.
+  - **Mixability gate:** New `DISCRETE_FORMS = ['wet']` concept. Cans/pouches get "Vet Tip: Introduce gradually" card. Bulk/mixable food (dry, fresh, raw, freeze-dried) gets full Safe Switch 7-day transition.
+  - **Intent-based copy:** "Is this new to [pet]'s diet?" → **"Switching [pet]'s diet?"** (base food only). Rotational food: question removed entirely.
+  - **Serving stays visible during transition:** `computeBehavioralServing` no longer returns null for `isInTransition`. Shows "Target serving (after transition)" label. User sees the destination math, Safe Switch detail handles day-by-day.
+  - **V2 vision:** Section 9 added to `BEHAVIORAL_FEEDING_IMPLEMENTED.md` — 4 items: decouple Safe Switch from Add flow, custom mode rotational override, wet food transition guide, per-serving kcal in wet reserve.
+  - **Docs sync:** CLAUDE.md migrations 029→034, ROADMAP.md M9 checklist, DECISIONS.md date.
+- **Files changed (11 modified, 0 new):**
+  - `src/components/pantry/AddToPantrySheet.tsx` (mixability gate, intent copy, serving fix, wet_only base, supplement guard, UI gates widened)
+  - `src/utils/pantryHelpers.ts` (rotational budget, isInTransition no longer null-returns)
+  - `src/services/pantryService.ts` (EC-1 custom default, EC-2 kcal cap, info status, feeding-style messages)
+  - `src/screens/PantryScreen.tsx` (dismissible info banner)
+  - `src/types/pantry.ts` (`'info'` status tier)
+  - `__tests__/utils/pantryHelpers.test.ts` (rotational budget test, isInTransition test updated)
+  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC fixes marked, Section 9 V2 vision)
+  - `CLAUDE.md`, `ROADMAP.md`, `DECISIONS.md`, `docs/status/CURRENT.md` (doc sync)
+- **Tests:** 1398 passing / 61 suites.
 - **Not done yet:**
-  - **EC-4 (LOW):** `refreshWetReserve` inventory fallback uses `|| 1` when empty — semantically wrong for bulk items. Partially mitigated by EC-2 cap.
-  - **EC-5 (ACCEPTED):** Custom mode can't mix user-defined splits with rotational "Fed This Today" — V2 feature.
+  - **EC-4 (LOW):** `refreshWetReserve` inventory fallback `|| 1` — partially mitigated by EC-2 cap.
+  - **EC-5 (ACCEPTED):** Custom mode rotational override — V2 (Section 9, V2-2).
   - **Prior M9 carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
-  - **Gemini scratch files still untracked:** `m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `m9walkthrough2.md`, `ts_output.txt`.
+  - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
 - **Next session should:** Pick from M9 carry-overs (stale browse scores fix is highest architectural impact, 17 non-border token decision is quickest). Or move to general UX friction fixes / HomeScreen visual overhaul.
 - **Gotchas / context for next session:**
-  - **`BEHAVIORAL_FEEDING_IMPLEMENTED.md` is the living doc** — Sections 1-8. EC-1/2/3 marked FIXED, EC-4/5 open (low priority).
-  - **Diet banner dismiss is session-local** — `bannerDismissed` resets on pet switch and app relaunch. No persistence (intentional — if the mismatch persists, user sees it again next session).
-  - **`MAX_SERVING_KCAL = 500` cap** — chosen because the largest single-serve wet food is ~250 kcal (12.5 oz can). 500 gives 2x headroom. If a legitimate single-serve product exceeds this, the cap clips it silently — monitor for false positives.
-  - **`getDietBannerConfig` return type changed** — now includes `dismissible: boolean`. Any callers outside PantryScreen would need to handle this (currently none).
-- **Decision/scoring changes:** None. No new D-numbers (count remains 129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
+  - **`BEHAVIORAL_FEEDING_IMPLEMENTED.md` Sections 1-9.** EC-1/2/3 FIXED, EC-4/5 open (low). Section 9 = V2 vision (4 items).
+  - **Mixability: `DISCRETE_FORMS = ['wet']`** in AddToPantrySheet. If a new product_form (e.g., `'tray'`, `'pouch'`) is added to the DB, it should be added to this array if it's single-serve/non-mixable.
+  - **`computeBehavioralServing` no longer returns null for `isInTransition`** — the `isInTransition` parameter is now a no-op. Can be removed in a future cleanup pass. Safe Switch detail screen still computes its own day-by-day ratios independently.
+  - **Rotational fallback in mixed mode:** When `wetReserve === 0` (first wet food add), budget defaults to `Math.round(der * 0.25)`. This is a rough heuristic — monitor if the 25% feels wrong for users.
+  - **Diet banner dismiss is session-local** — resets on pet switch and app relaunch. No persistence.
+  - **`MAX_SERVING_KCAL = 500` cap** — largest single-serve wet food is ~250 kcal. 500 = 2x headroom.
+- **Decision/scoring changes:** None. No new D-numbers (129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---
-[Previous session 29 block retained below for reference]
+[Previous session 30a block retained below for reference]
 
 - **Date:** 2026-04-05 (session 22)
 - **Accomplished:** Agent workflow tooling — built a reusable, self-contained workflow file for finishing the legacy color token migration, plus an index README for the `.agent/workflows/` directory. Zero source code changes, zero scoring impact, zero schema or test changes. This session produced prompts/tooling, not shipped code.

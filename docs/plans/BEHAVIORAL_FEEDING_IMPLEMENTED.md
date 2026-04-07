@@ -211,4 +211,32 @@ Five edge cases identified during implementation review. Ordered by severity.
 
 ---
 
+---
+
+## 9. V2 Vision — Future Improvements
+
+Items below are logged for future work. None are blocking launch.
+
+### V2-1: Decouple Safe Switch from Add Flow
+
+Currently, Safe Switch is triggered from the AddToPantrySheet when a user says "Yes" to "Switching diets?" This shoehorns a "Replace" behavior into an "Add" flow. In V2, Safe Switch should be entry-point-only:
+- User adds Kibble B to pantry cleanly (no transition prompt).
+- User goes to Kibble A's PantryCard, taps an explicit **"Replace this food"** button, selects Kibble B from pantry.
+- That triggers Safe Switch with perfect context: the system knows which food is "Old" and which is "New."
+- Removes all ambiguity from the Add Sheet. Keeps it focused: quantity + role + serving + add.
+
+### V2-2: Custom Mode Rotational Override (from EC-5)
+
+Custom mode converts all daily foods to `feeding_role: 'base'`, eliminating "Fed This Today" for rotational logging. A user wanting 60% Kibble A / 40% Kibble B + a rotational wet topper can't express this today. V2 should allow per-item `feeding_role` override within custom mode, letting users mark specific foods as rotational. Logged rotational kcal would subtract from the custom kibble budgets instead of being excluded from serving math entirely.
+
+### V2-3: Wet Food Transition Guide
+
+Safe Switch's 75/25 → 50/50 → 25/75 mixing schedule works for bulk/mixable food (dry, fresh, raw, freeze-dried) but not for discrete units (cans, pouches). V2 could add a lighter "Wet Transition Guide" — instead of mix ratios, show a meal-level plan: "Day 1-2: Feed 3 meals of old, 1 meal of new → Day 3-4: 2 old, 2 new → Day 5+: all new." No math wizard needed — just a simple schedule card.
+
+### V2-4: Per-Serving Kcal in Wet Reserve
+
+`refreshWetReserve` currently uses per-unit (per-package) kcal from `getWetFoodKcal`, capped at 500 kcal (EC-2 fix). A more accurate approach: read the assignment's `serving_size` and multiply by kcal density to get true per-serving kcal. This would eliminate the need for the cap and handle edge cases (e.g., a user who feeds half a can per meal) more precisely.
+
+---
+
 *This document confirms the full behavioral feeding integration (Phases 1–3 + Expansion) and should be referenced to ensure any incoming features map correctly to `feeding_role`, `calorie_share_pct`, or the `feeding_log` tables without regressing to slot fractions.*
