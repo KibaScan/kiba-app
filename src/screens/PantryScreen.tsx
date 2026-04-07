@@ -88,14 +88,17 @@ export function shouldShowD157Nudge(
 
 export function getDietBannerConfig(
   dietStatus: DietCompletenessResult | null,
-): { show: boolean; color: string; message: string } | null {
+): { show: boolean; color: string; message: string; dismissible: boolean } | null {
   if (!dietStatus) return null;
   if (dietStatus.status === 'complete' || dietStatus.status === 'empty') return null;
+  if (dietStatus.status === 'info') {
+    return { show: true, color: Colors.textSecondary, message: dietStatus.message ?? '', dismissible: true };
+  }
   if (dietStatus.status === 'amber_warning') {
-    return { show: true, color: Colors.severityAmber, message: dietStatus.message ?? '' };
+    return { show: true, color: Colors.severityAmber, message: dietStatus.message ?? '', dismissible: false };
   }
   if (dietStatus.status === 'red_warning') {
-    return { show: true, color: Colors.severityRed, message: dietStatus.message ?? '' };
+    return { show: true, color: Colors.severityRed, message: dietStatus.message ?? '', dismissible: false };
   }
   return null;
 }
@@ -154,6 +157,7 @@ export default function PantryScreen({ navigation }: Props) {
 
   // ── Local state ──
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [activeSort, setActiveSort] = useState<SortOption>('default');
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [removeSheetItem, setRemoveSheetItem] = useState<PantryCardData | null>(null);
@@ -295,6 +299,7 @@ export default function PantryScreen({ navigation }: Props) {
     setActivePet(petId);
     setActiveFilter('all');
     setActiveSort('default');
+    setBannerDismissed(false);
   }, [setActivePet]);
 
   // ── No pet empty state ──
@@ -438,17 +443,22 @@ export default function PantryScreen({ navigation }: Props) {
       )}
 
       {/* Diet completeness banner */}
-      {bannerConfig && (
+      {bannerConfig && !(bannerConfig.dismissible && bannerDismissed) && (
         <View style={[
           styles.banner,
           { backgroundColor: `${bannerConfig.color}15`, borderLeftColor: bannerConfig.color },
         ]}>
           <View style={{ marginTop: 2 }}>
-            <Ionicons name="warning-outline" size={16} color={bannerConfig.color} />
+            <Ionicons name={bannerConfig.dismissible ? 'information-circle-outline' : 'warning-outline'} size={16} color={bannerConfig.color} />
           </View>
-          <Text style={[styles.bannerText, { color: bannerConfig.color }]}>
+          <Text style={[styles.bannerText, { color: bannerConfig.color, flex: 1 }]}>
             {bannerConfig.message}
           </Text>
+          {bannerConfig.dismissible && (
+            <TouchableOpacity onPress={() => setBannerDismissed(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close" size={16} color={bannerConfig.color} />
+            </TouchableOpacity>
+          )}
         </View>
       )}
 

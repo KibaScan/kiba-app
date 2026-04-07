@@ -110,7 +110,7 @@ export interface PantryCardData extends PantryItemWithProduct {
 }
 
 export interface DietCompletenessResult {
-  status: 'complete' | 'amber_warning' | 'red_warning' | 'empty';
+  status: 'complete' | 'info' | 'amber_warning' | 'red_warning' | 'empty';
   message: string | null;
 }
 

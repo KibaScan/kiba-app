@@ -710,6 +710,15 @@ export async function evaluateDietCompleteness(
     }
   }
 
+  // Has daily food but missing base → feeding style mismatch, not a critical issue
+  if (hasAnyDaily && !hasBase && (feedingStyle === 'dry_only' || feedingStyle === 'dry_and_wet')) {
+    const styleLabel = feedingStyle === 'dry_only' ? 'dry food only' : 'mixed feeding';
+    return {
+      status: 'info',
+      message: `${petName} is set to ${styleLabel} but has no base dry food. Add one or change the feeding style.`,
+    };
+  }
+
   const nonTreatItems = typedItems.filter(i => i.products?.category !== 'treat');
   if (nonTreatItems.length === 0) {
     return {
@@ -730,8 +739,8 @@ export async function evaluateDietCompleteness(
   }
 
   return {
-    status: 'red_warning',
-    message: `${petName}'s pantry does not include a complete diet.`,
+    status: 'amber_warning',
+    message: `${petName}'s pantry doesn't include a complete daily diet yet.`,
   };
 }
 

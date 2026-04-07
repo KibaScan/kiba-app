@@ -62,7 +62,7 @@ Replaces `computeMealBasedServing`. It generates the actual serving sizes (e.g.,
 Auto-splits `calorie_share_pct` evenly across all base-role assignments for a pet (e.g., 2 bases → 50/50, 3 → 33/33/34). Also scales `serving_size` proportionally so the displayed amount matches the new share. Called after `addToPantry`, `removePantryItem`, and `sharePantryItem`. **Skipped when `feeding_style === 'custom'`** — user controls splits manually via `CustomFeedingStyleScreen`.
 
 ### `evaluateDietCompleteness(petId, petName)`
-Instead of a rigid `> 2 daily foods` guard generating a false red-warning alarm, diet completeness now counts the number of `base` foods vs `rotational` foods dynamically against the pet's explicit `feeding_style`. For `custom` mode: `hasAnyDaily` = complete (no further enforcement — users explicitly control allocation). 
+Instead of a rigid `> 2 daily foods` guard generating a false red-warning alarm, diet completeness now counts the number of `base` foods vs `rotational` foods dynamically against the pet's explicit `feeding_style`. For `custom` mode: `hasAnyDaily` = complete (no further enforcement — users explicitly control allocation). Returns 4 status tiers: `complete`, `info` (has food but missing base — feeding style mismatch, dismissible banner), `amber_warning` (supplemental-only), `red_warning` (treats-only / truly empty). Messages are feeding-style-specific (e.g., "Wilson is set to mixed feeding but has no base dry food"). The generic catch-all fallthrough is `amber_warning`, not `red_warning` — red is reserved for recalls and critical states.
 
 ---
 
