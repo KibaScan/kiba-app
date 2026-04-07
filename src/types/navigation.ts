@@ -47,6 +47,7 @@ export type PantryStackParamList = {
   Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
+  CustomFeedingStyle: { petId: string };
 };
 
 export type MeStackParamList = {
@@ -73,6 +74,7 @@ export type MeStackParamList = {
   Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
+  CustomFeedingStyle: { petId: string };
 };
 
 // ─── Paywall Trigger ─────────────────────────────────

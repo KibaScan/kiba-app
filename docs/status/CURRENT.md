@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-06 (session 28)
+# Project Status — Last updated 2026-04-07 (session 29)
 
 ## Active Milestone
 
@@ -61,7 +61,7 @@
 
 ## Numbers
 
-- **Tests:** 1395 passing / 61 suites
+- **Tests:** 1398 passing / 61 suites
 - **Decisions:** 129
 - **Migrations:** 34 (001–034)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -97,32 +97,38 @@
 
 ## Last Session
 
-- **Date:** 2026-04-06 (session 28)
-- **Accomplished:** Dual-tool session — Gemini implemented Phases 1+2 of behavioral feeding overhaul, Claude audited and fixed both rounds.
-  - **Gemini shipped:** Migration 034 (schema), `computeBehavioralServing`/`getWetFoodKcal`/`computeBehavioralBudgetWarning`/`getTodayBounds` math engine, `FedThisTodaySheet` + `FeedingStyleSetupSheet` new components, PantryScreen role sectioning, PantryCard rotational badges, EditPantryItemScreen read-only config, AddToPantrySheet role inference, `logWetFeeding`/`undoWetFeeding` RPCs, legacy function teardown (`computeMealBasedServing`, `rebalanceExistingFood`, `computeRebalancedMeals`), `refreshWetReserve` with 5-callsite wiring, `evaluateDietCompleteness` rewrite, vet report rotational display, auto-deplete cron `feeding_log` integration, Safe Switch UI generalization.
-  - **Claude audit fixes (Round 1):** Deleted `pickNextSlotForPet` (queried dropped `slot_index` column). Replaced `slot_index` with `feeding_role`/`auto_deplete_enabled`/`calorie_share_pct` in `addToPantry` and `sharePantryItem` inserts. Expanded `sharePantryItem` signature + `SharePantrySheet` caller to pass behavioral fields. Updated stale comments.
-  - **Claude audit fixes (Round 2):** Fixed `refreshWetReserve` to populate `wet_reserve_source` (was always null). Removed legacy `> 2 base foods` red warning guard from `evaluateDietCompleteness`. Wrapped `refreshWetReserve` in try-catch (side effect shouldn't crash callers). Replaced dynamic import with top-level import. Fixed `removePantryItem` no-petId branch to refresh reserve for all affected pets.
-  - **Claude feature:** Added feeding style picker to PetHubScreen (tappable chip in stats row) and EditPetScreen (tappable row in Card 3) — both reuse `FeedingStyleSetupSheet`.
-  - **Claude specs:** Wrote `docs/specs/FEEDING_STYLE_EXPANSION_SPEC.md` (Phase 1: widen inference to `product_form !== 'dry'`; Phase 2: activate `custom` mode). Added 6 gaps + dependency note to `docs/plans/PHASE_3_CUSTOM_FEEDING_PLAN.md`.
-- **Files changed:** 44 files, 1133 insertions(+), 4568 deletions(-). Key files: `pantryService.ts` (+306/-), `pantryHelpers.ts` (+230/-), `AddToPantrySheet.tsx`, `PantryCard.tsx`, `PantryScreen.tsx`, `EditPantryItemScreen.tsx`, `EditPetScreen.tsx`, `PetHubScreen.tsx`, `SafeSwitchSetupScreen.tsx`, `vetReportService.ts`, `auto-deplete/index.ts`, `pantry.ts`, `pet.ts`. New files: `FedThisTodaySheet.tsx`, `FeedingStyleSetupSheet.tsx`, `034_behavioral_feeding.sql`, `FEEDING_STYLE_EXPANSION_SPEC.md`.
-- **Tests:** 1395 passing / 61 suites. Delta from 1397 (committed baseline): -13 legacy meal-fraction tests removed, +15 behavioral tests added, -4 legacy `MEAL_FRACTION_OPTIONS` tests removed = net -2.
+- **Date:** 2026-04-07 (session 29)
+- **Accomplished:** Shipped Phase 1 Expansion, Phase 3 Custom Feeding Style, `rebalanceBaseShares` auto-split, feeding style mismatch detection, and consolidated the living architecture doc.
+  - **Phase 1 Expansion:** Widened role inference from `product_form === 'wet'` to `product_form !== 'dry'` in `AddToPantrySheet.tsx:187`. Freeze-dried, raw, dehydrated, air-dried, and fresh foods now infer `rotational` in mixed-feeding mode. UI labels updated: `dry_and_wet` → "Mixed feeding" in `FeedingStyleSetupSheet`, `PetHubScreen`, `EditPetScreen`.
+  - **Phase 3 Custom Feeding Style:** Full implementation of deferred `'custom'` feeding style. New `CustomFeedingStyleScreen.tsx` — config screen with kcal inputs per food, DER banner, visual sum bar, scale-invariant pct storage. Service layer: `updateCalorieShares`, `transitionToCustomMode`, `transitionFromCustomMode`. `rebalanceBaseShares` skipped for custom. Safe Switch disabled for custom. 4th option "Custom split" added to `FeedingStyleSetupSheet`. Entry points: PetHubScreen (auto-navigate), EditPetScreen (post-save navigate), PantryScreen header icon. Tab bar hidden on config screen.
+  - **`rebalanceBaseShares` auto-split:** Evenly splits `calorie_share_pct` across all base foods after add/remove/share. Scales `serving_size` proportionally. Prevents double-feeding display for multi-base setups.
+  - **Mismatch detection:** `AddToPantrySheet` now re-shows `FeedingStyleSetupSheet` when adding non-dry food to `dry_only` pet (or dry to `wet_only`). Previously only fired on first-ever daily food add.
+  - **Living doc consolidation:** `BEHAVIORAL_FEEDING_IMPLEMENTED.md` updated with Sections 6 (Custom Mode), 7 (Phase 1 Expansion), 8 (5 edge cases with fix plans). `PHASE_3_CUSTOM_FEEDING_PLAN.md` marked superseded.
+- **Files changed (16 modified, 1 new):**
+  - **New:** `src/screens/CustomFeedingStyleScreen.tsx`
+  - **Modified:** `pantryService.ts` (rebalanceBaseShares guard + 3 new functions), `pantryHelpers.ts` (custom branch), `AddToPantrySheet.tsx` (mismatch detection + Safe Switch guard), `FeedingStyleSetupSheet.tsx` (4th option), `PetHubScreen.tsx` (labels + transitions), `EditPetScreen.tsx` (labels + transitions), `PantryScreen.tsx` (configure splits button), `navigation.ts` (route types), `index.tsx` (navigator), `pantryHelpers.test.ts` (+3 tests), `BEHAVIORAL_FEEDING_IMPLEMENTED.md`, `PHASE_3_CUSTOM_FEEDING_PLAN.md`, `FEEDING_STYLE_EXPANSION_SPEC.md`
+- **Tests:** 1398 passing / 61 suites (was 1395, +3 custom branch tests).
 - **Not done yet:**
-  - **`custom` feeding style** — deferred. Plan at `docs/plans/PHASE_3_CUSTOM_FEEDING_PLAN.md` (with 6 audit gaps added this session).
-  - **Phase 1 inference widening** — `product_form !== 'dry'` instead of `=== 'wet'` for rotational inference. Spec at `docs/specs/FEEDING_STYLE_EXPANSION_SPEC.md`. One-line change, should ship before Phase 3 custom mode.
+  - **5 edge cases (Section 8 of BEHAVIORAL_FEEDING_IMPLEMENTED.md):**
+    - **EC-1 (HIGH):** Custom mode defaults new food to `calorie_share_pct: 100` → overfeeding spike. Fix: default to 0%.
+    - **EC-2 (HIGH):** `refreshWetReserve` uses per-package kcal from `getWetFoodKcal` → bulk items (freeze-dried bags) spike the reserve. Fix: use per-serving kcal.
+    - **EC-3 (MEDIUM):** Mismatch detection fires on supplements (salmon oil, liquid probiotics). Fix: add `!product.is_supplemental` guard.
+    - **EC-4 (LOW):** `refreshWetReserve` inventory fallback uses `|| 1` when empty — semantically wrong for bulk items.
+    - **EC-5 (ACCEPTED):** Custom mode can't mix user-defined splits with rotational "Fed This Today" — V2 feature.
   - **`CLAUDE.md` migration count is stale** — says `001–029` but we're at `001–034`.
-  - **Prior M9 carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA, chip background review, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
-- **Next session should:** Either (a) ship Phase 1 inference widening (one-line fix in `AddToPantrySheet.tsx:187`), (b) build `CustomFeedingStyleScreen` (Phase 3), or (c) return to general M9 UI Polish & Search roadmap.
+  - **Prior M9 carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+- **Next session should:** Fix EC-1, EC-2, EC-3 (the three pre-launch edge cases). EC-1 and EC-3 are one-line fixes. EC-2 needs design decision on mitigation approach (per-serving kcal vs exclude bulk vs cap). Read Section 8 of `BEHAVIORAL_FEEDING_IMPLEMENTED.md` for full context.
 - **Gotchas / context for next session:**
-  - **`feeding_role` is the structural source of truth** — `slot_index` is fully dead. Zero references remain in `src/`. Do not revert.
-  - **`refreshWetReserve` is wrapped in try-catch** — failures are logged but non-blocking. This is intentional: reserve recalculation is a side effect of add/remove/share, not the primary operation.
-  - **`evaluateDietCompleteness` no longer hard-codes `> 2 base foods`** — it's feeding-style-aware. Multiple base foods with `calorie_share_pct` distribution is valid.
-  - **Feeding style picker on PetHubScreen saves immediately** (calls `updatePet` + `refreshWetReserve` on select). EditPetScreen defers to the "Save Changes" button.
-  - **Temp files in working tree:** `m9walkthrough.md`, `m9walkthrough2.md`, `m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `ts_output.txt` — all Gemini scratch files, safe to delete.
-  - **New untracked docs:** `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md`, `docs/plans/PHASE_3_CUSTOM_FEEDING_PLAN.md`, `docs/specs/FEEDING_STYLE_EXPANSION_SPEC.md` — should be committed.
+  - **`BEHAVIORAL_FEEDING_IMPLEMENTED.md` is the living doc** — Sections 1-5 (original), 6 (custom mode), 7 (Phase 1 expansion), 8 (edge cases). This is the single source of truth for the entire feeding architecture.
+  - **`PHASE_3_CUSTOM_FEEDING_PLAN.md` is superseded** — retained for historical context only. Section 6 of the implemented doc is canonical.
+  - **PetHubScreen feeding style transitions** — selecting `custom` calls `transitionToCustomMode` (equal-splits + convert to base) then auto-navigates to `CustomFeedingStyleScreen`. Selecting away from `custom` calls `transitionFromCustomMode` (resets shares + re-infers roles). EditPetScreen defers to save button.
+  - **`rebalanceBaseShares` is skipped for custom** — guard queries `pets.feeding_style` and returns early if `custom`. User controls splits manually.
+  - **Mismatch detection only fires for daily food** — treats are already excluded (`if (!visible || treat) return`). Supplements need the EC-3 fix (`!product.is_supplemental`).
+  - **Working tree is dirty** — all changes uncommitted. Gemini scratch files still present (`m9walkthrough*.md`, `m9task.md`, etc.).
 - **Decision/scoring changes:** None. No new D-numbers (count remains 129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---
-[Previous session 27 block retained below for reference]
+[Previous session 28 block retained below for reference]
 
 - **Date:** 2026-04-05 (session 22)
 - **Accomplished:** Agent workflow tooling — built a reusable, self-contained workflow file for finishing the legacy color token migration, plus an index README for the `.agent/workflows/` directory. Zero source code changes, zero scoring impact, zero schema or test changes. This session produced prompts/tooling, not shipped code.

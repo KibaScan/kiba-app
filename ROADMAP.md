@@ -1,7 +1,7 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: April 3, 2026
+> Updated: April 7, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
@@ -696,14 +696,18 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] **SwipeableRow component** — reusable swipe-to-reveal gestures on health records, medications, appointments. Swipe left → delete (with confirmation), swipe right → edit. `src/components/ui/SwipeableRow.tsx`
 - [x] **Matte Premium design system** — `.agent/design.md` established: `cardSurface`, `hairlineBorder`, `pressOverlay` tokens, card anatomy, typography, spacing, anti-patterns. Checklist for polishing any screen.
 - [x] **Vet diet data fix** — migration 027 restores 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet` for future imports.
-- [ ] Pantry polish — SwipeableRow on PantryCards, legacy token migration (`Colors.card` → `cardSurface`)
+- [x] **Pantry polish** — SwipeableRow on PantryCards, legacy token migration (`Colors.card` → `cardSurface`)
 - [x] **Card contrast alignment** — `cardSurface` `#1C1C1E` → `#242424`, `hairlineBorder` `rgba 0.08` → `0.12`. PetHubScreen cards now match AppointmentsListScreen.
 - [x] **Design system documentation** — icon platters, screen headers, disclaimer placement, Featured Action Card, zero-state text rules added to `.agent/design.md`.
 - [x] **HomeScreen category browse** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Dynamic search re-triggers on filter change. Variety pack exclusion (`is_variety_pack` column, migration 029, ~1,706 flagged). `@shopify/flash-list` installed. `categoryBrowseService.ts` with cursor pagination + `fetchCategoryTopPicks` stub.
+- [x] **Legacy token migration** — `Colors.card` → `Colors.cardSurface` and `Colors.cardBorder` → `Colors.hairlineBorder` across ~40 remaining files
+- [x] **ResultScreen + HomeScreen matte frame pass** — card anatomy on 8 scoring cards (PositionMap, BonusNutrientGrid, CollapsibleSection, SafeSwapSection, AafcoProgressBars), HomeScreen category cards, Compare + Add to Pantry buttons
+- [x] **Behavioral Feeding architecture** — migration 034, `feeding_style` + `feeding_role` model replacing slot/meal-fraction system. Wet Reserve Engine, diet completeness engine, refactored auto-deplete cron
+- [x] **Custom Feeding Style** — `CustomFeedingStyleScreen`, kcal inputs per food, DER banner, visual sum bar, scale-invariant pct storage. Service layer: `updateCalorieShares`, `transitionToCustomMode/FromCustomMode`. 4th option in `FeedingStyleSetupSheet`
+- [x] **`rebalanceBaseShares` auto-split** — even calorie_share_pct across base foods after add/remove/share, proportional serving_size scaling
+- [x] **Feeding style mismatch detection** — `AddToPantrySheet` re-shows `FeedingStyleSetupSheet` when adding non-dry to `dry_only` (or dry to `wet_only`)
 - [ ] Top Picks per category/sub-filter (up to 50, dedicated screen — stub ready)
 - [ ] HomeScreen visual overhaul (custom assets, layout polish)
-- [ ] Legacy token migration across remaining screens (HomeScreen, ResultScreen, CompareScreen, etc.)
-- [ ] Pantry polish — SwipeableRow on PantryCards, legacy token migration
 - [ ] General UX friction fixes
 
 ---

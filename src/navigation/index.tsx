@@ -39,6 +39,7 @@ import CompareScreen from '../screens/CompareScreen';
 import SafeSwitchSetupScreen from '../screens/SafeSwitchSetupScreen';
 import SafeSwitchDetailScreen from '../screens/SafeSwitchDetailScreen';
 import CategoryBrowseScreen from '../screens/CategoryBrowseScreen';
+import CustomFeedingStyleScreen from '../screens/CustomFeedingStyleScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -107,6 +108,7 @@ function PantryStackScreen() {
       <PantryStack.Screen name="Result" component={ResultScreen} />
       <PantryStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <PantryStack.Screen name="Compare" component={CompareScreen} />
+      <PantryStack.Screen name="CustomFeedingStyle" component={CustomFeedingStyleScreen} />
     </PantryStack.Navigator>
   );
 }
@@ -132,6 +134,7 @@ function MeStackScreen() {
       <MeStack.Screen name="Result" component={ResultScreen} />
       <MeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <MeStack.Screen name="Compare" component={CompareScreen} />
+      <MeStack.Screen name="CustomFeedingStyle" component={CustomFeedingStyleScreen} />
     </MeStack.Navigator>
   );
 }

@@ -10,6 +10,8 @@ import type {
   AddToPantryInput,
   DietCompletenessResult,
   PantryAnchor,
+  FeedingRole,
+  FeedingFrequency,
 } from '../types/pantry';
 import { PantryOfflineError } from '../types/pantry';
 import {
@@ -18,7 +20,7 @@ import {
   getCalorieContext,
   getWetFoodKcal,
 } from '../utils/pantryHelpers';
-import type { Pet } from '../types/pet';
+import type { Pet, FeedingStyle } from '../types/pet';
 import type { Product } from '../types';
 
 // ─── Internal ───────────────────────────────────────────
@@ -27,6 +29,37 @@ async function requireOnline(): Promise<void> {
   if (!(await isOnline())) throw new PantryOfflineError();
 }
 
+
+/**
+ * Evenly splits calorie_share_pct across all base-role assignments for a pet.
+ * Also scales serving_size proportionally so the displayed amount matches the new share.
+ * Called after add/remove/share to keep multi-base splits accurate.
+ */
+async function rebalanceBaseShares(petId: string): Promise<void> {
+  // Custom mode: user controls splits manually, never auto-rebalance
+  const { data: pet } = await supabase.from('pets').select('feeding_style').eq('id', petId).single();
+  if (pet?.feeding_style === 'custom') return;
+
+  const { data } = await supabase
+    .from('pantry_pet_assignments')
+    .select('id, feeding_role, calorie_share_pct, serving_size')
+    .eq('pet_id', petId)
+    .eq('feeding_role', 'base');
+  if (!data || data.length === 0) return;
+
+  const newShare = Math.round(100 / data.length);
+  for (const a of data) {
+    const oldShare = a.calorie_share_pct || 100;
+    const scaledServing = oldShare > 0 ? a.serving_size * (newShare / oldShare) : a.serving_size;
+    await supabase
+      .from('pantry_pet_assignments')
+      .update({
+        calorie_share_pct: newShare,
+        serving_size: Math.round(scaledServing * 10000) / 10000,
+      })
+      .eq('id', a.id);
+  }
+}
 
 // ─── Write Functions ────────────────────────────────────
 
@@ -72,6 +105,7 @@ export async function addToPantry(
 
   if (assignErr) throw new Error(`Failed to assign pantry item: ${assignErr.message}`);
 
+  await rebalanceBaseShares(petId);
   await refreshWetReserve(petId);
 
   return item as PantryItem;
@@ -126,6 +160,7 @@ export async function removePantryItem(
       if (deactErr) throw new Error(`Failed to deactivate item: ${deactErr.message}`);
     }
     
+    await rebalanceBaseShares(petId);
     await refreshWetReserve(petId);
   } else {
     // Collect affected pet IDs before deleting assignments
@@ -149,6 +184,7 @@ export async function removePantryItem(
     if (error) throw new Error(`Failed to remove pantry item: ${error.message}`);
 
     for (const pid of affectedPetIds) {
+      await rebalanceBaseShares(pid);
       await refreshWetReserve(pid);
     }
   }
@@ -257,7 +293,8 @@ export async function sharePantryItem(
     .single();
 
   if (error) throw new Error(`Failed to share pantry item: ${error.message}`);
-  
+
+  await rebalanceBaseShares(petId);
   await refreshWetReserve(petId);
   
   return data as PantryPetAssignment;
@@ -488,6 +525,120 @@ export async function checkDuplicateUpc(
 
   if (error || !data) return null;
   return data.id as string;
+}
+
+// ─── Custom Feeding Mode ────────────────────────────────
+
+/**
+ * Batch-updates calorie_share_pct for multiple assignments.
+ * Used by CustomFeedingStyleScreen to save user-defined splits.
+ */
+export async function updateCalorieShares(
+  petId: string,
+  shares: Array<{ assignmentId: string; calorie_share_pct: number }>,
+): Promise<void> {
+  await requireOnline();
+  for (const s of shares) {
+    await supabase
+      .from('pantry_pet_assignments')
+      .update({ calorie_share_pct: s.calorie_share_pct })
+      .eq('id', s.assignmentId);
+  }
+}
+
+/**
+ * Transitions a pet to custom feeding mode.
+ * Converts all daily food assignments to base role with equal calorie splits.
+ */
+export async function transitionToCustomMode(petId: string): Promise<void> {
+  await requireOnline();
+
+  // 1. Set feeding_style to custom
+  await supabase.from('pets').update({ feeding_style: 'custom' }).eq('id', petId);
+
+  // 2. Query all daily food assignments (exclude treats — they have null feeding_role)
+  const { data: assignments } = await supabase
+    .from('pantry_pet_assignments')
+    .select('id, feeding_role, pantry_items!inner(is_active, products!inner(category, is_supplemental))')
+    .eq('pet_id', petId);
+
+  type AssignRow = { id: string; feeding_role: FeedingRole; pantry_items: { is_active: boolean; products: { category: string; is_supplemental: boolean } } };
+  const dailyAssignments = ((assignments ?? []) as unknown as AssignRow[]).filter(a =>
+    a.pantry_items?.is_active &&
+    a.pantry_items?.products?.category === 'daily_food' &&
+    !a.pantry_items?.products?.is_supplemental,
+  );
+
+  if (dailyAssignments.length === 0) return;
+
+  // 3. Convert all to base with equal split
+  const equalShare = Math.round(100 / dailyAssignments.length);
+  for (const a of dailyAssignments) {
+    await supabase
+      .from('pantry_pet_assignments')
+      .update({
+        feeding_role: 'base' as FeedingRole,
+        calorie_share_pct: equalShare,
+        feeding_frequency: 'daily' as FeedingFrequency,
+        auto_deplete_enabled: true,
+      })
+      .eq('id', a.id);
+  }
+}
+
+/**
+ * Transitions a pet away from custom feeding mode.
+ * Resets calorie shares to 100, re-infers feeding roles based on new style.
+ */
+export async function transitionFromCustomMode(
+  petId: string,
+  newStyle: Exclude<FeedingStyle, 'custom'>,
+): Promise<void> {
+  await requireOnline();
+
+  // 1. Set new feeding_style
+  await supabase.from('pets').update({ feeding_style: newStyle }).eq('id', petId);
+
+  // 2. Reset all calorie_share_pct to 100
+  await supabase
+    .from('pantry_pet_assignments')
+    .update({ calorie_share_pct: 100 })
+    .eq('pet_id', petId);
+
+  // 3. Re-infer roles based on new style
+  const { data: assignments } = await supabase
+    .from('pantry_pet_assignments')
+    .select('id, pantry_items!inner(is_active, products!inner(product_form, category, is_supplemental))')
+    .eq('pet_id', petId);
+
+  type ReAssignRow = { id: string; pantry_items: { is_active: boolean; products: { product_form: string; category: string; is_supplemental: boolean } } };
+  for (const a of ((assignments ?? []) as unknown as ReAssignRow[])) {
+    const product = a.pantry_items?.products;
+    if (!product || !a.pantry_items?.is_active || product.category !== 'daily_food' || product.is_supplemental) continue;
+
+    let role: FeedingRole = 'base';
+    let frequency: FeedingFrequency = 'daily';
+    let autoDeplete = true;
+
+    if (newStyle === 'wet_only') {
+      role = 'rotational';
+      frequency = 'as_needed';
+      autoDeplete = false;
+    } else if (newStyle === 'dry_and_wet' && product.product_form !== 'dry') {
+      role = 'rotational';
+      frequency = 'as_needed';
+      autoDeplete = false;
+    }
+
+    await supabase
+      .from('pantry_pet_assignments')
+      .update({ feeding_role: role, feeding_frequency: frequency, auto_deplete_enabled: autoDeplete })
+      .eq('id', a.id);
+  }
+
+  // 4. Rebalance and refresh for the new style
+  await rebalanceBaseShares(petId);
+  await refreshWetReserve(petId);
 }
 
 /**

@@ -1,6 +1,8 @@
 # Phase 3: Custom Feeding Style Setup
 
-The goal of this phase is to unblock the deferred `'custom'` feeding style, allowing users to explicitely assign calorie amounts to individual foods in their pet's pantry using actual numerical text inputs, while allowing the app to dynamically scale those amounts up or down if the pet's weight goal (DER) ever changes.
+> **Status: Implemented** — see `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` Section 6 for the living implementation reference. This file is retained for historical context only.
+
+The goal of this phase was to unblock the deferred `'custom'` feeding style, allowing users to explicitly assign calorie amounts to individual foods in their pet's pantry using actual numerical text inputs, while allowing the app to dynamically scale those amounts up or down if the pet's weight goal (DER) ever changes.
 
 ## Proposed Changes
 

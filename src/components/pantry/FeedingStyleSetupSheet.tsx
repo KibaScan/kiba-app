@@ -47,8 +47,8 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
                     <Ionicons name="water" size={24} color={Colors.textPrimary} />
                   </View>
                   <View style={styles.optionTextContainer}>
-                    <Text style={styles.optionTitle}>Dry food + wet food</Text>
-                    <Text style={styles.optionSubtitle}>Kibble base with wet food rotation.</Text>
+                    <Text style={styles.optionTitle}>Mixed feeding</Text>
+                    <Text style={styles.optionSubtitle}>Kibble base with other food rotation.</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                 </Pressable>
@@ -60,6 +60,17 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Wet food only</Text>
                     <Text style={styles.optionSubtitle}>Exclusively canned or pouch diet.</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                </Pressable>
+
+                <Pressable style={styles.optionCard} onPress={() => handleSelect('custom')}>
+                  <View style={[styles.iconBox, { backgroundColor: Colors.cardBorder }]}>
+                    <Ionicons name="options" size={24} color={Colors.textPrimary} />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>Custom split</Text>
+                    <Text style={styles.optionSubtitle}>Set calorie amounts per food.</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
                 </Pressable>

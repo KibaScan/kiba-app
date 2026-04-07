@@ -38,25 +38,19 @@ Rename `dry_and_wet` to "Kibble + other" or "Mixed feeding" in the UI only (keep
 
 **Files:** `AddToPantrySheet.tsx` (inference), `FeedingStyleSetupSheet.tsx` (labels), `PetHubScreen.tsx` (chip label), `EditPetScreen.tsx` (row label)
 
-### Phase 2: `custom` mode (larger scope)
+### Custom mode (separate scope)
 
-Activate the fourth `feeding_style = 'custom'` value. In custom mode:
-- No automatic role inference — user picks base vs rotational per item during add
-- Any product form can be base or rotational
-- Calorie math uses `calorie_share_pct` on each assignment (already in schema)
-- Supports exotic combos: raw + freeze-dried, multiple wet bases, etc.
-
-**Files:** `AddToPantrySheet.tsx` (role picker UI), `computeBehavioralServing` (share-pct math), `FeedingStyleSetupSheet.tsx` (4th option)
+For exotic combos where auto-inference is wrong (e.g., raw food IS the base diet, not a topper), the `custom` feeding style allows user-controlled calorie splits. This is a larger effort with its own plan: **`docs/plans/PHASE_3_CUSTOM_FEEDING_PLAN.md`**.
 
 ## Edge Cases
 
-| Scenario | Phase 1 behavior | Phase 2 behavior |
-|----------|-----------------|-----------------|
-| Kibble + freeze-dried topper | Topper = rotational | Same, or user picks |
-| Kibble + Farmer's Dog | Fresh = rotational | Same, or user picks |
-| Raw + freeze-dried (no kibble) | Use `wet_only`, both rotational | Use `custom`, user assigns roles |
-| Two kibbles | Both = base, share via `calorie_share_pct` | Same |
-| Kibble + raw base diet | Raw = rotational (may be wrong if it's 50/50) | Use `custom`, user assigns |
+| Scenario | After Phase 1 | Needs custom mode? |
+|----------|--------------|-------------------|
+| Kibble + freeze-dried topper | Topper = rotational | No |
+| Kibble + Farmer's Dog | Fresh = rotational | No |
+| Raw + freeze-dried (no kibble) | Use `wet_only`, both rotational | Yes — user assigns roles |
+| Two kibbles | Both = base, auto-split via `calorie_share_pct` | No |
+| Kibble + raw base diet | Raw = rotational (may be wrong if it's 50/50) | Yes — user assigns roles |
 
 ## Dependencies
 

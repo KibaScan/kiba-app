@@ -27,6 +27,7 @@ import { chipToggle, saveSuccess, deleteConfirm } from '../utils/haptics';
 import { synthesizeDob, formatLocalDate, parseDateString } from '../utils/lifeStage';
 import { updatePet, deletePet, getPetConditions, getPetAllergens } from '../services/petService';
 import { FeedingStyleSetupSheet } from '../components/pantry/FeedingStyleSetupSheet';
+import { transitionToCustomMode, transitionFromCustomMode } from '../services/pantryService';
 import type { FeedingStyle } from '../types/pet';
 import { validatePetForm, isFormValid, canDeletePet } from '../utils/petFormValidation';
 import type { PetFormErrors } from '../utils/petFormValidation';
@@ -279,6 +280,17 @@ export default function EditPetScreen({ navigation, route }: Props) {
       // Photo upload failed silently — notify user
       if (photoUri && !photoUri.startsWith('http') && !updatedPet.photo_url) {
         Alert.alert('Photo Upload', "Photo couldn't be saved — you can try again later.");
+      }
+
+      // Handle feeding style transitions
+      if (pet && feedingStyle !== pet.feeding_style) {
+        if (feedingStyle === 'custom') {
+          await transitionToCustomMode(petId);
+          navigation.replace('CustomFeedingStyle', { petId });
+          return;
+        } else if (pet.feeding_style === 'custom') {
+          await transitionFromCustomMode(petId, feedingStyle as Exclude<FeedingStyle, 'custom'>);
+        }
       }
 
       navigation.navigate('MeMain');
@@ -594,8 +606,9 @@ export default function EditPetScreen({ navigation, route }: Props) {
             >
               <Text style={styles.switchLabel}>
                 {feedingStyle === 'dry_only' ? 'Dry food only' :
-                 feedingStyle === 'dry_and_wet' ? 'Dry + wet food' :
-                 feedingStyle === 'wet_only' ? 'Wet food only' : 'Dry food only'}
+                 feedingStyle === 'dry_and_wet' ? 'Mixed feeding' :
+                 feedingStyle === 'wet_only' ? 'Wet food only' :
+                 feedingStyle === 'custom' ? 'Custom split' : 'Dry food only'}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
             </TouchableOpacity>

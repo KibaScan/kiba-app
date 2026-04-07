@@ -995,6 +995,38 @@ describe('computeBehavioralServing', () => {
     });
     expect(result).toBeNull();
   });
+
+  test('custom mode uses full DER times calorie_share_pct', () => {
+    const pet = { ...defaultPet, feeding_style: 'custom' as const };
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    // 30% of 1018 DER = 305.4 kcal -> 305.4 / 400 = 0.7635 cups
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 30, isPremiumGoalWeight: false
+    });
+    expect(result?.basisKcal).toBeCloseTo(305.4);
+    expect(result?.amount).toBeCloseTo(305.4 / 400);
+    expect(result?.unit).toBe('cups');
+  });
+
+  test('custom mode with 100% share gets full DER', () => {
+    const pet = { ...defaultPet, feeding_style: 'custom' as const };
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    expect(result?.basisKcal).toBe(1018);
+    expect(result?.amount).toBeCloseTo(1018 / 400);
+  });
+
+  test('custom mode with 0% share returns 0 kcal', () => {
+    const pet = { ...defaultPet, feeding_style: 'custom' as const };
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 0, isPremiumGoalWeight: false
+    });
+    expect(result?.basisKcal).toBe(0);
+    expect(result?.amount).toBe(0);
+  });
 });
 
 describe('computeBehavioralBudgetWarning', () => {

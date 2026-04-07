@@ -348,6 +348,15 @@ export default function PantryScreen({ navigation }: Props) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Pantry</Text>
+          {activePet.feeding_style === 'custom' && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CustomFeedingStyle', { petId: activePet.id })}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={{ marginLeft: Spacing.sm }}
+            >
+              <Ionicons name="options-outline" size={22} color={Colors.accent} />
+            </TouchableOpacity>
+          )}
           {!hasMultiplePets && (
             <View style={styles.headerPet}>
               <View style={styles.headerAvatar}>

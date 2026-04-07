@@ -54,7 +54,7 @@ import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
 import { canExportVetReport } from '../utils/permissions';
-import { getPantryForPet, refreshWetReserve } from '../services/pantryService';
+import { getPantryForPet, refreshWetReserve, transitionToCustomMode, transitionFromCustomMode } from '../services/pantryService';
 import { updatePet } from '../services/petService';
 import { FeedingStyleSetupSheet } from '../components/pantry/FeedingStyleSetupSheet';
 import type { FeedingStyle } from '../types/pet';
@@ -78,8 +78,9 @@ const APPT_ICONS: Record<AppointmentType, string> = {
 
 const FEEDING_STYLE_LABELS: Record<string, string> = {
   dry_only: 'Dry only',
-  dry_and_wet: 'Dry + wet',
+  dry_and_wet: 'Mixed',
   wet_only: 'Wet only',
+  custom: 'Custom',
 };
 
 // ─── Component ────────────────────────────────────────────
@@ -1006,11 +1007,22 @@ export default function PetHubScreen({ navigation }: Props) {
           petName={activePet.name}
           onSelect={async (style: FeedingStyle) => {
             const prev = activePet.feeding_style;
-            await updatePet(activePet.id, { feeding_style: style });
-            useActivePetStore.getState().loadPets();
-            setFeedingStyleSheetVisible(false);
-            if (style === 'dry_and_wet' || prev === 'dry_and_wet') {
-              refreshWetReserve(activePet.id).catch(() => {});
+            if (style === 'custom') {
+              await transitionToCustomMode(activePet.id);
+              useActivePetStore.getState().loadPets();
+              setFeedingStyleSheetVisible(false);
+              navigation.navigate('CustomFeedingStyle', { petId: activePet.id });
+            } else if (prev === 'custom') {
+              await transitionFromCustomMode(activePet.id, style);
+              useActivePetStore.getState().loadPets();
+              setFeedingStyleSheetVisible(false);
+            } else {
+              await updatePet(activePet.id, { feeding_style: style });
+              useActivePetStore.getState().loadPets();
+              setFeedingStyleSheetVisible(false);
+              if (style === 'dry_and_wet' || prev === 'dry_and_wet') {
+                refreshWetReserve(activePet.id).catch(() => {});
+              }
             }
           }}
           onDismiss={() => setFeedingStyleSheetVisible(false)}

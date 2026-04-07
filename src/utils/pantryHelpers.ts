@@ -322,7 +322,7 @@ export function computeBehavioralServing(params: {
   } else if (style === 'wet_only') {
     budgetedKcal = Math.max(0, der - dailyWetFedKcal);
   } else if (style === 'custom') {
-    return null; // Deferred
+    budgetedKcal = der;
   }
 
   // Apply split PCT to budget

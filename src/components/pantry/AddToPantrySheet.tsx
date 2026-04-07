@@ -144,12 +144,25 @@ export function AddToPantrySheet({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Behavioral Feeding Base Setup
+  // Behavioral Feeding Base Setup + Mismatch Detection
   useEffect(() => {
-    if (visible && !treat && numDailyFoods === 0 && !hasSeenStyleSetup && pet.feeding_style === 'dry_only') {
+    if (!visible || treat) return;
+
+    // Cold start: first daily food, prompt for feeding style
+    if (numDailyFoods === 0 && !hasSeenStyleSetup && pet.feeding_style === 'dry_only') {
+      setShowStyleSetup(true);
+      return;
+    }
+
+    // Mismatch: adding non-dry to dry_only, or dry to wet_only
+    const isMismatch =
+      (pet.feeding_style === 'dry_only' && product.product_form !== 'dry') ||
+      (pet.feeding_style === 'wet_only' && product.product_form === 'dry');
+
+    if (isMismatch && !hasSeenStyleSetup) {
       setShowStyleSetup(true);
     }
-  }, [visible, treat, numDailyFoods, hasSeenStyleSetup, pet.feeding_style]);
+  }, [visible, treat, numDailyFoods, hasSeenStyleSetup, pet.feeding_style, product.product_form]);
 
   // Reset & Init
   useEffect(() => {
@@ -184,7 +197,7 @@ export function AddToPantrySheet({
   const inferredRole: FeedingRole = useMemo(() => {
     if (treat) return null;
     if (pet.feeding_style === 'wet_only') return 'rotational';
-    if (pet.feeding_style === 'dry_and_wet' && product.product_form === 'wet') return 'rotational';
+    if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') return 'rotational';
     return 'base';
   }, [treat, pet.feeding_style, product.product_form]);
 
@@ -265,7 +278,7 @@ export function AddToPantrySheet({
     // Daily Food Path (Behavioral)
     try {
       // Safe switch strictly for BASE role transitions
-      if (isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch) {
+      if (isNewToDiet === true && inferredRole === 'base' && onStartSafeSwitch && pet.feeding_style !== 'custom') {
         onStartSafeSwitch({
           newProductId: product.id,
           petId: pet.id,
