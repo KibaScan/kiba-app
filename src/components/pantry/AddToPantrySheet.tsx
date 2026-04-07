@@ -155,9 +155,11 @@ export function AddToPantrySheet({
     }
 
     // Mismatch: adding non-dry to dry_only, or dry to wet_only
+    // EC-3: Supplements (salmon oil, liquid probiotics) should never trigger mismatch
     const isMismatch =
-      (pet.feeding_style === 'dry_only' && product.product_form !== 'dry') ||
-      (pet.feeding_style === 'wet_only' && product.product_form === 'dry');
+      !product.is_supplemental &&
+      ((pet.feeding_style === 'dry_only' && product.product_form !== 'dry') ||
+      (pet.feeding_style === 'wet_only' && product.product_form === 'dry'));
 
     if (isMismatch && !hasSeenStyleSetup) {
       setShowStyleSetup(true);

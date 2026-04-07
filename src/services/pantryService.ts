@@ -88,6 +88,10 @@ export async function addToPantry(
 
   if (itemErr) throw new Error(`Failed to add pantry item: ${itemErr.message}`);
 
+  // EC-1: Custom mode defaults new food to 0% share (user must configure via CustomFeedingStyleScreen)
+  const { data: petRow } = await supabase.from('pets').select('feeding_style').eq('id', petId).single();
+  const defaultShare = petRow?.feeding_style === 'custom' ? 0 : 100;
+
   const { error: assignErr } = await supabase
     .from('pantry_pet_assignments')
     .insert({
@@ -100,7 +104,7 @@ export async function addToPantry(
       feeding_times: input.feeding_times ?? null,
       feeding_role: input.feeding_role ?? null,
       auto_deplete_enabled: input.auto_deplete_enabled ?? false,
-      calorie_share_pct: input.calorie_share_pct ?? 100,
+      calorie_share_pct: input.calorie_share_pct ?? defaultShare,
     });
 
   if (assignErr) throw new Error(`Failed to assign pantry item: ${assignErr.message}`);
@@ -758,13 +762,19 @@ export async function refreshWetReserve(petId: string): Promise<void> {
     let totalWeight = 0;
     const sourceCounts = new Map<string, number>();
 
+    // EC-2: Cap per-unit kcal at 500 — anything above is per-package (bulk freeze-dried bags),
+    // not per-serving. Without the cap, a 5lb bag (~10,000 kcal) would spike the reserve and
+    // zero out dry food serving calculations.
+    const MAX_SERVING_KCAL = 500;
+
     for (const a of assignments) {
       const item = a.pantry_items as unknown as { quantity_remaining: number | null; products: any } | null;
       if (!item || !item.products) continue;
       const qtyContext = item.quantity_remaining && item.quantity_remaining > 0 ? item.quantity_remaining : 1;
       const kcalRes = getWetFoodKcal(item.products);
       if (kcalRes) {
-        totalKcal += kcalRes.kcal * qtyContext;
+        const kcalPerServing = Math.min(kcalRes.kcal, MAX_SERVING_KCAL);
+        totalKcal += kcalPerServing * qtyContext;
         totalWeight += qtyContext;
         sourceCounts.set(kcalRes.source, (sourceCounts.get(kcalRes.source) ?? 0) + qtyContext);
       }

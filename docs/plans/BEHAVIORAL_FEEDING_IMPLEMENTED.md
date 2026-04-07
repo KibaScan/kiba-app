@@ -159,40 +159,35 @@ Added form-mismatch guard in `AddToPantrySheet`: when adding a non-dry food to a
 
 Five edge cases identified during implementation review. Ordered by severity.
 
-### EC-1: Custom Mode "100% Default" Overfeeding Spike (**HIGH — fix before launch**)
+### EC-1: Custom Mode "100% Default" Overfeeding Spike (**FIXED — session 30**)
 
 **Problem:** When a user adds a new food in custom mode, it defaults to `calorie_share_pct: 100` and `rebalanceBaseShares` is skipped. If a pet has 400 kcal DER split 50/50 between two foods and the user adds a third, the system computes servings for 250% of DER. If the user closes the app without configuring splits, auto-deplete and serving displays instruct double-feeding.
 
 **Root cause:** `addToPantry()` inserts `calorie_share_pct: input.calorie_share_pct ?? 100`. Custom mode skips `rebalanceBaseShares`, so the 100% default sticks.
 
-**Fix:** In custom mode, default new foods to `calorie_share_pct: 0`. PantryCard shows "0 cups — configure splits" which is safe. The `CustomFeedingStyleScreen` "Configure splits" button on PantryScreen prompts the user to allocate.
+**Fix:** `addToPantry()` now queries `pets.feeding_style`. When `custom`, defaults `calorie_share_pct` to 0 instead of 100. PantryCard shows "0 cups — configure splits" which is safe. User allocates via `CustomFeedingStyleScreen`.
 
-**Files:** `pantryService.ts` (`addToPantry` — check `feeding_style` before defaulting), potentially `PantryCard.tsx` (display "Not configured" when share is 0).
+**Files:** `pantryService.ts:91-92` (`addToPantry` — queries feeding_style, conditional default).
 
-### EC-2: Bulk vs. Discrete Averaging Trap (**HIGH — verify and fix**)
+### EC-2: Bulk vs. Discrete Averaging Trap (**FIXED — session 30**)
 
 **Problem:** `refreshWetReserve()` uses `getWetFoodKcal()` which returns **kcal per unit** (per package). For discrete items (cans/pouches), 1 unit ≈ 1 serving ≈ 80–150 kcal — the weighted average is sensible. But Phase 1 Expansion made freeze-dried, raw, and fresh foods rotational. A 5lb freeze-dried bag has `kcal_per_unit` of ~10,000 kcal. If this enters the average, the reserve spikes massively, forcing `computeBehavioralServing` to compute `Math.max(0, DER - 10000) = 0` → dry food serving becomes 0 cups.
 
-**Root cause:** `refreshWetReserve` line 765–767: `getWetFoodKcal(item.products)` returns per-package kcal. Line 767: `totalKcal += kcalRes.kcal * qtyContext`. The weighted average `totalKcal / totalWeight` gives per-package kcal, not per-serving kcal.
+**Root cause:** `getWetFoodKcal` Tier 1 derives kcal from `kcal_per_kg * unit_weight_g / 1000`. For a 5lb bag, `unit_weight_g = 2268`, so the result is the entire bag's calories.
 
-**Confirmed by code:** `getWetFoodKcal` Tier 1 derives kcal from `kcal_per_kg * unit_weight_g / 1000`. For a 5lb bag, `unit_weight_g = 2268`, so the result is the entire bag's calories.
+**Fix:** `refreshWetReserve` now caps per-unit kcal at `MAX_SERVING_KCAL = 500` before entering the weighted average. A single wet/rotational serving is never 500+ kcal — anything above is clearly per-package (bulk freeze-dried, raw bags). The cap is applied at the reserve calculation level, not in `getWetFoodKcal` itself, preserving the helper's accuracy for other callers.
 
-**Mitigation options:**
-1. Use per-serving kcal instead: read `serving_size` and `serving_size_unit` from the assignment, multiply by kcal density.
-2. Exclude bulk items (`serving_mode === 'weight'` or `quantity_unit !== 'units'`) from the average — fall back to remaining discrete items.
-3. Cap the per-unit kcal at a reasonable daily ceiling (e.g., 500 kcal/unit) and log a warning if exceeded.
+**Files:** `pantryService.ts:761-762` (`refreshWetReserve` — `MAX_SERVING_KCAL` constant + `Math.min` clamp).
 
-**Files:** `pantryService.ts` (`refreshWetReserve`), possibly `pantryHelpers.ts` (`getWetFoodKcal`).
-
-### EC-3: Mismatch Detection False Positive on Supplements (**MEDIUM — fix before launch**)
+### EC-3: Mismatch Detection False Positive on Supplements (**FIXED — session 30**)
 
 **Problem:** The mismatch detection in `AddToPantrySheet` fires when `product_form !== 'dry'` and `feeding_style === 'dry_only'`. A salmon oil supplement or liquid probiotic is non-dry but should NOT trigger "Change your feeding style?" — it's a supplement, not a diet change.
 
 **Root cause:** The mismatch guard checks `if (!visible || treat) return;` — treats are excluded. But supplements go through the daily food path if `product.category === 'daily_food'` or `is_supplemental === true`. The `is_supplemental` flag is not checked in the mismatch condition.
 
-**Fix:** Add `&& !product.is_supplemental` to the mismatch condition. Supplements should never trigger a feeding style change prompt.
+**Fix:** Added `!product.is_supplemental` guard to the `isMismatch` condition. Supplements now bypass mismatch detection entirely.
 
-**File:** `AddToPantrySheet.tsx` — one line addition to the `isMismatch` check.
+**File:** `AddToPantrySheet.tsx:161` — `!product.is_supplemental &&` prepended to the mismatch check.
 
 ### EC-4: Divide-by-Zero in refreshWetReserve (**LOW — partially mitigated**)
 
