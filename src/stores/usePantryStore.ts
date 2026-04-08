@@ -2,6 +2,7 @@
 // No persistence — data fetched from Supabase on each screen focus.
 // All mutations reload via getPantryForPet + evaluateDietCompleteness.
 
+import { Alert } from 'react-native';
 import { create } from 'zustand';
 import type { PantryCardData, DietCompletenessResult, AddToPantryInput } from '../types/pantry';
 import { PantryOfflineError } from '../types/pantry';
@@ -103,7 +104,8 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     } catch (e) {
       const msg = (e as Error).message ?? 'Failed to remove item.';
       if (__DEV__) console.warn('[usePantryStore] removeItem failed:', msg);
-      set({ error: e instanceof PantryOfflineError ? msg : msg, loading: false });
+      set({ error: msg, loading: false });
+      Alert.alert('Cannot Remove', msg);
     }
   },
 

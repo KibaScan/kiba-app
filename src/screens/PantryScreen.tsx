@@ -30,7 +30,7 @@ import { PantryCard } from '../components/pantry/PantryCard';
 import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import { WetTransitionCard } from '../components/pantry/WetTransitionCard';
-import { getWetTransition, dismissWetTransition } from '../services/wetTransitionStorage';
+import { getWetTransition, dismissWetTransition, clearWetTransition } from '../services/wetTransitionStorage';
 import type { WetTransitionRecord } from '../utils/wetTransitionHelpers';
 import SwipeableRow from '../components/ui/SwipeableRow';
 import { canUseSafeSwaps } from '../utils/permissions';
@@ -215,13 +215,18 @@ export default function PantryScreen({ navigation }: Props) {
       if (!activePetId) return;
       let cancelled = false;
       loadPantry(activePetId).then(() => { if (cancelled) return; });
-      // Load active safe switch
-      getActiveSwitchForPet(activePetId).then(data => {
-        if (!cancelled) setActiveSwitchData(data);
-      });
-      // Load wet transition guide
-      getWetTransition(activePetId).then(data => {
-        if (!cancelled) setWetTransition(data);
+      // Load active safe switch, then wet transition (sequential — mutual exclusion)
+      getActiveSwitchForPet(activePetId).then(async (data) => {
+        if (cancelled) return;
+        setActiveSwitchData(data);
+        if (data) {
+          // Mutual exclusion: clear stale wet transition when Safe Switch is active
+          await clearWetTransition(activePetId);
+          setWetTransition(null);
+        } else {
+          const wt = await getWetTransition(activePetId);
+          if (!cancelled) setWetTransition(wt);
+        }
       });
       return () => { cancelled = true; };
     }, [activePetId, loadPantry]),

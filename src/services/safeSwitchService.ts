@@ -123,6 +123,10 @@ export async function createSafeSwitch(
   }
 
   // Step 3: Insert safe_switches row with derived old_product_id + pantry_item_id FK
+  // Pass local date explicitly — DB default CURRENT_DATE uses UTC, which is wrong
+  // for users in negative-offset timezones (e.g., 8 PM Pacific = tomorrow UTC).
+  const now = new Date();
+  const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const { data, error } = await supabase
     .from('safe_switches')
     .insert({
@@ -135,6 +139,7 @@ export async function createSafeSwitch(
       new_serving_size: input.new_serving_size,
       new_serving_size_unit: input.new_serving_size_unit,
       new_feedings_per_day: input.new_feedings_per_day,
+      started_at: localDate,
       status: 'active',
     })
     .select()

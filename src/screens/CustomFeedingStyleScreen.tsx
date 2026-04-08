@@ -55,6 +55,7 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
   const [foods, setFoods] = useState<FoodRow[]>([]);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [roleOverrides, setRoleOverrides] = useState<Record<string, FeedingRole>>({});
+  const [inputMode, setInputMode] = useState<'kcal' | 'pct'>('kcal');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -183,10 +184,16 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
     }
   }, [foods, inputs, roleOverrides, der, petId, navigation]);
 
-  // Update input for a specific assignment
-  const updateInput = useCallback((assignmentId: string, value: string) => {
-    setInputs(prev => ({ ...prev, [assignmentId]: value }));
-  }, []);
+  // Update input — converts from % to internal kcal when in pct mode
+  const updateInputConverted = useCallback((assignmentId: string, value: string) => {
+    if (inputMode === 'pct') {
+      const pctVal = parseFloat(value) || 0;
+      const kcalVal = der > 0 ? Math.round(der * pctVal / 100) : 0;
+      setInputs(prev => ({ ...prev, [assignmentId]: String(kcalVal) }));
+    } else {
+      setInputs(prev => ({ ...prev, [assignmentId]: value }));
+    }
+  }, [inputMode, der]);
 
   // Toggle a food's role between base and rotational
   const toggleRole = useCallback((assignmentId: string) => {
@@ -212,6 +219,12 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
     const kcalStr = inputs[item.assignmentId] ?? '0';
     const kcal = parseFloat(kcalStr) || 0;
     const pct = der > 0 ? Math.round((kcal / der) * 100) : 0;
+
+    // Display value depends on input mode
+    const displayValue = inputMode === 'pct' ? String(pct) : kcalStr;
+    const inputLabel = inputMode === 'pct' ? '%' : 'kcal';
+    const badgeText = inputMode === 'pct' ? `${Math.round(kcal)}` : `${pct}%`;
+    const badgeLabel = inputMode === 'pct' ? 'kcal' : '';
 
     return (
       <View style={styles.foodCard}>
@@ -249,15 +262,16 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
               style={styles.kcalInput}
               keyboardType="decimal-pad"
               returnKeyType="done"
-              value={kcalStr}
-              onChangeText={(v) => updateInput(item.assignmentId, v)}
+              value={displayValue}
+              onChangeText={(v) => updateInputConverted(item.assignmentId, v)}
               placeholderTextColor={Colors.textTertiary}
               selectTextOnFocus
             />
-            <Text style={styles.kcalLabel}>kcal</Text>
+            <Text style={styles.kcalLabel}>{inputLabel}</Text>
             <View style={styles.pctBadge}>
-              <Text style={styles.pctText}>{pct}%</Text>
+              <Text style={styles.pctText}>{badgeText}</Text>
             </View>
+            {badgeLabel ? <Text style={styles.badgeSuffix}>{badgeLabel}</Text> : null}
           </View>
         )}
       </View>
@@ -276,7 +290,13 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
             <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Custom Splits</Text>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity
+            style={styles.modeToggle}
+            onPress={() => setInputMode(m => m === 'kcal' ? 'pct' : 'kcal')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.modeToggleText}>{inputMode === 'kcal' ? 'kcal' : '%'}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* DER banner */}
@@ -443,12 +463,12 @@ const styles = StyleSheet.create({
   },
   pctBadge: {
     backgroundColor: Colors.background,
-    borderRadius: 6,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
   },
   pctText: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.md,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
@@ -529,6 +549,24 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: 'center',
     marginTop: Spacing.xs,
+  },
+  modeToggle: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    paddingHorizontal: Spacing.xs + 2,
+    paddingVertical: 2,
+  },
+  modeToggleText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '700',
+    color: Colors.accent,
+  },
+  badgeSuffix: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    marginLeft: 4,
   },
   roleRow: {
     flexDirection: 'row',

@@ -103,26 +103,40 @@
   - **V2-4: Per-serving kcal in wet reserve** — New `computePerServingKcal` helper in `pantryHelpers.ts` uses assignment `serving_size` × product kcal density. `refreshWetReserve` Supabase select widened to include `serving_size, serving_size_unit`. Loop prefers per-serving path (no cap needed); falls back to raw per-unit with EC-2 cap.
   - **V2-2: Custom mode rotational override** — `transitionToCustomMode` now preserves existing rotational roles (base items get equal share, rotational keeps role with 0% share). `updateCalorieShares` extended with optional `feeding_role/feeding_frequency/auto_deplete_enabled` fields. `computeBehavioralServing` custom branch returns `null` for rotational items. `CustomFeedingStyleScreen` adds Base/Rotational chip pair per food card, hides kcal input for rotational, validates >=1 base item, includes role changes in save. Fixes EC-5.
   - **Code review** caught and fixed React Hooks ordering bug — `toggleRole` (`useCallback`) was placed after a conditional return in `CustomFeedingStyleScreen.tsx`. Moved before the early return. Also updated stale sections in `BEHAVIORAL_FEEDING_IMPLEMENTED.md` (sections 3, 5, 6 still described pre-V2-2 custom mode behavior).
-- **Files changed (4 modified, 0 new):**
+  - **CustomFeedingStyleScreen kcal/% toggle** — Added `inputMode` state (`'kcal' | 'pct'`). Header pill toggles between modes. In % mode, input accepts/displays %, badge shows kcal equivalent. Internal state always stores kcal — conversion at display boundary. Badge and suffix sizes bumped for readability (`pctBadge` padding increased, `pctText` xs→md, `badgeSuffix` xs→sm).
+  - **Pantry delete error surfacing** — `usePantryStore.removeItem` now shows `Alert.alert('Cannot Remove', msg)` directly in the catch block. Previously the error was swallowed (logged to console only). Covers all delete paths (single-pet, shared-remove-all, shared-remove-pet-only).
+  - **Safe Switch + Wet Transition mutual exclusion fix** — PantryScreen `useFocusEffect` now loads Safe Switch first; if active, clears stale wet transition from AsyncStorage and sets `wetTransition` to null. Prevents the Meal Transition Guide from flashing alongside the Safe Switch banner.
+  - **Safe Switch `started_at` timezone fix** — `createSafeSwitch` now passes local date explicitly (`YYYY-MM-DD` from `new Date()`) instead of relying on DB `CURRENT_DATE` (UTC). Fixes day advancement for negative-offset timezones where evening creation got tomorrow's UTC date.
+- **Files changed (8 modified, 0 new):**
   - `src/services/pantryService.ts` (EC-4 loop, V2-4 select+per-serving path, V2-2a transitionToCustomMode, V2-2b updateCalorieShares, imports)
   - `src/utils/pantryHelpers.ts` (V2-4 computePerServingKcal, V2-2c custom rotational branch)
-  - `src/screens/CustomFeedingStyleScreen.tsx` (V2-2d role toggle UI, sum bar, save logic, styles, hooks ordering fix)
+  - `src/screens/CustomFeedingStyleScreen.tsx` (V2-2d role toggle UI, kcal/% toggle, sum bar, save logic, styles, hooks ordering fix)
+  - `src/stores/usePantryStore.ts` (removeItem Alert.alert in catch, Alert import, return type kept void)
+  - `src/screens/PantryScreen.tsx` (mutual exclusion fix — sequential switch→transition load, clearWetTransition import)
+  - `src/services/safeSwitchService.ts` (started_at local date explicit pass)
   - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC-4, EC-5, V2-2, V2-4 — sections 3, 5, 6, 8, 9 updated)
   - Tests: `pantryHelpers.test.ts` (+10 tests: 8 computePerServingKcal, 2 custom mode)
 - **Tests:** 1436 passing / 62 suites (+10 new tests).
 - **Not done yet:**
-  - **Visual QA** of CustomFeedingStyleScreen role toggle on device (switch to custom with dry+wet pet, toggle roles, verify save persists).
+  - **Visual QA** of CustomFeedingStyleScreen role toggle + kcal/% toggle on device.
+  - **Visual QA** of Safe Switch day advancement after timezone fix (cancel existing switch, recreate, verify Day 1 = today).
+  - **Visual QA** of "Cannot Remove" Alert when deleting a Safe Switch-anchored item.
   - **Visual QA** carry-over from session 32: V2-1/V2-1b Safe Switch entry points + unit display.
 - **Next session should start with:**
-  - Visual QA of V2-2 role toggle (custom mode with mixed feeding pet → toggle wet to rotational → verify Fed This Today works → toggle back to base → verify kcal input returns).
+  - Visual QA of all session 33 changes on device (role toggle, kcal/% mode, delete error Alert, mutual exclusion, Safe Switch day advancement).
+  - Existing Safe Switches in DB still have UTC-based `started_at` — user should cancel and recreate to get correct local date. No migration needed (only affects future inserts).
   - Then M9 carry-overs: stale browse scores, 17 non-border cardBorder token decision, HomeScreen visual overhaul, search UX overhaul.
 - **Gotchas:**
-  - `updateCalorieShares` optional fields are backward compatible — existing callers (CustomFeedingStyleScreen pre-V2-2) only pass `assignmentId + calorie_share_pct`.
-  - `transitionToCustomMode` promotes first rotational to base if no base items exist (guard prevents all-rotational custom mode).
-  - Custom rotational items do NOT auto-subtract from base budgets. Base allocations are fixed DER percentages. Sum bar warns if over.
-  - `MAX_SERVING_KCAL = 500` cap only applies to fallback path in `refreshWetReserve` — per-serving path has no cap.
+  - `usePantryStore.removeItem` now shows Alert directly from the store's catch block (not from PantryScreen). This is a pragmatic choice — re-throwing caused unhandled promise rejections in RN's Alert callback bridge, and return-value approach had Modal animation timing issues.
+  - `PantryScreen` wet transition load is now **sequential after Safe Switch** (not parallel). Adds a few ms to focus but guarantees mutual exclusion without flash.
+  - `createSafeSwitch` passes `started_at` as local `YYYY-MM-DD` string. `getCurrentDay` in `safeSwitchHelpers.ts` already uses local midnight comparison — both sides are now timezone-consistent.
+  - `CustomFeedingStyleScreen` `inputMode` state is component-local (resets to 'kcal' on re-mount). `inputs` state always stores kcal internally.
+  - `updateCalorieShares` optional fields are backward compatible — existing callers only pass `assignmentId + calorie_share_pct`.
+  - `transitionToCustomMode` promotes first rotational to base if no base items exist.
+  - Custom rotational items do NOT auto-subtract from base budgets. Sum bar warns if over DER.
+  - `MAX_SERVING_KCAL = 500` cap only applies to fallback path in `refreshWetReserve`.
   - No new decisions, no scoring changes, no migrations this session.
-  - **Carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA (V2-1/V2-1b + V2-2), same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+  - **Carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
 - **Decision/scoring changes:** None. No new D-numbers (129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
