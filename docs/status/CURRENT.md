@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-08 (session 33)
+# Project Status — Last updated 2026-04-08 (session 34)
 
 ## Active Milestone
 
@@ -61,9 +61,9 @@
 
 ## Numbers
 
-- **Tests:** 1436 passing / 62 suites
+- **Tests:** 1445 passing / 63 suites
 - **Decisions:** 129
-- **Migrations:** 34 (001–034)
+- **Migrations:** 35 (001–035)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -97,51 +97,54 @@
 
 ## Last Session
 
-- **Date:** 2026-04-08 (session 33)
+- **Date:** 2026-04-08 (session 34)
 - **Accomplished:**
-  - **EC-4: refreshWetReserve empty-inventory fix** — Replaced `|| 1` phantom inventory fallback with dual-track accumulation. When all rotational items depleted, uses unweighted average (`SUM(kcal) / COUNT(*)`) instead of weighted-by-phantom-1.
-  - **V2-4: Per-serving kcal in wet reserve** — New `computePerServingKcal` helper in `pantryHelpers.ts` uses assignment `serving_size` × product kcal density. `refreshWetReserve` Supabase select widened to include `serving_size, serving_size_unit`. Loop prefers per-serving path (no cap needed); falls back to raw per-unit with EC-2 cap.
-  - **V2-2: Custom mode rotational override** — `transitionToCustomMode` now preserves existing rotational roles (base items get equal share, rotational keeps role with 0% share). `updateCalorieShares` extended with optional `feeding_role/feeding_frequency/auto_deplete_enabled` fields. `computeBehavioralServing` custom branch returns `null` for rotational items. `CustomFeedingStyleScreen` adds Base/Rotational chip pair per food card, hides kcal input for rotational, validates >=1 base item, includes role changes in save. Fixes EC-5.
-  - **Code review** caught and fixed React Hooks ordering bug — `toggleRole` (`useCallback`) was placed after a conditional return in `CustomFeedingStyleScreen.tsx`. Moved before the early return. Also updated stale sections in `BEHAVIORAL_FEEDING_IMPLEMENTED.md` (sections 3, 5, 6 still described pre-V2-2 custom mode behavior).
-  - **CustomFeedingStyleScreen kcal/% toggle** — Added `inputMode` state (`'kcal' | 'pct'`). Header pill toggles between modes. In % mode, input accepts/displays %, badge shows kcal equivalent. Internal state always stores kcal — conversion at display boundary. Badge and suffix sizes bumped for readability (`pctBadge` padding increased, `pctText` xs→md, `badgeSuffix` xs→sm).
-  - **Pantry delete error surfacing** — `usePantryStore.removeItem` now shows `Alert.alert('Cannot Remove', msg)` directly in the catch block. Previously the error was swallowed (logged to console only). Covers all delete paths (single-pet, shared-remove-all, shared-remove-pet-only).
-  - **Safe Switch + Wet Transition mutual exclusion fix** — PantryScreen `useFocusEffect` now loads Safe Switch first; if active, clears stale wet transition from AsyncStorage and sets `wetTransition` to null. Prevents the Meal Transition Guide from flashing alongside the Safe Switch banner.
-  - **Safe Switch `started_at` timezone fix** — `createSafeSwitch` now passes local date explicitly (`YYYY-MM-DD` from `new Date()`) instead of relying on DB `CURRENT_DATE` (UTC). Fixes day advancement for negative-offset timezones where evening creation got tomorrow's UTC date.
-- **Files changed (8 modified, 0 new):**
-  - `src/services/pantryService.ts` (EC-4 loop, V2-4 select+per-serving path, V2-2a transitionToCustomMode, V2-2b updateCalorieShares, imports)
-  - `src/utils/pantryHelpers.ts` (V2-4 computePerServingKcal, V2-2c custom rotational branch)
-  - `src/screens/CustomFeedingStyleScreen.tsx` (V2-2d role toggle UI, kcal/% toggle, sum bar, save logic, styles, hooks ordering fix)
-  - `src/stores/usePantryStore.ts` (removeItem Alert.alert in catch, Alert import, return type kept void)
-  - `src/screens/PantryScreen.tsx` (mutual exclusion fix — sequential switch→transition load, clearWetTransition import)
-  - `src/services/safeSwitchService.ts` (started_at local date explicit pass)
-  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC-4, EC-5, V2-2, V2-4 — sections 3, 5, 6, 8, 9 updated)
-  - Tests: `pantryHelpers.test.ts` (+10 tests: 8 computePerServingKcal, 2 custom mode)
-- **Tests:** 1436 passing / 62 suites (+10 new tests).
+  - **Form-aware cache maturity (migration 035)** — Added `product_form` column to `pet_product_scores` with backfill + composite index. Maturity check queries in both `batchScoreOnDevice.ts` and Edge Function `batch-score/index.ts` now filter by `product_form` when provided. Rate limit keys include form (`pet:category:form`) so form-specific scoring isn't blocked by category-wide batches. Upsert payloads include `product_form`. Deployed migration 035 to production.
+  - **`ensureFormScored()` browse trigger** — New function in `categoryBrowseService.ts` checks if a specific form has any cached scores; if 0, triggers `batchScoreHybrid`. Wired into `CategoryBrowseScreen.loadFirstPage` — fires before `fetchBrowseResults` when a form-specific sub-filter is active (dry/wet/freeze-dried). Reads pet from store at call time to avoid stale closure.
+  - **Cache invalidation architecture** — `invalidateStaleScores(petId)` in `topMatches.ts` does a full DELETE of all `pet_product_scores` rows for a pet (not filtered by `pet_updated_at` — handles life stage drift and engine version bumps that don't change `pet_updated_at`). `ensureCacheFresh(petId, pet)` orchestrates: check freshness → invalidate → re-score via `batchScoreHybrid` (1000 products via Edge Function). In-memory concurrency lock (`Set<string>`) prevents overlapping runs from rapid tab switching.
+  - **HomeScreen scoring trigger** — `ensureCacheFresh` wired into HomeScreen `useFocusEffect` (fire-and-forget). Previously `useTopMatchesStore` was orphaned — no component imported it, so `checkCacheFreshness` and `loadTopMatches` were never called. Now HomeScreen validates cache on every focus.
+  - **`CURRENT_SCORING_VERSION` bumped `'1'` → `'2'`** — Forces global cache invalidation for all pets. Old cached scores (version `'1'`) detected as stale by `checkCacheFreshness` condition #4.
+  - **Payload-driven versioning** — `batchScoreHybrid` sends `scoring_version: CURRENT_SCORING_VERSION` in Edge Function request body. Edge Function uses client-provided version for upserts (fallback `'1'` for old clients). Prevents infinite wipe+score loop when version bumps: old clients see `'1'` in DB, new clients see `'2'`.
+  - **`useTopMatchesStore` updated** — Switched from `batchScoreOnDevice` (200 limit) to `batchScoreHybrid` (1000 via Edge Function). Added `invalidateStaleScores` before scoring in both `loadTopMatches` and `refreshScores`. Store is still orphaned but correct if re-wired.
+  - **`searchProducts` stale filter reverted** — Removed aggressive `pet_updated_at` comparison that was filtering ALL cached scores (causing no score badges). Stale rows are now deleted at source via `invalidateStaleScores`.
+  - **Edge Function redeployed** — `supabase functions deploy batch-score` with payload-driven versioning, form-aware maturity checks, and `product_form` in upsert payloads.
+  - **Living document created** — `docs/plans/SCORING_CACHE_ARCHITECTURE.md` — comprehensive reference for all scoring cache read/write/trigger paths, constants, gaps, and flow diagram.
+- **Files changed (10 modified, 3 new):**
+  - `src/services/batchScoreOnDevice.ts` (form-aware maturity queries, form in rate limit key, `product_form` in upsert, `scoring_version` in Edge Function request body)
+  - `src/services/topMatches.ts` (added `invalidateStaleScores`, `ensureCacheFresh`, `batchScoreHybrid` import; reverted stale filter in `searchProducts`)
+  - `src/services/categoryBrowseService.ts` (added `ensureFormScored`, `batchScoreHybrid` + `Pet` imports)
+  - `src/screens/CategoryBrowseScreen.tsx` (wired `ensureFormScored` into `loadFirstPage`)
+  - `src/screens/HomeScreen.tsx` (wired `ensureCacheFresh` into `useFocusEffect`)
+  - `src/stores/useTopMatchesStore.ts` (switched to `batchScoreHybrid` + `invalidateStaleScores`)
+  - `src/utils/constants.ts` (`CURRENT_SCORING_VERSION` `'1'` → `'2'`)
+  - `supabase/functions/batch-score/index.ts` (form-aware maturity, payload-driven versioning, `product_form` in upsert)
+  - `supabase/functions/batch-score/utils/constants.ts` (`CURRENT_SCORING_VERSION` `'1'` → `'2'`)
+  - New: `supabase/migrations/035_pps_product_form.sql` (product_form column + backfill + index)
+  - New: `__tests__/services/ensureFormScored.test.ts` (4 tests: cache hit, cache miss, query error, scoring error)
+  - New: `docs/plans/SCORING_CACHE_ARCHITECTURE.md` (living document)
+  - Tests: `batchScoreOnDevice.test.ts` (+2 tests: upsert includes product_form, form-specific rate limit), `topMatches.test.ts` (+3 tests: invalidateStaleScores happy/error/empty, scoring_version fixture bump), `ensureFormScored.test.ts` (+4 tests)
+- **Tests:** 1445 passing / 63 suites (+9 new tests, +1 new suite).
 - **Not done yet:**
-  - **Visual QA** of CustomFeedingStyleScreen role toggle + kcal/% toggle on device.
-  - **Visual QA** of Safe Switch day advancement after timezone fix (cancel existing switch, recreate, verify Day 1 = today).
-  - **Visual QA** of "Cannot Remove" Alert when deleting a Safe Switch-anchored item.
-  - **Visual QA** carry-over from session 32: V2-1/V2-1b Safe Switch entry points + unit display.
+  - **Search score coverage** — `searchProducts` queries 19K products but only ~1K have cached scores. Most search results show no score badge. Options: score on search demand (client-side `computeScore` for unscored results) or raise batch limits. See `docs/plans/SCORING_CACHE_ARCHITECTURE.md` section 9.1.
+  - **Top Picks empty for minority categories** — TopPicksCarousel filters to `final_score != null`. If active category has 0 scored products, carousel is empty. Could wire `ensureFormScored`-like logic.
+  - **Visual QA** carry-over from session 33: CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert.
 - **Next session should start with:**
-  - Visual QA of all session 33 changes on device (role toggle, kcal/% mode, delete error Alert, mutual exclusion, Safe Switch day advancement).
-  - Existing Safe Switches in DB still have UTC-based `started_at` — user should cancel and recreate to get correct local date. No migration needed (only affects future inserts).
-  - Then M9 carry-overs: stale browse scores, 17 non-border cardBorder token decision, HomeScreen visual overhaul, search UX overhaul.
+  - Read `docs/plans/SCORING_CACHE_ARCHITECTURE.md` for full scoring cache context.
+  - Decide on search score coverage fix: Option C (score on search demand) is most practical for immediate UX. Option D (raise batch limits) for full catalog coverage.
+  - Then M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
 - **Gotchas:**
-  - `usePantryStore.removeItem` now shows Alert directly from the store's catch block (not from PantryScreen). This is a pragmatic choice — re-throwing caused unhandled promise rejections in RN's Alert callback bridge, and return-value approach had Modal animation timing issues.
-  - `PantryScreen` wet transition load is now **sequential after Safe Switch** (not parallel). Adds a few ms to focus but guarantees mutual exclusion without flash.
-  - `createSafeSwitch` passes `started_at` as local `YYYY-MM-DD` string. `getCurrentDay` in `safeSwitchHelpers.ts` already uses local midnight comparison — both sides are now timezone-consistent.
-  - `CustomFeedingStyleScreen` `inputMode` state is component-local (resets to 'kcal' on re-mount). `inputs` state always stores kcal internally.
-  - `updateCalorieShares` optional fields are backward compatible — existing callers only pass `assignmentId + calorie_share_pct`.
-  - `transitionToCustomMode` promotes first rotational to base if no base items exist.
-  - Custom rotational items do NOT auto-subtract from base budgets. Sum bar warns if over DER.
-  - `MAX_SERVING_KCAL = 500` cap only applies to fallback path in `refreshWetReserve`.
-  - No new decisions, no scoring changes, no migrations this session.
-  - **Carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+  - `CURRENT_SCORING_VERSION` is now `'2'`. First HomeScreen focus after rebuild will wipe ALL cached scores for the active pet and re-score ~1000 via Edge Function. This is intentional — forces fresh scores matching ResultScreen.
+  - Edge Function uses **payload-driven versioning**: writes `scoring_version` from client request body, falls back to `'1'` if missing. Future version bumps only need to change the client constant — Edge Function adapts automatically.
+  - `invalidateStaleScores` does a **full wipe** (`DELETE WHERE pet_id = X`), not filtered by `pet_updated_at`. This handles all staleness conditions including life stage drift and engine version bumps.
+  - `ensureCacheFresh` is **fire-and-forget** in HomeScreen. TopPicksCarousel and search may load before scoring completes on first visit after a cache wipe. Subsequent visits see fresh scores.
+  - `useTopMatchesStore` is **orphaned** — no component imports it. Scoring triggers are now in HomeScreen (`ensureCacheFresh`) and CategoryBrowseScreen (`ensureFormScored`). Store is correct but dead code.
+  - Migration 035 deployed to production. Also repaired migration 034 tracking (was applied but not tracked in Supabase remote history).
+  - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
-- **Decision/scoring changes:** None. No new D-numbers (129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
+- **Decision/scoring changes:** No new D-numbers (129). Scoring engine logic untouched. `CURRENT_SCORING_VERSION` bumped `'1'` → `'2'` (cache invalidation trigger, not scoring logic change). Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---
-[Previous session 30 block retained below for reference]
+[Previous session 33 block retained below for reference]
 
 - **Date:** 2026-04-05 (session 22)
 - **Accomplished:** Agent workflow tooling — built a reusable, self-contained workflow file for finishing the legacy color token migration, plus an index README for the `.agent/workflows/` directory. Zero source code changes, zero scoring impact, zero schema or test changes. This session produced prompts/tooling, not shipped code.

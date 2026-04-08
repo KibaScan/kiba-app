@@ -24,7 +24,7 @@ import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { getUpcomingAppointments } from '../services/appointmentService';
 import { getRecentScans } from '../services/scanHistoryService';
-import { searchProducts } from '../services/topMatches';
+import { searchProducts, ensureCacheFresh } from '../services/topMatches';
 import { supabase } from '../services/supabase';
 import { InfoTooltip } from '../components/ui/InfoTooltip';
 import type { ProductSearchResult } from '../services/topMatches';
@@ -188,6 +188,13 @@ export default function HomeScreen() {
 
       if (usePantryStore.getState()._petId !== activePetId) {
         loadPantry(activePetId);
+      }
+
+      // Ensure cached scores are fresh (invalidate stale + re-score via Edge Function).
+      // Fire-and-forget — scoring completes in background before user searches/browses.
+      const currentPet = pets.find((p) => p.id === activePetId);
+      if (currentPet) {
+        ensureCacheFresh(activePetId, currentPet).catch(() => {});
       }
 
       let cancelled = false;

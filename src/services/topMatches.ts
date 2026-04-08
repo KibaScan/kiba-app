@@ -3,6 +3,7 @@
 // No store sync — deferred to useTopMatchesStore (Phase 5).
 
 import { supabase } from './supabase';
+import { batchScoreHybrid } from './batchScoreOnDevice';
 import type { Pet } from '../types/pet';
 import { deriveLifeStage, parseDateString } from '../utils/lifeStage';
 import { CURRENT_SCORING_VERSION } from '../utils/constants';
@@ -78,6 +79,56 @@ export async function checkCacheFreshness(pet: Pet): Promise<boolean> {
   if (cached.scoring_version !== CURRENT_SCORING_VERSION) return false;
 
   return true;
+}
+
+// ─── Cache Invalidation ────────────────────────────────
+
+/**
+ * Delete ALL cached scores for a pet. Called when checkCacheFreshness detects
+ * staleness. Full wipe (not filtered by pet_updated_at) because life stage
+ * drift and engine version bumps don't change pet_updated_at — a targeted
+ * delete would miss those rows, leaving the cache appearing "mature" and
+ * trapping batch scoring in delta mode.
+ */
+export async function invalidateStaleScores(petId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('pet_product_scores')
+    .delete({ count: 'exact' })
+    .eq('pet_id', petId);
+
+  if (error) {
+    console.error('[invalidateStaleScores] DELETE failed:', error.message);
+    return -1;
+  }
+
+  if (__DEV__ && (count ?? 0) > 0) {
+    console.log(`[invalidateStaleScores] Deleted ${count} stale rows for pet ${petId}`);
+  }
+
+  return count ?? 0;
+}
+
+// In-memory lock prevents overlapping invalidation/scoring runs from rapid
+// tab switching (useFocusEffect fires on every Home tab focus).
+const updatingPets = new Set<string>();
+
+/**
+ * Check cache freshness → invalidate stale rows → re-score via Edge Function.
+ * Called from HomeScreen useFocusEffect. Concurrency-safe per pet.
+ */
+export async function ensureCacheFresh(petId: string, pet: Pet): Promise<void> {
+  if (updatingPets.has(petId)) return;
+  updatingPets.add(petId);
+
+  try {
+    const fresh = await checkCacheFreshness(pet);
+    if (fresh) return;
+
+    await invalidateStaleScores(petId);
+    await batchScoreHybrid(petId, pet);
+  } finally {
+    updatingPets.delete(petId);
+  }
 }
 
 // ─── Fetch Top Matches ──────────────────────────────────

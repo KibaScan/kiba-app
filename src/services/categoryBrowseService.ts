@@ -4,6 +4,8 @@
 // D-094: suitability framing. D-095: UPVM compliance. D-096: supplements unscored.
 
 import { supabase } from './supabase';
+import { batchScoreHybrid } from './batchScoreOnDevice';
+import type { Pet } from '../types/pet';
 import type {
   BrowseCategory,
   BrowseProduct,
@@ -215,6 +217,37 @@ async function fetchUnscoredResults(
     : null;
 
   return { products, nextCursor };
+}
+
+// ─── Form-specific scoring trigger ────────────────────
+
+/**
+ * Checks if a specific product form has any cached scores for this pet.
+ * If not, triggers batch scoring for that form so the browse screen
+ * can show scored results instead of falling back to unscored products.
+ * Returns true if scoring was triggered, false if cache already had scores.
+ */
+export async function ensureFormScored(
+  petId: string,
+  petProfile: Pet,
+  category: string,
+  productForm: string,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from('pet_product_scores')
+    .select('id', { count: 'exact', head: true })
+    .eq('pet_id', petId)
+    .eq('category', category)
+    .eq('product_form', productForm);
+
+  if (error || (count ?? 0) > 0) return false;
+
+  try {
+    await batchScoreHybrid(petId, petProfile, category, productForm);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Public API ────────────────────────────────────────

@@ -72,27 +72,37 @@ export async function batchScoreOnDevice(
   let totalProducts = 0;
 
   if (category) {
+    // Build form-aware maturity queries when productForm is specified.
+    // Without this, dry+wet scores fill the 80% threshold and minority
+    // forms (freeze-dried, raw, dehydrated) never get a full batch.
+    let deltaQuery = supabase
+      .from('pet_product_scores')
+      .select('product_updated_at')
+      .eq('pet_id', petId)
+      .eq('category', category);
+    if (productForm) deltaQuery = deltaQuery.eq('product_form', productForm);
+    deltaQuery = deltaQuery.order('product_updated_at', { ascending: false }).limit(1);
+
+    let countQuery = supabase
+      .from('pet_product_scores')
+      .select('id', { count: 'exact', head: true })
+      .eq('pet_id', petId)
+      .eq('category', category);
+    if (productForm) countQuery = countQuery.eq('product_form', productForm);
+
+    let totalQuery = supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('target_species', petProfile.species)
+      .eq('is_vet_diet', false)
+      .eq('is_recalled', false)
+      .eq('category', category);
+    if (productForm) totalQuery = totalQuery.eq('product_form', productForm);
+
     const [deltaRes, countRes, totalRes] = await Promise.all([
-      supabase
-        .from('pet_product_scores')
-        .select('product_updated_at')
-        .eq('pet_id', petId)
-        .eq('category', category)
-        .order('product_updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('pet_product_scores')
-        .select('id', { count: 'exact', head: true })
-        .eq('pet_id', petId)
-        .eq('category', category),
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('target_species', petProfile.species)
-        .eq('is_vet_diet', false)
-        .eq('is_recalled', false)
-        .eq('category', category),
+      deltaQuery.maybeSingle(),
+      countQuery,
+      totalQuery,
     ]);
     deltaTimestamp = deltaRes.data?.product_updated_at ?? null;
     cacheCount = countRes.count ?? 0;
@@ -107,7 +117,9 @@ export async function batchScoreOnDevice(
   // ── 2. Rate limit (full batch only — delta is cheap) ──
 
   if (!isCacheMature) {
-    const rateLimitKey = category ? `${petId}:${category}` : petId;
+    const rateLimitKey = category
+      ? `${petId}:${category}${productForm ? ':' + productForm : ''}`
+      : petId;
     const lastRun = lastBatchTimestamp.get(rateLimitKey);
     if (lastRun && Date.now() - lastRun < RATE_LIMIT_MS) {
       return { scored: 0, duration_ms: 0 };
@@ -164,7 +176,9 @@ export async function batchScoreOnDevice(
   const products = (productData ?? []) as unknown as Product[];
 
   if (products.length === 0) {
-    const emptyRateLimitKey = category ? `${petId}:${category}` : petId;
+    const emptyRateLimitKey = category
+      ? `${petId}:${category}${productForm ? ':' + productForm : ''}`
+      : petId;
     if (!isCacheMature) lastBatchTimestamp.set(emptyRateLimitKey, Date.now());
     return { scored: 0, duration_ms: Date.now() - startTime };
   }
@@ -249,6 +263,7 @@ export async function batchScoreOnDevice(
         is_partial_score: result.isPartialScore,
         is_supplemental: scoringProduct.is_supplemental,
         category: result.category,
+        product_form: product.product_form ?? null,
         life_stage_at_scoring: petProfile.life_stage ?? null,
         pet_updated_at: petRow.updated_at,
         pet_health_reviewed_at: petRow.health_reviewed_at,
@@ -283,7 +298,9 @@ export async function batchScoreOnDevice(
   // ── 10. Mark rate limit (full batch only) + return ──
 
   if (!isCacheMature) {
-    const doneRateLimitKey = category ? `${petId}:${category}` : petId;
+    const doneRateLimitKey = category
+      ? `${petId}:${category}${productForm ? ':' + productForm : ''}`
+      : petId;
     lastBatchTimestamp.set(doneRateLimitKey, Date.now());
   }
 
@@ -317,6 +334,7 @@ export async function batchScoreHybrid(
         pet_id: petId,
         pet_profile: petProfile,
         limit_size: 1000,
+        scoring_version: CURRENT_SCORING_VERSION,
         ...(category && { category }),
         ...(productForm && { product_form: productForm }),
       },

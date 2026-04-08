@@ -18,7 +18,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { canSearch } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
-import { fetchBrowseResults, fetchBrowseCounts } from '../services/categoryBrowseService';
+import { fetchBrowseResults, fetchBrowseCounts, ensureFormScored } from '../services/categoryBrowseService';
 import { SubFilterChipRow } from '../components/browse/SubFilterChipRow';
 import { BrowseProductRow } from '../components/browse/BrowseProductRow';
 import { SUB_FILTERS } from '../types/categoryBrowse';
@@ -100,6 +100,18 @@ export default function CategoryBrowseScreen({ navigation, route }: Props) {
     setProducts([]);
     setCursor(null);
     try {
+      // Trigger form-specific scoring if cache is empty for this form.
+      // Read pet from store at call time to avoid stale closure + unnecessary
+      // useCallback recreation when pet object reference changes.
+      if (filterKey && category !== 'supplement') {
+        const currentPet = useActivePetStore.getState().pets.find((p) => p.id === petId);
+        const formMap: Record<string, string> = { dry: 'dry', wet: 'wet', freeze_dried: 'freeze_dried' };
+        const dbForm = formMap[filterKey] ?? null;
+        const dbCategory = category === 'toppers_mixers' ? 'daily_food' : category;
+        if (dbForm && currentPet) {
+          await ensureFormScored(petId, currentPet, dbCategory, dbForm);
+        }
+      }
       const page = await fetchBrowseResults(petId, category, filterKey, species, null);
       if (mountedRef.current) {
         setProducts(page.products);

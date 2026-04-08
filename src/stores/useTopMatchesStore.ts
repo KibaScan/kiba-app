@@ -7,8 +7,9 @@ import {
   checkCacheFreshness,
   fetchTopMatches,
   searchProducts,
+  invalidateStaleScores,
 } from '../services/topMatches';
-import { batchScoreOnDevice } from '../services/batchScoreOnDevice';
+import { batchScoreHybrid } from '../services/batchScoreOnDevice';
 import { useActivePetStore } from './useActivePetStore';
 
 type CategoryFilter = 'daily_food' | 'treat' | 'all';
@@ -54,7 +55,8 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
         const fresh = await checkCacheFreshness(pet);
         if (!fresh) {
           set({ refreshing: true });
-          await batchScoreOnDevice(petId, pet);
+          await invalidateStaleScores(petId);
+          await batchScoreHybrid(petId, pet);
           set({ refreshing: false });
         }
       } catch (e) {
@@ -84,7 +86,8 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
       if (!pet) throw new Error('Pet not found');
 
       try {
-        await batchScoreOnDevice(petId, pet);
+        await invalidateStaleScores(petId);
+        await batchScoreHybrid(petId, pet);
       } catch (e) {
         console.warn('[useTopMatchesStore] batch scoring failed during refresh:', e);
       }

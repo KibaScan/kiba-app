@@ -68,6 +68,7 @@ interface ScoringContext {
   petRow: { updated_at: string; health_reviewed_at: string | null };
   allergens: string[];
   conditions: string[];
+  clientScoringVersion: string;
 }
 
 /** Fetch ingredients for a batch of products (chunked + paginated). */
@@ -152,12 +153,13 @@ async function scoreAndUpsert(
         is_partial_score: result.isPartialScore,
         is_supplemental: scoringProduct.is_supplemental,
         category: result.category,
+        product_form: product.product_form ?? null,
         life_stage_at_scoring: ctx.petProfile.life_stage ?? null,
         pet_updated_at: ctx.petRow.updated_at,
         pet_health_reviewed_at: ctx.petRow.health_reviewed_at,
         product_updated_at: product.updated_at,
         scored_at: scoredAt,
-        scoring_version: CURRENT_SCORING_VERSION,
+        scoring_version: ctx.clientScoringVersion,
       });
     } catch (err) {
       console.error(`[batch-score] Failed to score product ${product.id}:`, err);
@@ -206,6 +208,10 @@ Deno.serve(async (req: Request) => {
   const petProfile = body.pet_profile as PetProfile | undefined;
   const filterCategory = typeof body.category === 'string' ? body.category : null;
   const filterForm = typeof body.product_form === 'string' ? body.product_form : null;
+  // Payload-driven versioning: client tells us which version to write.
+  // Old clients won't send this field → fallback '1' prevents infinite wipe+score loops.
+  const clientScoringVersion = typeof body.scoring_version === 'string'
+    ? body.scoring_version : '1';
   const limitSize = typeof body.limit_size === 'number'
     ? Math.min(Math.max(body.limit_size, MIN_LIMIT), MAX_LIMIT)
     : DEFAULT_LIMIT;
@@ -245,27 +251,37 @@ Deno.serve(async (req: Request) => {
   let totalProducts = 0;
 
   if (filterCategory) {
+    // Build form-aware maturity queries when filterForm is specified.
+    // Without this, dry+wet scores fill the 80% threshold and minority
+    // forms (freeze-dried, raw, dehydrated) never get a full batch.
+    let deltaQuery = supabase
+      .from('pet_product_scores')
+      .select('product_updated_at')
+      .eq('pet_id', petId)
+      .eq('category', filterCategory);
+    if (filterForm) deltaQuery = deltaQuery.eq('product_form', filterForm);
+    deltaQuery = deltaQuery.order('product_updated_at', { ascending: false }).limit(1);
+
+    let countQuery = supabase
+      .from('pet_product_scores')
+      .select('id', { count: 'exact', head: true })
+      .eq('pet_id', petId)
+      .eq('category', filterCategory);
+    if (filterForm) countQuery = countQuery.eq('product_form', filterForm);
+
+    let totalQuery = supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('target_species', petProfile.species)
+      .eq('is_vet_diet', false)
+      .eq('is_recalled', false)
+      .eq('category', filterCategory);
+    if (filterForm) totalQuery = totalQuery.eq('product_form', filterForm);
+
     const [deltaRes, countRes, totalRes] = await Promise.all([
-      supabase
-        .from('pet_product_scores')
-        .select('product_updated_at')
-        .eq('pet_id', petId)
-        .eq('category', filterCategory)
-        .order('product_updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from('pet_product_scores')
-        .select('id', { count: 'exact', head: true })
-        .eq('pet_id', petId)
-        .eq('category', filterCategory),
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('target_species', petProfile.species)
-        .eq('is_vet_diet', false)
-        .eq('is_recalled', false)
-        .eq('category', filterCategory),
+      deltaQuery.maybeSingle(),
+      countQuery,
+      totalQuery,
     ]);
     deltaTimestamp = deltaRes.data?.product_updated_at ?? null;
     cacheCount = countRes.count ?? 0;
@@ -289,6 +305,7 @@ Deno.serve(async (req: Request) => {
       .order('scored_at', { ascending: false })
       .limit(1);
     if (filterCategory) rateLimitQuery = rateLimitQuery.eq('category', filterCategory);
+    if (filterForm) rateLimitQuery = rateLimitQuery.eq('product_form', filterForm);
 
     const { data: lastScore } = await rateLimitQuery.maybeSingle();
 
@@ -323,6 +340,7 @@ Deno.serve(async (req: Request) => {
     petRow: { updated_at: petRow.updated_at, health_reviewed_at: petRow.health_reviewed_at },
     allergens,
     conditions,
+    clientScoringVersion,
   };
 
   // ── 5. Build product query (delta or full batch) ──

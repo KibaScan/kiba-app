@@ -13,16 +13,16 @@ jest.mock('../../src/utils/lifeStage', () => ({
   parseDateString: jest.fn(),
 }));
 
-import { checkCacheFreshness } from '../../src/services/topMatches';
+import { checkCacheFreshness, invalidateStaleScores } from '../../src/services/topMatches';
 import { supabase } from '../../src/services/supabase';
 import { deriveLifeStage, parseDateString } from '../../src/utils/lifeStage';
 import type { Pet } from '../../src/types/pet';
 
 // ─── Helpers ────────────────────────────────────────────
 
-function mockChain(result: { data: unknown; error: unknown }) {
+function mockChain(result: { data?: unknown; error: unknown; count?: number }) {
   const chain: Record<string, jest.Mock> = {};
-  for (const m of ['select', 'eq', 'in', 'or', 'order', 'limit']) {
+  for (const m of ['select', 'eq', 'in', 'or', 'neq', 'order', 'limit', 'delete']) {
     chain[m] = jest.fn(() => chain);
   }
   chain.maybeSingle = jest.fn().mockResolvedValue(result);
@@ -70,7 +70,7 @@ const FRESH_CACHED_ROW = {
   life_stage_at_scoring: 'adult',
   pet_updated_at: '2026-03-01T00:00:00Z',
   pet_health_reviewed_at: '2026-03-01T00:00:00Z',
-  scoring_version: '1',
+  scoring_version: '2',
 };
 
 // ─── Setup ──────────────────────────────────────────────
@@ -133,5 +133,39 @@ describe('checkCacheFreshness', () => {
 
     const result = await checkCacheFreshness(makePet());
     expect(result).toBe(true);
+  });
+});
+
+// ─── invalidateStaleScores ─────────────────────────────
+
+describe('invalidateStaleScores', () => {
+  test('deletes all rows for pet and returns count', async () => {
+    const chain = mockChain({ count: 150, error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await invalidateStaleScores('pet-1');
+
+    expect(result).toBe(150);
+    expect(supabase.from).toHaveBeenCalledWith('pet_product_scores');
+    expect(chain.delete).toHaveBeenCalledWith({ count: 'exact' });
+    expect(chain.eq).toHaveBeenCalledWith('pet_id', 'pet-1');
+  });
+
+  test('returns -1 on error', async () => {
+    const chain = mockChain({ count: undefined, error: { message: 'RLS violation' } });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await invalidateStaleScores('pet-1');
+
+    expect(result).toBe(-1);
+  });
+
+  test('returns 0 when no rows to delete', async () => {
+    const chain = mockChain({ count: 0, error: null });
+    (supabase.from as jest.Mock).mockReturnValue(chain);
+
+    const result = await invalidateStaleScores('pet-1');
+
+    expect(result).toBe(0);
   });
 });

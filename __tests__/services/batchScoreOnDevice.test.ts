@@ -214,7 +214,7 @@ describe('batchScoreOnDevice', () => {
       is_partial_score: false,
       is_supplemental: false,
       category: 'daily_food',
-      scoring_version: '1',
+      scoring_version: '2',
     });
   });
 
@@ -287,6 +287,42 @@ describe('batchScoreOnDevice', () => {
     // Should not throw — errors are logged, not thrown
     const result = await batchScoreOnDevice('pet-upsert', makePet({ id: 'pet-upsert' }));
     expect(result.scored).toBe(1);
+  });
+
+  test('upsert payload includes product_form', async () => {
+    const { upsertChain } = setupSupabaseMocks({
+      products: [{ ...MOCK_PRODUCT, product_form: 'freeze_dried' }],
+    });
+
+    await batchScoreOnDevice('pet-form', makePet({ id: 'pet-form' }));
+
+    const upsertedRows = upsertChain.upsert.mock.calls[0][0];
+    expect(upsertedRows[0]).toMatchObject({
+      product_form: 'freeze_dried',
+    });
+  });
+
+  test('rate limit key includes form: different forms are not blocked', async () => {
+    setupSupabaseMocks();
+
+    // Score with form A
+    const first = await batchScoreOnDevice(
+      'pet-formrl', makePet({ id: 'pet-formrl' }), 'daily_food', 'dry',
+    );
+    expect(first.scored).toBe(1);
+
+    // Same form should be rate-limited
+    const second = await batchScoreOnDevice(
+      'pet-formrl', makePet({ id: 'pet-formrl' }), 'daily_food', 'dry',
+    );
+    expect(second.scored).toBe(0);
+
+    // Different form should NOT be rate-limited
+    setupSupabaseMocks(); // reset mocks for fresh call
+    const third = await batchScoreOnDevice(
+      'pet-formrl', makePet({ id: 'pet-formrl' }), 'daily_food', 'freeze_dried',
+    );
+    expect(third.scored).toBe(1);
   });
 
   test('allergens and conditions are passed to computeScore', async () => {
