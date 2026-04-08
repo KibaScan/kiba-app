@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-07 (session 30)
+# Project Status — Last updated 2026-04-08 (session 32)
 
 ## Active Milestone
 
@@ -32,7 +32,7 @@
 - **Price backfill** — 15,781 products updated with price + product_size_kg from v7 dataset. 74.6% of daily food now has price data for Great Value slots.
 - **Affiliate link infrastructure (dormant)** — `AffiliateBuyButtons` component on ResultScreen (between PortionCard and Compare button). PantryCard "Reorder" button on low-stock items. `affiliateService.ts` generates Chewy/Amazon URLs from `source_url`/`chewy_sku`/`asin`/`affiliate_links` JSONB. D-020 compliant (zero scoring imports, buttons hidden when score < 50). D-053 compliant (Chewy shows estimated price, Amazon hides price). Config: `enabled: false` — flip on after affiliate program enrollment.
 - **Condition-aware feeding frequency** — auto-populate `feedings_per_day` based on pet health conditions when adding to pantry.
-- **Safe Switch Guide (M7 → M9 Phase B)** — guided 7-day (dogs) / 10-day (cats) food transition with daily mix ratios (75/25 → 50/50 → 25/75 → 100%). `SafeSwitchSetupScreen` (preview + start + slot picker for 2-slot pets), `SafeSwitchDetailScreen` (daily command center with proportion bar, optimistic tummy check pills, vertical timeline, "Done for today" / "Back to Pantry" CTA). `SafeSwitchBanner` on PantryScreen (day ring + mix ratio) and HomeScreen (compact status card). Entry points: "Switch to this" on Safe Swap cards (only when scanned product has a pantry anchor — enforced session 24), "Find a replacement" on low-scoring (<60%) daily food PantryCards. Daily notifications (9 AM mix reminder, 7 PM tummy check nudge). Upset advisory (2+ consecutive "upset" logs → informational card, D-095 compliant, no auto-action). One active switch per pet enforced at DB level (partial unique index). **Phase B (session 24): pantry-anchored switches** — `safe_switches.pantry_item_id` FK, `outcome_summary` JSONB, atomic `complete_safe_switch_with_pantry_swap` RPC (swaps pantry_items.product_id + sets quantity_remaining=0 + persists outcome in one transaction), entry-point enforcement (ResultScreen fetches getPantryAnchor, hides "Switch to this" when no anchor), slot picker on SafeSwitchSetupScreen for 2-slot pets (auto-pick by form+score via `pickSlotForSwap`), PantryCard "In Safe Switch" lock badge (disables swipe + hides "Find a replacement" during active switch), `removePantryItem` active-switch guard. Free feature (no paywall gate). Migration 025 + 031.
+- **Safe Switch Guide (M7 → M9 Phase B)** — guided 7-day (dogs) / 10-day (cats) food transition with daily mix ratios (75/25 → 50/50 → 25/75 → 100%). `SafeSwitchSetupScreen` (preview + start + slot picker for 2-slot pets), `SafeSwitchDetailScreen` (daily command center with proportion bar, optimistic tummy check pills, vertical timeline, "Done for today" / "Back to Pantry" CTA). `SafeSwitchBanner` on PantryScreen (day ring + mix ratio) and HomeScreen (compact status card). Entry points: "Switch to this" on Safe Swap cards (only when scanned product has a pantry anchor — enforced session 24), "Start Safe Switch" on ResultScreen (V2-1, mixable daily food with existing anchors), "Replace this food" on PantryCard (V2-1, all base daily foods). Daily notifications (9 AM mix reminder, 7 PM tummy check nudge). Upset advisory (2+ consecutive "upset" logs → informational card, D-095 compliant, no auto-action). One active switch per pet enforced at DB level (partial unique index). **Phase B (session 24): pantry-anchored switches** — `safe_switches.pantry_item_id` FK, `outcome_summary` JSONB, atomic `complete_safe_switch_with_pantry_swap` RPC (swaps pantry_items.product_id + sets quantity_remaining=0 + persists outcome in one transaction), entry-point enforcement (ResultScreen fetches getPantryAnchor, hides "Switch to this" when no anchor), slot picker on SafeSwitchSetupScreen for 2-slot pets (auto-pick by form+score via `pickSlotForSwap`), PantryCard "In Safe Switch" lock badge (disables swipe + hides "Find a replacement" during active switch), `removePantryItem` active-switch guard. Premium-gated via `canUseSafeSwaps()` in permissions.ts. Migration 025 + 031.
 - **EditPantryItemScreen meal-based model (M9 Phase C) — SUPERSEDED by Behavioral Feeding** — `computeMealBasedServing`, `rebalanceExistingFood`, `computeRebalancedMeals` all deleted. Replaced by `computeBehavioralServing` (dry anchor / wet rotational model). EditPantryItemScreen is now a read-only configuration overview showing feeding role, calorie share, and auto-deplete status.
 - **Behavioral Feeding Architecture (Migration 034)** — replaced rigid slot/meal-fraction system with flexible, behavioral `feeding_style` and `feeding_role` model. `dry_only`, `dry_and_wet`, `wet_only` native support. Wet Reserve Engine implemented (`refreshWetReserve`) to track blended average kcal of rotational items and deduct from base anchor dynamically via `computeBehavioralServing`. Feeding log table established for exact atomic logging (`log_wet_feeding_atomic`) via 'Fed This Today' bottom sheet. Safe Switch updated to only replace 'base' items. Diet completeness Engine (`evaluateDietCompleteness`) and Auto-Deplete cron completely refactored to correctly respect and track behavioral/rotational usage metrics.
 - **Pantry two-slot model (M9 Phase B) — SUPERSEDED by Behavioral Feeding (migration 034)** — `slot_index` dropped, `pickNextSlotForPet` deleted. Replaced by `feeding_role` ('base' | 'rotational' | null) on `pantry_pet_assignments`. `getPantryAnchor(petId)` returns daily-food anchors with `feedingRole` for Safe Switch entry-point enforcement.
@@ -61,7 +61,7 @@
 
 ## Numbers
 
-- **Tests:** 1398 passing / 61 suites
+- **Tests:** 1426 passing / 62 suites
 - **Decisions:** 129
 - **Migrations:** 34 (001–034)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -97,44 +97,54 @@
 
 ## Last Session
 
-- **Date:** 2026-04-07 (session 30)
-- **Accomplished:** Fixed EC-1/2/3 edge cases, diet completeness banner overhaul, Add-to-Pantry UX overhaul (mixability gate, intent-based copy, serving fix), wet_only role inference fix, rotational serving computation, V2 vision doc. Committed session 29 backlog.
-  - **EC-1/2/3 fixes:** Custom mode 0% default, bulk kcal 500 cap, supplement mismatch guard.
-  - **Diet completeness banner:** New `'info'` tier (muted, dismissible) for feeding-style mismatch. Feeding-style-specific messages. Red reserved for critical. Catch-all dropped to amber.
-  - **wet_only role inference fix:** `AddToPantrySheet:201` — wet food in `wet_only` mode now gets `'base'` role (was `'rotational'`). Restores "Switching diet?" prompt + auto serving computation.
-  - **Rotational serving computation:** `computeBehavioralServing` now returns a wet-budget-based serving for rotational food in `dry_and_wet` mode (was null). Uses `wetReserve` or 25% DER fallback.
-  - **Mixability gate:** New `DISCRETE_FORMS = ['wet']` concept. Cans/pouches get "Vet Tip: Introduce gradually" card. Bulk/mixable food (dry, fresh, raw, freeze-dried) gets full Safe Switch 7-day transition.
-  - **Intent-based copy:** "Is this new to [pet]'s diet?" → **"Switching [pet]'s diet?"** (base food only). Rotational food: question removed entirely.
-  - **Serving stays visible during transition:** `computeBehavioralServing` no longer returns null for `isInTransition`. Shows "Target serving (after transition)" label. User sees the destination math, Safe Switch detail handles day-by-day.
-  - **V2 vision:** Section 9 added to `BEHAVIORAL_FEEDING_IMPLEMENTED.md` — 4 items: decouple Safe Switch from Add flow, custom mode rotational override, wet food transition guide, per-serving kcal in wet reserve.
-  - **Docs sync:** CLAUDE.md migrations 029→034, ROADMAP.md M9 checklist, DECISIONS.md date.
-- **Files changed (11 modified, 0 new):**
-  - `src/components/pantry/AddToPantrySheet.tsx` (mixability gate, intent copy, serving fix, wet_only base, supplement guard, UI gates widened)
-  - `src/utils/pantryHelpers.ts` (rotational budget, isInTransition no longer null-returns)
-  - `src/services/pantryService.ts` (EC-1 custom default, EC-2 kcal cap, info status, feeding-style messages)
-  - `src/screens/PantryScreen.tsx` (dismissible info banner)
-  - `src/types/pantry.ts` (`'info'` status tier)
-  - `__tests__/utils/pantryHelpers.test.ts` (rotational budget test, isInTransition test updated)
-  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC fixes marked, Section 9 V2 vision)
-  - `CLAUDE.md`, `ROADMAP.md`, `DECISIONS.md`, `docs/status/CURRENT.md` (doc sync)
-- **Tests:** 1398 passing / 61 suites.
+- **Date:** 2026-04-08 (session 32)
+- **Accomplished:**
+  - **V2-1: Decouple Safe Switch from Add Flow** — Removed Safe Switch path from AddToPantrySheet entirely. "Switching diet?" question now only appears for discrete (wet) base foods. Added two explicit Safe Switch entry points: "Start Safe Switch" button on ResultScreen (premium-gated, visible for mixable daily food with existing anchors) and "Replace this food" button on PantryCard (replaces old "Find a replacement", available for all base daily foods, premium-gated). Fixed quantity visibility bug for mixable base foods, bagCollapsed visibility, and ctaReady validation.
+  - **V2-1b: Transition System Collision Fixes** — (1) Unit-aware Safe Switch: `dailyCups` → `dailyServingAmount` + `dailyServingUnit`, service resolves unit from pantry assignment, `getCupSplit` → `getAmountSplit` with two-total signature fixing caloric density bug, SafeSwitchDetailScreen shows per-food units with singularization. (2) Clearer Meal Transition Guide copy: "Swap 1 of your 7 daily servings" replaces clinical "6 portions old, 1 portion new." (3) Mutual exclusion: Safe Switch clears wet guide on start; wet guide skipped if Safe Switch active; PantryScreen display guard. (4) Error handling: `usePantryStore.removeItem` surfaces service error message instead of swallowing it.
+- **Files changed (14 modified, 0 new):**
+  - `src/components/pantry/AddToPantrySheet.tsx` (removed onStartSafeSwitch, restricted "Switching diet?" to discrete, fixed quantity/bagCollapsed visibility, ctaReady, mutual exclusion guard)
+  - `src/components/pantry/AddToPantryStyles.ts` (removed safeSwitchCta style)
+  - `src/components/pantry/PantryCard.tsx` (onFindReplacement → onReplaceFood, isPremiumUser prop, all base daily foods)
+  - `src/screens/ResultScreen.tsx` (removed onStartSafeSwitch callback, added "Start Safe Switch" button)
+  - `src/screens/PantryScreen.tsx` (canUseSafeSwaps import, premium gate, custom mode exclusion, display guard)
+  - `src/types/safeSwitch.ts` (dailyCups → dailyServingAmount + dailyServingUnit)
+  - `src/services/safeSwitchService.ts` (unit-aware getActiveSwitchForPet, pantry_items join)
+  - `src/utils/safeSwitchHelpers.ts` (getCupSplit → getAmountSplit with two totals)
+  - `src/screens/SafeSwitchDetailScreen.tsx` (dynamic units, singularization, per-food unit display)
+  - `src/screens/SafeSwitchSetupScreen.tsx` (clearWetTransition on Safe Switch creation)
+  - `src/utils/wetTransitionHelpers.ts` (friendlier label copy)
+  - `src/stores/usePantryStore.ts` (error message surfacing fix)
+  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (V2-1, V2-1b sections, V2-3 mutual exclusion note)
+  - `docs/status/CURRENT.md` (session update, test count, premium gate correction)
+  - Tests: `safeSwitchHelpers.test.ts`, `safeSwitchService.test.ts`, `wetTransitionHelpers.test.ts`
+- **Tests:** 1426 passing / 62 suites (+1 test for unequal caloric density split).
 - **Not done yet:**
+  - **Visual QA** of "Replace this food" button, "Start Safe Switch" button, unit-aware Safe Switch detail screen on device.
   - **EC-4 (LOW):** `refreshWetReserve` inventory fallback `|| 1` — partially mitigated by EC-2 cap.
-  - **EC-5 (ACCEPTED):** Custom mode rotational override — V2 (Section 9, V2-2).
+  - **EC-5 (ACCEPTED):** Custom mode rotational override — V2-2.
+- **Next session should start with:**
+  - Visual QA of V2-1 + V2-1b changes on device (test dry→dry, wet→dry, and wet_only Safe Switch flows).
+  - Verify unit display: dry food shows "cups", wet food shows "servings", mixed transitions show correct per-food units.
+  - Check M9 carry-overs: stale browse scores, 17 non-border cardBorder token decision, HomeScreen visual overhaul, search UX overhaul.
+- **Gotchas:**
+  - Safe Switch is now **premium-gated** (corrected from "Free feature" — user explicitly confirmed). Gate is `canUseSafeSwaps()` in permissions.ts. UI gates on ResultScreen and PantryCard.
+  - `getAmountSplit` now takes 4 args (oldTotal, newTotal, oldPct, newPct) — not 3. Any future caller must pass both totals.
+  - Mutual exclusion is asymmetric: Safe Switch cancels wet guide (safe — AsyncStorage only), but wet guide does NOT cancel Safe Switch (premium DB data). Instead, wet guide creation is skipped if Safe Switch is active.
+  - No new decisions, no scoring changes, no migrations this session.
   - **Prior M9 carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
-- **Next session should:** Pick from M9 carry-overs (stale browse scores fix is highest architectural impact, 17 non-border token decision is quickest). Or move to general UX friction fixes / HomeScreen visual overhaul.
+- **Next session should:** Visual QA of the WetTransitionCard on device (add a wet food with "Switching diet? Yes", verify card renders on PantryScreen). Then pick from M9 carry-overs.
 - **Gotchas / context for next session:**
-  - **`BEHAVIORAL_FEEDING_IMPLEMENTED.md` Sections 1-9.** EC-1/2/3 FIXED, EC-4/5 open (low). Section 9 = V2 vision (4 items).
-  - **Mixability: `DISCRETE_FORMS = ['wet']`** in AddToPantrySheet. If a new product_form (e.g., `'tray'`, `'pouch'`) is added to the DB, it should be added to this array if it's single-serve/non-mixable.
-  - **`computeBehavioralServing` no longer returns null for `isInTransition`** — the `isInTransition` parameter is now a no-op. Can be removed in a future cleanup pass. Safe Switch detail screen still computes its own day-by-day ratios independently.
-  - **Rotational fallback in mixed mode:** When `wetReserve === 0` (first wet food add), budget defaults to `Math.round(der * 0.25)`. This is a rough heuristic — monitor if the 25% feels wrong for users.
-  - **Diet banner dismiss is session-local** — resets on pet switch and app relaunch. No persistence.
-  - **`MAX_SERVING_KCAL = 500` cap** — largest single-serve wet food is ~250 kcal. 500 = 2x headroom.
+  - **`DISCRETE_FORMS = ['wet']`** in AddToPantrySheet. If a new product_form (e.g., `'tray'`, `'pouch'`) is added to the DB, it should be added to this array AND is eligible for wet transition guide (not Safe Switch).
+  - **`unitsPerDay` derivation:** reads `autoServingResult.amount` when `unit === 'units'`. If auto-math fails (no kcal data), defaults to 2. No user input.
+  - **AsyncStorage key:** `@kiba_wet_transition_{petId}`. One per pet. New adds overwrite old transitions. Lost on reinstall (acceptable — food is in pantry).
+  - **Card auto-expires** after `totalDays` (computed from schedule). Also dismissible via X button. No completion flow.
+  - **Coexists with Safe Switch** — both cards can render on PantryScreen simultaneously. No DB interaction.
+  - **Prior session carry-overs still apply:** `MAX_SERVING_KCAL = 500` cap, rotational 25% DER fallback, diet banner dismiss is session-local, `isInTransition` param is a no-op.
 - **Decision/scoring changes:** None. No new D-numbers (129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---
-[Previous session 30a block retained below for reference]
+[Previous session 30 block retained below for reference]
 
 - **Date:** 2026-04-05 (session 22)
 - **Accomplished:** Agent workflow tooling — built a reusable, self-contained workflow file for finishing the legacy color token migration, plus an index README for the `.agent/workflows/` directory. Zero source code changes, zero scoring impact, zero schema or test changes. This session produced prompts/tooling, not shipped code.

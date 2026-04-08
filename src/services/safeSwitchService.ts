@@ -427,35 +427,36 @@ export async function getActiveSwitchForPet(
     const todayLogged = typedLogs.some(l => l.day_number === currentDay && l.tummy_check != null);
     const schedule = getTransitionSchedule(sw.total_days);
 
-    // Step 5: Resolve daily cups from pantry serving data.
+    // Step 5: Resolve daily serving amount + unit from pantry serving data.
     // M9 Phase B: prefer the direct pantry_item_id FK. Fall back to 2.4 cups
     // for historical switches with NULL pantry_item_id — these were never
     // anchored to a specific pantry slot.
-    let dailyCups = 2.4;
+    let dailyServingAmount = 2.4;
+    let dailyServingUnit = 'cups';
     const pantryItemId = sw.pantry_item_id ?? null;
     if (pantryItemId) {
       const { data: asgn } = await supabase
         .from('pantry_pet_assignments')
-        .select('serving_size, serving_size_unit, feedings_per_day')
+        .select('serving_size, serving_size_unit, feedings_per_day, pantry_items(unit_label)')
         .eq('pantry_item_id', pantryItemId)
         .eq('pet_id', petId)
         .maybeSingle();
 
       if (asgn) {
-        const { serving_size, serving_size_unit, feedings_per_day } = asgn as {
-          serving_size: number; serving_size_unit: string; feedings_per_day: number;
-        };
-        if (serving_size_unit === 'cups') {
-          dailyCups = serving_size * feedings_per_day;
+        const { serving_size, serving_size_unit, feedings_per_day, pantry_items } = asgn as any;
+        dailyServingAmount = serving_size * feedings_per_day;
+        dailyServingUnit = serving_size_unit;
+        if (dailyServingUnit === 'units') {
+          dailyServingUnit = pantry_items?.unit_label || 'servings';
         }
       } else if (__DEV__) {
         console.warn(
-          `[getActiveSwitchForPet] pantry_item_id=${pantryItemId} present but no assignment for pet=${petId} — using 2.4 fallback`,
+          `[getActiveSwitchForPet] pantry_item_id=${pantryItemId} present but no assignment for pet=${petId} — using fallback`,
         );
       }
     } else if (__DEV__) {
       console.warn(
-        `[getActiveSwitchForPet] switch=${sw.id} has null pantry_item_id (historical row) — using 2.4 fallback`,
+        `[getActiveSwitchForPet] switch=${sw.id} has null pantry_item_id (historical row) — using fallback`,
       );
     }
 
@@ -473,7 +474,8 @@ export async function getActiveSwitchForPet(
       todayMix,
       todayLogged,
       schedule,
-      dailyCups,
+      dailyServingAmount,
+      dailyServingUnit,
     };
   } catch (e) {
     console.error('[getActiveSwitchForPet] FAILED:', e);

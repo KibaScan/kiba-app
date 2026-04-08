@@ -494,10 +494,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.accent,
   },
-  safeSwitchCta: {
-    backgroundColor: Colors.accent, // Cyan Morph
-  },
-
   bottomSpacer: {
     height: 34,
   },

@@ -78,8 +78,10 @@ export interface SafeSwitchCardData {
   todayMix: { oldPct: number; newPct: number };
   todayLogged: boolean;
   schedule: TransitionDay[];
-  /** Daily total cups from pantry serving data (fallback: 2.4) */
-  dailyCups: number;
+  /** Daily total serving amount from pantry serving data (fallback: 2.4) */
+  dailyServingAmount: number;
+  /** Serving size unit from pantry (fallback: 'cups') */
+  dailyServingUnit: string;
 }
 
 /**

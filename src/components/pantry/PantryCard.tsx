@@ -33,8 +33,10 @@ interface PantryCardProps {
   onRestock: (itemId: string) => void;
   onRemove: (itemId: string) => void;
   onGaveTreat?: (itemId: string) => void;
-  /** M7: Navigate to ResultScreen to see Safe Swap alternatives. */
-  onFindReplacement?: (productId: string) => void;
+  /** V2-1: Navigate to ResultScreen to start Safe Switch for this base food. */
+  onReplaceFood?: (productId: string) => void;
+  /** V2-1: true when the user has premium access to Safe Switch. */
+  isPremiumUser?: boolean;
   /** M9 Phase B: true when this item is the anchor of an active/paused Safe Switch. */
   isLocked?: boolean;
   onLogFeeding?: (item: PantryCardData) => void;
@@ -100,7 +102,7 @@ function getDepletionBarColor(pct: number): string {
 
 // ─── Component ──────────────────────────────────────────
 
-export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onFindReplacement, isLocked, onLogFeeding }: PantryCardProps) {
+export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGaveTreat, onReplaceFood, isPremiumUser, isLocked, onLogFeeding }: PantryCardProps) {
   const { product } = item;
   const isRecalled = product.is_recalled;
   const isVetDiet = product.is_vet_diet;
@@ -310,16 +312,16 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           </View>
         )}
 
-        {/* M7: Find a replacement — low-scoring daily food (score < 60). Hidden when locked. */}
-        {!isLocked && onFindReplacement && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
-         product.category === 'daily_food' && item.resolved_score != null && item.resolved_score < 60 && (
+        {/* V2-1: Replace this food — any base daily food. Premium-gated. Hidden when locked. */}
+        {!isLocked && onReplaceFood && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
+         product.category === 'daily_food' && !isRotational && (
           <TouchableOpacity
             style={styles.findReplacementButton}
-            onPress={() => onFindReplacement(item.product_id)}
+            onPress={() => onReplaceFood(item.product_id)}
             activeOpacity={0.7}
           >
-            <Ionicons name="swap-horizontal-outline" size={14} color={Colors.accent} />
-            <Text style={styles.findReplacementText}>Find a replacement</Text>
+            <Ionicons name={isPremiumUser ? "swap-horizontal-outline" : "lock-closed-outline"} size={14} color={Colors.accent} />
+            <Text style={styles.findReplacementText}>Replace this food</Text>
           </TouchableOpacity>
         )}
 

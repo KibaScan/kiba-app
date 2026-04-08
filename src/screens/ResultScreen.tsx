@@ -27,7 +27,7 @@ import {
   ResultRecalledBypass,
   ResultVarietyPackBypass,
 } from './result/ResultBypassViews';
-import { canCompare } from '../utils/permissions';
+import { canCompare, canUseSafeSwaps } from '../utils/permissions';
 import { ScanStackParamList } from '../types/navigation';
 import type { Product, PetProfile } from '../types';
 import type { ScoredResult, ProductIngredient } from '../types/scoring';
@@ -947,6 +947,43 @@ export default function ResultScreen() {
           </TouchableOpacity>
         )}
 
+        {/* V2-1: Start Safe Switch — explicit entry for scanned products */}
+        {product && pet && pantryAnchors.length > 0 &&
+         product.category === 'daily_food' &&
+         !product.is_supplemental && !isVetDiet &&
+         product.product_form !== 'wet' &&
+         pet.feeding_style !== 'custom' &&
+         !scoredResult?.bypass && (
+          <TouchableOpacity
+            style={styles.trackButton}
+            onPress={() => {
+              if (!canUseSafeSwaps()) {
+                (navigation as any).navigate('Paywall', { trigger: 'safe_swap', petName: pet.name });
+                return;
+              }
+              const anchor = pickBaseForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0];
+              if (!anchor) return;
+              (navigation.getParent() as any)?.navigate('Pantry', {
+                screen: 'SafeSwitchSetup',
+                params: {
+                  pantryItemId: anchor.pantryItemId,
+                  newProductId: product.id,
+                  petId: pet.id,
+                  newServingSize: null,
+                  newServingSizeUnit: null,
+                  newFeedingsPerDay: null,
+                },
+              });
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={canUseSafeSwaps() ? "swap-horizontal-outline" : "lock-closed-outline"} size={18} color={Colors.accent} />
+            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
+              Start Safe Switch
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -965,24 +1002,6 @@ export default function ResultScreen() {
           visible={pantrySheetVisible}
           onClose={() => setPantrySheetVisible(false)}
           onAdded={() => setPantrySheetVisible(false)}
-          onStartSafeSwitch={(params) => {
-            setPantrySheetVisible(false);
-            const targetAnchor = pantryAnchors.length > 0
-              ? pickBaseForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0]
-              : null;
-            if (!targetAnchor) return;
-            (navigation.getParent() as any)?.navigate('Pantry', {
-              screen: 'SafeSwitchSetup',
-              params: {
-                pantryItemId: targetAnchor.pantryItemId,
-                newProductId: params.newProductId,
-                petId: params.petId,
-                newServingSize: params.newServingSize,
-                newServingSizeUnit: params.newServingSizeUnit,
-                newFeedingsPerDay: params.newFeedingsPerDay,
-              },
-            });
-          }}
           conditions={petConditions}
         />
       )}

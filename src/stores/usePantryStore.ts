@@ -101,8 +101,9 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
       set({ items, dietStatus, loading: false });
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
-      console.error('[usePantryStore] removeItem failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to remove item.', loading: false });
+      const msg = (e as Error).message ?? 'Failed to remove item.';
+      if (__DEV__) console.warn('[usePantryStore] removeItem failed:', msg);
+      set({ error: e instanceof PantryOfflineError ? msg : msg, loading: false });
     }
   },
 

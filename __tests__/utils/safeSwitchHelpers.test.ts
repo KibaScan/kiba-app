@@ -6,7 +6,7 @@ import {
   getTransitionSchedule,
   getMixForDay,
   getCurrentDay,
-  getCupSplit,
+  getAmountSplit,
   shouldShowUpsetAdvisory,
   getSpeciesNote,
   getConsecutiveMissedDays,
@@ -162,31 +162,37 @@ describe('safeSwitchHelpers', () => {
     });
   });
 
-  // ─── getCupSplit ─────────────────────────────────────
+  // ─── getAmountSplit ─────────────────────────────────────
 
-  describe('getCupSplit', () => {
-    it('splits 2 cups at 75/25', () => {
-      const { oldCups, newCups } = getCupSplit(2, 75, 25);
-      expect(oldCups).toBe(1.5);
-      expect(newCups).toBe(0.5);
+  describe('getAmountSplit', () => {
+    it('splits equal totals at 75/25', () => {
+      const { oldAmount, newAmount } = getAmountSplit(2, 2, 75, 25);
+      expect(oldAmount).toBe(1.5);
+      expect(newAmount).toBe(0.5);
     });
 
-    it('splits 2.4 cups at 50/50', () => {
-      const { oldCups, newCups } = getCupSplit(2.4, 50, 50);
-      expect(oldCups).toBe(1.2);
-      expect(newCups).toBe(1.2);
+    it('splits equal totals at 50/50', () => {
+      const { oldAmount, newAmount } = getAmountSplit(2.4, 2.4, 50, 50);
+      expect(oldAmount).toBe(1.2);
+      expect(newAmount).toBe(1.2);
     });
 
     it('returns 0/total for 0/100 split', () => {
-      const { oldCups, newCups } = getCupSplit(3, 0, 100);
-      expect(oldCups).toBe(0);
-      expect(newCups).toBe(3);
+      const { oldAmount, newAmount } = getAmountSplit(3, 3, 0, 100);
+      expect(oldAmount).toBe(0);
+      expect(newAmount).toBe(3);
     });
 
-    it('handles zero total cups', () => {
-      const { oldCups, newCups } = getCupSplit(0, 75, 25);
-      expect(oldCups).toBe(0);
-      expect(newCups).toBe(0);
+    it('handles zero totals', () => {
+      const { oldAmount, newAmount } = getAmountSplit(0, 0, 75, 25);
+      expect(oldAmount).toBe(0);
+      expect(newAmount).toBe(0);
+    });
+
+    it('handles different caloric densities at 50/50', () => {
+      const { oldAmount, newAmount } = getAmountSplit(4, 2, 50, 50);
+      expect(oldAmount).toBe(2);
+      expect(newAmount).toBe(1);
     });
   });
 

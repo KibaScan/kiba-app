@@ -24,7 +24,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../utils/constants';
 import { stripBrandFromName } from '../utils/formatters';
 import {
-  getCupSplit,
+  getAmountSplit,
   shouldShowUpsetAdvisory,
   shouldShowConsecutiveMissedWarning,
   computeSwitchOutcome,
@@ -345,7 +345,21 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
   const outcomeMessage = getOutcomeMessage(outcome, petName, `${newProduct.brand} ${newName}`);
   const outcomeStats = buildOutcomeStatItems(outcome);
 
-  const { oldCups, newCups } = getCupSplit(data.dailyCups, todayMix.oldPct, todayMix.newPct);
+  const oldTotal = data.dailyServingAmount;
+  const newTotal = data.switch.new_serving_size
+    ? data.switch.new_serving_size * (data.switch.new_feedings_per_day ?? 1)
+    : oldTotal;
+  const { oldAmount, newAmount } = getAmountSplit(oldTotal, newTotal, todayMix.oldPct, todayMix.newPct);
+
+  const formatUnit = (amount: number, unit: string) => {
+    if (amount <= 1) {
+      if (unit.endsWith('ches')) return unit.slice(0, -2);
+      if (unit.endsWith('s')) return unit.slice(0, -1);
+    }
+    return unit;
+  };
+  const oldUnitStr = formatUnit(oldAmount, data.dailyServingUnit);
+  const newUnitStr = formatUnit(newAmount, data.switch.new_serving_size_unit ?? data.dailyServingUnit);
 
   // Today's tummy check value
   const todayLog = logs.find(l => l.day_number === currentDay);
@@ -521,14 +535,14 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
                 {todayMix.oldPct > 0 && (
                   <View style={styles.recipeLine}>
                     <View style={[styles.recipeDot, { backgroundColor: Colors.severityAmber }]} />
-                    <Text style={styles.recipeAmount}>{oldCups} cups ({todayMix.oldPct}%)</Text>
+                    <Text style={styles.recipeAmount}>{oldAmount} {oldUnitStr} ({todayMix.oldPct}%)</Text>
                     <Text style={styles.recipeSep}>·</Text>
                     <Text style={styles.recipeBrand} numberOfLines={1}>{oldProduct.brand}</Text>
                   </View>
                 )}
                 <View style={styles.recipeLine}>
                   <View style={[styles.recipeDot, { backgroundColor: Colors.severityGreen }]} />
-                  <Text style={styles.recipeAmount}>{newCups} cups ({todayMix.newPct}%)</Text>
+                  <Text style={styles.recipeAmount}>{newAmount} {newUnitStr} ({todayMix.newPct}%)</Text>
                   <Text style={styles.recipeSep}>·</Text>
                   <Text style={styles.recipeBrand} numberOfLines={1}>{newProduct.brand}</Text>
                 </View>

@@ -41,6 +41,9 @@ import { canUseGoalWeight } from '../../utils/permissions';
 import { chipToggle, saveSuccess } from '../../utils/haptics';
 import { stripBrandFromName } from '../../utils/formatters';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
+import { getWetTransitionSchedule, getWetTransitionTotalDays } from '../../utils/wetTransitionHelpers';
+import { saveWetTransition } from '../../services/wetTransitionStorage';
+import { hasActiveSwitchForPet } from '../../services/safeSwitchService';
 import { styles } from './AddToPantryStyles';
 import { FeedingStyleSetupSheet } from './FeedingStyleSetupSheet';
 
@@ -98,7 +101,6 @@ interface AddToPantrySheetProps {
   visible: boolean;
   onClose: () => void;
   onAdded: (item?: PantryItem) => void;
-  onStartSafeSwitch?: (params: { pantryItemId?: string; newProductId: string; petId: string; newServingSize: number | null; newServingSizeUnit: string | null; newFeedingsPerDay: number | null }) => void;
   conditions?: string[];
 }
 
@@ -108,7 +110,6 @@ export function AddToPantrySheet({
   visible,
   onClose,
   onAdded,
-  onStartSafeSwitch,
   conditions,
 }: AddToPantrySheetProps) {
   const treat = isTreat(product.category) || product.is_supplemental;
@@ -237,14 +238,23 @@ export function AddToPantrySheet({
   const effectiveServingSize = autoMode && autoServingResult ? autoServingResult.amount : manualServingSize;
   const effectiveServingUnit = autoMode && autoServingResult ? autoServingResult.unit : manualServingUnit;
 
+  // Wet transition schedule (discrete food only)
+  const wetUnitsPerDay = useMemo(() => {
+    if (!autoServingResult || effectiveServingUnit !== 'units') return 2;
+    return Math.max(1, Math.round(autoServingResult.amount));
+  }, [autoServingResult, effectiveServingUnit]);
+
+  const wetSchedule = useMemo(() => {
+    if (isMixable || inferredRole !== 'base') return null;
+    return getWetTransitionSchedule(wetUnitsPerDay, pet.species as 'dog' | 'cat');
+  }, [isMixable, inferredRole, wetUnitsPerDay, pet.species]);
+
+  const wetTotalDays = wetSchedule ? getWetTransitionTotalDays(wetSchedule) : 0;
+
   // Validation
   const bagValid = quantityValue.trim() !== '' && parseFloat(quantityValue) > 0;
-  const isSafeSwitchPath = isNewToDiet === true && inferredRole === 'base' && isMixable && !!onStartSafeSwitch;
-  const ctaReady = treat || inferredRole === 'rotational' || isNewToDiet === null
-    ? bagValid
-    : isSafeSwitchPath
-      ? true  // Safe Switch screen handles bag/quantity
-      : bagValid;
+  const questionShown = inferredRole === 'base' && !isMixable;
+  const ctaReady = bagValid && (!questionShown || isNewToDiet !== null);
 
   // Handlers
   const handlePillSwitch = (val: boolean) => {
@@ -284,34 +294,41 @@ export function AddToPantrySheet({
 
     // Daily Food Path (Behavioral)
     try {
-      // Safe Switch: only for base, mixable (non-discrete) food, non-custom style
-      if (isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch && pet.feeding_style !== 'custom') {
-        onStartSafeSwitch({
-          newProductId: product.id,
-          petId: pet.id,
-          newServingSize: effectiveServingSize,
-          newServingSizeUnit: effectiveServingUnit,
-          newFeedingsPerDay: 1, // Deprecated, Safe Switch doesn't use it anymore either
-        });
-        onClose();
-      } else {
-        const input = buildAddToPantryInput({
-          productId: product.id,
-          quantityValue,
-          quantityUnit: servingMode === 'unit' ? 'units' : quantityUnit,
-          servingMode,
-          servingSize: effectiveServingSize || 1,
-          servingSizeUnit: effectiveServingUnit || 'cups',
-          feedingsPerDay: 1,
-          feedingFrequency,
-          feedingRole: inferredRole,
-        });
+      const input = buildAddToPantryInput({
+        productId: product.id,
+        quantityValue,
+        quantityUnit: servingMode === 'unit' ? 'units' : quantityUnit,
+        servingMode,
+        servingSize: effectiveServingSize || 1,
+        servingSizeUnit: effectiveServingUnit || 'cups',
+        feedingsPerDay: 1,
+        feedingFrequency,
+        feedingRole: inferredRole,
+      });
 
-        await addItemWithRebalance(input, pet.id);
-        saveSuccess();
-        onAdded();
-        onClose();
+      await addItemWithRebalance(input, pet.id);
+
+      // Save wet transition guide for discrete base food switches
+      // Skip if a Safe Switch is already active — don't create conflicting guides
+      if (isNewToDiet === true && inferredRole === 'base' && !isMixable && wetSchedule) {
+        const hasActiveSafeSwitch = await hasActiveSwitchForPet(pet.id).catch(() => false);
+        if (!hasActiveSafeSwitch) {
+          saveWetTransition({
+            petId: pet.id,
+            productId: product.id,
+            productName: stripBrandFromName(product.name, product.brand),
+            startedAt: new Date().toISOString(),
+            totalDays: wetTotalDays,
+            unitsPerDay: wetUnitsPerDay,
+            schedule: wetSchedule,
+            dismissed: false,
+          }).catch(() => {}); // Fire-and-forget — guide is non-critical
+        }
       }
+
+      saveSuccess();
+      onAdded();
+      onClose();
     } catch (e) {
       setError((e as Error).message);
       Alert.alert('Error', (e as Error).message);
@@ -395,8 +412,8 @@ export function AddToPantrySheet({
               ) : (
                 /* DAILY FOOD PATH */
                 <>
-                  {/* Diet switch question — base food only (rotational is variety by nature) */}
-                  {inferredRole === 'base' && (
+                  {/* Diet switch question — discrete base food only (mixable foods skip question, V2-1) */}
+                  {inferredRole === 'base' && !isMixable && (
                     <>
                       <Text style={styles.label}>Switching {pet.name}'s diet?</Text>
                       <View style={styles.pillToggleRow}>
@@ -410,23 +427,19 @@ export function AddToPantrySheet({
                     </>
                   )}
 
-                  {/* Mixable base food (dry, fresh, raw, freeze-dried): full Safe Switch */}
-                  {isNewToDiet === true && inferredRole === 'base' && isMixable && (
-                    <View style={styles.advisoryCard}>
-                      <Text style={styles.advisoryTitle}>Safe Switch Recommended</Text>
-                      <Text style={styles.advisoryText}>Sudden diet changes can cause stomach upset. We recommend a 7-day transition.</Text>
-                    </View>
-                  )}
-
-                  {/* Discrete base food (cans, pouches): lighter vet tip, no Safe Switch */}
+                  {/* Discrete base food (cans, pouches): transition guide preview */}
                   {isNewToDiet === true && inferredRole === 'base' && !isMixable && (
-                    <View style={[styles.advisoryCard, { borderLeftColor: Colors.accent }]}>
-                      <Text style={[styles.advisoryTitle, { color: Colors.accent }]}>Vet Tip</Text>
-                      <Text style={styles.advisoryText}>Introduce new wet foods gradually over a few days. Start with small portions alongside the current food.</Text>
+                    <View style={styles.advisoryCard}>
+                      <Text style={styles.advisoryTitle}>Meal Transition Guide</Text>
+                      <Text style={styles.advisoryText}>
+                        {wetTotalDays > 0
+                          ? `We'll create a ${wetTotalDays}-day portion swap schedule to help ${pet.name} adjust gradually. The guide will appear in your pantry.`
+                          : `Introduce new foods gradually over a few days. Start with small portions alongside the current food.`}
+                      </Text>
                     </View>
                   )}
 
-                  {(inferredRole === 'rotational' || isNewToDiet === false) && (
+                  {(inferredRole !== 'base' || isMixable || isNewToDiet !== null) && (
                     <View style={styles.section}>
                       <Text style={styles.label}>{servingMode === 'weight' ? 'Bag Size' : 'Quantity'}</Text>
                       <View style={styles.inputRow}>
@@ -441,7 +454,7 @@ export function AddToPantrySheet({
                     </View>
                   )}
                   
-                  {isNewToDiet === false && bagValid && bagCollapsed && inferredRole === 'base' && (
+                  {isNewToDiet !== true && bagValid && bagCollapsed && inferredRole === 'base' && (
                     <TouchableOpacity style={styles.bagSizeCollapsed} onPress={() => { chipToggle(); setBagCollapsed(false); }} activeOpacity={0.7}>
                       <Text style={styles.bagSizeLabel}>Bag Size</Text>
                       <View style={styles.bagSizeValueRow}>
@@ -475,9 +488,6 @@ export function AddToPantrySheet({
                       {autoMode && autoServingResult ? (
                         <View style={{flex:1}}>
                           <Text style={styles.autoResultValue}>{Math.round(autoServingResult.amount * 100) / 100} <Text style={styles.autoResultUnit}>{autoServingResult.unit} / day</Text></Text>
-                          {isNewToDiet === true && inferredRole === 'base' && isMixable && (
-                             <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Target serving (after transition)</Text></Text>
-                          )}
                           {pet.feeding_style === 'dry_and_wet' && inferredRole === 'base' && !isNewToDiet && (
                              <Text style={styles.autoMathLine}><Text style={styles.dimmedText}>Budget excludes wet food allowance ({pet.wet_reserve_kcal || 0} kcal)</Text></Text>
                           )}
@@ -509,7 +519,6 @@ export function AddToPantrySheet({
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch && styles.safeSwitchCta,
                   (!ctaReady || submitting) && styles.confirmButtonDisabled
                 ]}
                 onPress={handleCTA}
@@ -517,7 +526,7 @@ export function AddToPantrySheet({
                 activeOpacity={0.7}
               >
                 <Text style={styles.confirmButtonText}>
-                  {submitting ? 'Please wait...' : isNewToDiet === true && inferredRole === 'base' && isMixable && onStartSafeSwitch ? 'Continue to Safe Switch' : `Add to ${pet.name}'s Pantry`}
+                  {submitting ? 'Please wait...' : `Add to ${pet.name}'s Pantry`}
                 </Text>
               </TouchableOpacity>
               

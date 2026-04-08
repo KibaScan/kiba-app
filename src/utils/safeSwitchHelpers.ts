@@ -116,15 +116,17 @@ export function getCurrentDay(startedAt: string, totalDays: number): number {
 /**
  * Splits a total serving amount into old/new portions based on day percentages.
  * Returns amounts rounded to 1 decimal place.
+ * Uses separate totals for old/new to handle different caloric densities.
  */
-export function getCupSplit(
-  totalCups: number,
+export function getAmountSplit(
+  oldTotal: number,
+  newTotal: number,
   oldPct: number,
   newPct: number,
-): { oldCups: number; newCups: number } {
-  const oldCups = Math.round((totalCups * oldPct / 100) * 10) / 10;
-  const newCups = Math.round((totalCups * newPct / 100) * 10) / 10;
-  return { oldCups, newCups };
+): { oldAmount: number; newAmount: number } {
+  const oldAmount = Math.round((oldTotal * oldPct / 100) * 10) / 10;
+  const newAmount = Math.round((newTotal * newPct / 100) * 10) / 10;
+  return { oldAmount, newAmount };
 }
 
 /**

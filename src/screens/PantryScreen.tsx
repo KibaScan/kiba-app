@@ -29,7 +29,11 @@ import { Colors, FontSizes, Spacing, SEVERITY_COLORS } from '../utils/constants'
 import { PantryCard } from '../components/pantry/PantryCard';
 import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
+import { WetTransitionCard } from '../components/pantry/WetTransitionCard';
+import { getWetTransition, dismissWetTransition } from '../services/wetTransitionStorage';
+import type { WetTransitionRecord } from '../utils/wetTransitionHelpers';
 import SwipeableRow from '../components/ui/SwipeableRow';
+import { canUseSafeSwaps } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { getActiveSwitchForPet } from '../services/safeSwitchService';
@@ -164,6 +168,7 @@ export default function PantryScreen({ navigation }: Props) {
   const [logFeedingItem, setLogFeedingItem] = useState<PantryCardData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
+  const [wetTransition, setWetTransition] = useState<WetTransitionRecord | null>(null);
 
   // ── Derived data ──
   const filteredItems = useMemo(() => filterItems(items, activeFilter), [items, activeFilter]);
@@ -213,6 +218,10 @@ export default function PantryScreen({ navigation }: Props) {
       // Load active safe switch
       getActiveSwitchForPet(activePetId).then(data => {
         if (!cancelled) setActiveSwitchData(data);
+      });
+      // Load wet transition guide
+      getWetTransition(activePetId).then(data => {
+        if (!cancelled) setWetTransition(data);
       });
       return () => { cancelled = true; };
     }, [activePetId, loadPantry]),
@@ -470,6 +479,16 @@ export default function PantryScreen({ navigation }: Props) {
         />
       )}
 
+      {/* Wet transition guide (V2-3) */}
+      {!activeSwitchData && wetTransition && (
+        <WetTransitionCard
+          record={wetTransition}
+          onDismiss={() => {
+            dismissWetTransition(activePetId!).then(() => setWetTransition(null));
+          }}
+        />
+      )}
+
       {/* Filter / sort bar */}
       <View style={styles.filterRow}>
         <ScrollView
@@ -547,13 +566,18 @@ export default function PantryScreen({ navigation }: Props) {
                 onGaveTreat={handleGaveTreat}
                 onLogFeeding={(i) => setLogFeedingItem(i)}
                 isLocked={locked}
-                onFindReplacement={(productId) => {
+                isPremiumUser={canUseSafeSwaps()}
+                onReplaceFood={activePet.feeding_style !== 'custom' ? (productId) => {
+                  if (!canUseSafeSwaps()) {
+                    (navigation.getParent() as any)?.navigate('Paywall', { trigger: 'safe_swap', petName: activePet?.name });
+                    return;
+                  }
                   navigation.navigate('Result', {
                     productId,
                     petId: activePetId,
                     pantryItemIdHint: item.id,
                   });
-                }}
+                } : undefined}
               />
             </SwipeableRow>
           );

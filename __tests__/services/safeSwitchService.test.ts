@@ -535,7 +535,8 @@ describe('getActiveSwitchForPet', () => {
     expect(result!.logs).toEqual([MOCK_LOG]);
     expect(result!.currentDay).toBe(3);
     expect(result!.todayMix).toEqual({ oldPct: 50, newPct: 50 });
-    expect(result!.dailyCups).toBe(2.4); // 1.2 cups × 2 feedings
+    expect(result!.dailyServingAmount).toBe(2.4); // 1.2 cups × 2 feedings
+    expect(result!.dailyServingUnit).toBe('cups');
     // Verify the fragile product_id string-match path is NOT used — Phase B drops it
     expect(asgnChain.eq).toHaveBeenCalledWith('pantry_item_id', 'pi-1');
     expect(getCurrentDay).toHaveBeenCalledWith(MOCK_SWITCH.started_at, 7);
@@ -550,7 +551,7 @@ describe('getActiveSwitchForPet', () => {
     expect(result).toBeNull();
   });
 
-  test('falls back to 2.4 dailyCups for historical rows with null pantry_item_id', async () => {
+  test('falls back to 2.4 dailyServingAmount for historical rows with null pantry_item_id', async () => {
     // Phase B: historical switches created before migration 031 have no anchor.
     const historicalSwitch = {
       ...MOCK_SWITCH,
@@ -573,7 +574,8 @@ describe('getActiveSwitchForPet', () => {
     const result = await getActiveSwitchForPet('pet-1');
 
     expect(result).not.toBeNull();
-    expect(result!.dailyCups).toBe(2.4);
+    expect(result!.dailyServingAmount).toBe(2.4);
+    expect(result!.dailyServingUnit).toBe('cups');
   });
 });
 

@@ -29,6 +29,7 @@ import {
 import { createSafeSwitch, hasActiveSwitchForPet } from '../services/safeSwitchService';
 import { getPantryAnchor } from '../services/pantryService';
 import { rescheduleAllSafeSwitchNotifications } from '../services/safeSwitchNotificationScheduler';
+import { clearWetTransition } from '../services/wetTransitionStorage';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { supabase } from '../services/supabase';
 import type { PantryStackParamList } from '../types/navigation';
@@ -176,6 +177,9 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
         new_serving_size_unit: newServingSizeUnit ?? null,
         new_feedings_per_day: newFeedingsPerDay ?? null,
       });
+
+      // Mutual exclusion: clear wet transition guide if active
+      await clearWetTransition(petId);
 
       // Schedule notifications
       await rescheduleAllSafeSwitchNotifications();

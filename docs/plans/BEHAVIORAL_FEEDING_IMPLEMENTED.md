@@ -217,25 +217,85 @@ Five edge cases identified during implementation review. Ordered by severity.
 
 Items below are logged for future work. None are blocking launch.
 
-### V2-1: Decouple Safe Switch from Add Flow
+### V2-1: Decouple Safe Switch from Add Flow (**IMPLEMENTED — session 32**)
 
-Currently, Safe Switch is triggered from the AddToPantrySheet when a user says "Yes" to "Switching diets?" This shoehorns a "Replace" behavior into an "Add" flow. In V2, Safe Switch should be entry-point-only:
-- User adds Kibble B to pantry cleanly (no transition prompt).
-- User goes to Kibble A's PantryCard, taps an explicit **"Replace this food"** button, selects Kibble B from pantry.
-- That triggers Safe Switch with perfect context: the system knows which food is "Old" and which is "New."
-- Removes all ambiguity from the Add Sheet. Keeps it focused: quantity + role + serving + add.
+Removed Safe Switch from AddToPantrySheet entirely. The sheet now stays focused on adding: quantity + role + serving + add. Safe Switch gets two explicit entry points with unambiguous old→new context.
+
+**AddToPantrySheet changes:**
+- Removed `onStartSafeSwitch` prop, Safe Switch branch from `handleCTA`, "Safe Switch Recommended" advisory card, and "Continue to Safe Switch" CTA variant.
+- "Switching diet?" question now only appears for discrete base foods (`!isMixable`) — needed by V2-3 wet transition guide. Mixable base foods (dry, fresh, raw, freeze-dried) skip the question entirely.
+- Fixed quantity section visibility: shows immediately for mixable base foods and for discrete base foods after answering the question (either Yes or No). Also fixed V2-3 bug where discrete + "Yes" hid the quantity input.
+- `ctaReady` enforces question answer for discrete base foods: `bagValid && (!questionShown || isNewToDiet !== null)`.
+- Fixed `bagCollapsed` visibility for mixable base foods (`isNewToDiet !== true` instead of `=== false`).
+
+**New entry point — ResultScreen "Start Safe Switch" button:**
+- Appears below "Add to Pantry" for mixable daily food products when the pet has existing base foods in pantry.
+- Visibility: `daily_food && !is_supplemental && !is_vet_diet && product_form !== 'wet' && feeding_style !== 'custom' && !bypass && pantryAnchors.length > 0`.
+- Premium-gated: free users see lock icon → Paywall (`safe_swap` trigger). Premium users → `pickBaseForSwap` auto-selects anchor → navigates to `SafeSwitchSetupScreen` (which has a slot picker for multi-base pets).
+
+**New entry point — PantryCard "Replace this food" button:**
+- Replaces the old "Find a replacement" button (M7, score < 60 gate removed).
+- Available for ALL base daily foods: `!isLocked && !isTreat && !isRecalled && !isVetDiet && !is_supplemental && daily_food && !isRotational`.
+- Hidden for custom feeding style (callback not passed).
+- Premium-gated: lock icon for free users → Paywall. Swap icon for premium → navigates to ResultScreen with `pantryItemIdHint` → SafeSwapSection shows alternatives → user starts Safe Switch.
+
+**Files modified:** `AddToPantrySheet.tsx`, `AddToPantryStyles.ts` (removed `safeSwitchCta`), `ResultScreen.tsx`, `PantryCard.tsx`, `PantryScreen.tsx`.
+
+**Downstream systems unchanged:** SafeSwapSection's `onSwitchTo` flow, SafeSwitchSetupScreen, safeSwitchService, permissions.ts (`canUseSafeSwaps` already existed), navigation types (`safe_swap` PaywallTrigger already existed).
+
+### V2-1b: Transition System Collision Fixes (**IMPLEMENTED — session 32**)
+
+Fixed three UX issues where the Safe Switch and Meal Transition Guide systems collided.
+
+**1. Unit-aware Safe Switch:**
+- `SafeSwitchCardData.dailyCups` → `dailyServingAmount` + `dailyServingUnit`. Service now computes serving amount for ALL units (not just cups) and resolves `'units'` → `unit_label` from `pantry_items` join.
+- `getCupSplit()` → `getAmountSplit(oldTotal, newTotal, oldPct, newPct)`. Takes separate totals for old and new food — fixes caloric density bug where a 50/50 day between 4-cup kibble and 2-cup dense food would show 2+2 instead of correct 2+1.
+- `SafeSwitchDetailScreen` uses per-food units: old food shows `data.dailyServingUnit`, new food shows `data.switch.new_serving_size_unit`. Singularization helper handles "pouches"→"pouch", "cups"→"cup", "servings"→"serving".
+
+**2. Clearer Meal Transition Guide copy:**
+- Replaced clinical "X portions old, Y portions new per day" with action-oriented labels: "Swap 1 of your 7 daily servings to the new food", "Feed ½ old and ½ new per day", "All new food".
+
+**3. Mutual exclusion:**
+- Starting a Safe Switch clears any active Meal Transition Guide (`clearWetTransition` in `SafeSwitchSetupScreen`). Safe — guide is stateless AsyncStorage.
+- Starting a Meal Transition Guide is **skipped** if a Safe Switch is active (`hasActiveSwitchForPet` check in `AddToPantrySheet`). Does NOT cancel the premium, DB-backed switch.
+- `PantryScreen` display guard: `{!activeSwitchData && wetTransition && (` suppresses guide card when Safe Switch banner is active.
+
+**4. Error handling fix:** `usePantryStore.removeItem` now surfaces the service error message ("Cancel the active Safe Switch before removing this item") instead of swallowing it with a generic string. Changed `console.error` → `console.warn` to avoid red LogBox in dev.
+
+**Files modified:** `safeSwitch.ts` (type), `safeSwitchService.ts`, `safeSwitchHelpers.ts`, `SafeSwitchDetailScreen.tsx`, `wetTransitionHelpers.ts`, `SafeSwitchSetupScreen.tsx`, `AddToPantrySheet.tsx`, `PantryScreen.tsx`, `usePantryStore.ts`. Tests updated in `safeSwitchHelpers.test.ts`, `safeSwitchService.test.ts`, `wetTransitionHelpers.test.ts`.
 
 ### V2-2: Custom Mode Rotational Override (from EC-5)
 
 Custom mode converts all daily foods to `feeding_role: 'base'`, eliminating "Fed This Today" for rotational logging. A user wanting 60% Kibble A / 40% Kibble B + a rotational wet topper can't express this today. V2 should allow per-item `feeding_role` override within custom mode, letting users mark specific foods as rotational. Logged rotational kcal would subtract from the custom kibble budgets instead of being excluded from serving math entirely.
 
-### V2-3: Wet Food Transition Guide
+### V2-3: Wet Food Transition Guide (**IMPLEMENTED — session 31**)
 
-Safe Switch's 75/25 → 50/50 → 25/75 mixing schedule works for bulk/mixable food (dry, fresh, raw, freeze-dried) but not for discrete units (cans, pouches). V2 could add a lighter "Wet Transition Guide" — instead of mix ratios, show a meal-level plan: "Day 1-2: Feed 3 meals of old, 1 meal of new → Day 3-4: 2 old, 2 new → Day 5+: all new." No math wizard needed — just a simple schedule card.
+Replaced the static "Vet Tip" card in AddToPantrySheet with an actionable **portion-swap schedule** for discrete (non-mixable) foods. Triggered when user taps "Yes" to "Switching diet?" on a wet base food.
+
+**Schedule algorithm:** 3-phase portion swap adapted to `unitsPerDay` (derived from auto-serving, default 2). Phase 1 introduces 1 new portion; Phase 2 splits to `ceil(n/2)` old + `floor(n/2)` new; Phase 3 = all new. For 1 unit/day: ½ old + ½ new (no alternating days — prevents GI distress). Species-aware durations: 2 days/phase (dogs), 3 days/phase (cats).
+
+**Persistence:** AsyncStorage (`@kiba_wet_transition_{petId}`), not DB. One per pet, auto-expires after transition window, dismissible. Acceptable to lose on reinstall — food is in pantry and functional.
+
+**UI:** Advisory card preview in AddToPantrySheet (amber, shows day count). Persistent `WetTransitionCard` on PantryScreen (between SafeSwitchBanner and filter chips) showing day counter, current phase label, "Next: 100% new diet from Day X." **Mutual exclusion with Safe Switch** (V2-1b): guide is suppressed when Safe Switch is active; starting a Safe Switch clears the guide; guide is not created if a Safe Switch is active.
+
+**Files:** `src/utils/wetTransitionHelpers.ts` (pure functions), `src/services/wetTransitionStorage.ts` (AsyncStorage CRUD), `src/components/pantry/WetTransitionCard.tsx` (card), `__tests__/utils/wetTransitionHelpers.test.ts` (27 tests). Modified: `AddToPantrySheet.tsx`, `PantryScreen.tsx`.
 
 ### V2-4: Per-Serving Kcal in Wet Reserve
 
 `refreshWetReserve` currently uses per-unit (per-package) kcal from `getWetFoodKcal`, capped at 500 kcal (EC-2 fix). A more accurate approach: read the assignment's `serving_size` and multiply by kcal density to get true per-serving kcal. This would eliminate the need for the cap and handle edge cases (e.g., a user who feeds half a can per meal) more precisely.
+
+### V3: Unified Transition Engine
+
+Long-term architectural goal — consolidate the two separate transition systems (Safe Switch + Meal Transition Guide) into a single polymorphic engine that adapts its UI and math based on `product_form`.
+
+**Current state:** Two systems with bolted-on mutual exclusion (V2-1b). Safe Switch is DB-backed/premium with cup-mixing percentages. Meal Transition Guide is AsyncStorage/free with portion-swap counts. They use different persistence, different notification pipelines, and different UI cards.
+
+**V3 target:** One `TransitionEngine` with a single DB model, single PantryScreen card, and single notification pipeline. Output adapts per food type:
+- **Mixable (dry→dry):** cup ratios, "Mix both foods together in the bowl"
+- **Discrete (wet→wet):** portion counts, "Swap X of Y servings"
+- **Cross-type (wet→dry, dry→wet):** hybrid — separate portions, not mixed
+
+Eliminates mutual exclusion entirely (one system, nothing to conflict). Merges the AsyncStorage guide into the DB model. Not blocking launch — build when the two-system approach causes real user friction beyond V2-1b fixes.
 
 ---
 
