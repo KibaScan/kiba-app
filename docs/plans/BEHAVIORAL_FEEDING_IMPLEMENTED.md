@@ -1,6 +1,6 @@
 # Behavioral Feeding Architecture — Implementation State
 
-> **Status:** Implemented (Phases 1, 2 & 3 Complete + Phase 1 Expansion)
+> **Status:** Implemented (Phases 1, 2 & 3 Complete + Phase 1 Expansion + EC-4/V2-2/V2-4)
 > **Goal:** This document serves as the master source of truth for the implemented Behavioral Feeding Architecture, replacing the legacy slot-based meal fraction model. If picking up this session or onboarding, read this to understand how feeding routing, calorie math, and the database behave.
 
 ---
@@ -45,7 +45,10 @@ Since rotational foods don't have predictable daily occurrences, their usage is 
 ## 3. Math & Service Layer (`pantryHelpers.ts` & `pantryService.ts`)
 
 ### `refreshWetReserve(petId)`
-When a user adds, removes, updates, or unshares a wet food to/from a pet's pantry, this service runs a **weighted average** of all the pet's active rotational wet foods multiplied by their inventory. It then sets `wet_reserve_kcal` and `wet_reserve_source` on the `pets` row.
+When a user adds, removes, updates, or unshares a wet food to/from a pet's pantry, this service computes a weighted average of all the pet's active rotational wet foods and sets `wet_reserve_kcal` and `wet_reserve_source` on the `pets` row. **V2-4:** Prefers per-serving kcal from `computePerServingKcal` (uses assignment `serving_size` × product kcal density) over raw per-unit kcal. Falls back to `getWetFoodKcal` with EC-2 cap (500 kcal) when serving data doesn't resolve. **EC-4:** Uses dual-track accumulation — weighted by real inventory when stocked, unweighted average when all items depleted.
+
+### `computePerServingKcal(product, servingSize, servingSizeUnit)` *(V2-4)*
+Computes per-serving kcal using assignment serving_size data. Priority: cups/scoops → `servingSize * ga_kcal_per_cup`; units → `servingSize * resolveCalories.kcalPerUnit`; units fallback → `servingSize * getWetFoodKcal`. Returns `null` if all paths fail. No MAX_SERVING_KCAL cap — serving data is correct by construction.
 
 ### `getWetFoodKcal(product)`
 Extracts raw caloric value via a 4-tier resolution chain (delegates to `resolveCalories` for tiers 1-3, adds tier 4):
@@ -56,7 +59,7 @@ Extracts raw caloric value via a 4-tier resolution chain (delegates to `resolveC
 Returns `null` if all 4 tiers fail (UI falls back to manual serving input in AddToPantrySheet).
 
 ### `computeBehavioralServing()`
-Replaces `computeMealBasedServing`. It generates the actual serving sizes (e.g., "1.2 cups") by analyzing the `pet`, the `feeding_role`, and the food itself, utilizing the `wet_reserve_kcal` to seamlessly scale back base foods if rotational food exists. For `custom` mode, uses full DER as budget with `calorie_share_pct` applied via the `dryFoodSplitPct` parameter.
+Replaces `computeMealBasedServing`. It generates the actual serving sizes (e.g., "1.2 cups") by analyzing the `pet`, the `feeding_role`, and the food itself, utilizing the `wet_reserve_kcal` to seamlessly scale back base foods if rotational food exists. For `custom` mode: base items use full DER as budget with `calorie_share_pct` applied via `dryFoodSplitPct`; **V2-2: rotational items return `null`** (Fed This Today logging, no computed serving).
 
 ### `rebalanceBaseShares(petId)` *(pantryService.ts)*
 Auto-splits `calorie_share_pct` evenly across all base-role assignments for a pet (e.g., 2 bases → 50/50, 3 → 33/33/34). Also scales `serving_size` proportionally so the displayed amount matches the new share. Called after `addToPantry`, `removePantryItem`, and `sharePantryItem`. **Skipped when `feeding_style === 'custom'`** — user controls splits manually via `CustomFeedingStyleScreen`.
@@ -85,8 +88,9 @@ Instead of a rigid `> 2 daily foods` guard generating a false red-warning alarm,
 ### Custom Feeding Configuration (`CustomFeedingStyleScreen`)
 - Full-screen configuration for manual calorie splits when `feeding_style === 'custom'`.
 - Shows pet's DER at top, lists all daily foods with `<TextInput>` for raw kcal/day per food.
-- Each input has a computed % badge. Visual sum bar at bottom warns if significantly over/under DER (no hard enforcement).
-- On save: converts each kcal to `calorie_share_pct = Math.round((kcal / DER) * 100)`, calls `updateCalorieShares()`.
+- Each input has a computed % badge. Visual sum bar at bottom warns if significantly over/under DER (no hard enforcement). Sum bar label reads "Base total" when rotational items exist, with "Rotational items logged separately" note.
+- **V2-2: Per-food Base/Rotational toggle chips.** Base selected → kcal input visible. Rotational selected → kcal input hidden, shows "Logged via Fed This Today" label. At least 1 base item required (Alert blocks save if all toggled to rotational).
+- On save: converts each kcal to `calorie_share_pct = Math.round((kcal / DER) * 100)`, calls `updateCalorieShares()` with optional role change fields for items whose role was toggled.
 - Scale-invariant: stores percentages, not raw kcal. If DER changes (weight goal adjustment), allocations auto-adjust.
 - **Entry points:** PetHubScreen (auto-navigates on custom select), EditPetScreen (auto-navigates on save), PantryScreen header icon ("Configure splits" button, visible when `feeding_style === 'custom'`).
 - Registered in both `PantryStackParamList` and `MeStackParamList`. Tab bar hidden on this screen.
@@ -112,26 +116,27 @@ Unblocks the `'custom'` feeding style for users who need manual control over cal
 - **No new columns or migrations.** `custom` already exists in the `FeedingStyle` type union and DB CHECK constraint. `calorie_share_pct` column already exists on `pantry_pet_assignments`.
 
 ### Service Layer (`pantryService.ts`)
-- **`updateCalorieShares(petId, shares[])`** — batch updates `calorie_share_pct` for multiple assignments. Used by `CustomFeedingStyleScreen` to save user-defined splits.
-- **`transitionToCustomMode(petId)`** — sets `feeding_style: 'custom'`, converts all daily food assignments to `feeding_role: 'base'`, `feeding_frequency: 'daily'`, `auto_deplete_enabled: true`, with equal `calorie_share_pct` split.
+- **`updateCalorieShares(petId, shares[])`** — batch updates `calorie_share_pct` for multiple assignments. **V2-2:** also accepts optional `feeding_role`, `feeding_frequency`, `auto_deplete_enabled` fields per entry (backward compatible). Used by `CustomFeedingStyleScreen` to save user-defined splits and role toggles.
+- **`transitionToCustomMode(petId)`** — sets `feeding_style: 'custom'`. **V2-2:** preserves existing rotational roles — base items get equal `calorie_share_pct` split, rotational items keep role with 0% share, `as_needed` frequency, `auto_deplete_enabled: false`. Guard: promotes first rotational to base if no base items exist.
 - **`transitionFromCustomMode(petId, newStyle)`** — sets new feeding style, resets all `calorie_share_pct` to 100, re-infers `feeding_role` per new style (requires join to `products.product_form`), calls `rebalanceBaseShares` + `refreshWetReserve`.
 
 ### Math
-- `computeBehavioralServing`: custom branch uses `budgetedKcal = der` (full DER), then the existing `dryFoodSplitPct / 100` multiplier applies the per-item `calorie_share_pct`.
+- `computeBehavioralServing`: custom branch uses `budgetedKcal = der` (full DER) for base items, then the existing `dryFoodSplitPct / 100` multiplier applies the per-item `calorie_share_pct`. **V2-2:** rotational items in custom mode return `null` (Fed This Today logging, no computed serving).
 - `rebalanceBaseShares`: **skipped** for custom (guard at top of function checks `feeding_style`).
-- `refreshWetReserve`: correctly no-ops (guards `!== 'dry_and_wet'`).
+- `refreshWetReserve`: correctly no-ops for custom mode (guards `!== 'dry_and_wet'`). Custom rotational kcal is logged explicitly, not estimated via reserve.
 - `evaluateDietCompleteness`: custom branch already exists (`hasAnyDaily` = complete).
 
-### Downstream Systems (No Changes)
-- **Auto-deplete cron:** custom items are all `base` → included in daily depletion (filter is `!== 'rotational'`).
-- **Vet report:** custom items are `base` → show full `dailyKcal`.
-- **`FedThisTodaySheet`:** irrelevant (no rotational items in custom mode).
+### Downstream Systems
+- **Auto-deplete cron:** base items in custom mode are included in daily depletion (filter is `!== 'rotational'`). V2-2 rotational items in custom mode are excluded (correct — logged via Fed This Today).
+- **Vet report:** base items show full `dailyKcal`. Rotational items show `"~kcal per unit, rotational"`.
+- **`FedThisTodaySheet`:** **V2-2:** now relevant in custom mode — rotational items use Fed This Today logging.
 - **`computeBehavioralBudgetWarning`:** works (warns based on total base kcal vs DER).
 
 ### Adding Food in Custom Mode
-- Role inference falls through to `'base'` (correct — custom has no rotational concept).
-- New food gets `calorie_share_pct: 100` (default). Total allocation temporarily >100%.
+- Role inference falls through to `'base'` (correct — user changes role via CustomFeedingStyleScreen).
+- New food gets `calorie_share_pct: 0` (EC-1 fix, default for custom). Total allocation safe.
 - `rebalanceBaseShares` is skipped. User adjusts via "Configure splits" on PantryScreen.
+- **V2-2:** CustomFeedingStyleScreen shows Base/Rotational toggle per food card.
 - Safe Switch is **disabled** for custom mode (`pet.feeding_style !== 'custom'` guard in AddToPantrySheet).
 
 ---
@@ -189,25 +194,19 @@ Five edge cases identified during implementation review. Ordered by severity.
 
 **File:** `AddToPantrySheet.tsx:161` — `!product.is_supplemental &&` prepended to the mismatch check.
 
-### EC-4: Divide-by-Zero in refreshWetReserve (**LOW — partially mitigated**)
+### EC-4: Divide-by-Zero in refreshWetReserve (**FIXED — session 33**)
 
-**Problem:** When all rotational items have `quantity_remaining = 0` (user fed the last unit), the weighted average denominator could be 0.
+**Problem:** When all rotational items have `quantity_remaining = 0` (user fed the last unit), the `|| 1` fallback made the reserve hold at per-unit kcal as if phantom inventory existed.
 
-**Current mitigation:** Line 764: `const qtyContext = item.quantity_remaining && item.quantity_remaining > 0 ? item.quantity_remaining : 1`. Falls back to 1, preventing true division by zero. The try-catch at the function level also prevents crashes.
+**Fix:** Dual-track accumulation in `refreshWetReserve`. Tracks `realTotalKcal/realTotalWeight` (items with inventory) separately from `rawKcalSum/rawCount` (all items). When all real inventory is zero, uses unweighted average (`rawKcalSum / rawCount`) — reflects "what this food would contribute if restocked" rather than a phantom inventory signal.
 
-**Residual issue:** Falling back to `1` when inventory is empty means the reserve holds at the per-unit kcal, which is incorrect (especially for bulk items per EC-2). A better fallback: use simple unweighted average `SUM(kcal) / COUNT(*)` when total inventory is 0.
+**Files:** `pantryService.ts` (`refreshWetReserve` loop).
 
-**File:** `pantryService.ts` (`refreshWetReserve`, line 764 and 773).
+### EC-5: Custom Mode "Zero-Sum" Limitation (**FIXED — session 33 via V2-2**)
 
-### EC-5: Custom Mode "Zero-Sum" Limitation (**ACCEPTED — document only**)
+**Problem:** `transitionToCustomMode` converted all daily foods to `feeding_role: 'base'`, eliminating "Fed This Today" for rotational items.
 
-**Problem:** `transitionToCustomMode` converts all daily foods to `feeding_role: 'base'`, eliminating the "Fed This Today" rotational button. A user wanting 60% Kibble A / 40% Kibble B + a rotational wet topper cannot express this. They must choose between:
-- `dry_and_wet` — auto-splits kibble 50/50 (wrong ratio), wet food is rotational (correct)
-- `custom` — allows 60/40 kibble split (correct), but wet food becomes base (loses Fed This Today UX)
-
-**Status:** Accepted MVP limitation. No fix needed for V1.
-
-**V2 path:** Custom mode should allow per-item `feeding_role` override, letting users mark specific foods as rotational within custom mode. Logged rotational kcal would subtract from the custom kibble budgets instead of being excluded from serving math entirely.
+**Fix:** V2-2 (Custom Mode Rotational Override) — see section 9. `transitionToCustomMode` now preserves existing rotational roles. `CustomFeedingStyleScreen` has per-item Base/Rotational toggle chips. Users can express 60% Kibble A / 40% Kibble B + rotational wet topper.
 
 ---
 
@@ -264,9 +263,27 @@ Fixed three UX issues where the Safe Switch and Meal Transition Guide systems co
 
 **Files modified:** `safeSwitch.ts` (type), `safeSwitchService.ts`, `safeSwitchHelpers.ts`, `SafeSwitchDetailScreen.tsx`, `wetTransitionHelpers.ts`, `SafeSwitchSetupScreen.tsx`, `AddToPantrySheet.tsx`, `PantryScreen.tsx`, `usePantryStore.ts`. Tests updated in `safeSwitchHelpers.test.ts`, `safeSwitchService.test.ts`, `wetTransitionHelpers.test.ts`.
 
-### V2-2: Custom Mode Rotational Override (from EC-5)
+### V2-2: Custom Mode Rotational Override (**IMPLEMENTED — session 33**)
 
-Custom mode converts all daily foods to `feeding_role: 'base'`, eliminating "Fed This Today" for rotational logging. A user wanting 60% Kibble A / 40% Kibble B + a rotational wet topper can't express this today. V2 should allow per-item `feeding_role` override within custom mode, letting users mark specific foods as rotational. Logged rotational kcal would subtract from the custom kibble budgets instead of being excluded from serving math entirely.
+Allows per-item `feeding_role` override within custom mode, solving EC-5.
+
+**Service layer changes:**
+- `transitionToCustomMode` preserves existing rotational roles instead of forcing all to base. Base items get equal `calorie_share_pct` split; rotational items keep role with 0% share, `as_needed` frequency, `auto_deplete_enabled: false`. Guard: promotes first rotational to base if no base items exist.
+- `updateCalorieShares` extended with optional `feeding_role`, `feeding_frequency`, `auto_deplete_enabled` fields (backward compatible).
+- `computeBehavioralServing` custom branch returns `null` for rotational items — PantryCard shows "Log feeding" button.
+
+**Design decision:** Rotational kcal does NOT auto-subtract from custom base budgets. Custom mode = explicit control. Base allocations are fixed DER percentages. Rotational logging is additive tracking. Sum bar on CustomFeedingStyleScreen warns if total > DER.
+
+**UI changes (CustomFeedingStyleScreen):**
+- `FoodRow` extended with `feedingRole`.
+- Per food card: Base/Rotational chip pair toggle. Base selected → kcal input visible. Rotational selected → "Logged via Fed This Today" label, kcal input hidden.
+- Validation: at least 1 base item required. Alert blocks save if all toggled to rotational.
+- Sum bar label changed to "Base total" with "Rotational items logged separately" note.
+- `handleSave` includes role changes in `updateCalorieShares` call.
+
+**No changes needed (verified):** AddToPantrySheet role inference, PantryCard "Log feeding" gate, refreshWetReserve custom guard, evaluateDietCompleteness custom branch, auto-deplete cron.
+
+**Files modified:** `pantryService.ts` (transitionToCustomMode, updateCalorieShares), `pantryHelpers.ts` (computeBehavioralServing), `CustomFeedingStyleScreen.tsx` (role toggle UI). Tests: `pantryHelpers.test.ts` (+2 tests).
 
 ### V2-3: Wet Food Transition Guide (**IMPLEMENTED — session 31**)
 
@@ -280,9 +297,18 @@ Replaced the static "Vet Tip" card in AddToPantrySheet with an actionable **port
 
 **Files:** `src/utils/wetTransitionHelpers.ts` (pure functions), `src/services/wetTransitionStorage.ts` (AsyncStorage CRUD), `src/components/pantry/WetTransitionCard.tsx` (card), `__tests__/utils/wetTransitionHelpers.test.ts` (27 tests). Modified: `AddToPantrySheet.tsx`, `PantryScreen.tsx`.
 
-### V2-4: Per-Serving Kcal in Wet Reserve
+### V2-4: Per-Serving Kcal in Wet Reserve (**IMPLEMENTED — session 33**)
 
-`refreshWetReserve` currently uses per-unit (per-package) kcal from `getWetFoodKcal`, capped at 500 kcal (EC-2 fix). A more accurate approach: read the assignment's `serving_size` and multiply by kcal density to get true per-serving kcal. This would eliminate the need for the cap and handle edge cases (e.g., a user who feeds half a can per meal) more precisely.
+Replaced raw per-unit (per-package) kcal with assignment-aware per-serving kcal in `refreshWetReserve`.
+
+**New helper:** `computePerServingKcal(product, servingSize, servingSizeUnit)` in `pantryHelpers.ts`. Uses assignment `serving_size` × product kcal density (cups → `ga_kcal_per_cup`, units → `resolveCalories.kcalPerUnit`, fallback to `getWetFoodKcal` size estimation). No MAX_SERVING_KCAL cap needed on the per-serving path — serving data is correct by construction.
+
+**refreshWetReserve changes:**
+- Supabase select widened to include `serving_size, serving_size_unit` from `pantry_pet_assignments`.
+- Loop prefers `computePerServingKcal` → only falls back to `getWetFoodKcal` with EC-2 cap when serving data doesn't resolve.
+- Combined with EC-4 dual-track accumulation for empty-inventory handling.
+
+**Files modified:** `pantryService.ts` (refreshWetReserve select + loop), `pantryHelpers.ts` (new `computePerServingKcal`). Tests: `pantryHelpers.test.ts` (+8 tests).
 
 ### V3: Unified Transition Engine
 

@@ -32,6 +32,7 @@ import {
   getWetFoodKcal,
   computeBehavioralServing,
   computeBehavioralBudgetWarning,
+  computePerServingKcal,
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -1074,6 +1075,106 @@ describe('getTodayBounds', () => {
     expect(bounds.start.getMinutes()).toBe(0);
     expect(bounds.start.getSeconds()).toBe(0);
     expect(bounds.end.getTime() - bounds.start.getTime()).toBe(24 * 60 * 60 * 1000);
+  });
+});
+
+// ─── V2-4: computePerServingKcal ────────────────────────
+
+describe('computePerServingKcal', () => {
+  test('cups product uses ga_kcal_per_cup', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const result = computePerServingKcal(product, 0.5, 'cups');
+    expect(result).toEqual({ kcal: 200, source: 'label' });
+  });
+
+  test('scoops product uses ga_kcal_per_cup', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 300 });
+    const result = computePerServingKcal(product, 2, 'scoops');
+    expect(result).toEqual({ kcal: 600, source: 'label' });
+  });
+
+  test('units product with kcal_per_unit multiplies by serving_size', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, kcal_per_unit: 85 });
+    const result = computePerServingKcal(product, 2, 'units');
+    expect(result).toEqual({ kcal: 170, source: 'label' });
+  });
+
+  test('units product derives kcal via ga_kcal_per_kg + unit_weight_g', () => {
+    // No kcal_per_unit or ga_kcal_per_cup, but has ga_kcal_per_kg + unit_weight_g
+    const product = makeProduct({
+      ga_kcal_per_cup: null,
+      kcal_per_unit: null,
+      ga_kcal_per_kg: 3500,
+      unit_weight_g: 85,
+    });
+    const result = computePerServingKcal(product, 1, 'units');
+    // resolveCalories: Math.round(3500 * 85 / 1000) = 298 kcal_per_unit, source: 'label'
+    expect(result).not.toBeNull();
+    expect(result!.kcal).toBe(298);
+    expect(result!.source).toBe('label');
+  });
+
+  test('units product falls back to size_fallback from product name', () => {
+    const product = makeProduct({
+      name: 'Fancy Feast 3 oz can',
+      ga_kcal_per_cup: null,
+      kcal_per_unit: null,
+      ga_kcal_per_kg: null,
+      unit_weight_g: null,
+    });
+    const result = computePerServingKcal(product, 1, 'units');
+    // 3 oz * 28.3495 = 85 grams => ~85 kcal (1 kcal/gram wet average)
+    expect(result).not.toBeNull();
+    expect(result!.kcal).toBeCloseTo(85, 0);
+    expect(result!.source).toBe('size_fallback');
+  });
+
+  test('returns null for zero or missing serving size', () => {
+    const product = makeProduct();
+    expect(computePerServingKcal(product, 0, 'cups')).toBeNull();
+  });
+
+  test('cups product with no ga_kcal_per_cup returns null', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null });
+    expect(computePerServingKcal(product, 1, 'cups')).toBeNull();
+  });
+
+  test('bulk freeze-dried product with cups serving bypasses per-unit trap', () => {
+    // Per-unit kcal would be 10000 (whole bag), but cups serving uses ga_kcal_per_cup
+    const product = makeProduct({
+      ga_kcal_per_cup: 300,
+      kcal_per_unit: 10000,
+      product_form: 'freeze_dried',
+    });
+    const result = computePerServingKcal(product, 0.5, 'cups');
+    expect(result).toEqual({ kcal: 150, source: 'label' });
+  });
+});
+
+// ─── V2-2: computeBehavioralServing custom + rotational ──
+
+describe('computeBehavioralServing — custom mode', () => {
+  const defaultPet = makePet({ weight_current_lbs: 50 }); // ~1018 DER
+
+  test('custom base uses full DER with calorie_share_pct', () => {
+    const pet = { ...defaultPet, feeding_style: 'custom' as const };
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 50, isPremiumGoalWeight: false,
+    });
+    // Custom: budgetedKcal = 1018, finalKcal = 1018 * 50/100 = 509
+    expect(result).not.toBeNull();
+    expect(result!.basisKcal).toBe(509);
+    expect(result!.amount).toBeCloseTo(509 / 400);
+  });
+
+  test('custom rotational returns null (Fed This Today logging)', () => {
+    const pet = { ...defaultPet, feeding_style: 'custom' as const };
+    const product = makeProduct({ product_form: 'wet', kcal_per_unit: 100 });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'rotational', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false,
+    });
+    expect(result).toBeNull();
   });
 });
 

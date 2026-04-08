@@ -289,6 +289,40 @@ export function getWetFoodKcal(product: Product): { kcal: number; source: 'label
   return null;
 }
 
+/**
+ * V2-4: Compute per-serving kcal using assignment serving_size data.
+ * More accurate than raw per-unit kcal from getWetFoodKcal — accounts for
+ * the user's configured serving size (e.g., 2 cans = 170 kcal, not 85).
+ */
+export function computePerServingKcal(
+  product: Product,
+  servingSize: number,
+  servingSizeUnit: ServingSizeUnit,
+): { kcal: number; source: 'label' | 'estimated' | 'size_fallback' } | null {
+  if (!servingSize || servingSize <= 0) return null;
+
+  // Cups/scoops: use ga_kcal_per_cup (most accurate for dry/freeze-dried)
+  if ((servingSizeUnit === 'cups' || servingSizeUnit === 'scoops') && product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+    return { kcal: servingSize * product.ga_kcal_per_cup, source: 'label' };
+  }
+
+  // Units: resolve per-unit kcal from product data
+  if (servingSizeUnit === 'units') {
+    const cal = resolveCalories(product);
+    if (cal?.kcalPerUnit && cal.kcalPerUnit > 0) {
+      return { kcal: servingSize * cal.kcalPerUnit, source: cal.source === 'label' ? 'label' : 'estimated' };
+    }
+
+    // Fallback to size-based estimation (getWetFoodKcal tiers)
+    const wetCal = getWetFoodKcal(product);
+    if (wetCal) {
+      return { kcal: servingSize * wetCal.kcal, source: wetCal.source };
+    }
+  }
+
+  return null;
+}
+
 export function computeBehavioralServing(params: {
   pet: Pet;
   product: Product;
@@ -323,6 +357,8 @@ export function computeBehavioralServing(params: {
   } else if (style === 'wet_only') {
     budgetedKcal = Math.max(0, der - dailyWetFedKcal);
   } else if (style === 'custom') {
+    // V2-2: Rotational items in custom mode use Fed This Today logging, not computed servings
+    if (feedingRole === 'rotational') return null;
     budgetedKcal = der;
   }
 

@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-08 (session 32)
+# Project Status — Last updated 2026-04-08 (session 33)
 
 ## Active Milestone
 
@@ -61,7 +61,7 @@
 
 ## Numbers
 
-- **Tests:** 1426 passing / 62 suites
+- **Tests:** 1436 passing / 62 suites
 - **Decisions:** 129
 - **Migrations:** 34 (001–034)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -97,50 +97,33 @@
 
 ## Last Session
 
-- **Date:** 2026-04-08 (session 32)
+- **Date:** 2026-04-08 (session 33)
 - **Accomplished:**
-  - **V2-1: Decouple Safe Switch from Add Flow** — Removed Safe Switch path from AddToPantrySheet entirely. "Switching diet?" question now only appears for discrete (wet) base foods. Added two explicit Safe Switch entry points: "Start Safe Switch" button on ResultScreen (premium-gated, visible for mixable daily food with existing anchors) and "Replace this food" button on PantryCard (replaces old "Find a replacement", available for all base daily foods, premium-gated). Fixed quantity visibility bug for mixable base foods, bagCollapsed visibility, and ctaReady validation.
-  - **V2-1b: Transition System Collision Fixes** — (1) Unit-aware Safe Switch: `dailyCups` → `dailyServingAmount` + `dailyServingUnit`, service resolves unit from pantry assignment, `getCupSplit` → `getAmountSplit` with two-total signature fixing caloric density bug, SafeSwitchDetailScreen shows per-food units with singularization. (2) Clearer Meal Transition Guide copy: "Swap 1 of your 7 daily servings" replaces clinical "6 portions old, 1 portion new." (3) Mutual exclusion: Safe Switch clears wet guide on start; wet guide skipped if Safe Switch active; PantryScreen display guard. (4) Error handling: `usePantryStore.removeItem` surfaces service error message instead of swallowing it.
-- **Files changed (14 modified, 0 new):**
-  - `src/components/pantry/AddToPantrySheet.tsx` (removed onStartSafeSwitch, restricted "Switching diet?" to discrete, fixed quantity/bagCollapsed visibility, ctaReady, mutual exclusion guard)
-  - `src/components/pantry/AddToPantryStyles.ts` (removed safeSwitchCta style)
-  - `src/components/pantry/PantryCard.tsx` (onFindReplacement → onReplaceFood, isPremiumUser prop, all base daily foods)
-  - `src/screens/ResultScreen.tsx` (removed onStartSafeSwitch callback, added "Start Safe Switch" button)
-  - `src/screens/PantryScreen.tsx` (canUseSafeSwaps import, premium gate, custom mode exclusion, display guard)
-  - `src/types/safeSwitch.ts` (dailyCups → dailyServingAmount + dailyServingUnit)
-  - `src/services/safeSwitchService.ts` (unit-aware getActiveSwitchForPet, pantry_items join)
-  - `src/utils/safeSwitchHelpers.ts` (getCupSplit → getAmountSplit with two totals)
-  - `src/screens/SafeSwitchDetailScreen.tsx` (dynamic units, singularization, per-food unit display)
-  - `src/screens/SafeSwitchSetupScreen.tsx` (clearWetTransition on Safe Switch creation)
-  - `src/utils/wetTransitionHelpers.ts` (friendlier label copy)
-  - `src/stores/usePantryStore.ts` (error message surfacing fix)
-  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (V2-1, V2-1b sections, V2-3 mutual exclusion note)
-  - `docs/status/CURRENT.md` (session update, test count, premium gate correction)
-  - Tests: `safeSwitchHelpers.test.ts`, `safeSwitchService.test.ts`, `wetTransitionHelpers.test.ts`
-- **Tests:** 1426 passing / 62 suites (+1 test for unequal caloric density split).
+  - **EC-4: refreshWetReserve empty-inventory fix** — Replaced `|| 1` phantom inventory fallback with dual-track accumulation. When all rotational items depleted, uses unweighted average (`SUM(kcal) / COUNT(*)`) instead of weighted-by-phantom-1.
+  - **V2-4: Per-serving kcal in wet reserve** — New `computePerServingKcal` helper in `pantryHelpers.ts` uses assignment `serving_size` × product kcal density. `refreshWetReserve` Supabase select widened to include `serving_size, serving_size_unit`. Loop prefers per-serving path (no cap needed); falls back to raw per-unit with EC-2 cap.
+  - **V2-2: Custom mode rotational override** — `transitionToCustomMode` now preserves existing rotational roles (base items get equal share, rotational keeps role with 0% share). `updateCalorieShares` extended with optional `feeding_role/feeding_frequency/auto_deplete_enabled` fields. `computeBehavioralServing` custom branch returns `null` for rotational items. `CustomFeedingStyleScreen` adds Base/Rotational chip pair per food card, hides kcal input for rotational, validates >=1 base item, includes role changes in save. Fixes EC-5.
+  - **Code review** caught and fixed React Hooks ordering bug — `toggleRole` (`useCallback`) was placed after a conditional return in `CustomFeedingStyleScreen.tsx`. Moved before the early return. Also updated stale sections in `BEHAVIORAL_FEEDING_IMPLEMENTED.md` (sections 3, 5, 6 still described pre-V2-2 custom mode behavior).
+- **Files changed (4 modified, 0 new):**
+  - `src/services/pantryService.ts` (EC-4 loop, V2-4 select+per-serving path, V2-2a transitionToCustomMode, V2-2b updateCalorieShares, imports)
+  - `src/utils/pantryHelpers.ts` (V2-4 computePerServingKcal, V2-2c custom rotational branch)
+  - `src/screens/CustomFeedingStyleScreen.tsx` (V2-2d role toggle UI, sum bar, save logic, styles, hooks ordering fix)
+  - `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` (EC-4, EC-5, V2-2, V2-4 — sections 3, 5, 6, 8, 9 updated)
+  - Tests: `pantryHelpers.test.ts` (+10 tests: 8 computePerServingKcal, 2 custom mode)
+- **Tests:** 1436 passing / 62 suites (+10 new tests).
 - **Not done yet:**
-  - **Visual QA** of "Replace this food" button, "Start Safe Switch" button, unit-aware Safe Switch detail screen on device.
-  - **EC-4 (LOW):** `refreshWetReserve` inventory fallback `|| 1` — partially mitigated by EC-2 cap.
-  - **EC-5 (ACCEPTED):** Custom mode rotational override — V2-2.
+  - **Visual QA** of CustomFeedingStyleScreen role toggle on device (switch to custom with dry+wet pet, toggle roles, verify save persists).
+  - **Visual QA** carry-over from session 32: V2-1/V2-1b Safe Switch entry points + unit display.
 - **Next session should start with:**
-  - Visual QA of V2-1 + V2-1b changes on device (test dry→dry, wet→dry, and wet_only Safe Switch flows).
-  - Verify unit display: dry food shows "cups", wet food shows "servings", mixed transitions show correct per-food units.
-  - Check M9 carry-overs: stale browse scores, 17 non-border cardBorder token decision, HomeScreen visual overhaul, search UX overhaul.
+  - Visual QA of V2-2 role toggle (custom mode with mixed feeding pet → toggle wet to rotational → verify Fed This Today works → toggle back to base → verify kcal input returns).
+  - Then M9 carry-overs: stale browse scores, 17 non-border cardBorder token decision, HomeScreen visual overhaul, search UX overhaul.
 - **Gotchas:**
-  - Safe Switch is now **premium-gated** (corrected from "Free feature" — user explicitly confirmed). Gate is `canUseSafeSwaps()` in permissions.ts. UI gates on ResultScreen and PantryCard.
-  - `getAmountSplit` now takes 4 args (oldTotal, newTotal, oldPct, newPct) — not 3. Any future caller must pass both totals.
-  - Mutual exclusion is asymmetric: Safe Switch cancels wet guide (safe — AsyncStorage only), but wet guide does NOT cancel Safe Switch (premium DB data). Instead, wet guide creation is skipped if Safe Switch is active.
+  - `updateCalorieShares` optional fields are backward compatible — existing callers (CustomFeedingStyleScreen pre-V2-2) only pass `assignmentId + calorie_share_pct`.
+  - `transitionToCustomMode` promotes first rotational to base if no base items exist (guard prevents all-rotational custom mode).
+  - Custom rotational items do NOT auto-subtract from base budgets. Base allocations are fixed DER percentages. Sum bar warns if over.
+  - `MAX_SERVING_KCAL = 500` cap only applies to fallback path in `refreshWetReserve` — per-serving path has no cap.
   - No new decisions, no scoring changes, no migrations this session.
-  - **Prior M9 carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+  - **Carry-overs:** 17 non-border `cardBorder` token decision, stale browse scores, visual QA (V2-1/V2-1b + V2-2), same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
-- **Next session should:** Visual QA of the WetTransitionCard on device (add a wet food with "Switching diet? Yes", verify card renders on PantryScreen). Then pick from M9 carry-overs.
-- **Gotchas / context for next session:**
-  - **`DISCRETE_FORMS = ['wet']`** in AddToPantrySheet. If a new product_form (e.g., `'tray'`, `'pouch'`) is added to the DB, it should be added to this array AND is eligible for wet transition guide (not Safe Switch).
-  - **`unitsPerDay` derivation:** reads `autoServingResult.amount` when `unit === 'units'`. If auto-math fails (no kcal data), defaults to 2. No user input.
-  - **AsyncStorage key:** `@kiba_wet_transition_{petId}`. One per pet. New adds overwrite old transitions. Lost on reinstall (acceptable — food is in pantry).
-  - **Card auto-expires** after `totalDays` (computed from schedule). Also dismissible via X button. No completion flow.
-  - **Coexists with Safe Switch** — both cards can render on PantryScreen simultaneously. No DB interaction.
-  - **Prior session carry-overs still apply:** `MAX_SERVING_KCAL = 500` cap, rotational 25% DER fallback, diet banner dismiss is session-local, `isInTransition` param is a no-op.
 - **Decision/scoring changes:** None. No new D-numbers (129). Scoring engine untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---

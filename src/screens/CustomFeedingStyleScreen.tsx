@@ -25,7 +25,7 @@ import { getPantryForPet, updateCalorieShares } from '../services/pantryService'
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
 import { saveSuccess } from '../utils/haptics';
-import type { PantryCardData, PantryPetAssignment } from '../types/pantry';
+import type { PantryCardData, PantryPetAssignment, FeedingRole, FeedingFrequency } from '../types/pantry';
 import type { Pet } from '../types/pet';
 
 // ─── Types ──────────────────────────────────────────────
@@ -36,6 +36,7 @@ interface FoodRow {
   productName: string;
   productBrand: string;
   calorie_share_pct: number;
+  feedingRole: FeedingRole;
 }
 
 type Props = {
@@ -53,6 +54,7 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
 
   const [foods, setFoods] = useState<FoodRow[]>([]);
   const [inputs, setInputs] = useState<Record<string, string>>({});
+  const [roleOverrides, setRoleOverrides] = useState<Record<string, FeedingRole>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -84,13 +86,15 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
 
         const rows: FoodRow[] = [];
         const initialInputs: Record<string, string> = {};
+        const initialRoles: Record<string, FeedingRole> = {};
 
         for (const item of dailyItems) {
           const myAssignment = item.assignments.find(a => a.pet_id === petId);
           if (!myAssignment) continue;
 
+          const role = myAssignment.feeding_role ?? 'base';
           const sharePct = myAssignment.calorie_share_pct ?? 100;
-          const kcal = der > 0 ? Math.round(der * sharePct / 100) : 0;
+          const kcal = role === 'rotational' ? 0 : (der > 0 ? Math.round(der * sharePct / 100) : 0);
 
           rows.push({
             assignmentId: myAssignment.id,
@@ -98,13 +102,16 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
             productName: item.product.name,
             productBrand: item.product.brand,
             calorie_share_pct: sharePct,
+            feedingRole: role,
           });
 
-          initialInputs[myAssignment.id] = String(kcal);
+          initialInputs[myAssignment.id] = role === 'rotational' ? '' : String(kcal);
+          initialRoles[myAssignment.id] = role;
         }
 
         setFoods(rows);
         setInputs(initialInputs);
+        setRoleOverrides(initialRoles);
         setLoading(false);
       }
       load();
@@ -112,13 +119,15 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
     }, [petId, der]),
   );
 
-  // Compute totals from inputs
+  // Compute totals from base items only (rotational items logged separately)
   const totalKcal = useMemo(() => {
-    return Object.values(inputs).reduce((sum, val) => {
-      const n = parseFloat(val);
+    return foods.reduce((sum, f) => {
+      const role = roleOverrides[f.assignmentId] ?? f.feedingRole;
+      if (role === 'rotational') return sum;
+      const n = parseFloat(inputs[f.assignmentId] || '0');
       return sum + (isNaN(n) ? 0 : n);
     }, 0);
-  }, [inputs]);
+  }, [inputs, foods, roleOverrides]);
 
   const totalPct = der > 0 ? Math.round((totalKcal / der) * 100) : 0;
 
@@ -128,14 +137,39 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
     totalPct < 80 ? Colors.severityAmber :
     Colors.severityGreen;
 
-  // Save handler
+  // Save handler — includes V2-2 role changes
   const handleSave = useCallback(async () => {
+    // Validate at least 1 base item
+    const baseCount = foods.filter(f => (roleOverrides[f.assignmentId] ?? f.feedingRole) !== 'rotational').length;
+    if (baseCount === 0) {
+      Alert.alert('Base food required', 'At least one food must be a base item to anchor your pet\'s daily calories.');
+      return;
+    }
+
     setSaving(true);
     try {
       const shares = foods.map(f => {
-        const kcal = parseFloat(inputs[f.assignmentId] || '0') || 0;
-        const pct = der > 0 ? Math.round((kcal / der) * 100) : 0;
-        return { assignmentId: f.assignmentId, calorie_share_pct: pct };
+        const role = roleOverrides[f.assignmentId] ?? f.feedingRole;
+        const isRotational = role === 'rotational';
+        const kcal = isRotational ? 0 : (parseFloat(inputs[f.assignmentId] || '0') || 0);
+        const pct = isRotational ? 0 : (der > 0 ? Math.round((kcal / der) * 100) : 0);
+
+        const entry: {
+          assignmentId: string;
+          calorie_share_pct: number;
+          feeding_role?: FeedingRole;
+          feeding_frequency?: FeedingFrequency;
+          auto_deplete_enabled?: boolean;
+        } = { assignmentId: f.assignmentId, calorie_share_pct: pct };
+
+        // Include role fields if role changed from original
+        if (role !== f.feedingRole) {
+          entry.feeding_role = role;
+          entry.feeding_frequency = isRotational ? 'as_needed' : 'daily';
+          entry.auto_deplete_enabled = !isRotational;
+        }
+
+        return entry;
       });
 
       await updateCalorieShares(petId, shares);
@@ -147,11 +181,20 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [foods, inputs, der, petId, navigation]);
+  }, [foods, inputs, roleOverrides, der, petId, navigation]);
 
   // Update input for a specific assignment
   const updateInput = useCallback((assignmentId: string, value: string) => {
     setInputs(prev => ({ ...prev, [assignmentId]: value }));
+  }, []);
+
+  // Toggle a food's role between base and rotational
+  const toggleRole = useCallback((assignmentId: string) => {
+    setRoleOverrides(prev => {
+      const current = prev[assignmentId] ?? 'base';
+      const next = current === 'rotational' ? 'base' : 'rotational';
+      return { ...prev, [assignmentId]: next };
+    });
   }, []);
 
   // Render
@@ -164,6 +207,8 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
   }
 
   const renderFoodRow = ({ item }: { item: FoodRow }) => {
+    const role = roleOverrides[item.assignmentId] ?? item.feedingRole;
+    const isRotational = role === 'rotational';
     const kcalStr = inputs[item.assignmentId] ?? '0';
     const kcal = parseFloat(kcalStr) || 0;
     const pct = der > 0 ? Math.round((kcal / der) * 100) : 0;
@@ -174,21 +219,47 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
           <Text style={styles.foodBrand} numberOfLines={1}>{item.productBrand}</Text>
           <Text style={styles.foodName} numberOfLines={2}>{item.productName}</Text>
         </View>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.kcalInput}
-            keyboardType="decimal-pad"
-            returnKeyType="done"
-            value={kcalStr}
-            onChangeText={(v) => updateInput(item.assignmentId, v)}
-            placeholderTextColor={Colors.textTertiary}
-            selectTextOnFocus
-          />
-          <Text style={styles.kcalLabel}>kcal</Text>
-          <View style={styles.pctBadge}>
-            <Text style={styles.pctText}>{pct}%</Text>
-          </View>
+
+        {/* V2-2: Role toggle chips */}
+        <View style={styles.roleRow}>
+          <TouchableOpacity
+            style={[styles.roleChip, !isRotational && styles.roleChipActive]}
+            onPress={() => isRotational && toggleRole(item.assignmentId)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.roleChipText, !isRotational && styles.roleChipTextActive]}>Base</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleChip, isRotational && styles.roleChipActive]}
+            onPress={() => !isRotational && toggleRole(item.assignmentId)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.roleChipText, isRotational && styles.roleChipTextActive]}>Rotational</Text>
+          </TouchableOpacity>
         </View>
+
+        {isRotational ? (
+          <View style={styles.rotationalLabel}>
+            <Ionicons name="restaurant-outline" size={14} color={Colors.textTertiary} />
+            <Text style={styles.rotationalText}>Logged via "Fed This Today"</Text>
+          </View>
+        ) : (
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.kcalInput}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              value={kcalStr}
+              onChangeText={(v) => updateInput(item.assignmentId, v)}
+              placeholderTextColor={Colors.textTertiary}
+              selectTextOnFocus
+            />
+            <Text style={styles.kcalLabel}>kcal</Text>
+            <View style={styles.pctBadge}>
+              <Text style={styles.pctText}>{pct}%</Text>
+            </View>
+          </View>
+        )}
       </View>
     );
   };
@@ -236,12 +307,15 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
             {/* Sum bar */}
             <View style={styles.sumBar}>
               <View style={styles.sumRow}>
-                <Text style={styles.sumLabel}>Total</Text>
+                <Text style={styles.sumLabel}>Base total</Text>
                 <Text style={[styles.sumValue, { color: sumColor }]}>
                   {Math.round(totalKcal)} / {Math.round(der)} kcal
                 </Text>
                 <Text style={[styles.sumPct, { color: sumColor }]}>{totalPct}%</Text>
               </View>
+              {foods.some(f => (roleOverrides[f.assignmentId] ?? f.feedingRole) === 'rotational') && (
+                <Text style={styles.rotationalNote}>Rotational items logged separately</Text>
+              )}
               <View style={styles.progressTrack}>
                 <View
                   style={[
@@ -455,5 +529,46 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: 'center',
     marginTop: Spacing.xs,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  roleChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
+    backgroundColor: 'transparent',
+  },
+  roleChipActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  roleChipText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  roleChipTextActive: {
+    color: Colors.background,
+  },
+  rotationalLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
+  },
+  rotationalText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
+  },
+  rotationalNote: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    marginTop: 2,
   },
 });

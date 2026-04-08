@@ -12,6 +12,7 @@ import type {
   PantryAnchor,
   FeedingRole,
   FeedingFrequency,
+  ServingSizeUnit,
 } from '../types/pantry';
 import { PantryOfflineError } from '../types/pantry';
 import {
@@ -19,6 +20,7 @@ import {
   isLowStock,
   getCalorieContext,
   getWetFoodKcal,
+  computePerServingKcal,
 } from '../utils/pantryHelpers';
 import type { Pet, FeedingStyle } from '../types/pet';
 import type { Product } from '../types';
@@ -534,25 +536,37 @@ export async function checkDuplicateUpc(
 // ─── Custom Feeding Mode ────────────────────────────────
 
 /**
- * Batch-updates calorie_share_pct for multiple assignments.
- * Used by CustomFeedingStyleScreen to save user-defined splits.
+ * Batch-updates calorie_share_pct (and optionally feeding_role/frequency/auto-deplete)
+ * for multiple assignments. Used by CustomFeedingStyleScreen to save user-defined splits
+ * and V2-2 role toggles.
  */
 export async function updateCalorieShares(
   petId: string,
-  shares: Array<{ assignmentId: string; calorie_share_pct: number }>,
+  shares: Array<{
+    assignmentId: string;
+    calorie_share_pct: number;
+    feeding_role?: FeedingRole;
+    feeding_frequency?: FeedingFrequency;
+    auto_deplete_enabled?: boolean;
+  }>,
 ): Promise<void> {
   await requireOnline();
   for (const s of shares) {
+    const update: Record<string, unknown> = { calorie_share_pct: s.calorie_share_pct };
+    if (s.feeding_role !== undefined) update.feeding_role = s.feeding_role;
+    if (s.feeding_frequency !== undefined) update.feeding_frequency = s.feeding_frequency;
+    if (s.auto_deplete_enabled !== undefined) update.auto_deplete_enabled = s.auto_deplete_enabled;
     await supabase
       .from('pantry_pet_assignments')
-      .update({ calorie_share_pct: s.calorie_share_pct })
+      .update(update)
       .eq('id', s.assignmentId);
   }
 }
 
 /**
  * Transitions a pet to custom feeding mode.
- * Converts all daily food assignments to base role with equal calorie splits.
+ * V2-2: Preserves existing rotational roles — only base items get equal calorie splits.
+ * Rotational items keep their role with 0% share (Fed This Today logging).
  */
 export async function transitionToCustomMode(petId: string): Promise<void> {
   await requireOnline();
@@ -575,9 +589,18 @@ export async function transitionToCustomMode(petId: string): Promise<void> {
 
   if (dailyAssignments.length === 0) return;
 
-  // 3. Convert all to base with equal split
-  const equalShare = Math.round(100 / dailyAssignments.length);
-  for (const a of dailyAssignments) {
+  // 3. V2-2: Split into base and rotational groups — preserve existing roles
+  const baseAssignments = dailyAssignments.filter(a => a.feeding_role !== 'rotational');
+  const rotationalAssignments = dailyAssignments.filter(a => a.feeding_role === 'rotational');
+
+  // Guard: at least 1 base item required for calorie anchor
+  if (baseAssignments.length === 0 && rotationalAssignments.length > 0) {
+    baseAssignments.push(rotationalAssignments.shift()!);
+  }
+
+  // Base items: equal calorie split, daily auto-deplete
+  const equalShare = baseAssignments.length > 0 ? Math.round(100 / baseAssignments.length) : 100;
+  for (const a of baseAssignments) {
     await supabase
       .from('pantry_pet_assignments')
       .update({
@@ -585,6 +608,19 @@ export async function transitionToCustomMode(petId: string): Promise<void> {
         calorie_share_pct: equalShare,
         feeding_frequency: 'daily' as FeedingFrequency,
         auto_deplete_enabled: true,
+      })
+      .eq('id', a.id);
+  }
+
+  // Rotational items: keep role, 0% share, as-needed frequency (Fed This Today)
+  for (const a of rotationalAssignments) {
+    await supabase
+      .from('pantry_pet_assignments')
+      .update({
+        feeding_role: 'rotational' as FeedingRole,
+        calorie_share_pct: 0,
+        feeding_frequency: 'as_needed' as FeedingFrequency,
+        auto_deplete_enabled: false,
       })
       .eq('id', a.id);
   }
@@ -752,9 +788,10 @@ export async function refreshWetReserve(petId: string): Promise<void> {
     const { data: pet } = await supabase.from('pets').select('feeding_style').eq('id', petId).single();
     if (pet?.feeding_style !== 'dry_and_wet') return;
 
+    // V2-4: Include serving_size + serving_size_unit for per-serving kcal calculation
     const { data: assignments } = await supabase
       .from('pantry_pet_assignments')
-      .select('feeding_role, pantry_items(quantity_remaining, products(*))')
+      .select('feeding_role, serving_size, serving_size_unit, pantry_items(quantity_remaining, products(*))')
       .eq('pet_id', petId)
       .eq('feeding_role', 'rotational')
       .eq('pantry_items.is_active', true)
@@ -767,8 +804,12 @@ export async function refreshWetReserve(petId: string): Promise<void> {
       return;
     }
 
-    let totalKcal = 0;
-    let totalWeight = 0;
+    // EC-4: Dual-track accumulation — weighted by real inventory when stocked,
+    // unweighted average when all items depleted (no phantom inventory signal).
+    let realTotalKcal = 0;
+    let realTotalWeight = 0;
+    let rawKcalSum = 0;
+    let rawCount = 0;
     const sourceCounts = new Map<string, number>();
 
     // EC-2: Cap per-unit kcal at 500 — anything above is per-package (bulk freeze-dried bags),
@@ -779,17 +820,47 @@ export async function refreshWetReserve(petId: string): Promise<void> {
     for (const a of assignments) {
       const item = a.pantry_items as unknown as { quantity_remaining: number | null; products: any } | null;
       if (!item || !item.products) continue;
-      const qtyContext = item.quantity_remaining && item.quantity_remaining > 0 ? item.quantity_remaining : 1;
-      const kcalRes = getWetFoodKcal(item.products);
-      if (kcalRes) {
-        const kcalPerServing = Math.min(kcalRes.kcal, MAX_SERVING_KCAL);
-        totalKcal += kcalPerServing * qtyContext;
-        totalWeight += qtyContext;
-        sourceCounts.set(kcalRes.source, (sourceCounts.get(kcalRes.source) ?? 0) + qtyContext);
+
+      // V2-4: Prefer per-serving kcal from assignment data (accounts for configured serving size).
+      // Falls back to raw per-unit kcal with EC-2 cap when serving data doesn't resolve.
+      const servingSize = (a as any).serving_size as number | null;
+      const servingSizeUnit = (a as any).serving_size_unit as ServingSizeUnit | null;
+      const servingKcal = servingSize && servingSizeUnit
+        ? computePerServingKcal(item.products, servingSize, servingSizeUnit)
+        : null;
+
+      let kcalValue: number;
+      let kcalSource: string;
+
+      if (servingKcal) {
+        kcalValue = servingKcal.kcal;
+        kcalSource = servingKcal.source;
+      } else {
+        const rawKcal = getWetFoodKcal(item.products);
+        if (!rawKcal) continue;
+        kcalValue = Math.min(rawKcal.kcal, MAX_SERVING_KCAL);
+        kcalSource = rawKcal.source;
+      }
+
+      rawKcalSum += kcalValue;
+      rawCount += 1;
+
+      const qty = item.quantity_remaining && item.quantity_remaining > 0 ? item.quantity_remaining : 0;
+      if (qty > 0) {
+        realTotalKcal += kcalValue * qty;
+        realTotalWeight += qty;
+        sourceCounts.set(kcalSource, (sourceCounts.get(kcalSource) ?? 0) + qty);
+      } else {
+        sourceCounts.set(kcalSource, (sourceCounts.get(kcalSource) ?? 0) + 1);
       }
     }
 
-    const newReserve = totalWeight > 0 ? Math.round(totalKcal / totalWeight) : 0;
+    // Weighted average when inventory exists; unweighted when all depleted
+    const newReserve = realTotalWeight > 0
+      ? Math.round(realTotalKcal / realTotalWeight)
+      : rawCount > 0
+        ? Math.round(rawKcalSum / rawCount)
+        : 0;
     let newSource: string | null = null;
     if (sourceCounts.size === 1) {
       newSource = [...sourceCounts.keys()][0];
