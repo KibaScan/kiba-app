@@ -63,7 +63,7 @@
 
 - **Tests:** 1445 passing / 63 suites
 - **Decisions:** 129
-- **Migrations:** 37 (001–037)
+- **Migrations:** 38 (001–038)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -97,51 +97,33 @@
 
 ## Last Session
 
-- **Date:** 2026-04-09 (session 37)
+- **Date:** 2026-04-09 (session 38)
 - **Accomplished:**
-  - **Scoring reference docs audit** — Fixed 2 stale penalty values: `scoring-rules.md:322-323` allergen table (15→20, 8→10), `conditionScoring.ts:12` comment (-15→-25).
-  - **`is_protein_fat_source` column (migration 037)** — Added boolean to `ingredients_dict`, replacing M1 hardcoded `false`. Enables Layer 1c protein naming specificity scoring (was always returning 50 "unknown") and condition scoring `countDistinctProteinSources()` (was always returning 0). Column deployed to production.
-  - **Pipeline hydration** — Replaced hardcoded `false` with `dict.is_protein_fat_source ?? false` in all 3 pipeline files (`src/services/scoring/pipeline.ts`, Edge Function copy, `scripts/scoring/batch_score.ts`). TODO comments removed.
-  - **Type definitions** — Added `is_protein_fat_source: boolean` to `IngredientDict` interface in both `src/types/index.ts` and `supabase/functions/batch-score/types/index.ts`. Also added to `batch_score.ts` local type.
-  - **Backfill script + execution** — `scripts/data/backfill_protein_fat_source.ts` (new). Follows `backfill_pulse_flags.ts` pattern: exact set (~130 entries) + underscore-aware regex patterns + exclusion patterns. Covers named meats/meals/organs, eggs, dairy protein, named/unnamed fats, plant oils, plant protein isolates. Dry-run mode, exclusion verification, spot checks, chunked updates (100/chunk). **Run against production — 1,396 ingredients flagged out of 7,710 (18.1%).** Script required two rounds of fixes: (1) `\b` word boundary doesn't work with underscore-separated names — replaced with `(?:^|_)word(?:$|_)` helper functions; (2) PostgREST URL limit on large `.in()` queries — chunked to 100 IDs per request. Parser garbage exclusions added (compound entries, marketing copy, `>60 char` length filter).
-  - **Scoring version bump** — `CURRENT_SCORING_VERSION` '4' → '5' in both client and Edge Function constants. Forces full cache rebuild.
-  - **Regression anchor shift** — Pure Balance 60→61 (protein naming 50→60, FC 88→90). Temptations stays 0. Pancreatitis 52→53. All 4 Pure Balance test fixtures updated (regressionAnchors, engine, realDataTrace, conditionScoring). Scoring version fixtures updated (batchScoreOnDevice, topMatches).
-  - **Doc updates (~25 files)** — Anchor value 60→61 across CLAUDE.md, scoring CLAUDE.md, tests CLAUDE.md, CURRENT.md, copilot-instructions, commands, optimization docs, specs, plans, DECISIONS.md. Pancreatitis 52→53 in CURRENT.md. `SCORING_CACHE_ARCHITECTURE.md` version '2'→'5'.
-  - **Edge Function deployed** — `batch-score` with `is_protein_fat_source` hydration + version '5'.
-  - **Search reference clone** — All search-related files copied to `docs/plans/search-uiux/` for future search UX overhaul planning (10 files).
-- **Files changed (session 37):**
-  - `supabase/migrations/037_is_protein_fat_source.sql` (new — deployed)
-  - `scripts/data/backfill_protein_fat_source.ts` (new — run against production, 1,396 flagged)
-  - `src/types/index.ts` (IngredientDict field)
-  - `supabase/functions/batch-score/types/index.ts` (same)
-  - `src/services/scoring/pipeline.ts` (hydration)
-  - `supabase/functions/batch-score/scoring/pipeline.ts` (same)
-  - `scripts/scoring/batch_score.ts` (hydration + type)
-  - `src/utils/constants.ts` (version 5)
-  - `supabase/functions/batch-score/utils/constants.ts` (same)
-  - `src/utils/conditionScoring.ts` (comment fix -15→-25)
-  - `docs/references/scoring-rules.md` (allergen table 15/8→20/10)
-  - 6 test files (regressionAnchors, engine, realDataTrace, conditionScoring, batchScoreOnDevice, topMatches)
-  - ~25 doc/config files (anchor value updates)
-  - `docs/plans/search-uiux/` (new directory, 10 reference files)
-- **Tests:** 1445 passing / 63 suites (unchanged count — fixture values updated, no new tests).
+  - **Fuzzy search RPC (migration 038)** — Replaced ILIKE substring matching with `pg_trgm` word similarity. `search_products_fuzzy` RPC uses `<%` operator on functional GIN index `(brand || ' ' || name)` for cross-column typo-tolerant search. Threshold 0.3 scoped via function-level `SET` (no global pollution). COALESCE on nullable booleans matching migration 029 patterns. `RETURNS SETOF products` preserves `.select(selectCols)` compatibility with JIT scoring pipeline. Deployed to production via `supabase db push`.
+  - **`topMatches.ts` search rewrite** — `searchProducts()` now branches: non-empty query → RPC (relevance-sorted, no `.order()`/`.limit()` chained to avoid PostgREST ordering trap), empty query → direct table query with alphabetical sort (browse mode). ILIKE escape logic removed.
+  - **Stale score cache fix** — Identified root cause: `pet_product_scores` cache was rebuilt between migration 037 (cache wipe) and backfill script (flagged 1,396 ingredients). Cached scores had `is_protein_fat_source = false` for all ingredients. Fix: `TRUNCATE TABLE pet_product_scores;` in Supabase SQL editor. Verified on-device: Honest Kitchen Fish 96% → 99%, now matches ResultScreen.
+- **Files changed (session 38):**
+  - `supabase/migrations/038_fuzzy_search_rpc.sql` (new — deployed)
+  - `src/services/topMatches.ts` (search query rewrite: RPC branch + browse fallback)
+  - `docs/status/CURRENT.md` (migration count 37→38, session handoff)
+- **Tests:** 1445 passing / 63 suites (unchanged — search function not unit-tested, JIT scoring unaffected).
 - **Not done yet:**
-  - **Search UX overhaul** — ILIKE single-substring matching doesn't split terms. `pg_trgm` + GIN indexes exist but aren't used for fuzzy/similarity matching. Reference files cloned to `docs/plans/search-uiux/`.
   - **Visual QA carry-overs** — CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert, CategoryBrowseScreen "See All" no scores.
   - **17 non-border `cardBorder` uses** — token decision still pending.
-- **Next session should start with:**
-  - Verify on-device that protein naming is working: scan a product with named proteins (e.g., Honest Kitchen Wholemade) and check that the formulation score reflects protein naming > 50.
-  - Search UX overhaul — split search terms, potentially use `pg_trgm` similarity for fuzzy matching. Reference files in `docs/plans/search-uiux/`.
-- **Gotchas:**
-  - **`CURRENT_SCORING_VERSION = '5'`** — forces full cache rebuild on next app launch. Migration 037 wiped `pet_product_scores`. Cache is rebuilding (~1,504 rows already re-scored as of end of session).
-  - **Backfill run** — 1,396 ingredients flagged. Verified: all 11 spot-checked proteins true, all 11 spot-checked non-proteins false. Production scoring now reflects real protein naming specificity.
-  - **Regression anchors shifted** — Pure Balance 60→61, pancreatitis 52→53. This is correct (products with named proteins score better than the old "unknown" default of 50).
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
-  - **`docs/plans/search-uiux/topMatches.test.ts.ref`** — renamed from `.test.ts` to avoid Jest pickup. It's a reference copy, not a live test.
-- **Decision/scoring changes:** No new D-numbers (129). **Scoring engine data changed:** `is_protein_fat_source` hydration enabled (was hardcoded false). Formulation scoring protein naming sub-check now functional (was always 50). Regression anchors: Pure Balance = 61, Temptations = 0.
+- **Next session should start with:**
+  - On-device fuzzy search stress test: try typos ("temptashuns"), partial brand names ("blue buff"), wrong word order ("chicken wholesome honest kitchen"). Verify relevance ranking.
+  - Visual QA carry-overs from session 21.
+  - Consider migration squashing (38 files is getting thick — Mottle flagged this).
+- **Gotchas:**
+  - **`pet_product_scores` was TRUNCATED** — cache is rebuilding via JIT scoring and TopPicksCarousel self-healing. First browse of each category will trigger batch scoring (~10s spinner).
+  - **Fuzzy search threshold = 0.3** — if users report missing results, this can be lowered. If too many garbage results, raise it. Tunable in migration 038 RPC definition.
+  - **PostgREST ordering trap** — never chain `.order()` on the RPC call; it wraps in a subquery and destroys relevance sort. The comment in `topMatches.ts:235` documents this.
+  - **`categoryBrowseService.ts` still uses ILIKE** — for internal sub-filter patterns (e.g., `%biscuit%`), not user search. Intentionally not converted to fuzzy.
+- **Decision/scoring changes:** No new D-numbers (129). No scoring engine changes. Migration 038 is search infrastructure only.
 
 ---
-[Previous session 36 block retained below for reference]
+[Previous session 37 block retained below for reference]
 
 - **Date:** 2026-04-09 (session 36)
 - **Accomplished:**

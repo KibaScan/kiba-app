@@ -227,38 +227,50 @@ export async function searchProducts(
     ? SCORING_COLUMNS + ', image_url'
     : 'id, name, brand, image_url, product_form, category, is_supplemental';
 
-  let q = supabase
-    .from('products')
-    .select(selectCols)
-    .eq('target_species', species)
-    .eq('is_vet_diet', filters?.isVetDiet ?? false)
-    .eq('is_recalled', false)
-    .eq('is_variety_pack', false)
-    .neq('category', 'supplement');
+  let q;
 
   if (trimmed) {
-    const escaped = trimmed.replace(/%/g, '\\%').replace(/_/g, '\\_');
-    q = q.or(`name.ilike.%${escaped}%,brand.ilike.%${escaped}%`);
-  }
+    // Fuzzy search via pg_trgm word similarity (migration 038)
+    // RPC owns ORDER BY word_similarity DESC and LIMIT 50 internally —
+    // do NOT chain .order() or .limit() (PostgREST would override relevance sort)
+    q = supabase.rpc('search_products_fuzzy', {
+      search_query: trimmed,
+      p_species: species,
+      p_category: filters?.category ?? null,
+      p_product_form: filters?.productForm ?? null,
+      p_is_supplemental: filters?.isSupplemental ?? null,
+      p_is_vet_diet: filters?.isVetDiet ?? false,
+    }).select(selectCols);
+  } else {
+    // Empty query — browse mode with alphabetical sort
+    q = supabase
+      .from('products')
+      .select(selectCols)
+      .eq('target_species', species)
+      .eq('is_vet_diet', filters?.isVetDiet ?? false)
+      .eq('is_recalled', false)
+      .eq('is_variety_pack', false)
+      .neq('category', 'supplement');
 
-  q = q.order('name', { ascending: true }).limit(50);
-
-  if (filters?.category) {
-    q = q.eq('category', filters.category);
-  }
-
-  if (filters?.productForm) {
-    if (filters.productForm === 'freeze_dried') {
-      q = q.in('product_form', ['freeze_dried', 'freeze-dried']);
-    } else if (filters.productForm === 'other') {
-      q = q.not('product_form', 'in', '("dry","wet","freeze_dried","freeze-dried")');
-    } else {
-      q = q.eq('product_form', filters.productForm);
+    if (filters?.category) {
+      q = q.eq('category', filters.category);
     }
-  }
 
-  if (filters?.isSupplemental !== undefined) {
-    q = q.eq('is_supplemental', filters.isSupplemental);
+    if (filters?.productForm) {
+      if (filters.productForm === 'freeze_dried') {
+        q = q.in('product_form', ['freeze_dried', 'freeze-dried']);
+      } else if (filters.productForm === 'other') {
+        q = q.not('product_form', 'in', '("dry","wet","freeze_dried","freeze-dried")');
+      } else {
+        q = q.eq('product_form', filters.productForm);
+      }
+    }
+
+    if (filters?.isSupplemental !== undefined) {
+      q = q.eq('is_supplemental', filters.isSupplemental);
+    }
+
+    q = q.order('name', { ascending: true }).limit(50);
   }
 
   const { data, error } = await q;
