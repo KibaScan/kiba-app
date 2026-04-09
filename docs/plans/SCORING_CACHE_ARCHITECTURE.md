@@ -218,7 +218,7 @@ Batch scoring's cache maturity check counted ALL products in a category. When dr
 
 **Guard:** `scripts/verify-engine-copy.ts` (Pure Balance = 61 regression test). CLAUDE.md documents: "Changes to `src/services/scoring/` MUST be synced here."
 
-**Current state:** Engines are logic-identical (session 37: `is_protein_fat_source` hydration synced). `CURRENT_SCORING_VERSION` bumped to `'5'`. Edge Function redeploy pending.
+**Current state:** Engines are logic-identical (session 37: `is_protein_fat_source` hydration synced). `CURRENT_SCORING_VERSION` = `'5'`. Edge Function redeployed session 37.
 
 ### 9.4 `useTopMatchesStore` Partially Orphaned
 **Problem:** The store exists with correct `invalidateStaleScores` + `batchScoreHybrid` logic, but no component imports it for top matches display. The original consumer (SearchScreen) was deleted when HomeScreen v2 replaced it.
@@ -302,4 +302,4 @@ HomeScreen useFocusEffect
 
 ---
 
-*This document confirms the full scoring cache architecture as of session 35 (April 8, 2026). Reference before any scoring, search, browse, or cache changes.*
+*This document confirms the full scoring cache architecture as of session 37 (April 9, 2026). Reference before any scoring, search, browse, or cache changes.*
