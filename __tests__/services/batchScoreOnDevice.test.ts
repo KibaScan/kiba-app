@@ -214,7 +214,7 @@ describe('batchScoreOnDevice', () => {
       is_partial_score: false,
       is_supplemental: false,
       category: 'daily_food',
-      scoring_version: '4',
+      scoring_version: '5',
     });
   });
 

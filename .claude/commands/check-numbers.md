@@ -4,7 +4,7 @@ Quick freshness check — compare documented values in docs/status/CURRENT.md to
 2. Count decisions: `grep -c "^### D-" DECISIONS.md` → compare to CURRENT.md
 3. Count migration files in supabase/migrations/ → compare to CURRENT.md
 4. Check ROADMAP.md for current milestone → compare to CURRENT.md
-5. Verify Pure Balance regression target = 60
+5. Verify Pure Balance regression target = 61
 6. Verify Temptations regression target = 0
 
 Report what's drifted. If anything is off, update CURRENT.md with the correct values.

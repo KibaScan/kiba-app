@@ -2,7 +2,7 @@ Closing milestone: $ARGUMENTS
 
 1. Run the full test suite — report results (count, suites, failures)
 2. Verify regression anchors: `npx jest --testPathPattern=regressionAnchors`
-   - Pure Balance (Dog) = 60
+   - Pure Balance (Dog) = 61
    - Temptations (Cat Treat) = 0
 3. Run /check-numbers — fix any drift in CURRENT.md
 4. Update docs/status/CURRENT.md with current project state:

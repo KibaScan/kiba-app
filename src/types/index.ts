@@ -171,6 +171,7 @@ export interface IngredientDict {
   is_pulse_protein: boolean;            // D-137 Rule 3 (pulse protein isolates)
   position_reduction_eligible: boolean;
   cat_carb_flag: boolean;
+  is_protein_fat_source: boolean;       // Layer 1c protein naming + condition scoring
 
   // D-105: display content columns
   display_name: string | null;

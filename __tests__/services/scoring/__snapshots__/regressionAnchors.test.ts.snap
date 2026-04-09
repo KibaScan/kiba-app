@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Regression Anchor: Pure Balance (Dog) = 60 full result shape snapshot 1`] = `
+exports[`Regression Anchor: Pure Balance (Dog) = 61 full result shape snapshot 1`] = `
 {
   "allergenDelta": 0,
   "carbEstimate": {
@@ -11,8 +11,8 @@ exports[`Regression Anchor: Pure Balance (Dog) = 60 full result shape snapshot 1
     "valueDmb": 43.3,
   },
   "category": "daily_food",
-  "displayScore": 60,
-  "finalScore": 60,
+  "displayScore": 61,
+  "finalScore": 61,
   "flags": [
     "ingredient_splitting_detected",
   ],
@@ -189,10 +189,10 @@ exports[`Regression Anchor: Pure Balance (Dog) = 60 full result shape snapshot 1
   "isPartialScore": false,
   "isRecalled": false,
   "layer1": {
-    "formulation": 88,
+    "formulation": 90,
     "ingredientQuality": 48,
     "nutritionalProfile": 79,
-    "weightedComposite": 63.3,
+    "weightedComposite": 63.6,
   },
   "layer2": {
     "appliedRules": [

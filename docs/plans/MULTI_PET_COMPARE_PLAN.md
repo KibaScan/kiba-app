@@ -119,7 +119,7 @@ This is a nice-to-have. Can be deferred.
 - Safe Swap still shows 2-3 candidates for the active pet on ResultScreen
 - Compare screen shows multi-pet score row for 2+ same-species pets
 - Pet switcher updates score rings + Score Breakdown + Key Differences
-- Regression anchors: Pure Balance = 60, Temptations = 0
+- Regression anchors: Pure Balance = 61, Temptations = 0
 - All existing tests pass
 - No new bulk scoring needed — `computeScore()` handles everything
 

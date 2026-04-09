@@ -86,7 +86,7 @@ implementation in the codebase. For each section:
 5. Score color system — verify getScoreColor() ranges and hex values
    match what the doc says.
 6. Severity colors — verify SEVERITY_COLORS from constants.ts matches.
-7. Regression targets — verify Pure Balance = 60 and any other targets.
+7. Regression targets — verify Pure Balance = 61 and any other targets.
 8. Check for any new scoring rules added via recent decisions that
    aren't documented here.
 
@@ -261,7 +261,7 @@ The best approach isn't auditing after drift — it's preventing drift in the fi
 Prompt:
 "I just changed scoring logic. Do the following:
 1. Run the full test suite — report count (update SKILL.md if it changed)
-2. Verify Pure Balance = 60
+2. Verify Pure Balance = 61
 3. Check if references/scoring-details.md needs updating for this change
 4. Check if references/scoring-rules.md needs updating for this change
 5. If either reference file is now stale, update it"

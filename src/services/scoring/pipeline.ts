@@ -48,10 +48,7 @@ export function hydrateIngredient(
     cat_carb_flag: dict.cat_carb_flag,
     allergen_group: dict.allergen_group,
     allergen_group_possible: dict.allergen_group_possible ?? [],
-    // TODO: Add is_protein_fat_source column to ingredients_dict schema.
-    // For M1, defaults to false — formulation protein naming returns 50 (default).
-    // Impact: 25% of 15% bucket = 3.75% of total score. Acceptable M1 limitation.
-    is_protein_fat_source: false,
+    is_protein_fat_source: dict.is_protein_fat_source ?? false,
     // D-105 display content (UI only — scoring engine never reads these)
     definition: dict.definition,
     tldr: dict.tldr,

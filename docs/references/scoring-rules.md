@@ -319,8 +319,8 @@ When a pet has declared allergens, the scoring engine overrides ingredient sever
 
 | Match Type | Source Field | Override Severity | Points |
 |------------|-------------|------------------|--------|
-| Direct match | `allergen_group` | `danger` | 15 |
-| Possible match | `allergen_group_possible` | `caution` | 8 |
+| Direct match | `allergen_group` | `danger` | 20 |
+| Possible match | `allergen_group_possible` | `caution` | 10 |
 
 - Override is a **floor:** `max(baseSeverity, override)` — danger stays danger, never reduced
 - Base severity in `ingredients_dict` is **NEVER written** — override is per-pet, per-score only

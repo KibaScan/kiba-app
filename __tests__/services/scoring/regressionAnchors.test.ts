@@ -129,9 +129,9 @@ function makeIngredient(
   };
 }
 
-// ─── Anchor 1: Pure Balance Wild & Free Salmon & Pea (Dog) = 60 ───
+// ─── Anchor 1: Pure Balance Wild & Free Salmon & Pea (Dog) = 61 ───
 
-describe('Regression Anchor: Pure Balance (Dog) = 60', () => {
+describe('Regression Anchor: Pure Balance (Dog) = 61', () => {
   const product = makeProduct({
     category: Category.DailyFood,
     target_species: Species.Dog,
@@ -145,17 +145,17 @@ describe('Regression Anchor: Pure Balance (Dog) = 60', () => {
   });
 
   const ingredients: ProductIngredient[] = [
-    makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
-    makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
+    makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
+    makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
     makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
     makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral' }),
     makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral' }),
-    makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution' }),
+    makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution', is_protein_fat_source: true }),
     makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
-    makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
+    makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true, is_protein_fat_source: true }),
     makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral' }),
     makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
-    makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false }),
+    makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false, is_protein_fat_source: true }),
     makeIngredient({ position: 12, canonical_name: 'flaxseed',         dog_base_severity: 'good',    cluster_id: 'seed_flax' }),
     makeIngredient({ position: 13, canonical_name: 'salt',             dog_base_severity: 'caution' }),
     makeIngredient({ position: 14, canonical_name: 'dicalcium_phosphate', dog_base_severity: 'good' }),
@@ -169,9 +169,9 @@ describe('Regression Anchor: Pure Balance (Dog) = 60', () => {
 
   const pet = makePet({ life_stage: LifeStage.Adult });
 
-  test('finalScore === 60', () => {
+  test('finalScore === 61', () => {
     const result = computeScore(product, ingredients, pet);
-    expect(result.finalScore).toBe(60);
+    expect(result.finalScore).toBe(61);
   });
 
   test('full result shape snapshot', () => {

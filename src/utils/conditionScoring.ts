@@ -9,7 +9,7 @@
 // Cap logic:
 //   - Per-condition: ±8 points total across all rules for that condition
 //   - Total bonus: +10 max
-//   - Total penalty: -15 max
+//   - Total penalty: -25 max
 //
 // 12 conditions: obesity, underweight, gi_sensitive, diabetes, pancreatitis,
 // ckd, cardiac, urinary, joint, skin, hypothyroid, hyperthyroid

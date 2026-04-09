@@ -551,7 +551,7 @@ This replaces the simple `health_conditions TEXT[]` array with structured data. 
 
 ## Regression Impact
 
-**Pure Balance = 60 must hold** for a pet with no health conditions. Condition adjustments are Layer 3 only — they don't fire when `health_conditions` is empty. Zero regression risk for the baseline.
+**Pure Balance = 61 must hold** for a pet with no health conditions. Condition adjustments are Layer 3 only — they don't fire when `health_conditions` is empty. Zero regression risk for the baseline.
 
 New regression targets needed:
 - Pure Balance + overweight dog = expected ~57 (high fat penalty)

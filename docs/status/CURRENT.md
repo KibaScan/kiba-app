@@ -63,15 +63,15 @@
 
 - **Tests:** 1445 passing / 63 suites
 - **Decisions:** 129
-- **Migrations:** 36 (001–036)
+- **Migrations:** 37 (001–037)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
 
-- Pure Balance (Dog, daily food) = 60
+- Pure Balance (Dog, daily food) = 61
 - Temptations (Cat, treat) = 0
 - Pure Balance + cardiac dog = 0 (DCM zero-out)
-- Pure Balance + pancreatitis dog = 52 (fat >12% DMB penalty)
+- Pure Balance + pancreatitis dog = 53 (fat >12% DMB penalty)
 
 ## Up Next
 
@@ -96,6 +96,54 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-09 (session 37)
+- **Accomplished:**
+  - **Scoring reference docs audit** — Fixed 2 stale penalty values: `scoring-rules.md:322-323` allergen table (15→20, 8→10), `conditionScoring.ts:12` comment (-15→-25).
+  - **`is_protein_fat_source` column (migration 037)** — Added boolean to `ingredients_dict`, replacing M1 hardcoded `false`. Enables Layer 1c protein naming specificity scoring (was always returning 50 "unknown") and condition scoring `countDistinctProteinSources()` (was always returning 0). Column deployed to production.
+  - **Pipeline hydration** — Replaced hardcoded `false` with `dict.is_protein_fat_source ?? false` in all 3 pipeline files (`src/services/scoring/pipeline.ts`, Edge Function copy, `scripts/scoring/batch_score.ts`). TODO comments removed.
+  - **Type definitions** — Added `is_protein_fat_source: boolean` to `IngredientDict` interface in both `src/types/index.ts` and `supabase/functions/batch-score/types/index.ts`. Also added to `batch_score.ts` local type.
+  - **Backfill script** — `scripts/data/backfill_protein_fat_source.ts` (new). Follows `backfill_pulse_flags.ts` pattern: exact set (~120 entries) + regex patterns + exclusion patterns. Covers named meats/meals/organs, eggs, dairy protein, named/unnamed fats, plant oils, plant protein isolates. Dry-run mode, exclusion verification, spot checks. **Not yet run against production** — needs manual execution.
+  - **Scoring version bump** — `CURRENT_SCORING_VERSION` '4' → '5' in both client and Edge Function constants. Forces full cache rebuild.
+  - **Regression anchor shift** — Pure Balance 60→61 (protein naming 50→60, FC 88→90). Temptations stays 0. Pancreatitis 52→53. All 4 Pure Balance test fixtures updated (regressionAnchors, engine, realDataTrace, conditionScoring). Scoring version fixtures updated (batchScoreOnDevice, topMatches).
+  - **Doc updates (~25 files)** — Anchor value 60→61 across CLAUDE.md, scoring CLAUDE.md, tests CLAUDE.md, CURRENT.md, copilot-instructions, commands, optimization docs, specs, plans, DECISIONS.md. Pancreatitis 52→53 in CURRENT.md. `SCORING_CACHE_ARCHITECTURE.md` version '2'→'5'.
+  - **Edge Function deployed** — `batch-score` with `is_protein_fat_source` hydration + version '5'.
+  - **Search reference clone** — All search-related files copied to `docs/plans/search-uiux/` for future search UX overhaul planning (10 files).
+- **Files changed (session 37):**
+  - `supabase/migrations/037_is_protein_fat_source.sql` (new — deployed)
+  - `scripts/data/backfill_protein_fat_source.ts` (new — not yet run)
+  - `src/types/index.ts` (IngredientDict field)
+  - `supabase/functions/batch-score/types/index.ts` (same)
+  - `src/services/scoring/pipeline.ts` (hydration)
+  - `supabase/functions/batch-score/scoring/pipeline.ts` (same)
+  - `scripts/scoring/batch_score.ts` (hydration + type)
+  - `src/utils/constants.ts` (version 5)
+  - `supabase/functions/batch-score/utils/constants.ts` (same)
+  - `src/utils/conditionScoring.ts` (comment fix -15→-25)
+  - `docs/references/scoring-rules.md` (allergen table 15/8→20/10)
+  - 6 test files (regressionAnchors, engine, realDataTrace, conditionScoring, batchScoreOnDevice, topMatches)
+  - ~25 doc/config files (anchor value updates)
+  - `docs/plans/search-uiux/` (new directory, 10 reference files)
+- **Tests:** 1445 passing / 63 suites (unchanged count — fixture values updated, no new tests).
+- **Not done yet:**
+  - **Backfill script not run** — `scripts/data/backfill_protein_fat_source.ts` needs manual execution: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx ts-node scripts/data/backfill_protein_fat_source.ts --dry-run` then without flag. Until run, all products still score 50 on protein naming in production (DB column exists but all rows are `false`).
+  - **Search UX overhaul** — ILIKE single-substring matching doesn't split terms. `pg_trgm` + GIN indexes exist but aren't used for fuzzy/similarity matching. Reference files cloned to `docs/plans/search-uiux/`.
+  - **Visual QA carry-overs** — CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert, CategoryBrowseScreen "See All" no scores.
+  - **17 non-border `cardBorder` uses** — token decision still pending.
+- **Next session should start with:**
+  - Run the backfill: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx ts-node scripts/data/backfill_protein_fat_source.ts --dry-run` — review output (expect ~150-300 flagged ingredients), then run without `--dry-run`.
+  - Verify a product with named proteins (e.g., Honest Kitchen) now scores higher on protein naming (should be ~80-100 instead of 50).
+  - Search UX overhaul — split search terms, potentially use `pg_trgm` similarity for fuzzy matching.
+- **Gotchas:**
+  - **`CURRENT_SCORING_VERSION = '5'`** — forces full cache rebuild on next app launch. Migration 037 also wiped `pet_product_scores`. Users will see blank Top Picks for ~10-20s while batch scoring runs.
+  - **Backfill NOT yet run** — the column exists and pipeline reads it, but all values are `false`. Production scoring is identical to pre-session behavior until backfill runs.
+  - **Regression anchors shifted** — Pure Balance 60→61, pancreatitis 52→53. This is correct (products with named proteins should score better than "unknown" default of 50).
+  - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
+  - **`docs/plans/search-uiux/topMatches.test.ts.ref`** — renamed from `.test.ts` to avoid Jest pickup. It's a reference copy, not a live test.
+- **Decision/scoring changes:** No new D-numbers (129). **Scoring engine data changed:** `is_protein_fat_source` hydration enabled (was hardcoded false). Formulation scoring protein naming sub-check now functional (was always 50). Regression anchors: Pure Balance = 61, Temptations = 0.
+
+---
+[Previous session 36 block retained below for reference]
 
 - **Date:** 2026-04-09 (session 36)
 - **Accomplished:**

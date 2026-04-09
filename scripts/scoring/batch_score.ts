@@ -69,6 +69,7 @@ interface IngredientDictRow {
   is_pulse_protein: boolean;
   position_reduction_eligible: boolean;
   cat_carb_flag: boolean;
+  is_protein_fat_source: boolean;
   allergen_group: string | null;
   allergen_group_possible: string[] | null;
 }
@@ -104,7 +105,7 @@ function hydrateIngredient(row: ProductIngredientRow): ProductIngredient | null 
     cat_carb_flag: dict.cat_carb_flag,
     allergen_group: dict.allergen_group,
     allergen_group_possible: dict.allergen_group_possible ?? [],
-    is_protein_fat_source: false, // M1 limitation — same as pipeline.ts
+    is_protein_fat_source: dict.is_protein_fat_source ?? false,
   };
 }
 

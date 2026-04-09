@@ -2287,7 +2287,7 @@ Eight display bug fixes — no scoring engine changes, all presentation-layer:
 
 **Citations:** AAFCO Official Publication, Nutritional Adequacy — Growth & Reproduction vs Adult Maintenance profiles.
 
-**Regression:** Pure Balance = 60 (unaffected — adult pet, no life_stage_claim).
+**Regression:** Pure Balance = 61 (unaffected — adult pet, no life_stage_claim).
 
 ---
 

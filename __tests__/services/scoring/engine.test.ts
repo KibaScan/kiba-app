@@ -378,17 +378,17 @@ describe('computeScore — Orchestrator', () => {
 
     // Key scoring-relevant ingredients from Walmart bag (42 total, neutrals omitted for brevity)
     const ingredients: ProductIngredient[] = [
-      makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
-      makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
+      makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
+      makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
       makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
       makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral' }),
       makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral' }),
-      makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution' }),
+      makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution', is_protein_fat_source: true }),
       makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
-      makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
+      makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true, is_protein_fat_source: true }),
       makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral' }),
       makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
-      makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false }),
+      makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false, is_protein_fat_source: true }),
       makeIngredient({ position: 12, canonical_name: 'flaxseed',         dog_base_severity: 'good',    cluster_id: 'seed_flax' }),
       makeIngredient({ position: 13, canonical_name: 'salt',             dog_base_severity: 'caution' }),
       makeIngredient({ position: 14, canonical_name: 'dicalcium_phosphate', dog_base_severity: 'good' }),
@@ -420,11 +420,11 @@ describe('computeScore — Orchestrator', () => {
       // Layer 1b: NP = 79
       expect(result.layer1.nutritionalProfile).toBe(79);
 
-      // Layer 1c: FC = 63
-      expect(result.layer1.formulation).toBe(63);
+      // Layer 1c: FC = 65 (AAFCO 50×0.5 + preservative 100×0.25 + proteinNaming 60×0.25)
+      expect(result.layer1.formulation).toBe(65);
 
-      // Weighted: (48×0.55) + (79×0.30) + (63×0.15) = 26.4 + 23.7 + 9.45 = 59.55 → 60
-      expect(result.layer1.weightedComposite).toBeCloseTo(59.6, 1);
+      // Weighted: (48×0.55) + (79×0.30) + (65×0.15) = 26.4 + 23.7 + 9.75 = 59.85
+      expect(result.layer1.weightedComposite).toBeCloseTo(59.9, 1);
 
       // Layer 2 — D-137: DCM fires (Rule 1: peas at pos 3; Rule 2: 2 pulses in top 10)
       const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');

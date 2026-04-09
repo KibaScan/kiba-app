@@ -262,7 +262,7 @@ Display label for `danger` is "Severe" (not "Danger") per D-143.
 - **Location:** `__tests__/{category}/{file}.test.ts`
 - **Preset:** `jest-expo`
 - **Current count:** 641 tests across 32 suites
-- After scoring changes: verify Pure Balance = 60, Temptations = 0
+- After scoring changes: verify Pure Balance = 61, Temptations = 0
 
 ---
 
@@ -277,7 +277,7 @@ Display label for `danger` is "Severe" (not "Danger") per D-143.
 1. Read `docs/references/scoring-rules.md` first
 2. Make changes in `src/services/scoring/`
 3. Run `npx jest __tests__/scoring/` — all must pass
-4. Verify regression anchors: Pure Balance = 60, Temptations = 0
+4. Verify regression anchors: Pure Balance = 61, Temptations = 0
 5. Update `docs/references/scoring-rules.md` if rules changed
 
 ### Adding a paywall gate
