@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-08 (session 34)
+# Project Status — Last updated 2026-04-08 (session 35)
 
 ## Active Milestone
 
@@ -57,7 +57,7 @@
 
 ## What's Broken / Known Issues
 
-- **Stale browse scores**: CategoryBrowseScreen reads cached scores from `pet_product_scores` which can diverge from fresh ResultScreen scores (e.g. 82 vs 79) when pet profile changes after batch scoring. Root cause: batch scoring delta check counts ALL daily food for cache maturity but fetches by specific `product_form` — cache appears mature when dry/wet fill 80%, so freeze-dried (and other minority forms) never get scored. Workaround: fallback to unscored `products` query when scored cache is empty for a form. Long-term fix: make cache maturity check form-aware in both Edge Function and `batchScoreOnDevice.ts`.
+- **Stale browse scores (largely mitigated)**: Form-aware cache maturity (session 34) + TopPicksCarousel self-healing scoring trigger (session 35) cover most gaps. Remaining edge: first visit to a form after full cache wipe shows spinner while batch scoring runs (~10s). CategoryBrowseScreen's unscored fallback still shows products without badges until scoring completes.
 
 ## Numbers
 
@@ -97,6 +97,43 @@
 
 ## Last Session
 
+- **Date:** 2026-04-08 (session 35)
+- **Accomplished:**
+  - **JIT search scoring (read-through cache)** — `searchProducts()` now scores unscored products on-device when `pet` is provided. After cache enrichment, identifies products with `final_score === null`, fetches ingredients (paginated to avoid PostgREST 1,000-row limit), hydrates via `hydrateIngredient()`, runs `computeScore()` with runtime variety pack detection (D-145) and supplemental detection (D-136), merges scores into results immediately. Fire-and-forget upsert to `pet_product_scores` grows the cache organically. Best-effort: entire JIT block wrapped in try/catch.
+  - **`searchProducts()` signature change** — `petId?: string` → `pet?: Pet`. When pet provided, selects full `SCORING_COLUMNS` (28 fields) instead of minimal 7 columns. Enables JIT scoring without a second DB query.
+  - **`SCORING_COLUMNS` exported** — from `batchScoreOnDevice.ts` for reuse in `topMatches.ts`.
+  - **`useTopMatchesStore` wired for JIT** — `executeSearch` now retrieves active pet via `useActivePetStore.getState()` and passes it to `searchProducts()`. Previously passed nothing — no scores at all.
+  - **TopPicksCarousel self-healing scoring** — When carousel loads fewer than 10 scored results for a form-specific sub-filter (dry/wet/freeze-dried), triggers `batchScoreHybrid` for that category+form (~1000 products via Edge Function) and reloads. Fixes sparse Top Picks after cache wipe.
+  - **`docs/plans/SCORING_CACHE_ARCHITECTURE.md` updated** — Added §3.4 (JIT write path), updated §4.1 (search read path), §5 (scoring triggers table), marked §9.1 resolved, updated §9.4 (store partially unwired).
+- **Files changed (5 modified, 0 new):**
+  - `src/services/batchScoreOnDevice.ts` (exported `SCORING_COLUMNS`)
+  - `src/services/topMatches.ts` (JIT scoring: signature `pet?: Pet`, expanded query columns, paginated ingredient fetch, `computeScore` loop with variety pack + supplemental guards, fire-and-forget cache upsert)
+  - `src/screens/HomeScreen.tsx` (pass `activePet` instead of `activePetId` to `searchProducts`)
+  - `src/stores/useTopMatchesStore.ts` (`executeSearch` passes active pet to `searchProducts`)
+  - `src/components/browse/TopPicksCarousel.tsx` (self-healing: trigger `batchScoreHybrid` when < 10 scored results for a form)
+  - `docs/plans/SCORING_CACHE_ARCHITECTURE.md` (§3.4 JIT path, §9.1 resolved)
+- **Tests:** 1445 passing / 63 suites (unchanged — no new tests this session, scoring logic untouched).
+- **Not done yet:**
+  - **Visual QA** carry-over: CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert.
+  - **CategoryBrowseScreen "See All" no scores** — When user taps "See All" on Top Picks, CategoryBrowseScreen may show unscored products if `ensureFormScored` count > 0 (a few products exist but not enough). Could add similar < threshold trigger as TopPicksCarousel.
+  - **JIT tests** — no new tests written for JIT scoring path. Should add: JIT with pet (verify scores computed), JIT without pet (verify no scoring), background cache upsert shape.
+- **Next session should start with:**
+  - Test JIT scoring on device: search for an obscure product, confirm score badge appears, tap into ResultScreen to verify score matches.
+  - Test TopPicksCarousel self-healing: switch sub-filters (Dry → Wet → Freeze-Dried), verify carousel populates after brief spinner.
+  - Then M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
+- **Gotchas:**
+  - `searchProducts()` signature changed from `petId?: string` to `pet?: Pet`. All callers updated. `CompareProductPickerSheet` still passes no pet (intentional — score badges not needed in picker).
+  - JIT scoring is **best-effort** — wrapped in try/catch. If ingredient fetch or scoring fails, results return with whatever cached scores are available (or null). Never blocks search.
+  - **Ingredient pagination critical** — PostgREST 1,000-row default limit. 50 products × ~50-60 ingredients = ~2,500-3,000 rows. Without `.range()` pagination, later products get silently truncated and score artificially high. Pagination loop matches `batchScoreOnDevice.ts:199-217`.
+  - TopPicksCarousel scoring trigger uses `batchScoreHybrid` directly (not `ensureFormScored`). It fires when scored < 10, not just when count = 0. Rate-limited by `batchScoreHybrid`'s 5-min cooldown per `pet:category:form`.
+  - `useTopMatchesStore` is still partially orphaned — `executeSearch` now passes pet (for JIT), but `loadTopMatches`/`refreshScores` remain unwired.
+  - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+  - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
+- **Decision/scoring changes:** No new D-numbers (129). Scoring engine logic untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
+
+---
+[Previous session 34 block retained below for reference]
+
 - **Date:** 2026-04-08 (session 34)
 - **Accomplished:**
   - **Form-aware cache maturity (migration 035)** — Added `product_form` column to `pet_product_scores` with backfill + composite index. Maturity check queries in both `batchScoreOnDevice.ts` and Edge Function `batch-score/index.ts` now filter by `product_form` when provided. Rate limit keys include form (`pet:category:form`) so form-specific scoring isn't blocked by category-wide batches. Upsert payloads include `product_form`. Deployed migration 035 to production.
@@ -109,38 +146,7 @@
   - **`searchProducts` stale filter reverted** — Removed aggressive `pet_updated_at` comparison that was filtering ALL cached scores (causing no score badges). Stale rows are now deleted at source via `invalidateStaleScores`.
   - **Edge Function redeployed** — `supabase functions deploy batch-score` with payload-driven versioning, form-aware maturity checks, and `product_form` in upsert payloads.
   - **Living document created** — `docs/plans/SCORING_CACHE_ARCHITECTURE.md` — comprehensive reference for all scoring cache read/write/trigger paths, constants, gaps, and flow diagram.
-- **Files changed (10 modified, 3 new):**
-  - `src/services/batchScoreOnDevice.ts` (form-aware maturity queries, form in rate limit key, `product_form` in upsert, `scoring_version` in Edge Function request body)
-  - `src/services/topMatches.ts` (added `invalidateStaleScores`, `ensureCacheFresh`, `batchScoreHybrid` import; reverted stale filter in `searchProducts`)
-  - `src/services/categoryBrowseService.ts` (added `ensureFormScored`, `batchScoreHybrid` + `Pet` imports)
-  - `src/screens/CategoryBrowseScreen.tsx` (wired `ensureFormScored` into `loadFirstPage`)
-  - `src/screens/HomeScreen.tsx` (wired `ensureCacheFresh` into `useFocusEffect`)
-  - `src/stores/useTopMatchesStore.ts` (switched to `batchScoreHybrid` + `invalidateStaleScores`)
-  - `src/utils/constants.ts` (`CURRENT_SCORING_VERSION` `'1'` → `'2'`)
-  - `supabase/functions/batch-score/index.ts` (form-aware maturity, payload-driven versioning, `product_form` in upsert)
-  - `supabase/functions/batch-score/utils/constants.ts` (`CURRENT_SCORING_VERSION` `'1'` → `'2'`)
-  - New: `supabase/migrations/035_pps_product_form.sql` (product_form column + backfill + index)
-  - New: `__tests__/services/ensureFormScored.test.ts` (4 tests: cache hit, cache miss, query error, scoring error)
-  - New: `docs/plans/SCORING_CACHE_ARCHITECTURE.md` (living document)
-  - Tests: `batchScoreOnDevice.test.ts` (+2 tests: upsert includes product_form, form-specific rate limit), `topMatches.test.ts` (+3 tests: invalidateStaleScores happy/error/empty, scoring_version fixture bump), `ensureFormScored.test.ts` (+4 tests)
 - **Tests:** 1445 passing / 63 suites (+9 new tests, +1 new suite).
-- **Not done yet:**
-  - **Search score coverage** — `searchProducts` queries 19K products but only ~1K have cached scores. Most search results show no score badge. Options: score on search demand (client-side `computeScore` for unscored results) or raise batch limits. See `docs/plans/SCORING_CACHE_ARCHITECTURE.md` section 9.1.
-  - **Top Picks empty for minority categories** — TopPicksCarousel filters to `final_score != null`. If active category has 0 scored products, carousel is empty. Could wire `ensureFormScored`-like logic.
-  - **Visual QA** carry-over from session 33: CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert.
-- **Next session should start with:**
-  - Read `docs/plans/SCORING_CACHE_ARCHITECTURE.md` for full scoring cache context.
-  - Decide on search score coverage fix: Option C (score on search demand) is most practical for immediate UX. Option D (raise batch limits) for full catalog coverage.
-  - Then M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
-- **Gotchas:**
-  - `CURRENT_SCORING_VERSION` is now `'2'`. First HomeScreen focus after rebuild will wipe ALL cached scores for the active pet and re-score ~1000 via Edge Function. This is intentional — forces fresh scores matching ResultScreen.
-  - Edge Function uses **payload-driven versioning**: writes `scoring_version` from client request body, falls back to `'1'` if missing. Future version bumps only need to change the client constant — Edge Function adapts automatically.
-  - `invalidateStaleScores` does a **full wipe** (`DELETE WHERE pet_id = X`), not filtered by `pet_updated_at`. This handles all staleness conditions including life stage drift and engine version bumps.
-  - `ensureCacheFresh` is **fire-and-forget** in HomeScreen. TopPicksCarousel and search may load before scoring completes on first visit after a cache wipe. Subsequent visits see fresh scores.
-  - `useTopMatchesStore` is **orphaned** — no component imports it. Scoring triggers are now in HomeScreen (`ensureCacheFresh`) and CategoryBrowseScreen (`ensureFormScored`). Store is correct but dead code.
-  - Migration 035 deployed to production. Also repaired migration 034 tracking (was applied but not tracked in Supabase remote history).
-  - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
-  - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
 - **Decision/scoring changes:** No new D-numbers (129). Scoring engine logic untouched. `CURRENT_SCORING_VERSION` bumped `'1'` → `'2'` (cache invalidation trigger, not scoring logic change). Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---

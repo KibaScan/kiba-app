@@ -308,7 +308,7 @@ export default function HomeScreen() {
         }
         const results = await searchProducts(text, activePet.species,
           Object.keys(filters).length > 0 ? filters : undefined,
-          activePetId ?? undefined);
+          activePet ?? undefined);
         setSearchResults(results);
       } catch {
         setSearchResults([]);

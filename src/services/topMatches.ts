@@ -3,8 +3,15 @@
 // No store sync — deferred to useTopMatchesStore (Phase 5).
 
 import { supabase } from './supabase';
-import { batchScoreHybrid } from './batchScoreOnDevice';
+import { batchScoreHybrid, SCORING_COLUMNS } from './batchScoreOnDevice';
+import { computeScore } from './scoring/engine';
+import { hydrateIngredient } from './scoring/pipeline';
+import { getPetAllergens, getPetConditions } from './petService';
+import { isSupplementalByName } from '../utils/supplementalClassifier';
+import { detectVarietyPack } from '../utils/varietyPackDetector';
 import type { Pet } from '../types/pet';
+import type { Product } from '../types';
+import type { ProductIngredient, ScoredResult } from '../types/scoring';
 import { deriveLifeStage, parseDateString } from '../utils/lifeStage';
 import { CURRENT_SCORING_VERSION } from '../utils/constants';
 
@@ -196,7 +203,8 @@ export interface ProductSearchResult {
 
 /**
  * Search products table directly by name/brand.
- * Independent of batch-score cache — works even when pet_product_scores is empty.
+ * When `pet` is provided: enriches results with cached scores, then JIT-scores
+ * any unscored products on-device and background-caches the results.
  */
 export async function searchProducts(
   query: string,
@@ -207,14 +215,21 @@ export async function searchProducts(
     isSupplemental?: boolean;
     isVetDiet?: boolean;
   },
-  petId?: string,
+  pet?: Pet,
 ): Promise<ProductSearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed && !filters?.category) return [];
 
+  const petId = pet?.id;
+
+  // When pet is provided, fetch full scoring columns for JIT scoring
+  const selectCols = pet
+    ? SCORING_COLUMNS
+    : 'id, name, brand, image_url, product_form, category, is_supplemental';
+
   let q = supabase
     .from('products')
-    .select('id, name, brand, image_url, product_form, category, is_supplemental')
+    .select(selectCols)
     .eq('target_species', species)
     .eq('is_vet_diet', filters?.isVetDiet ?? false)
     .eq('is_recalled', false)
@@ -250,7 +265,14 @@ export async function searchProducts(
 
   if (error || !data) return [];
 
-  const results = (data as Record<string, unknown>[]).map((row) => ({
+  const rawData = data as unknown as Record<string, unknown>[];
+
+  // Build lookup for JIT scoring (only when pet provided)
+  const productDataMap = pet
+    ? new Map(rawData.map((row) => [row.id as string, row]))
+    : null;
+
+  const results = rawData.map((row) => ({
     product_id: row.id as string,
     product_name: row.name as string,
     brand: row.brand as string,
@@ -261,7 +283,7 @@ export async function searchProducts(
     final_score: null as number | null,
   }));
 
-  // Enrich with cached scores if petId provided
+  // ── 1. Enrich with cached scores ──
   if (petId && results.length > 0) {
     const productIds = results.map((r) => r.product_id);
     const { data: scores } = await supabase
@@ -277,6 +299,120 @@ export async function searchProducts(
       }
       for (const r of results) {
         r.final_score = scoreMap.get(r.product_id) ?? null;
+      }
+    }
+  }
+
+  // ── 2. JIT scoring for unscored results ──
+  if (pet && productDataMap) {
+    const missingProducts = results.filter((r) => r.final_score === null);
+
+    if (missingProducts.length > 0) {
+      try {
+        // 2a. Fetch pet allergens + conditions in parallel
+        const [allergenRows, conditionRows] = await Promise.all([
+          getPetAllergens(pet.id),
+          getPetConditions(pet.id),
+        ]);
+        const allergens = allergenRows.map((r) => r.allergen);
+        const conditions = conditionRows.map((r) => r.condition_tag);
+
+        // 2b. Fetch ingredients — paginated to avoid PostgREST 1,000-row limit
+        const missingIds = missingProducts.map((r) => r.product_id);
+        const ingRows: Array<Record<string, unknown>> = [];
+        let ingFrom = 0;
+        const PAGE_SIZE = 1000;
+        while (true) {
+          const { data: page, error: pageErr } = await supabase
+            .from('product_ingredients')
+            .select('product_id, position, ingredient_id, ingredients_dict(*)')
+            .in('product_id', missingIds)
+            .order('position')
+            .range(ingFrom, ingFrom + PAGE_SIZE - 1);
+
+          if (pageErr || !page || page.length === 0) break;
+          ingRows.push(...(page as unknown as Record<string, unknown>[]));
+          if (page.length < PAGE_SIZE) break;
+          ingFrom += PAGE_SIZE;
+        }
+
+        // 2c. Hydrate + group by product_id
+        const ingredientsByProduct = new Map<string, ProductIngredient[]>();
+        for (const row of ingRows) {
+          const hydrated = hydrateIngredient(
+            row as unknown as Parameters<typeof hydrateIngredient>[0],
+          );
+          if (!hydrated) continue;
+          const pid = row.product_id as string;
+          const list = ingredientsByProduct.get(pid) ?? [];
+          list.push(hydrated);
+          ingredientsByProduct.set(pid, list);
+        }
+
+        // 2d. Score each missing product
+        const jitScores = new Map<string, ScoredResult>();
+        for (const r of missingProducts) {
+          const rawProduct = productDataMap.get(r.product_id);
+          const ingredients = ingredientsByProduct.get(r.product_id);
+          if (!rawProduct || !ingredients?.length) continue;
+
+          // D-145: algorithmic variety pack detection
+          if (detectVarietyPack(rawProduct.name as string, ingredients)) continue;
+
+          // D-136: runtime supplemental detection
+          const scoringProduct =
+            !rawProduct.is_supplemental &&
+            isSupplementalByName(rawProduct.name as string)
+              ? ({ ...rawProduct, is_supplemental: true } as unknown as Product)
+              : (rawProduct as unknown as Product);
+
+          const scored = computeScore(
+            scoringProduct,
+            ingredients,
+            pet,
+            allergens,
+            conditions,
+          );
+          r.final_score = scored.finalScore;
+          jitScores.set(r.product_id, scored);
+        }
+
+        // 2e. Background cache upsert (fire-and-forget)
+        const cacheRows: Array<Record<string, unknown>> = [];
+        const scoredAt = new Date().toISOString();
+        for (const r of missingProducts) {
+          const scored = jitScores.get(r.product_id);
+          if (!scored) continue;
+          const rawProduct = productDataMap.get(r.product_id)!;
+          cacheRows.push({
+            pet_id: pet.id,
+            product_id: r.product_id,
+            final_score: scored.finalScore,
+            is_partial_score: scored.isPartialScore,
+            is_supplemental: r.is_supplemental,
+            category: rawProduct.category,
+            product_form: rawProduct.product_form ?? null,
+            life_stage_at_scoring: pet.life_stage ?? null,
+            pet_updated_at: pet.updated_at,
+            pet_health_reviewed_at: pet.health_reviewed_at ?? null,
+            product_updated_at: rawProduct.updated_at,
+            scored_at: scoredAt,
+            scoring_version: CURRENT_SCORING_VERSION,
+          });
+        }
+
+        if (cacheRows.length > 0) {
+          supabase
+            .from('pet_product_scores')
+            .upsert(cacheRows, { onConflict: 'pet_id,product_id' })
+            .then(({ error: upsertErr }) => {
+              if (upsertErr)
+                console.warn('[searchProducts] JIT cache upsert failed:', upsertErr);
+            });
+        }
+      } catch (jitErr) {
+        // JIT scoring is best-effort — return results with whatever scores we have
+        console.warn('[searchProducts] JIT scoring failed:', jitErr);
       }
     }
   }

@@ -145,9 +145,11 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
     set({ searchLoading: true });
     try {
       const category = get().categoryFilter;
+      const { activePetId, pets } = useActivePetStore.getState();
+      const activePet = pets.find((p) => p.id === activePetId);
       const results = await searchProducts(query, species, {
         category: category === 'all' ? undefined : category,
-      });
+      }, activePet ?? undefined);
       // Staleness guard — only apply if query hasn't changed
       if (get().searchQuery === query) {
         set({ searchResults: results, searchLoading: false });

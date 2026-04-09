@@ -1,6 +1,6 @@
 # Scoring Cache Architecture — Implementation State
 
-> **Status:** Implemented (Session 33-34). Form-aware scoring, cache invalidation, payload-driven versioning, HomeScreen scoring trigger.
+> **Status:** Implemented (Session 33-35). Form-aware scoring, cache invalidation, payload-driven versioning, HomeScreen scoring trigger, JIT search scoring.
 > **Goal:** This document is the master source of truth for how product scores flow through the app — from batch computation to cache storage to UI display. Read this before touching any scoring, search, or browse code.
 
 ---
@@ -66,7 +66,23 @@ UNIQUE (pet_id, product_id)
 
 Tries Edge Function first (1,000 limit), falls back to client-side (200 limit) if Edge Function fails. Passes `scoring_version: CURRENT_SCORING_VERSION` in request body.
 
-### 3.4 Fresh Scoring: `scoreProduct()`
+### 3.4 JIT Scoring: `searchProducts()` read-through cache
+**File:** `src/services/topMatches.ts`
+
+When `pet` is provided and search results have unscored products (no cached row in `pet_product_scores`), scores them on-device inside `searchProducts()`:
+
+1. Fetches pet allergens + conditions in parallel
+2. Fetches ingredients for missing products (paginated — PostgREST 1,000-row limit guard)
+3. Hydrates ingredients via `hydrateIngredient()`, groups by product_id
+4. Runs `computeScore()` for each, with runtime `detectVarietyPack()` (D-145) and `isSupplementalByName()` (D-136) guards
+5. Merges scores into search results immediately
+6. Fire-and-forget upsert to `pet_product_scores` (grows cache organically)
+
+**Performance:** Max 50 products × ~50-60 ingredients. Ingredient fetch ~100ms, scoring math <5ms. Invisible behind search debounce spinner.
+
+**Best-effort:** Entire JIT block is wrapped in try/catch — failures return results with whatever scores are available (cached or null).
+
+### 3.5 Fresh Scoring: `scoreProduct()`
 **File:** `src/services/scoring/pipeline.ts`
 
 On-demand scoring for a single product. Called by ResultScreen on mount. Fetches ingredients from DB, hydrates, runs `computeScore()`. Result is NOT cached in `pet_product_scores` — it's displayed directly and stored in `scan_history` for the Recent Scans section.
@@ -80,11 +96,11 @@ On-demand scoring for a single product. Called by ResultScreen on mount. Fetches
 ### 4.1 HomeScreen Search (`searchProducts`)
 **File:** `src/services/topMatches.ts`
 
-1. Queries `products` table by name/brand ILIKE (up to 50 results)
-2. If `petId` provided, enriches with cached scores from `pet_product_scores`
-3. Products without cached scores get `final_score: null` (no badge)
+1. Queries `products` table by name/brand ILIKE (up to 50 results). When `pet` is provided, selects full `SCORING_COLUMNS` (not just display fields).
+2. Enriches with cached scores from `pet_product_scores`
+3. **JIT scoring:** Products without cached scores are scored on-device via `computeScore()` and background-cached (see §3.4). Scores appear in search results immediately.
 
-**Gap:** Search queries the full 19K catalog but scores exist for only ~1K. Most search results show no score.
+**Resolved:** Previously, most search results showed no score badge. JIT scoring fills the gap as a read-through cache.
 
 ### 4.2 Top Picks Carousel
 **File:** `src/components/browse/TopPicksCarousel.tsx`
@@ -120,6 +136,7 @@ Reads from `scan_history` table (NOT `pet_product_scores`). Scores stored here a
 |---------|----------|------|------|
 | `ensureCacheFresh()` | HomeScreen `useFocusEffect` | Every Home tab focus | Check freshness → wipe stale → re-score 1K via Edge Function |
 | `ensureFormScored()` | CategoryBrowseScreen `loadFirstPage` | Browse a specific form (dry/wet/freeze-dried) | Check form count → score that form if 0 cached |
+| JIT in `searchProducts()` | HomeScreen search, useTopMatchesStore | User searches with active pet | Score unscored results on-device, background-cache |
 | SafeSwapSection | ResultScreen Safe Swap | Cache empty or no candidates | `batchScoreHybrid()` for category+form |
 | `useTopMatchesStore` | Orphaned store | Never (no consumer) | `loadTopMatches` / `refreshScores` — correct but unwired |
 
@@ -186,17 +203,10 @@ Batch scoring's cache maturity check counted ALL products in a category. When dr
 
 ## 9. Known Gaps & Open Issues
 
-### 9.1 Search Score Coverage (Active)
-**Problem:** `searchProducts()` queries the full 19K catalog but only ~1K products have cached scores. Most search results show no score badge.
+### 9.1 Search Score Coverage — RESOLVED
+**Problem:** `searchProducts()` queries the full 19K catalog but only ~1K products have cached scores.
 
-**Why:** The 1K batch is ordered by `updated_at DESC` — most recently updated products, not most searched. Search terms may match products outside the batch.
-
-**Options:**
-- **A. Score on search demand** — when `searchProducts` returns unscored products, score them client-side via `computeScore()`. Requires bulk ingredient fetch (~2-3s for 50 products).
-- **B. Raise batch limits** — increase `MAX_LIMIT` to 5K+, run multiple batches, cover more catalog. One-time cost per pet.
-- **C. Pre-compute via background job** — pg_cron or dedicated Edge Function that scores entire catalog for a pet. Server-to-server, no timeout pressure.
-
-**Status:** Not yet implemented. Search results show scores only for products in the ~1K batch.
+**Solution:** Option A (JIT scoring on search demand) implemented in session 35. `searchProducts()` now scores unscored results on-device via `computeScore()` with paginated ingredient fetch, then background-caches to `pet_product_scores`. Sparse cache architecture: pre-warmed 1K batch handles browse/Top Picks, JIT fills the long tail as users search. See §3.4 for details.
 
 ### 9.2 Top Picks Empty for Minority Categories
 **Problem:** TopPicksCarousel filters to `final_score != null`. If the active category (e.g., Treats, Toppers) has 0 scored products, carousel is empty.
@@ -210,10 +220,10 @@ Batch scoring's cache maturity check counted ALL products in a category. When dr
 
 **Current state:** Engines are logic-identical (verified session 34). `CURRENT_SCORING_VERSION` bumped to `'2'` and Edge Function redeployed.
 
-### 9.4 `useTopMatchesStore` Orphaned
-**Problem:** The store exists with correct `invalidateStaleScores` + `batchScoreHybrid` logic, but no component imports it. The original consumer (SearchScreen) was deleted when HomeScreen v2 replaced it.
+### 9.4 `useTopMatchesStore` Partially Orphaned
+**Problem:** The store exists with correct `invalidateStaleScores` + `batchScoreHybrid` logic, but no component imports it for top matches display. The original consumer (SearchScreen) was deleted when HomeScreen v2 replaced it.
 
-**Impact:** None — scoring triggers are now wired directly into HomeScreen (`ensureCacheFresh`) and CategoryBrowseScreen (`ensureFormScored`). Store is dead code but correct if re-wired.
+**Partial fix (session 35):** `executeSearch` now retrieves the active pet via `useActivePetStore.getState()` and passes it to `searchProducts()`, so any consumer of the store's search gets JIT-scored results. The `loadTopMatches` / `refreshScores` actions remain unwired.
 
 ---
 
@@ -292,4 +302,4 @@ HomeScreen useFocusEffect
 
 ---
 
-*This document confirms the full scoring cache architecture as of session 34 (April 8, 2026). Reference before any scoring, search, browse, or cache changes.*
+*This document confirms the full scoring cache architecture as of session 35 (April 8, 2026). Reference before any scoring, search, browse, or cache changes.*

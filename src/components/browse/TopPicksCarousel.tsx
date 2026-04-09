@@ -20,6 +20,8 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
 import { stripBrandFromName, sanitizeBrand } from '../../utils/formatters';
 import { fetchCategoryTopPicks } from '../../services/categoryBrowseService';
+import { batchScoreHybrid } from '../../services/batchScoreOnDevice';
+import { useActivePetStore } from '../../stores/useActivePetStore';
 import type { BrowseProduct, BrowseCategory } from '../../types/categoryBrowse';
 import type { HomeStackParamList, TabParamList } from '../../types/navigation';
 
@@ -72,7 +74,28 @@ export function TopPicksCarousel({
         FETCH_LIMIT,
       );
       // Only show products with actual scores — unscored fallbacks aren't "top picks"
-      setPicks(results.filter(p => p.final_score != null));
+      const scored = results.filter(p => p.final_score != null);
+
+      // If cache is sparse for this form, trigger form-specific batch scoring and reload
+      if (scored.length < DISPLAY_LIMIT && category !== 'supplement') {
+        const formMap: Record<string, string> = { dry: 'dry', wet: 'wet', freeze_dried: 'freeze_dried' };
+        const dbForm = activeSubFilter ? formMap[activeSubFilter] ?? null : null;
+        const dbCategory = category === 'toppers_mixers' ? 'daily_food' : category;
+        const pet = useActivePetStore.getState().pets.find((p) => p.id === petId);
+        if (pet && dbForm) {
+          try {
+            await batchScoreHybrid(petId, pet, dbCategory, dbForm);
+            // Reload with fresh scores
+            const refreshed = await fetchCategoryTopPicks(petId, category, activeSubFilter, species, FETCH_LIMIT);
+            setPicks(refreshed.filter(p => p.final_score != null));
+            return;
+          } catch {
+            // Fall through to show whatever we have
+          }
+        }
+      }
+
+      setPicks(scored);
     } catch {
       setPicks([]);
     } finally {

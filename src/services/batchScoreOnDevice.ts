@@ -30,7 +30,7 @@ const CACHE_MATURITY_THRESHOLD = 0.8; // Delta mode requires ≥80% cache covera
 const lastBatchTimestamp = new Map<string, number>();
 
 // Scoring-only columns (same as Edge Function)
-const SCORING_COLUMNS = [
+export const SCORING_COLUMNS = [
   'id', 'brand', 'name', 'category', 'target_species',
   'aafco_statement', 'life_stage_claim', 'preservative_type',
   'ga_protein_pct', 'ga_fat_pct', 'ga_fiber_pct', 'ga_moisture_pct',
