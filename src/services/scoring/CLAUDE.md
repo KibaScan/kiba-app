@@ -18,8 +18,8 @@ Brand-blind (D-019). Affiliate-invisible (D-020).
 - Wet food moisture: infer from `product_form` when `ga_moisture_pct` is null
 
 ## Regression anchors (verify after ANY change)
-- Pure Balance (Dog, daily food) = 62
-- Temptations (Cat, treat) = 9
+- Pure Balance (Dog, daily food) = 60
+- Temptations (Cat, treat) = 0
 
 ## Testing
 Run: `npx jest --testPathPattern=scoring`

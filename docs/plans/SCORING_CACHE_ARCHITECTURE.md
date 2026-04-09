@@ -216,7 +216,7 @@ Batch scoring's cache maturity check counted ALL products in a category. When dr
 ### 9.3 Edge Function Engine Sync
 **Problem:** The Edge Function has its own copy of the scoring engine at `supabase/functions/batch-score/scoring/`. If client-side scoring logic changes, the Edge Function must be redeployed.
 
-**Guard:** `scripts/verify-engine-copy.ts` (Pure Balance = 62 regression test). CLAUDE.md documents: "Changes to `src/services/scoring/` MUST be synced here."
+**Guard:** `scripts/verify-engine-copy.ts` (Pure Balance = 60 regression test). CLAUDE.md documents: "Changes to `src/services/scoring/` MUST be synced here."
 
 **Current state:** Engines are logic-identical (verified session 34). `CURRENT_SCORING_VERSION` bumped to `'2'` and Edge Function redeployed.
 

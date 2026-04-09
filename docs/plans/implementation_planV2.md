@@ -514,4 +514,4 @@ New test file: `__tests__/services/vetReportService.test.ts` (25+ tests)
 ### Regression
 
 - Run full test suite (`npm test`) — expect 1075+ passing
-- Verify Pure Balance = 62, Temptations = 9 anchors unchanged
+- Verify Pure Balance = 60, Temptations = 0 anchors unchanged

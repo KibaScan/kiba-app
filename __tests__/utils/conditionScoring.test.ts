@@ -418,7 +418,7 @@ describe('conditionScoring — integration with computeScore', () => {
     category: Category.DailyFood,
     target_species: Species.Dog,
     is_grain_free: true,
-    aafco_statement: 'yes',
+    aafco_statement: 'Growth and Reproduction',
     preservative_type: PreservativeType.Natural,
     ga_protein_pct: 24,
     ga_fat_pct: 15,
@@ -449,10 +449,10 @@ describe('conditionScoring — integration with computeScore', () => {
     makeIngredient({ position: 42, canonical_name: 'rosemary_extract', dog_base_severity: 'good' }),
   ];
 
-  test('Pure Balance = 62 with NO conditions (regression holds)', () => {
+  test('Pure Balance = 60 with NO conditions (regression holds)', () => {
     const pet = makePet({ life_stage: LifeStage.Adult });
     const result = computeScore(pureBalanceProduct, pureBalanceIngredients, pet);
-    expect(result.finalScore).toBe(62);
+    expect(result.finalScore).toBe(60);
   });
 
   test('Pure Balance + overweight dog is lower than baseline', () => {
@@ -462,7 +462,7 @@ describe('conditionScoring — integration with computeScore', () => {
     // Fiber: 5% as-fed → 5.56% DMB → just above 5% → +2 bonus
     // L-carnitine at position 40 → +1 bonus
     // Expected: 62 + 2 + 1 = 65 (bonuses, not penalties, for this specific food)
-    expect(result.finalScore).toBeGreaterThan(62); // Pure Balance is actually healthy for overweight dogs
+    expect(result.finalScore).toBeGreaterThan(60); // Pure Balance is actually healthy for overweight dogs
     const conditionAdjs = result.layer3.personalizations.filter(
       (p: { type: string }) => p.type === 'condition',
     );
@@ -504,7 +504,7 @@ describe('conditionScoring — integration with computeScore', () => {
     expect(result.finalScore).toBeGreaterThan(0);
   });
 
-  test('Temptations = 9 with NO conditions (regression holds)', () => {
+  test('Temptations = 0 with NO conditions (regression holds)', () => {
     const temptationsProduct = makeProduct({
       category: Category.Treat,
       target_species: Species.Cat,
@@ -532,7 +532,7 @@ describe('conditionScoring — integration with computeScore', () => {
     ];
     const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Adult });
     const result = computeScore(temptationsProduct, temptationsIngredients, pet);
-    expect(result.finalScore).toBe(9);
+    expect(result.finalScore).toBe(0);
   });
 });
 

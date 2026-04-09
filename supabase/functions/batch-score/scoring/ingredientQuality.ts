@@ -12,8 +12,8 @@ const SEVERITY_ORDER: Record<IngredientSeverity, number> = {
 };
 
 const SEVERITY_PENALTY: Record<IngredientSeverity, number> = {
-  danger: 15,
-  caution: 8,
+  danger: 20,
+  caution: 10,
   neutral: 0,
   good: 0,
 };

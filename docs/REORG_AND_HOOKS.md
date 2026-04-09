@@ -174,7 +174,7 @@ kiba-app/
 
 **How it works:** Reads the tool input JSON from stdin, extracts the file path via Node.js, checks against the protected list. If matched, returns a `permissionDecision: "ask"` response forcing user confirmation. Non-matches pass through silently.
 
-**Why:** The scoring engine is the core IP. Regression anchors (Pure Balance = 62, Temptations = 9) must hold after any change. This forces a pause before editing scoring logic.
+**Why:** The scoring engine is the core IP. Regression anchors (Pure Balance = 60, Temptations = 0) must hold after any change. This forces a pause before editing scoring logic.
 
 ### Hook 4: Regression Anchor Reminder (SessionStart)
 
@@ -184,7 +184,7 @@ kiba-app/
 ```json
 {
   "type": "command",
-  "command": "echo '{\"systemMessage\": \"Scoring regression anchors: Pure Balance (Dog) = 62, Temptations (Cat Treat) = 9. Verify after any scoring changes.\"}'"
+  "command": "echo '{\"systemMessage\": \"Scoring regression anchors: Pure Balance (Dog) = 60, Temptations (Cat Treat) = 0. Verify after any scoring changes.\"}'"
 }
 ```
 

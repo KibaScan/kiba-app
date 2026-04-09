@@ -309,12 +309,12 @@ const PANCREATITIS_RULES: ConditionRule[] = [
   { id: 'pancreatitis_dog_high_fat_penalty', species: 'dog',
     check: (_p, _i, _pet, dmb) =>
       dmb.fatDmb !== null && dmb.fatDmb > 12
-        ? adj('pancreatitis', 'pancreatitis_dog_high_fat_penalty', -5, 'NP', 'Fat is the primary dietary trigger for canine pancreatitis', 'Fat content above 12% DMB may trigger flare-ups')
+        ? adj('pancreatitis', 'pancreatitis_dog_high_fat_penalty', -8, 'NP', 'Fat is the primary dietary trigger for canine pancreatitis', 'Fat content above 12% DMB may trigger flare-ups')
         : null },
   { id: 'pancreatitis_dog_ultra_high_fat', species: 'dog',
     check: (_p, _i, _pet, dmb) =>
       dmb.fatDmb !== null && dmb.fatDmb > 18
-        ? adj('pancreatitis', 'pancreatitis_dog_ultra_high_fat', -3, 'NP', 'A single high-fat meal can trigger a life-threatening flare', 'Very high fat content is a significant concern for pancreatitis')
+        ? adj('pancreatitis', 'pancreatitis_dog_ultra_high_fat', -7, 'NP', 'A single high-fat meal can trigger a life-threatening flare', 'Very high fat content is a significant concern for pancreatitis')
         : null },
   { id: 'pancreatitis_dog_lean_protein_bonus', species: 'dog',
     check: (_p, _i, _pet, dmb) =>
@@ -604,7 +604,7 @@ const CONDITION_RULES: Record<string, ConditionRule[]> = {
 
 const PER_CONDITION_CAP = 8;
 const TOTAL_BONUS_CAP = 10;
-const TOTAL_PENALTY_CAP = -15;
+const TOTAL_PENALTY_CAP = -25;
 
 function applyConditionCaps(adjustments: ConditionAdjustment[]): { capped: ConditionAdjustment[]; total: number } {
   const byCondition = new Map<string, ConditionAdjustment[]>();
@@ -616,12 +616,13 @@ function applyConditionCaps(adjustments: ConditionAdjustment[]): { capped: Condi
 
   const capped: ConditionAdjustment[] = [];
 
-  for (const [, condAdjs] of byCondition) {
+  for (const [conditionName, condAdjs] of byCondition) {
     const condTotal = condAdjs.reduce((s, a) => s + a.points, 0);
-    if (Math.abs(condTotal) <= PER_CONDITION_CAP) {
+    const effectiveCap = conditionName === 'pancreatitis' ? 15 : PER_CONDITION_CAP;
+    if (Math.abs(condTotal) <= effectiveCap) {
       capped.push(...condAdjs);
     } else {
-      const capValue = condTotal > 0 ? PER_CONDITION_CAP : -PER_CONDITION_CAP;
+      const capValue = condTotal > 0 ? effectiveCap : -effectiveCap;
       const scale = capValue / condTotal;
       for (const a of condAdjs) {
         capped.push({ ...a, points: Math.round(a.points * scale) });

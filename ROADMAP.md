@@ -762,8 +762,8 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 62/100 (regression test — D-137 DCM fires, mitigation applies)
-- [ ] Temptations Classic Tuna → 9/100 (regression test — updated per D-142 colorant escalation)
+- [ ] Pure Balance Grain-Free Salmon → 60/100 (regression test — D-137 DCM fires, mitigation applies)
+- [ ] Temptations Classic Tuna → 0/100 (regression test — updated per D-142 colorant escalation + danger penalty increase)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling
 - [ ] Performance: scan → score ≤2s perceived latency

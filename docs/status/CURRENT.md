@@ -63,15 +63,15 @@
 
 - **Tests:** 1445 passing / 63 suites
 - **Decisions:** 129
-- **Migrations:** 35 (001–035)
+- **Migrations:** 36 (001–036)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
 
-- Pure Balance (Dog, daily food) = 62
-- Temptations (Cat, treat) = 9
+- Pure Balance (Dog, daily food) = 60
+- Temptations (Cat, treat) = 0
 - Pure Balance + cardiac dog = 0 (DCM zero-out)
-- Pure Balance + pancreatitis dog = 57 (fat >12% DMB penalty)
+- Pure Balance + pancreatitis dog = 52 (fat >12% DMB penalty)
 
 ## Up Next
 
@@ -97,24 +97,43 @@
 
 ## Last Session
 
-- **Date:** 2026-04-08 (session 36)
+- **Date:** 2026-04-09 (session 36)
 - **Accomplished:**
-  - **Search result images fix** — `searchProducts()` was using `SCORING_COLUMNS` (which lacks `image_url`) when a pet is provided. Since session 35 wired the active pet into search for JIT scoring, `image_url` was never selected, causing all search results to show placeholder icons instead of product images. Fixed by appending `, image_url` to the select when pet is provided. The v7 dataset has 19,034/19,058 products with valid Chewy CDN image URLs — the data was always there, just not being queried.
-- **Files changed (1 modified, 0 new):**
-  - `src/services/topMatches.ts` (line 227: `SCORING_COLUMNS` → `SCORING_COLUMNS + ', image_url'` in `searchProducts()`)
-- **Tests:** 1445 passing / 63 suites (unchanged — no scoring logic touched).
+  - **Search result images fix** — `searchProducts()` was using `SCORING_COLUMNS` (which lacks `image_url`) when a pet is provided. Fixed by appending `, image_url` to the select.
+  - **AAFCO statement data fix (migration 036)** — 100% of products had bad AAFCO data (scrapers captured `"yes"`, `"likely"`, `"unknown"` instead of actual statement text). Synthesized proper AAFCO text from `life_stage_claim` (99.9% populated): `adult` → `"Adult Maintenance"`, `puppy/kitten` → `"Growth and Reproduction"`, `all life stages` → `"All Life Stages"`, `senior` → `"Adult Maintenance"`. Import script updated to prevent recurrence on future imports. Deployed to production.
+  - **Scoring penalty rebalance** — Caution 8→10, Danger 15→20 in `ingredientQuality.ts`. Pancreatitis -5/-8 → -8/-15 with per-condition cap override (15 vs default 8) and total penalty cap -15 → -25 in `conditionScoring.ts`. Reviewed by Gemini (senior engineer role) who approved all three with mathematical justification.
+  - **Regression anchors updated** — Pure Balance 62→66 (AAFCO fix) →60 (penalty rebalance). Temptations 9→0 (danger 20 × 3 dyes crushes IQ). Pure Balance + pancreatitis 57→52 (base 60 - 8 fat penalty). All test assertions, snapshots, and ~30 doc/config references updated. Scoring version bumped to `'4'`.
+  - **Edge Function redeployed** — `batch-score` with updated penalties + scoring version 4.
+- **Files changed (12 modified, 1 new):**
+  - `src/services/topMatches.ts` (`image_url` in search select)
+  - `src/services/scoring/ingredientQuality.ts` (caution 10, danger 20)
+  - `src/utils/conditionScoring.ts` (pancreatitis -8/-15, per-condition cap override, total cap -25)
+  - `src/utils/constants.ts` (`CURRENT_SCORING_VERSION` → `'4'`)
+  - `scripts/import/import_products.py` (AAFCO synthesis on import)
+  - `supabase/migrations/036_aafco_statement_synthesis.sql` (new — deployed)
+  - `supabase/functions/batch-score/scoring/ingredientQuality.ts` (synced)
+  - `supabase/functions/batch-score/utils/conditionScoring.ts` (synced)
+  - `supabase/functions/batch-score/utils/constants.ts` (version 4)
+  - 7 test files updated (regressionAnchors, engine, ingredientQuality, allergenOverride, realDataTrace, conditionScoring, topMatches, batchScoreOnDevice)
+  - ~30 doc/config files updated with new anchor values
+- **Tests:** 1445 passing / 63 suites (unchanged count — test values updated, no new tests).
 - **Not done yet:**
   - **Visual QA** carry-over: CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert.
   - **CategoryBrowseScreen "See All" no scores** — carry-over from session 35.
   - **JIT tests** — no new tests written for JIT scoring path. Carry-over from session 35.
+  - **Scoring reference docs audit** — `docs/references/scoring-details.md` and `docs/references/scoring-rules.md` may have stale penalty values (8/15) and need updating to reflect caution=10, danger=20, pancreatitis changes.
 - **Next session should start with:**
-  - Continue on-device testing: TopPicksCarousel self-healing (switch Dry → Wet → Freeze-Dried sub-filters).
+  - Audit `docs/references/scoring-rules.md` and `docs/references/scoring-details.md` for stale penalty values.
+  - On-device smoke test: verify scores look reasonable after the rebalance (products should score slightly lower, Temptations-like products should score 0).
   - M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
 - **Gotchas:**
-  - `searchProducts()` now selects `SCORING_COLUMNS + ', image_url'` when pet is provided. The non-pet branch already included `image_url` and is unchanged.
+  - **Scores shifted globally** — AAFCO fix raised scores ~4 pts, penalty rebalance lowered them ~6 pts. Net effect: most products score slightly lower than before. This is intentional — products were both over-penalized (bad AAFCO data) and under-penalized (weak caution/danger values). The corrections mostly cancel out.
+  - **Temptations = 0** — 3 artificial dyes at danger=20 each = -60 from IQ alone, floors to 0. This is correct behavior — products packed with harmful additives should score at the floor.
+  - **Pancreatitis per-condition cap is 15** (not the default 8). Only pancreatitis has this override via `conditionName === 'pancreatitis'` check in `applyConditionCaps`. Total penalty cap raised to -25 so pancreatitis doesn't swallow other condition penalties.
+  - **`CURRENT_SCORING_VERSION = '4'`** — forces full cache rebuild on next app launch. Migration 036 also wiped `pet_product_scores`.
   - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
-- **Decision/scoring changes:** No new D-numbers (129). Scoring engine logic untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
+- **Decision/scoring changes:** No new D-numbers (129). **Scoring engine changed:** caution 8→10, danger 15→20, pancreatitis -5/-8→-8/-15, per-condition cap override for pancreatitis (15), total penalty cap -15→-25. Regression anchors: Pure Balance = 60, Temptations = 0.
 
 ---
 [Previous session 35 block retained below for reference]

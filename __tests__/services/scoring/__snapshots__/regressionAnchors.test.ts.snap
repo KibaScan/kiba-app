@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1`] = `
+exports[`Regression Anchor: Pure Balance (Dog) = 60 full result shape snapshot 1`] = `
 {
   "allergenDelta": 0,
   "carbEstimate": {
@@ -11,35 +11,34 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
     "valueDmb": 43.3,
   },
   "category": "daily_food",
-  "displayScore": 62,
-  "finalScore": 62,
+  "displayScore": 60,
+  "finalScore": 60,
   "flags": [
     "ingredient_splitting_detected",
-    "aafco_statement_unrecognized",
   ],
   "ingredientPenalties": [
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "peas",
       "position": 3,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "poultry_fat",
       "position": 6,
-      "positionAdjustedPenalty": 5.6,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 7,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "fish_meal",
       "position": 8,
-      "positionAdjustedPenalty": 5.6,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 7,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
@@ -54,8 +53,8 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "citationSource": "AAFCO-2023",
       "ingredientName": "natural_flavor",
       "position": 11,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
@@ -70,16 +69,16 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "citationSource": "AAFCO-2023",
       "ingredientName": "salt",
       "position": 13,
-      "positionAdjustedPenalty": 3.2,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 4,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "copper_sulfate",
       "position": 33,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
   ],
@@ -91,13 +90,13 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 8,
+      "totalWeightedPoints": 10,
     },
     {
       "canonicalName": "poultry_fat",
@@ -106,13 +105,13 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 5.6,
+          "weightedPoints": 7,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 5.6,
+      "totalWeightedPoints": 7,
     },
     {
       "canonicalName": "fish_meal",
@@ -121,9 +120,9 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 5.6,
+          "weightedPoints": 7,
         },
         {
           "citationSource": "AAFCO Definitions 9.3/9.14 (2023)",
@@ -133,7 +132,7 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 7.6,
+      "totalWeightedPoints": 9,
     },
     {
       "canonicalName": "natural_flavor",
@@ -142,9 +141,9 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
         {
           "citationSource": "AAFCO Definitions 9.3/9.14 (2023)",
@@ -154,7 +153,7 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 10,
+      "totalWeightedPoints": 12,
     },
     {
       "canonicalName": "salt",
@@ -163,13 +162,13 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 3.2,
+          "weightedPoints": 4,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 3.2,
+      "totalWeightedPoints": 4,
     },
     {
       "canonicalName": "copper_sulfate",
@@ -178,22 +177,22 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 8,
+      "totalWeightedPoints": 10,
     },
   ],
   "isPartialScore": false,
   "isRecalled": false,
   "layer1": {
-    "formulation": 63,
-    "ingredientQuality": 57.60000000000001,
+    "formulation": 88,
+    "ingredientQuality": 48,
     "nutritionalProfile": 79,
-    "weightedComposite": 64.8,
+    "weightedComposite": 63.3,
   },
   "layer2": {
     "appliedRules": [
@@ -230,7 +229,7 @@ exports[`Regression Anchor: Pure Balance (Dog) = 62 full result shape snapshot 1
 }
 `;
 
-exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapshot 1`] = `
+exports[`Regression Anchor: Temptations (Cat Treat) = 0 full result shape snapshot 1`] = `
 {
   "allergenDelta": 0,
   "carbEstimate": {
@@ -241,32 +240,32 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
     "valueDmb": 34.1,
   },
   "category": "treat",
-  "displayScore": 9,
-  "finalScore": 9,
+  "displayScore": 0,
+  "finalScore": 0,
   "flags": [],
   "ingredientPenalties": [
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "chicken by-product meal",
       "position": 1,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "ground corn",
       "position": 2,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023",
       "ingredientName": "animal fat",
       "position": 3,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
@@ -281,8 +280,8 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "citationSource": "AAFCO-2023",
       "ingredientName": "dried meat by-products",
       "position": 4,
-      "positionAdjustedPenalty": 8,
-      "rawPenalty": 8,
+      "positionAdjustedPenalty": 10,
+      "rawPenalty": 10,
       "reason": "Moderate-severity ingredient concern",
     },
     {
@@ -297,24 +296,24 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "citationSource": "AAFCO-2023; Merck Veterinary Manual",
       "ingredientName": "yellow 5",
       "position": 10,
-      "positionAdjustedPenalty": 15,
-      "rawPenalty": 15,
+      "positionAdjustedPenalty": 20,
+      "rawPenalty": 20,
       "reason": "High-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023; Merck Veterinary Manual",
       "ingredientName": "red 40",
       "position": 11,
-      "positionAdjustedPenalty": 15,
-      "rawPenalty": 15,
+      "positionAdjustedPenalty": 20,
+      "rawPenalty": 20,
       "reason": "High-severity ingredient concern",
     },
     {
       "citationSource": "AAFCO-2023; Merck Veterinary Manual",
       "ingredientName": "blue 2",
       "position": 12,
-      "positionAdjustedPenalty": 15,
-      "rawPenalty": 15,
+      "positionAdjustedPenalty": 20,
+      "rawPenalty": 20,
       "reason": "High-severity ingredient concern",
     },
   ],
@@ -326,13 +325,13 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 8,
+      "totalWeightedPoints": 10,
     },
     {
       "canonicalName": "ground corn",
@@ -341,13 +340,13 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 8,
+      "totalWeightedPoints": 10,
     },
     {
       "canonicalName": "animal fat",
@@ -356,9 +355,9 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
         {
           "citationSource": "AAFCO Definitions 9.3/9.14 (2023)",
@@ -368,7 +367,7 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 10,
+      "totalWeightedPoints": 12,
     },
     {
       "canonicalName": "dried meat by-products",
@@ -377,13 +376,13 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023",
-          "rawPoints": 8,
+          "rawPoints": 10,
           "reason": "Moderate-severity ingredient concern",
-          "weightedPoints": 8,
+          "weightedPoints": 10,
         },
       ],
       "severity": "caution",
-      "totalWeightedPoints": 8,
+      "totalWeightedPoints": 10,
     },
     {
       "canonicalName": "natural flavor",
@@ -407,13 +406,13 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023; Merck Veterinary Manual",
-          "rawPoints": 15,
+          "rawPoints": 20,
           "reason": "High-severity ingredient concern",
-          "weightedPoints": 15,
+          "weightedPoints": 20,
         },
       ],
       "severity": "danger",
-      "totalWeightedPoints": 15,
+      "totalWeightedPoints": 20,
     },
     {
       "canonicalName": "red 40",
@@ -422,13 +421,13 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023; Merck Veterinary Manual",
-          "rawPoints": 15,
+          "rawPoints": 20,
           "reason": "High-severity ingredient concern",
-          "weightedPoints": 15,
+          "weightedPoints": 20,
         },
       ],
       "severity": "danger",
-      "totalWeightedPoints": 15,
+      "totalWeightedPoints": 20,
     },
     {
       "canonicalName": "blue 2",
@@ -437,22 +436,22 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
       "reasons": [
         {
           "citationSource": "AAFCO-2023; Merck Veterinary Manual",
-          "rawPoints": 15,
+          "rawPoints": 20,
           "reason": "High-severity ingredient concern",
-          "weightedPoints": 15,
+          "weightedPoints": 20,
         },
       ],
       "severity": "danger",
-      "totalWeightedPoints": 15,
+      "totalWeightedPoints": 20,
     },
   ],
   "isPartialScore": false,
   "isRecalled": false,
   "layer1": {
     "formulation": 0,
-    "ingredientQuality": 19,
+    "ingredientQuality": 0,
     "nutritionalProfile": 0,
-    "weightedComposite": 19,
+    "weightedComposite": 0,
   },
   "layer2": {
     "appliedRules": [
@@ -478,7 +477,7 @@ exports[`Regression Anchor: Temptations (Cat Treat) = 9 full result shape snapsh
         "ruleId": "UGT1A6_WARNING",
       },
     ],
-    "speciesAdjustment": -10,
+    "speciesAdjustment": 0,
   },
   "layer3": {
     "allergenWarnings": [],

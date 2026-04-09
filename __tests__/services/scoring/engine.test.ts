@@ -405,17 +405,17 @@ describe('computeScore — Orchestrator', () => {
     test('full breakdown → 62 (D-137: DCM fires, mitigation applies)', () => {
       const result = computeScore(product, ingredients, pet);
 
-      // Layer 1a: IQ = 57.6
-      //   peas (3, caution, eligible):              −8 × 1.0  = −8
-      //   poultry_fat (6, caution, eligible):       −8 × 0.7  = −5.6
-      //   fish_meal (8, caution, eligible):         −8 × 0.7  = −5.6
-      //   fish_meal (unnamed):                      −2         = −2
-      //   natural_flavor (11, caution, NOT elig):   −8 × 1.0  = −8
-      //   natural_flavor (unnamed):                 −2         = −2
-      //   salt (13, caution, eligible):             −8 × 0.4  = −3.2
-      //   copper_sulfate (33, caution, NOT elig):   −8 × 1.0  = −8
-      //   Total: −42.4 → IQ = 57.6
-      expect(result.layer1.ingredientQuality).toBeCloseTo(57.6, 1);
+      // Layer 1a: IQ = 48
+      //   peas (3, caution, eligible):              −10 × 1.0  = −10
+      //   poultry_fat (6, caution, eligible):       −10 × 0.7  = −7
+      //   fish_meal (8, caution, eligible):         −10 × 0.7  = −7
+      //   fish_meal (unnamed):                      −2          = −2
+      //   natural_flavor (11, caution, NOT elig):   −10 × 1.0  = −10
+      //   natural_flavor (unnamed):                 −2          = −2
+      //   salt (13, caution, eligible):             −10 × 0.4  = −4
+      //   copper_sulfate (33, caution, NOT elig):   −10 × 1.0  = −10
+      //   Total: −52 → IQ = 48
+      expect(result.layer1.ingredientQuality).toBeCloseTo(48, 1);
 
       // Layer 1b: NP = 79
       expect(result.layer1.nutritionalProfile).toBe(79);
@@ -423,28 +423,28 @@ describe('computeScore — Orchestrator', () => {
       // Layer 1c: FC = 63
       expect(result.layer1.formulation).toBe(63);
 
-      // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 = 64.83 → 65
-      expect(result.layer1.weightedComposite).toBeCloseTo(64.8, 1);
+      // Weighted: (48×0.55) + (79×0.30) + (63×0.15) = 26.4 + 23.7 + 9.45 = 59.55 → 60
+      expect(result.layer1.weightedComposite).toBeCloseTo(59.6, 1);
 
       // Layer 2 — D-137: DCM fires (Rule 1: peas at pos 3; Rule 2: 2 pulses in top 10)
       const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
       expect(dcm).toBeDefined();
       expect(dcm!.fired).toBe(true);
-      // DCM: −round(65 × 0.08) = −round(5.2) = −5
+      // DCM: −round(60 × 0.08) = −round(4.8) = −5
       expect(dcm!.adjustment).toBe(-5);
 
       // Mitigation fires: taurine (pos 17) + l_carnitine (pos 40)
       const mitigation = result.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
       expect(mitigation).toBeDefined();
       expect(mitigation!.fired).toBe(true);
-      // Mitigation: +round(65 × 0.03) = +round(1.95) = +2
+      // Mitigation: +round(60 × 0.03) = +round(1.8) = +2
       expect(mitigation!.adjustment).toBe(2);
 
       // L2 net: −5 + 2 = −3
       expect(result.layer2.speciesAdjustment).toBe(-3);
 
-      // Final: 65 − 3 = 62
-      expect(result.finalScore).toBe(62);
+      // Final: 60 − 3 = 57
+      expect(result.finalScore).toBe(57);
     });
   });
 

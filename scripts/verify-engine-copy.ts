@@ -1,6 +1,6 @@
 // Verification script — validates the scoring engine copy produces correct results.
 // Run: npx ts-node scripts/verify-engine-copy.ts
-// Expected: Pure Balance Wild & Free Salmon & Pea (Dog) → finalScore = 62
+// Expected: Pure Balance Wild & Free Salmon & Pea (Dog) → finalScore = 60
 
 import { computeScore } from '../supabase/functions/batch-score/scoring/engine';
 import type { Product, PetProfile } from '../supabase/functions/batch-score/types';
@@ -16,7 +16,7 @@ const product: Product = {
   category: Category.DailyFood,
   target_species: Species.Dog,
   source: 'curated',
-  aafco_statement: 'yes',
+  aafco_statement: 'Growth and Reproduction',
   life_stage_claim: null,
   preservative_type: PreservativeType.Natural,
   ga_protein_pct: 24,
@@ -124,13 +124,13 @@ const ingredients: ProductIngredient[] = [
 
 const result = computeScore(product, ingredients, pet);
 
-if (result.finalScore === 62) {
+if (result.finalScore === 60) { // Updated: was 66 (AAFCO fix), then 62 (original)
   console.log(`PASS — Pure Balance scored ${result.finalScore}`);
   console.log(`  IQ=${result.layer1.ingredientQuality}, NP=${result.layer1.nutritionalProfile}, FC=${result.layer1.formulation}`);
   console.log(`  Weighted=${result.layer1.weightedComposite}, L2=${result.layer2.speciesAdjustment}`);
   process.exit(0);
 } else {
-  console.error(`FAIL — Pure Balance scored ${result.finalScore}, expected 62`);
+  console.error(`FAIL — Pure Balance scored ${result.finalScore}, expected 60`);
   console.error(`  IQ=${result.layer1.ingredientQuality}, NP=${result.layer1.nutritionalProfile}, FC=${result.layer1.formulation}`);
   console.error(`  Weighted=${result.layer1.weightedComposite}, L2=${result.layer2.speciesAdjustment}`);
   process.exit(1);

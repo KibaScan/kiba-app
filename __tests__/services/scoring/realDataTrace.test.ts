@@ -187,11 +187,11 @@ describe('Real Data Trace: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
 
     // ─── Assertions ──────────────────────────────────────────
 
-    // Layer 1a: IQ = 57.6
-    //   Caution penalties: peas(-8) + poultry_fat(-5.6) + fish_meal(-5.6) + natural_flavor(-8) + salt(-3.2) + copper_sulfate(-8) = −38.4
+    // Layer 1a: IQ = 48
+    //   Caution penalties: peas(-10) + poultry_fat(-7) + fish_meal(-7) + natural_flavor(-10) + salt(-4) + copper_sulfate(-10) = −48
     //   Unnamed species: fish_meal(-2) + natural_flavor(-2) = −4
-    //   Total: −42.4 → IQ = 57.6
-    expect(iq).toBeCloseTo(57.6, 1);
+    //   Total: −52 → IQ = 48
+    expect(iq).toBeCloseTo(48, 1);
 
     // Layer 1b: NP = 79
     expect(np).toBe(79);
@@ -199,25 +199,25 @@ describe('Real Data Trace: Pure Balance Wild & Free Salmon & Pea (Dog)', () => {
     // Layer 1c: FC = 63
     expect(fc).toBe(63);
 
-    // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 ≈ 65
-    expect(base).toBeCloseTo(64.8, 1);
+    // Weighted: (48×0.55) + (79×0.30) + (63×0.15) = 26.4 + 23.7 + 9.45 ≈ 60
+    expect(base).toBeCloseTo(59.6, 1);
 
     // D-137: DCM fires — Rule 1 (peas at pos 3) + Rule 2 (2 pulses in top 10)
     expect(dcm!.fired).toBe(true);
-    // DCM: −round(65 × 0.08) = −round(5.2) = −5
+    // DCM: −round(60 × 0.08) = −round(4.8) = −5
     expect(dcm!.adjustment).toBe(-5);
 
     // Mitigation fires: taurine (pos 17) + l_carnitine (pos 40) both present
     expect(mit!.fired).toBe(true);
-    // Mitigation: +round(65 × 0.03) = +round(1.95) = +2
+    // Mitigation: +round(60 × 0.03) = +round(1.8) = +2
     expect(mit!.adjustment).toBe(2);
 
     // Layer 3: neutral (no allergens, no conditions)
     const l3Adjustment = result.layer3.personalizations.reduce((sum, p) => sum + p.adjustment, 0);
     expect(l3Adjustment).toBe(0);
 
-    // Final: 65 − 5 + 2 = 62
-    expect(result.finalScore).toBe(62);
+    // Final: 60 − 5 + 2 = 57
+    expect(result.finalScore).toBe(57);
     expect(result.petName).toBe('Buster');
   });
 });

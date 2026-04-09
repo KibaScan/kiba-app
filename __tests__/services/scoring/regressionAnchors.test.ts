@@ -129,14 +129,14 @@ function makeIngredient(
   };
 }
 
-// ─── Anchor 1: Pure Balance Wild & Free Salmon & Pea (Dog) = 62 ───
+// ─── Anchor 1: Pure Balance Wild & Free Salmon & Pea (Dog) = 60 ───
 
-describe('Regression Anchor: Pure Balance (Dog) = 62', () => {
+describe('Regression Anchor: Pure Balance (Dog) = 60', () => {
   const product = makeProduct({
     category: Category.DailyFood,
     target_species: Species.Dog,
     is_grain_free: true,
-    aafco_statement: 'yes',
+    aafco_statement: 'Growth and Reproduction',
     preservative_type: PreservativeType.Natural,
     ga_protein_pct: 24,
     ga_fat_pct: 15,
@@ -169,9 +169,9 @@ describe('Regression Anchor: Pure Balance (Dog) = 62', () => {
 
   const pet = makePet({ life_stage: LifeStage.Adult });
 
-  test('finalScore === 62', () => {
+  test('finalScore === 60', () => {
     const result = computeScore(product, ingredients, pet);
-    expect(result.finalScore).toBe(62);
+    expect(result.finalScore).toBe(60);
   });
 
   test('full result shape snapshot', () => {
@@ -180,9 +180,9 @@ describe('Regression Anchor: Pure Balance (Dog) = 62', () => {
   });
 });
 
-// ─── Anchor 2: Temptations Classic Tuna (Cat Treat) = 9 ──────────
+// ─── Anchor 2: Temptations Classic Tuna (Cat Treat) = 0 ──────────
 
-describe('Regression Anchor: Temptations (Cat Treat) = 9', () => {
+describe('Regression Anchor: Temptations (Cat Treat) = 0', () => {
   const product = makeProduct({
     category: Category.Treat,
     target_species: Species.Cat,
@@ -212,9 +212,9 @@ describe('Regression Anchor: Temptations (Cat Treat) = 9', () => {
 
   const pet = makePet({ species: Species.Cat, life_stage: LifeStage.Adult });
 
-  test('finalScore === 9', () => {
+  test('finalScore === 0', () => {
     const result = computeScore(product, ingredients, pet);
-    expect(result.finalScore).toBe(9);
+    expect(result.finalScore).toBe(0);
   });
 
   test('full result shape snapshot', () => {

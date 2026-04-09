@@ -199,7 +199,7 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
     expect(withoutOverride.ingredientScore).toBe(100); // neutral = no penalty
-    expect(withOverride.ingredientScore).toBe(85); // danger at pos 1 = -15
+    expect(withOverride.ingredientScore).toBe(80); // danger at pos 1 = -20
   });
 
   test('good ingredient overridden to danger gets penalty', () => {
@@ -214,7 +214,7 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const overrides = new Map([['chicken', 'danger' as const]]);
 
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
-    expect(withOverride.ingredientScore).toBe(85); // danger at pos 1 = -15
+    expect(withOverride.ingredientScore).toBe(80); // danger at pos 1 = -20
   });
 
   test('danger ingredient stays danger (max rule — no change)', () => {
@@ -233,8 +233,8 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
     // Both danger — no change
-    expect(withoutOverride.ingredientScore).toBe(85);
-    expect(withOverride.ingredientScore).toBe(85); // unchanged — same severity
+    expect(withoutOverride.ingredientScore).toBe(80);
+    expect(withOverride.ingredientScore).toBe(80); // unchanged — same severity
   });
 
   test('caution ingredient escalated to danger by direct match', () => {
@@ -251,8 +251,8 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withoutOverride = scoreIngredients(ingredients, 'dog');
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
-    expect(withoutOverride.ingredientScore).toBe(92); // caution = -8
-    expect(withOverride.ingredientScore).toBe(85); // danger = -15
+    expect(withoutOverride.ingredientScore).toBe(90); // caution = -10
+    expect(withOverride.ingredientScore).toBe(80); // danger = -20
   });
 
   test('undefined overrides = identical to no overrides', () => {
@@ -474,7 +474,7 @@ describe('Pure Balance regression — D-129 zero delta', () => {
     const pet = makePet({ life_stage: LifeStage.Adult });
     const result = computeScore(product, ingredients, pet);
 
-    expect(result.finalScore).toBe(69);
+    expect(result.finalScore).toBe(65);
     expect(result.allergenDelta).toBe(0);
   });
 });

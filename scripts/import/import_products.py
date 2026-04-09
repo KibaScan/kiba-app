@@ -42,10 +42,18 @@ def map_product_row(record: dict) -> dict:
     Handles Chewy, Amazon, and Walmart field naming conventions.
     """
 
-    # AAFCO statement: 'unknown' -> null (but preserve inferred values)
+    # AAFCO statement: synthesize from life_stage_claim when scraper
+    # captured non-descriptive values ('yes', 'likely', 'unknown', etc.)
     aafco = record.get('aafco_statement')
-    if aafco == 'unknown':
-        aafco = None
+    life_stage = record.get('life_stage_claim')
+    if aafco in (None, '', 'unknown', 'yes', 'likely'):
+        synthesis_map = {
+            'all life stages': 'All Life Stages',
+            'puppy/kitten': 'Growth and Reproduction',
+            'adult': 'Adult Maintenance',
+            'senior': 'Adult Maintenance',
+        }
+        aafco = synthesis_map.get(life_stage, aafco)
 
     # Preservative type: validate against allowed values
     pt = record.get('preservative_type')

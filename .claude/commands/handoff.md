@@ -9,7 +9,7 @@ Before we end this session, do the following:
 
 2. Run the test suite and update the test count in CURRENT.md if it changed.
 
-3. Verify regression anchors: Pure Balance = 62, Temptations = 9.
+3. Verify regression anchors: Pure Balance = 60, Temptations = 0.
 
 4. Decision drift check: count D-number entries in DECISIONS.md (grep -c "^### D-"),
    compare to the count in CURRENT.md under "## Numbers". Update CURRENT.md if drifted.

@@ -70,7 +70,7 @@ const FRESH_CACHED_ROW = {
   life_stage_at_scoring: 'adult',
   pet_updated_at: '2026-03-01T00:00:00Z',
   pet_health_reviewed_at: '2026-03-01T00:00:00Z',
-  scoring_version: '2',
+  scoring_version: '4',
 };
 
 // ─── Setup ──────────────────────────────────────────────

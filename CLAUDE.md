@@ -51,7 +51,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 | Supplemental | 65% | 35% (macro-only) | 0% |
 | Treats | 100% | 0% | 0% |
 
-**Regression anchors:** Pure Balance (Dog) = 62, Temptations (Cat Treat) = 9
+**Regression anchors:** Pure Balance (Dog) = 60, Temptations (Cat Treat) = 0
 
 ## Schema Traps
 
@@ -109,7 +109,7 @@ M6: compare flow with side-by-side scoring
 
 ## Self-Check
 
-□ Scoring deterministic? Pure Balance = 62 after changes?
+□ Scoring deterministic? Pure Balance = 60 after changes?
 □ `position_reduction_eligible` checked? DMB for wet food? `cluster_id` for splitting?
 □ Score framing + UPVM compliance in UI copy?
 □ Paywall in permissions.ts only? RLS on user tables? API keys server-side?

@@ -53,7 +53,7 @@ to other modules. Don't repeat what's in the root CLAUDE.md."
 ```
 
 > **Kiba examples of scoped files:**
-> - `src/scoring/CLAUDE.md` — pipeline bypass order, regression target (Pure Balance = 62), "never use is_legume for DCM"
+> - `src/scoring/CLAUDE.md` — pipeline bypass order, regression target (Pure Balance = 60), "never use is_legume for DCM"
 > - `src/db/CLAUDE.md` — migration naming/ordering rules, RLS requirements, schema gotchas table
 > - `src/components/CLAUDE.md` — severity display labels, score colors vs severity colors, clinical copy rules
 
@@ -116,7 +116,7 @@ my-project/
 | **How to add common things**   | Step-by-step for frequent changes            | "New endpoint: handler in X → route in Y → types in Z → test in W"  |
 | **Error-prone areas**          | Where mistakes have severe consequences      | "Changing `auth.ts` requires the full integration suite"             |
 | **Environment & deps** *(NEW)* | Runtime, package manager, key versions       | "Node 20, pnpm, Postgres 16, Expo SDK 52"                           |
-| **Regression targets** *(NEW)* | Numbers that must not change without review  | "Pure Balance = 62. Check after ANY scoring change."                 |
+| **Regression targets** *(NEW)* | Numbers that must not change without review  | "Pure Balance = 60. Check after ANY scoring change."                 |
 
 ### What NOT to Include
 
@@ -172,7 +172,7 @@ my-project/
 Three layers: Base (IQ+NP+FC) → Species Rules → Personalization
 Pipeline bypass order: vet diet → species mismatch → variety pack → supplemental → normal
 ⚠ DCM uses is_pulse/is_pulse_protein — NEVER is_legume
-⚠ Pure Balance regression target = 62. Check after ANY scoring change.
+⚠ Pure Balance regression target = 60. Check after ANY scoring change.
 → Full math: references/scoring-details.md
 ```
 
@@ -229,7 +229,7 @@ Pipeline bypass order: vet diet → species mismatch → variety pack → supple
 6. Run: npx jest --testPathPattern=[domain]
 
 ## Regression Targets
-- Pure Balance = 62. Check after ANY scoring change.
+- Pure Balance = 60. Check after ANY scoring change.
 - 558 tests passing, 28 suites. Don't drop below without justification.
 
 ## Error-Prone Areas
@@ -329,7 +329,7 @@ This is the file the agent reads first on every fresh session. It answers: **"Wh
 - Switched validation from Joi to Zod. Do not use Joi.
 
 ## Regression Check
-- Pure Balance = 62 ✅ (last verified YYYY-MM-DD)
+- Pure Balance = 60 ✅ (last verified YYYY-MM-DD)
 - Test count: 558 passing, 28 suites ✅
 
 ## Next Milestone
@@ -358,7 +358,7 @@ Prompt:
 (4) Update CLAUDE.md if any build commands, conventions, or
     directory structures changed.
 (5) Check that all commands in CLAUDE.md actually work — run them.
-(6) Verify regression targets (run scoring tests, confirm Pure Balance = 62)."
+(6) Verify regression targets (run scoring tests, confirm Pure Balance = 60)."
 ```
 
 ---
@@ -469,7 +469,7 @@ Add scoring rule for $ARGUMENTS:
 5. Add citation_source for any new penalty
 6. Write tests covering: normal case, edge case, bypass case
 7. Run scoring test suite
-8. Verify Pure Balance regression target = 62
+8. Verify Pure Balance regression target = 60
 9. Run full test suite to check for side effects
 ```
 
@@ -479,7 +479,7 @@ Add scoring rule for $ARGUMENTS:
 We're closing milestone: $ARGUMENTS
 
 1. Run the full test suite — report results
-2. Verify regression target: Pure Balance = 62
+2. Verify regression target: Pure Balance = 60
 3. Update docs/status/CURRENT.md with current project state
 4. Create docs/status/milestones/[name].md with:
    - What was accomplished
@@ -934,7 +934,7 @@ Then check:
     vs is_legume) surfaced where the agent would encounter them?
 (4) Is DECISIONS.md referenced correctly (no superseded decisions
     without markers)?
-(5) Are regression targets (Pure Balance = 62, test count) in CURRENT.md?
+(5) Are regression targets (Pure Balance = 60, test count) in CURRENT.md?
 (6) Are the top 5 common pitfalls from git history in docs/errors.md?
 Fix whatever's missing."
 ```
@@ -975,7 +975,7 @@ START OF SESSION       →  /boot (slash command)
 BEFORE BIG TASK        →  Git checkpoint: git commit -m "checkpoint: before X"
 MAKING CHANGES         →  Run single-file tests after each change
 LARGE FEATURE          →  Break into 4-6 chained prompts, not one mega-prompt
-SCORING CHANGE         →  Verify Pure Balance = 62 after every change  🐾
+SCORING CHANGE         →  Verify Pure Balance = 60 after every change  🐾
 MADE A DECISION        →  Add to docs/decisions/NNN-name.md
 HIT A BUG              →  Add to docs/errors.md after fixing
 SOMETHING BROKE        →  Revert to last checkpoint, re-approach differently

@@ -196,13 +196,13 @@ NOT persisted to AsyncStorage — score data is large and stales quickly. Fetche
 4. `topMatches.ts` service + freshness checks (client service layer)
 5. Zustand store (state management)
 6. SearchScreen UI rewrite (the visible feature)
-7. Tests: freshness logic, batch scoring regression (Pure Balance = 62), pagination
+7. Tests: freshness logic, batch scoring regression (Pure Balance = 60), pagination
 8. Device testing + performance profiling
 
 ## Verification
 
 1. `npx jest --silent` — 641/641 tests still pass (no scoring logic changed)
-2. Batch-scored Pure Balance = 62 (matches scan pipeline)
+2. Batch-scored Pure Balance = 60 (matches scan pipeline)
 3. Add allergy → reopen Top Matches → scores refresh automatically
 4. Edit pet breed → scores refresh automatically
 5. Wait for life stage boundary crossing (or mock DOB) → scores refresh

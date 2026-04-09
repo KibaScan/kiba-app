@@ -19,7 +19,7 @@
 | Refactor (no behavior change) | Run existing suite | Don't write new — existing tests are the gate |
 
 ## Regression Anchors
-Pure Balance (Dog) = **62**, Temptations (Cat Treat) = **9**. Run after ANY scoring change.
+Pure Balance (Dog) = **60**, Temptations (Cat Treat) = **0**. Run after ANY scoring change.
 Snapshots in `services/scoring/__snapshots__/` — review diffs carefully before updating.
 
 ## Fixtures
