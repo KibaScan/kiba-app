@@ -224,7 +224,7 @@ export async function searchProducts(
 
   // When pet is provided, fetch full scoring columns for JIT scoring
   const selectCols = pet
-    ? SCORING_COLUMNS
+    ? SCORING_COLUMNS + ', image_url'
     : 'id, name, brand, image_url, product_form, category, is_supplemental';
 
   let q = supabase

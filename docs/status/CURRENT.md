@@ -97,42 +97,27 @@
 
 ## Last Session
 
-- **Date:** 2026-04-08 (session 35)
+- **Date:** 2026-04-08 (session 36)
 - **Accomplished:**
-  - **JIT search scoring (read-through cache)** — `searchProducts()` now scores unscored products on-device when `pet` is provided. After cache enrichment, identifies products with `final_score === null`, fetches ingredients (paginated to avoid PostgREST 1,000-row limit), hydrates via `hydrateIngredient()`, runs `computeScore()` with runtime variety pack detection (D-145) and supplemental detection (D-136), merges scores into results immediately. Fire-and-forget upsert to `pet_product_scores` grows the cache organically. Best-effort: entire JIT block wrapped in try/catch.
-  - **`searchProducts()` signature change** — `petId?: string` → `pet?: Pet`. When pet provided, selects full `SCORING_COLUMNS` (28 fields) instead of minimal 7 columns. Enables JIT scoring without a second DB query.
-  - **`SCORING_COLUMNS` exported** — from `batchScoreOnDevice.ts` for reuse in `topMatches.ts`.
-  - **`useTopMatchesStore` wired for JIT** — `executeSearch` now retrieves active pet via `useActivePetStore.getState()` and passes it to `searchProducts()`. Previously passed nothing — no scores at all.
-  - **TopPicksCarousel self-healing scoring** — When carousel loads fewer than 10 scored results for a form-specific sub-filter (dry/wet/freeze-dried), triggers `batchScoreHybrid` for that category+form (~1000 products via Edge Function) and reloads. Fixes sparse Top Picks after cache wipe.
-  - **`docs/plans/SCORING_CACHE_ARCHITECTURE.md` updated** — Added §3.4 (JIT write path), updated §4.1 (search read path), §5 (scoring triggers table), marked §9.1 resolved, updated §9.4 (store partially unwired).
-- **Files changed (5 modified, 0 new):**
-  - `src/services/batchScoreOnDevice.ts` (exported `SCORING_COLUMNS`)
-  - `src/services/topMatches.ts` (JIT scoring: signature `pet?: Pet`, expanded query columns, paginated ingredient fetch, `computeScore` loop with variety pack + supplemental guards, fire-and-forget cache upsert)
-  - `src/screens/HomeScreen.tsx` (pass `activePet` instead of `activePetId` to `searchProducts`)
-  - `src/stores/useTopMatchesStore.ts` (`executeSearch` passes active pet to `searchProducts`)
-  - `src/components/browse/TopPicksCarousel.tsx` (self-healing: trigger `batchScoreHybrid` when < 10 scored results for a form)
-  - `docs/plans/SCORING_CACHE_ARCHITECTURE.md` (§3.4 JIT path, §9.1 resolved)
-- **Tests:** 1445 passing / 63 suites (unchanged — no new tests this session, scoring logic untouched).
+  - **Search result images fix** — `searchProducts()` was using `SCORING_COLUMNS` (which lacks `image_url`) when a pet is provided. Since session 35 wired the active pet into search for JIT scoring, `image_url` was never selected, causing all search results to show placeholder icons instead of product images. Fixed by appending `, image_url` to the select when pet is provided. The v7 dataset has 19,034/19,058 products with valid Chewy CDN image URLs — the data was always there, just not being queried.
+- **Files changed (1 modified, 0 new):**
+  - `src/services/topMatches.ts` (line 227: `SCORING_COLUMNS` → `SCORING_COLUMNS + ', image_url'` in `searchProducts()`)
+- **Tests:** 1445 passing / 63 suites (unchanged — no scoring logic touched).
 - **Not done yet:**
   - **Visual QA** carry-over: CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert.
-  - **CategoryBrowseScreen "See All" no scores** — When user taps "See All" on Top Picks, CategoryBrowseScreen may show unscored products if `ensureFormScored` count > 0 (a few products exist but not enough). Could add similar < threshold trigger as TopPicksCarousel.
-  - **JIT tests** — no new tests written for JIT scoring path. Should add: JIT with pet (verify scores computed), JIT without pet (verify no scoring), background cache upsert shape.
+  - **CategoryBrowseScreen "See All" no scores** — carry-over from session 35.
+  - **JIT tests** — no new tests written for JIT scoring path. Carry-over from session 35.
 - **Next session should start with:**
-  - Test JIT scoring on device: search for an obscure product, confirm score badge appears, tap into ResultScreen to verify score matches.
-  - Test TopPicksCarousel self-healing: switch sub-filters (Dry → Wet → Freeze-Dried), verify carousel populates after brief spinner.
-  - Then M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
+  - Continue on-device testing: TopPicksCarousel self-healing (switch Dry → Wet → Freeze-Dried sub-filters).
+  - M9 carry-overs: 17 non-border `cardBorder` token decision, HomeScreen visual overhaul, search UX overhaul.
 - **Gotchas:**
-  - `searchProducts()` signature changed from `petId?: string` to `pet?: Pet`. All callers updated. `CompareProductPickerSheet` still passes no pet (intentional — score badges not needed in picker).
-  - JIT scoring is **best-effort** — wrapped in try/catch. If ingredient fetch or scoring fails, results return with whatever cached scores are available (or null). Never blocks search.
-  - **Ingredient pagination critical** — PostgREST 1,000-row default limit. 50 products × ~50-60 ingredients = ~2,500-3,000 rows. Without `.range()` pagination, later products get silently truncated and score artificially high. Pagination loop matches `batchScoreOnDevice.ts:199-217`.
-  - TopPicksCarousel scoring trigger uses `batchScoreHybrid` directly (not `ensureFormScored`). It fires when scored < 10, not just when count = 0. Rate-limited by `batchScoreHybrid`'s 5-min cooldown per `pet:category:form`.
-  - `useTopMatchesStore` is still partially orphaned — `executeSearch` now passes pet (for JIT), but `loadTopMatches`/`refreshScores` remain unwired.
+  - `searchProducts()` now selects `SCORING_COLUMNS + ', image_url'` when pet is provided. The non-pet branch already included `image_url` and is unchanged.
   - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
 - **Decision/scoring changes:** No new D-numbers (129). Scoring engine logic untouched. Regression anchors: Pure Balance = 62, Temptations = 9.
 
 ---
-[Previous session 34 block retained below for reference]
+[Previous session 35 block retained below for reference]
 
 - **Date:** 2026-04-08 (session 34)
 - **Accomplished:**
