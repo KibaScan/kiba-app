@@ -85,73 +85,106 @@ const EXACT_MATCHES: Set<string> = new Set([
   // ── Plant protein isolates/concentrates ──
   'pea_protein', 'pea_protein_isolate', 'pea_protein_concentrate',
   'soy_protein', 'soy_protein_isolate', 'soybean_meal',
-  'corn_gluten_meal', 'wheat_gluten', 'rice_protein', 'potato_protein',
-  'rice_protein_concentrate',
+  'corn_gluten_meal', 'corn_protein', 'corn_protein_concentrate',
+  'cornprotein_meal',  // parser artifact (jammed spelling)
+  'wheat_gluten', 'wheat_germ_meal',
+  'rice_protein', 'rice_protein_concentrate',
+  'potato_protein',
 ]);
 
+// ─── Underscore-Aware Boundary Helpers ───────────────────
+// In canonical names, words are separated by underscores.
+// Standard \b treats _ as a word character, so \bcorn\b won't match corn_meal.
+// These helpers use (?:^|_) and (?:$|_) as word boundaries instead.
+
+/** Match a word at underscore boundaries: (?:^|_)word(?:$|_) */
+function uw(word: string): RegExp {
+  return new RegExp(`(?:^|_)${word}(?:$|_)`);
+}
+
+/** Match a word prefix at underscore boundary: (?:^|_)prefix */
+function uwPrefix(prefix: string): RegExp {
+  return new RegExp(`(?:^|_)${prefix}`);
+}
+
 // Pattern fragments — catch parser variants (organic_chicken, dehydrated_salmon_meal, etc.)
+// Max length filter: ingredients > 60 chars are parser garbage (compound entries, marketing copy)
+const MAX_INGREDIENT_LENGTH = 60;
+
 const PATTERNS: RegExp[] = [
-  // Named species
-  /\bchicken\b/, /\bbeef\b/, /\bturkey\b/, /\blamb\b/, /\bduck\b/,
-  /\bvenison\b/, /\bbison\b/, /\brabbit\b/, /\bsalmon\b/, /\bherring\b/,
-  /\bmackerel\b/, /\bsardine/, /\banchov/, /\btrout\b/, /\btuna\b/,
-  /\bcod\b/, /\bpollock\b/, /\bhaddock\b/, /\bcatfish\b/, /\btilapia\b/,
-  /\belk\b/, /\bgoat\b/, /\bpork\b/, /\bwhitefish/, /\bquail\b/,
-  /\bpheasant\b/, /\bboar\b/, /\bkangaroo\b/, /\bmenhaden\b/,
-  // Structural (X_meal, X_fat, X_oil, X_protein, X_by_product, X_digest, X_liver, X_heart)
-  /\w_meal\b/,
-  /\w_fat\b/,
-  /\w_oil\b/,
-  /\w_protein\b/,
-  /\w_by_product/,
-  /\w_digest\b/,
-  /\w_liver\b/,
-  /\w_heart\b/,
-  /\w_tallow\b/,
+  // Named species at underscore boundaries
+  uw('chicken'), uw('beef'), uw('turkey'), uw('lamb'), uw('duck'),
+  uw('venison'), uw('bison'), uw('rabbit'), uw('salmon'), uw('herring'),
+  uw('mackerel'), uwPrefix('sardine'), uwPrefix('anchov'), uw('trout'), uw('tuna'),
+  uw('cod'), uw('pollock'), uw('haddock'), uw('catfish'), uw('tilapia'),
+  uw('elk'), uw('goat'), uw('pork'), uwPrefix('whitefish'), uw('quail'),
+  uw('pheasant'), uw('boar'), uw('kangaroo'), uw('menhaden'),
+  // Structural suffixes (X_meal, X_fat, X_oil, etc.)
+  /_meal$/,
+  /_fat$/,
+  /_oil$/,
+  /_protein$/,
+  /_by_product/,
+  /_digest$/,
+  /_liver$/,
+  /_heart$/,
+  /_tallow$/,
   // Eggs & dairy
-  /\begg/, /\bcasein\b/, /\bwhey\b/, /\bcheese\b/,
+  uwPrefix('egg'), uw('casein'), uw('whey'), uw('cheese'),
   // Gluten meals (protein sources)
-  /\bgluten_meal\b/, /\bwheat_gluten\b/,
-  // Natural flavor (protein/fat source)
-  /\bnatural_flavor\b/,
+  /gluten_meal/, /wheat_gluten/,
+  // Natural flavor
+  /natural_flavor/,
 ];
 
 // Hard exclusions — NEVER classify as protein/fat source.
 // These only block PATTERN matches. Exact set matches are immune.
+// Use underscore-aware boundaries so corn_meal is excluded by the corn rule.
 const EXCLUSION_PATTERNS: RegExp[] = [
   // Grains (except gluten meal / protein isolates — handled by exact set)
-  /\bcorn\b/, /\brice\b/, /\bwheat\b/, /\bbarley/, /\boats?\b/, /\bsorghum/,
-  /\bmillet/, /\brye\b/, /\bbuckwheat/,
+  uw('corn'), uw('rice'), uw('wheat'), uwPrefix('barley'), uw('oats?'),
+  uwPrefix('sorghum'), uwPrefix('millet'), uw('rye'), uwPrefix('buckwheat'),
   // Starches
-  /\bpotato\b/, /\btapioca/, /\bcassava/, /\bsweet_potato/,
+  uw('potato'), uwPrefix('tapioca'), uwPrefix('cassava'), /sweet_potato/,
   // Fibers
-  /\bcellulose/, /\bbeet_pulp/, /\bpea_fiber/, /\bpea_starch/, /\bpea_flour/,
-  /\bpea_hull/, /\btomato_pomace/, /\bpumpkin\b/, /\bapple\b/,
+  uwPrefix('cellulose'), /beet_pulp/, /pea_fiber/, /pea_starch/, /pea_flour/,
+  /pea_hull/, /tomato_pomace/, uw('pumpkin'), uw('apple'),
   // Legumes as carbs (not protein isolates)
-  /\bpeas?\b/, /\blentil/, /\bchickpea/, /\bfava/, /\bbean/,
+  uw('peas?'), uwPrefix('lentil'), uwPrefix('chickpea'), uwPrefix('fava'), uwPrefix('bean'),
   // Vitamins/minerals/supplements
-  /\bvitamin/, /\bmineral/, /\bcalcium/, /\bphosphate/, /\bpotassium/,
-  /\bchloride/, /\bsulfate/, /\boxide/, /\bselenite/, /\biodate/,
-  /\bcarbonate/, /\btaurine\b/, /\bmethionine\b/, /\bl_carnitine\b/,
-  /\bbiotin\b/, /\bcholine\b/, /\bniacin/, /\bthiamine/, /\briboflavin/,
-  /\bfolic/, /\bpyridoxine/, /\bascorbic/, /\bpantothen/,
+  uwPrefix('vitamin'), uwPrefix('mineral'), uwPrefix('calcium'), uwPrefix('phosphate'),
+  uwPrefix('potassium'), uwPrefix('chloride'), uwPrefix('sulfate'), uwPrefix('oxide'),
+  uwPrefix('selenite'), uwPrefix('iodate'), uwPrefix('carbonate'),
+  /taurine/, uw('methionine'), uw('l_carnitine'),
+  uw('biotin'), uw('choline'), uwPrefix('niacin'), uwPrefix('thiamine'),
+  uwPrefix('riboflavin'), uwPrefix('folic'), uwPrefix('pyridoxine'),
+  uwPrefix('ascorbic'), uwPrefix('pantothen'),
   // Probiotics
-  /\bprobiotics?/, /\blactobacillus/, /\bbacillus/, /\benterococcus/,
-  // Preservatives / extracts (rosemary_oil is NOT a fat source)
-  /\brosemary/, /\btocopherol/, /\bcitric_acid/, /\bpeppermint/,
-  /\bmarigold/, /\byucca/,
+  uwPrefix('probiotic'), uwPrefix('lactobacillus'), uwPrefix('bacillus'), uwPrefix('enterococcus'),
+  // Preservatives / extracts
+  uwPrefix('rosemary'), uwPrefix('tocopherol'), /citric_acid/, uwPrefix('peppermint'),
+  uwPrefix('marigold'), uwPrefix('yucca'),
   // Non-fat plant items
-  /\bflaxseed\b/, /\bchia_seed/, /\bsunflower_seed/,
-  // Misc non-protein items that could match patterns
-  /\balfalfa/, /\bkelp/, /\bseaweed/, /\bspirulina/,
-  /\bbrewers_yeast/, /\bdried_yeast/, /\byeast/,
-  /\bsalt\b/, /\bwater\b/, /\bguar_gum/, /\bxanthan/, /\bcarrageenan/,
-  /\bagar/, /\blocust_bean/,
+  uw('flaxseed'), /chia_seed/, /sunflower_seed/,
+  // Misc non-protein items
+  uwPrefix('alfalfa'), uwPrefix('kelp'), uwPrefix('seaweed'), uwPrefix('spirulina'),
+  /brewers_yeast/, /dried_yeast/, uwPrefix('yeast'),
+  uw('salt'), uw('water'), /guar_gum/, uwPrefix('xanthan'), uwPrefix('carrageenan'),
+  uwPrefix('agar'), /locust_bean/,
   // Colors / dyes
-  /\bcolor/, /\bdye\b/, /\byellow_\d/, /\bred_\d/, /\bblue_\d/,
+  uwPrefix('color'), uw('dye'), /yellow_\d/, /red_\d/, /blue_\d/,
   // Fruits / vegetables
-  /\bblueberr/, /\bcranberr/, /\bcarrot\b/, /\bspinach\b/, /\bbroccoli/,
-  /\bsweet_potato/, /\bsquash/, /\bparsley/, /\bturmeric/, /\bginger\b/,
+  uwPrefix('blueberr'), uwPrefix('cranberr'), uw('carrot'), uw('spinach'),
+  uwPrefix('broccoli'), /sweet_potato/, uw('squash'), uwPrefix('parsley'),
+  uwPrefix('turmeric'), uw('ginger'),
+  // Parser garbage patterns
+  /guaranteed_analysis/, /crude_protein/, /crude_fat/, /active_ingredient/,
+  /they_contain/, /with_over_\d/, /source_of_protein/, /perfect_protein/,
+  /at_\d+_protein/, /low_in_fat/, /\d+_fat/, /\d+_protein/,
+  uwPrefix('including'), /a_meal$/, /a_good_source/, /a_happy/,
+  /complete_and_balanced/, uwPrefix('filling_'),
+  // Compound entries (multiple ingredients jammed together by parser)
+  /&/, /__/, /sea_salt/, /green_bean/, uwPrefix('potatoes'),
 ];
 
 // ─── Classification Logic ────────────────────────────────
@@ -165,9 +198,14 @@ interface IngredientRow {
 function classify(name: string): { match: boolean; ambiguous: boolean } {
   const lower = name.toLowerCase();
 
-  // Exact set always wins — immune to exclusions
+  // Exact set always wins — immune to exclusions and length filter
   if (EXACT_MATCHES.has(lower)) {
     return { match: true, ambiguous: false };
+  }
+
+  // Length filter: skip parser garbage (compound entries, marketing copy)
+  if (lower.length > MAX_INGREDIENT_LENGTH) {
+    return { match: false, ambiguous: false };
   }
 
   // Check exclusions before patterns
@@ -274,10 +312,13 @@ async function backfill() {
   const verifyIngredients = allIngredients.filter(i => verifyNames.test(i.canonical_name.toLowerCase()));
   const matchIds = new Set(matches.map(m => m.id));
 
-  // Exceptions: exact set items that legitimately match verify pattern
+  // Exceptions: items that legitimately match BOTH verify pattern AND protein/fat source
   const legitimateExceptions = new Set([
-    'corn_gluten_meal', 'rice_protein', 'rice_protein_concentrate',
-    'wheat_gluten', 'potato_protein', 'corn_oil',
+    'corn_gluten_meal', 'corn_protein', 'corn_protein_concentrate', 'cornprotein_meal', 'corn_oil',
+    'rice_protein', 'rice_protein_concentrate',
+    'wheat_gluten', 'wheat_germ_meal',
+    'potato_protein',
+    'soybean_germ_meal',
   ]);
 
   let allExcluded = true;
@@ -291,7 +332,13 @@ async function backfill() {
   if (verifyIngredients.length > 15) {
     const remaining = verifyIngredients.slice(15);
     const remainingErrors = remaining.filter(i => matchIds.has(i.id) && !legitimateExceptions.has(i.canonical_name.toLowerCase()));
-    if (remainingErrors.length > 0) allExcluded = false;
+    if (remainingErrors.length > 0) {
+      allExcluded = false;
+      console.log(`  ERRORS:`);
+      for (const err of remainingErrors) {
+        console.log(`    ${err.canonical_name} ✗`);
+      }
+    }
     console.log(`  ... and ${remaining.length} more (${remainingErrors.length === 0 ? 'all ✓' : `${remainingErrors.length} ERRORS`})`);
   }
   console.log(`  Result: ${allExcluded ? 'ALL PASS' : 'FAILURES DETECTED — aborting'}`);
@@ -310,16 +357,22 @@ async function backfill() {
 
   if (matches.length > 0) {
     const ids = matches.map(m => m.id);
-    const { error } = await supabase
-      .from('ingredients_dict')
-      .update({ is_protein_fat_source: true })
-      .in('id', ids);
+    const CHUNK = 100;
+    let updated = 0;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      const { error } = await supabase
+        .from('ingredients_dict')
+        .update({ is_protein_fat_source: true })
+        .in('id', chunk);
 
-    if (error) {
-      console.error(`\nFailed to update: ${error.message}`);
-      process.exit(1);
+      if (error) {
+        console.error(`\nFailed to update chunk ${i}-${i + chunk.length}: ${error.message}`);
+        process.exit(1);
+      }
+      updated += chunk.length;
     }
-    console.log(`\nUpdated ${ids.length} rows with is_protein_fat_source = true`);
+    console.log(`\nUpdated ${updated} rows with is_protein_fat_source = true (${Math.ceil(ids.length / CHUNK)} chunks)`);
   }
 
   // ─── Spot Check ────────────────────────────────────
