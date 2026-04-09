@@ -59,11 +59,11 @@ Weighted composite of three sub-buckets (or two for supplemental, or one for tre
 
 **Ingredient Quality (55% / 65% / 100%):**
 - Start at 100, deduct per ingredient based on severity × position weight
-- Severity enum: `good` (+0), `neutral` (+0), `caution` (−8), `danger` (−15)
+- Severity enum: `good` (+0), `neutral` (+0), `caution` (−10), `danger` (−20)
 - Position weighting (D-018): proportion-based concerns get reduced penalty at lower positions (1–5 = full, 6–10 = −30%, 11+ = −60%). Presence-based concerns (BHA, BHT, artificial colorants) = full penalty regardless of position
 - Check `position_reduction_eligible` flag before applying any position discount
 - Unnamed species penalty: −2 per unnamed fat/protein source (D-012)
-- D-129 allergen override: when pet has allergens, engine scores IQ twice — `baseIqResult` (for waterfall display) and `iqResult` (with allergen overrides applied). Direct allergen match → `danger` (15pts). Possible match → `caution` (8pts). Override is a floor: `max(baseSeverity, override)`.
+- D-129 allergen override: when pet has allergens, engine scores IQ twice — `baseIqResult` (for waterfall display) and `iqResult` (with allergen overrides applied). Direct allergen match → `danger` (20pts). Possible match → `caution` (10pts). Override is a floor: `max(baseSeverity, override)`.
 
 **Nutritional Profile (30% / 35% / 0%):**
 - Full spec: `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`
@@ -356,23 +356,23 @@ These are UI notes only — they never affect the score:
 
 ### Pure Balance Wild & Free Salmon & Pea (Dog)
 
-**Expected:** final_score = **62** (non-negotiable)
+**Expected:** final_score = **60** (non-negotiable)
 
 Breakdown:
-- IQ: 58, NP: 79, FC: 63
-- Base: (58 × 0.55) + (79 × 0.30) + (63 × 0.15) = 31.9 + 23.7 + 9.45 = 65.05 → 65
+- IQ: 48, NP: 79, FC: 88
+- Base: (48 × 0.55) + (79 × 0.30) + (88 × 0.15) = 26.4 + 23.7 + 13.2 = 63.3 → 63
 - Layer 2 (D-137): DCM fires — Rule 1 (Dried Peas at pos 3) + Rule 2 (2 pulses in top 10)
-  - ×0.92 → 59.8
-  - Mitigation (taurine + L-carnitine) → ×1.03 → 61.6
-- Rounded: **62**
+  - ×0.92 → 58.0
+  - Mitigation (taurine + L-carnitine) → ×1.03 → 59.7
+- Rounded: **60**
 
 ### Temptations Classic Tuna (Cat Treat)
 
-**Expected:** final_score = **9**
+**Expected:** final_score = **0**
 
 Breakdown:
-- IQ: 19 (treat = 100% IQ, so base = 19). Three artificial colorants at danger severity (yellow 5, red 40, blue 2 — D-142 escalation, 15 pts each, no position reduction) + chicken by-product meal, animal fat (unnamed), dried meat by-products at caution.
-- Layer 2: Taurine missing −10 → 9. Carb overload does NOT fire (only 2 carb flags in top 5, needs 3).
+- IQ: 0 (treat = 100% IQ). Three artificial colorants at danger severity (yellow 5, red 40, blue 2 — D-142 escalation, 20 pts each, no position reduction = −60) + chicken by-product meal, animal fat (unnamed), dried meat by-products at caution (10 pts each). Total deductions exceed 100, floored to 0.
+- Layer 2: Taurine missing −10 → still 0 (already at floor).
 
 ### Test Count
 

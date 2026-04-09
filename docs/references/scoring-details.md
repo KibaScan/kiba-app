@@ -39,8 +39,8 @@ Checked sequentially before scoring runs. If any fires, scoring engine is skippe
 **Severity penalties (raw, before position adjustment):**
 | Severity | Penalty |
 |---|---|
-| Danger | −15 |
-| Caution | −8 |
+| Danger | −20 |
+| Caution | −10 |
 | Neutral | 0 |
 | Good | 0 |
 
@@ -223,11 +223,11 @@ File: `src/utils/conditionScoring.ts`
 
 | Cap | Value |
 |-----|-------|
-| Per-condition total | ±8 points |
+| Per-condition total | ±8 points (pancreatitis: ±15) |
 | Total bonus cap | +10 max |
-| Total penalty cap | −15 max |
+| Total penalty cap | −25 max |
 
-When a per-condition total exceeds ±8, all rules for that condition are proportionally scaled.
+When a per-condition total exceeds the cap (±8 default, ±15 for pancreatitis), all rules for that condition are proportionally scaled.
 
 ### Critical Safety Override: cardiac + DCM = 0
 
@@ -466,8 +466,8 @@ Source: `constants.ts` SEVERITY_COLORS
 
 | Product | Species | Category | Score | Test File |
 |---|---|---|---|---|
-| Pure Balance Wild & Free Salmon & Pea | Dog | Daily food | **62** | `regressionAnchors.test.ts` |
-| Temptations Classic Tuna | Cat | Treat | **9** | `regressionAnchors.test.ts` |
+| Pure Balance Wild & Free Salmon & Pea | Dog | Daily food | **60** | `regressionAnchors.test.ts` |
+| Temptations Classic Tuna | Cat | Treat | **0** | `regressionAnchors.test.ts` |
 
 Verify after ANY scoring change. Run: `npx jest --testPathPattern=regressionAnchors`
 

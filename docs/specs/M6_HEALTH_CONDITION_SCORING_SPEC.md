@@ -248,8 +248,8 @@ carb_est = 100 - protein_dmb - fat_dmb - fiber_dmb - ash_est(7%)
 **Score Adjustments:**
 | Rule | Condition | Adjustment | Citation |
 |---|---|---|---|
-| High-fat penalty | `ga_fat_dmb_pct > 12%` | −5 NP | Fat is THE trigger for canine pancreatitis |
-| Ultra-high-fat critical | `ga_fat_dmb_pct > 18%` | −8 NP (stacks with above for −13 total) | A single high-fat meal can trigger a deadly flare |
+| High-fat penalty | `ga_fat_dmb_pct > 12%` | −8 NP | Fat is THE trigger for canine pancreatitis |
+| Ultra-high-fat critical | `ga_fat_dmb_pct > 18%` | −7 NP (stacks with above for −15 total) | A single high-fat meal can trigger a deadly flare |
 | Lean protein bonus | High protein (>25% DMB) with low fat (<10% DMB) | +3 NP | Digestible lean protein is ideal |
 | Digestive enzyme bonus | Digestive enzymes in ingredients | +1 FC | Reduces pancreatic workload |
 
@@ -346,8 +346,8 @@ To prevent condition stacking from producing absurd scores:
 | Cap | Value | Rationale |
 |---|---|---|
 | Max condition bonus per product | +10 pts total | Same as breed modifier cap |
-| Max condition penalty per product | −15 pts total | Conditions can be life-threatening — penalties should be meaningful |
-| Max per-condition | ±8 pts | No single condition dominates the entire score |
+| Max condition penalty per product | −25 pts total | Conditions can be life-threatening — penalties should be meaningful |
+| Max per-condition | ±8 pts (pancreatitis: ±15) | No single condition dominates the entire score; pancreatitis is acute/life-threatening and needs higher cap |
 | Stacking with allergens (D-129) | Both apply independently | Allergens are immune responses, conditions are metabolic — different axes |
 | Stacking with DCM (D-137) | Both apply | Heart disease + DCM pulse advisory are additive (intentional) |
 
@@ -555,7 +555,7 @@ This replaces the simple `health_conditions TEXT[]` array with structured data. 
 
 New regression targets needed:
 - Pure Balance + overweight dog = expected ~57 (high fat penalty)
-- Pure Balance + pancreatitis dog = expected ~48 (severe fat penalty)
+- Pure Balance + pancreatitis dog = expected ~52 (base 60 − 8 fat penalty)
 - Pure Balance + diabetic cat = expected ~55 (moderate carb penalty)
 - Pure Balance + CKD cat = expected ~58 (phosphorus check)
 
