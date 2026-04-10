@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '../../utils/constants';
 
 export interface PetShareCardProps {
   petName: string;

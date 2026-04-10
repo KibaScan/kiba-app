@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     top: 8,
     height: 5,
     borderRadius: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: Colors.chipSurface,
   },
   avgLineGlow: {
     position: 'absolute',

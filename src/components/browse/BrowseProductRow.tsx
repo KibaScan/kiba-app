@@ -3,7 +3,7 @@
 // D-094: score framing. D-084: Ionicons only.
 
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
 import type { BrowseProduct } from '../../types/categoryBrowse';
@@ -27,44 +27,56 @@ export function BrowseProductRow({ product, rank, onPress }: Props) {
   const displayName = stripBrandPrefix(product.product_name, product.brand);
 
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      {/* Rank */}
-      <Text style={styles.rank}>
-        {rank}
-      </Text>
+    <Pressable style={styles.row} onPress={onPress}>
+      {({ pressed }) => (
+        <>
+          {/* Rank */}
+          <Text style={styles.rank}>
+            {rank}
+          </Text>
 
-      {/* Thumbnail */}
-      {product.image_url ? (
-        <Image source={{ uri: product.image_url }} style={styles.image} />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Ionicons
-            name={product.is_vet_diet ? 'medkit-outline' : 'nutrition-outline'}
-            size={18}
-            color={Colors.textTertiary}
-          />
-        </View>
+          {/* Thumbnail */}
+          {product.image_url ? (
+            <Image source={{ uri: product.image_url }} style={styles.image} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons
+                name={product.is_vet_diet ? 'medkit-outline' : 'nutrition-outline'}
+                size={18}
+                color={Colors.textTertiary}
+              />
+            </View>
+          )}
+
+          {/* Info */}
+          <View style={styles.info}>
+            <Text style={styles.brand} numberOfLines={1}>
+              {product.brand || 'Unknown Brand'}
+            </Text>
+            <Text style={styles.name} numberOfLines={2}>
+              {displayName}
+            </Text>
+          </View>
+
+          {/* Score pill or chevron */}
+          {hasScore ? (
+            <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
+              <Text style={[styles.scorePillText, { color: scoreColor }]}>{score}%</Text>
+            </View>
+          ) : (
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          )}
+
+          {/* Press feedback overlay */}
+          {pressed && (
+            <View
+              style={[StyleSheet.absoluteFill, { backgroundColor: Colors.pressOverlay }]}
+              pointerEvents="none"
+            />
+          )}
+        </>
       )}
-
-      {/* Info */}
-      <View style={styles.info}>
-        <Text style={styles.brand} numberOfLines={1}>
-          {product.brand || 'Unknown Brand'}
-        </Text>
-        <Text style={styles.name} numberOfLines={2}>
-          {displayName}
-        </Text>
-      </View>
-
-      {/* Score pill or chevron */}
-      {hasScore ? (
-        <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
-          <Text style={[styles.scorePillText, { color: scoreColor }]}>{score}%</Text>
-        </View>
-      ) : (
-        <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-      )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

@@ -5,6 +5,7 @@ import React from 'react';
 import {
   Image,
   Linking,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -143,11 +144,11 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
   const isShared = item.assignments.length > 1;
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.card, isRecalled && styles.cardRecalled]}
       onPress={() => onTap(item.id)}
-      activeOpacity={0.7}
     >
+      {({ pressed }) => (<>
       {/* Main content — reduced opacity when empty */}
       <View style={item.is_empty ? styles.emptyContent : undefined}>
         {/* Main row: image | info | score */}
@@ -379,7 +380,19 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           )}
         </View>
       )}
-    </TouchableOpacity>
+
+      {/* Press feedback overlay — 5% white lift on Matte Premium surface */}
+      {pressed && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: Colors.pressOverlay, borderRadius: 12 },
+          ]}
+          pointerEvents="none"
+        />
+      )}
+      </>)}
+    </Pressable>
   );
 }
 

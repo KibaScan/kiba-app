@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: 28,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: Colors.chipSurface,
     borderRadius: 14,
     overflow: 'hidden',
     justifyContent: 'center',
