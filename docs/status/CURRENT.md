@@ -108,9 +108,14 @@
   - `docs/status/CURRENT.md` (migration count 37→38, session handoff)
 - **Tests:** 1445 passing / 63 suites (unchanged — search function not unit-tested, JIT scoring unaffected).
 - **Not done yet:**
-  - **Visual QA carry-overs** — CustomFeedingStyleScreen role toggle, Safe Switch day advancement, delete error Alert, CategoryBrowseScreen "See All" no scores.
-  - **17 non-border `cardBorder` uses** — token decision still pending.
+  - **CustomFeedingStyleScreen role toggle** — user plans full overhaul (custom assets, click-to-fill like HomeScreen) in future session. Not a blocker.
+  - **22 non-border `cardBorder` uses** — token decision still pending. Recommendation: new `chipSurface` token at `rgba(255,255,255,0.08)` for chip fills, Switch tracks, timeline dots, drag handles, `ScoreRing` `TRACK_COLOR`. Full list in `.agent/workflows/legacy-token-migration.md` Step 7.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
+  - **Migration squashing** — 38 files is getting thick. Mottle flagged upstreaming as a future cleanup.
+- **Cleared this session (carry-overs resolved):**
+  - **Delete error Alert** — user confirmed this was the `removePantryItem` active-switch guard, already shipped session 24.
+  - **Safe Switch day advancement** — user confirmed working, pantry handoff on completion verified.
+  - **CategoryBrowseScreen "See All" no scores** — resolved by form-aware batch scoring (sessions 34-35). Initial load still shows spinner for ~10s on fresh cache but scores populate correctly once Phase 2 completes.
 - **Next session should start with:**
   - On-device fuzzy search stress test: try typos ("temptashuns"), partial brand names ("blue buff"), wrong word order ("chicken wholesome honest kitchen"). Verify relevance ranking.
   - Visual QA carry-overs from session 21.

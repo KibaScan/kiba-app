@@ -41,6 +41,7 @@ const EXACT_MATCHES: Set<string> = new Set([
   'boar', 'pork', 'menhaden',
   'deboned_chicken', 'deboned_turkey', 'deboned_lamb', 'deboned_salmon',
   'deboned_beef', 'deboned_duck', 'deboned_pork', 'deboned_trout',
+  'white_fish', 'white_fish_broth',
   'dehydrated_chicken', 'dehydrated_turkey', 'dehydrated_lamb',
   'dehydrated_salmon', 'dehydrated_duck', 'dehydrated_pork',
 
