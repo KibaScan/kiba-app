@@ -119,13 +119,17 @@
     1. **Step 5** extended with import verification: after replacing a literal with a named-import reference (e.g., `'#242424'` → `Colors.cardSurface`), the sweeper MUST verify the file imports the namespace. If missing, add the import using `Grep` to find the canonical path; if undetermined, flag as "MISSING IMPORT" in Human Review Needed. The PetShareCard bug is now cited as permanent rationale in the .md.
     2. **Step 6 CRITICAL_OVERRIDE** strengthened: now explicitly forbids (a) edits, (b) semantic recommendations, (c) citations to design.md/constants.ts/any reference, (d) prose explaining what values "probably mean". Must emit ONLY file path + line + literal match on ambiguous cases. Session 41's "Recommendation: hairlineBorder" violation is the canonical example in the .md text.
     3. **Step 7** orphan check made MANDATORY on EVERY invocation. Explicit wording: "If you do not perform this check, your output is invalid." Addresses Haiku's narrow-scope interpretation bias.
-- **Commits (this session, 3 total on top of session 40's pre-commits `04376aa` + `22e5834`):**
+  - **Self-audit + Priority-1 fix (commit `6dea693`)** — user asked for a self-audit of the long session. Found 11 gaps: 1 code inconsistency I introduced (`PositionMap.barHighlight` sibling of BenchmarkBar was still at `rgba(255, 255, 255, 0.1)` — 0.02 alpha drift from BenchmarkBar's new chipSurface), ~17 broader Matte Premium rgba drift sites (0.02/0.03/0.04/0.08/0.5/0.7 alphas — out of scope for session 41's 0.12-specific sweep), 2 on-device-QA-dependent risks (PantryCard inner-button press flash, recalled-card overflow artifacts), 1 sweeper self-contradiction not addressed by iteration 2 (recommended 1-2px token for 28px element), plus 4 aesthetic/framing nits. Priority 1: closed the PositionMap drift (1-line edit, Colors already imported) + updated CURRENT.md Up Next with 3 new carry-overs (expanded on-device QA checklist, broader alpha audit scoped for dedicated pre-launch session, sweeper iteration 3 candidate).
+  - **Scratch file cleanup** — deleted 6 untracked carry-over files (`m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `m9walkthrough2.md`, `ts_output.txt`). All were session 38+ behavioral-feeding walkthroughs now redundant with git history + CURRENT.md. Working tree fully clean.
+- **Commits (this session, 4 total on top of session 40's pre-commits `04376aa` + `22e5834`):**
   - `60ce580` — M9: chipSurface for gauge+benchmark fills + pressOverlay wire-up on PantryCard/BrowseProductRow — 5 files, +66/-40
   - `f26c415` — M9: settings.json — Pure Balance anchor drift 60 → 61 — 1 file, +1/-1
   - `189a1b6` — M9: kiba-token-sweeper iteration 2 (unconditional step 7, stronger CRITICAL_OVERRIDE, step 5 import verification) — 1 file, +3/-3
-- **Files changed (unique across 3 commits, 7 total):**
+  - `6dea693` — M9: PositionMap.barHighlight → chipSurface + CURRENT.md carry-overs (audit Priority 1) — 2 files, +4/-2
+- **Files changed (unique across 4 commits, 8 total):**
   - `src/components/TreatBatteryGauge.tsx` (rgba → chipSurface)
   - `src/components/scoring/BenchmarkBar.tsx` (rgba → chipSurface)
+  - `src/components/scoring/PositionMap.tsx` (rgba 0.1 → chipSurface — closes session 41 audit gap 1: sibling drift with BenchmarkBar)
   - `src/components/pantry/PantryCard.tsx` (TouchableOpacity → Pressable + overlay View)
   - `src/components/browse/BrowseProductRow.tsx` (TouchableOpacity → Pressable + overlay View)
   - `src/components/pet/PetShareCard.tsx` (+1 Colors import — latent session 40 bug fix)
@@ -139,7 +143,6 @@
   - **Git committer identity** — session 41 commits still show `stevendiaz@mac.mynetworksettings.com` auto-generated. User runs `git config --global user.email "..."` themselves (Claude Code blocked from touching git config per CLAUDE.md).
   - **Session 39 carry-overs still pending:** chipSurface visual QA at 0.12 across 20 sites, TopPicksCarousel populated-state border check, on-device fuzzy search stress test.
   - **M9 carry-overs:** HomeScreen visual overhaul, Search UX overhaul, custom icon rollout (5 v2 bold variants), same-brand disambiguation for `getConversationalName`, affiliate enrollment, migration squashing (38 files getting thick).
-  - **Untracked scratch files still present:** `m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `m9walkthrough2.md`, `ts_output.txt` — carry-over from session 38+.
 - **Next session should start with:**
   1. **Restart Claude Code** so `189a1b6` sweeper .md iteration 2 is loaded
   2. **Run `/agents`** — confirm all 4 agents load with correct model badges
