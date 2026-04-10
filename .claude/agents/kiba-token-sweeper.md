@@ -55,6 +55,7 @@ You audit and report — you do **NOT** auto-rewrite medical copy. Context matte
 4. **Edit in batches** — you're cheap; use it. Multiple edits per invocation are expected.
 5. **Verify after every sweep** — re-grep for the old pattern, confirm zero remaining occurrences, report the count.
 6. **Stop and report, don't auto-convert, when ambiguous** — if a usage looks semantically different than expected (e.g., `chipSurface` as a background for something that isn't a chip), stop and report. Human judgment needed.
+7. **Flag zero-use tokens as architectural orphans** — after counting occurrences of each Matte Premium token, if any token defined in `src/utils/constants.ts:14-17` has zero references in `src/components/` or `src/screens/`, report it. Orphan tokens are drift signals: either speculative additions that never got wired up, or legacy tokens whose definitions survived their retirement. Report them in the "Human Review Needed" section of your output, not as automatic edits — the user decides whether to wire them up or delete the definition.
 
 ## What You Refuse to Touch
 
