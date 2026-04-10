@@ -76,9 +76,9 @@
 
 ## Up Next
 
-- **Restart Claude Code + walk through `.claude/agents/README.md`** — session 40 landed the custom subagent starter roster (4 agents), but subagents only load at session start. Restart the CLI, run `/agents` to confirm all 4 appear with correct model badges, then walk through the README's 4 test prompts in order (sweeper → migration-writer → code-reviewer → scoring-architect). Failure-mode tables in the README map each bad output to a specific system prompt fix.
-- **Apply the 3 sweeper-found hex regressions** (discovered during in-session simulation) — `SubFilterChipRow.tsx:67,83` (`#1C1C1E` → `Colors.cardSurface`), `PetShareCard.tsx:185` (`#242424` → `Colors.cardSurface`). Also report-only: `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` (ambiguous rgba — need semantic decision: `chipSurface` or `hairlineBorder`). And flag: `pressOverlay` is defined in `constants.ts:17` with zero references anywhere — architectural orphan, decide wire-up or delete.
-- **Settings.json regression anchor drift** — `.claude/settings.json:44` SessionStart message says `Pure Balance = 60` but actual anchor is **61**. Pre-existing nit, unrelated to session 40 work. Fix in a one-line follow-up.
+- **Restart Claude Code + retest sweeper iteration 2** — session 41 shipped `189a1b6` (sweeper .md iteration 2: unconditional step 7 orphan check, stronger CRITICAL_OVERRIDE banning recommendations/citations/prose, step 5(b) import verification). Subagents don't hot-reload; iteration 2 is invisible to the running sweeper until restart. NOTE: original test 1 fixtures (the 2 rgba sites) are now clean after `60ce580` — retest needs either (a) a fresh regression introduction, (b) a different prompt that exercises step 7 unconditionally (e.g., "Run a Matte Premium audit on src/ — flag any orphan tokens"), or (c) skip sweeper retest and walk tests 2-4 directly. Option (b) validates iteration 2 fixes without fake regressions.
+- **Walk remaining agent tests 2-4** — migration-writer, code-reviewer, scoring-architect (README tests 2-4). Sweeper test 1 is done after session 41 iteration 2 validation.
+- **On-device QA for session 41 token edits** — tap PantryCard + BrowseProductRow → confirm subtle 5% white press lift reads (not invisible, not jarring). Visual sanity on TreatBatteryGauge (PetHubScreen) + BenchmarkBar (ResultScreen) after chipSurface swap — nothing broken.
 - **Chipsurface visual QA (session 39 carry-over)** — `CreatePet`/`EditPet` Switches + segment buttons + weight chips, `NotificationPreferences` toggles, drag handles (`CompareProductPickerSheet`, `WeightEstimateSheet`), `WeightGoalSlider.rail`, `ScoreRing.track`, `VoteBarChart.track`, `ConditionChip`, `KibaIndexSection.noPetWarning`, `HealthConditionsScreen.sectionDivider`, `FeedbackCard.divider`, `FormulaChangeTimeline.connector`, `FeedingStyleSetupSheet` iconBoxes — all need eyeballs at 0.12. Watch for any site that reads too strong.
 - **TopPicksCarousel populated-state border check (session 39 carry-over)** — inner `card` border was added based on same reasoning as `zeroStateCard`, but only zero state was visually verified.
 - **On-device fuzzy search stress test (session 38 carry-over)** — typos, partial brand names, wrong word order. Verify relevance ranking.
@@ -103,59 +103,55 @@
 
 ## Last Session
 
-- **Date:** 2026-04-10 (session 40)
+- **Date:** 2026-04-10 (session 41)
 - **Accomplished:**
-  - **Vertex AI backfill plan + doc hooks** — committed the session 39 dirty tree: new `docs/plans/VERTEX_AI_BACKFILL_PLAN.md` (269 lines) plus CLAUDE.md spec-table row, ROADMAP.md "Post-M9 Data Enrichment" section, CURRENT.md carry-over line. Two workstreams: ingredient TLDR/citation backfill, Amazon A+ image → GA extraction. Routed through Vertex AI to use existing ~$300 GCP credits. Commit `89797bc`.
-  - **Tag cleanup** — deleted stale `m5-complete` git tag (pointed to `fc86a8e`) that was colliding with the branch name and producing `src refspec m5-complete matches more than one` on push. Tag deleted locally + on origin. The commit it pointed to is still reachable in history; re-tag with `git tag m5-complete fc86a8e` if ever needed.
-  - **Custom Claude Code subagent starter roster (4 agents)** — new `.claude/agents/` directory, commit `4152de9`:
-    - `kiba-scoring-architect.md` (opus, read-only) — design-time validator for scoring changes. Enforces all 4 regression anchors, brand-blindness (D-019), affiliate isolation (D-020), Rule #6 citations, DMB conversion, `cluster_id` splitting, `position_reduction_eligible`, layer architecture (D-011), and the **engine copy trap** (the `src/services/scoring/` → `supabase/functions/batch-score/scoring/` mirror). Refuses to write code — output is always a structured design doc.
-    - `kiba-code-reviewer.md` (opus, read-only) — pre-commit domain-aware reviewer. Enforces all 13 CLAUDE.md non-negotiables plus 8 additional Kiba-specific checks (engine copy sync, decision supersession drift, cache invalidation misses, pantry offline handling, auto-deplete idempotency, behavioral feeding model, Matte Premium tokens, hardcoded hex regressions). Report-only — never edits.
-    - `kiba-migration-writer.md` (sonnet, read+write) — end-to-end Supabase migration owner. Coordinates schema SQL + RLS policies + backfills + `pet_product_scores` invalidation + TypeScript type alignment in `src/types/` as ONE commit. Refuses to touch `src/services/scoring/` or the mirrored copy.
-    - `kiba-token-sweeper.md` (haiku, read+edit) — mechanical multi-file sweeps for design token migrations and card anatomy enforcement. Stop-on-ambiguity rule. Step 7 added in polish commit: **flag zero-use tokens as architectural orphans**.
-  - **Committed `.agent/` directory** (previously gitignored). Un-gitignores `.agent/design.md` (622 lines) + 7 workflow templates (`boot.md`, `handoff.md`, `review.md`, `design.md`, `ios.md`, `legacy-token-migration.md`, `README.md`). Prerequisite for sweeper/reviewer agents to read the canonical Matte Premium design system on any fresh clone. Commit `9b224e2` (9 files, +1174).
-  - **`.claude/agents/README.md`** — 258-line testing walkthrough for validating all 4 agents post-restart. Natural-language + explicit invocation + success criteria + failure-mode tables (mapping specific bad outputs to specific system prompt fixes) per agent. Rollout order: sweeper → migration-writer → code-reviewer → scoring-architect. Commit `88f90fb` (bundled with the sweeper step 7 patch).
-  - **In-session sweeper validation (manual simulation)** — because Claude Code doesn't hot-reload `.claude/agents/` mid-session, manually walked the sweeper's workflow as the main Claude. Real findings: 5 hex regressions across 4 files (`SubFilterChipRow.tsx:67,83` #1C1C1E, `PetShareCard.tsx:185` #242424 inlined, `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` rgba ambiguous), plus `pressOverlay` orphan (defined in `constants.ts:17`, zero references anywhere in `src/`). The orphan finding surfaced a gap in the sweeper's system prompt — no explicit "flag zero-use tokens" rule — which was patched as step 7 in commit `88f90fb`.
-- **Commits (this session, 4 total):**
-  - `89797bc` — M9: Vertex AI backfill plan (post-M9 data enrichment) — 4 files, +281
-  - `9b224e2` — M9: commit .agent/ — Matte Premium design system + workflow templates — 9 files, +1174
-  - `4152de9` — M9: custom subagent starter roster (4 agents) — 4 files, +549
-  - `88f90fb` — M9: kiba-token-sweeper polish + agents README for testing — 2 files, +259
-- **Files changed (unique, 20 total across the 4 commits):**
-  - CLAUDE.md (Vertex AI plan spec row)
-  - ROADMAP.md (Post-M9 Data Enrichment section)
-  - docs/status/CURRENT.md (Vertex AI carry-over, plus this handoff)
-  - docs/plans/VERTEX_AI_BACKFILL_PLAN.md (new, 269 lines)
-  - .gitignore (removed `.agent/` line)
-  - .agent/design.md (newly tracked, 622 lines)
-  - .agent/workflows/{README,boot,handoff,design,ios,legacy-token-migration,review}.md (newly tracked, 7 files)
-  - .claude/agents/kiba-scoring-architect.md (new)
-  - .claude/agents/kiba-code-reviewer.md (new)
-  - .claude/agents/kiba-migration-writer.md (new)
-  - .claude/agents/kiba-token-sweeper.md (new + step 7 polish in commit 88f90fb)
-  - .claude/agents/README.md (new, 258 lines)
-- **Tests:** 1445 passing / 63 suites (unchanged — zero source code touched, pure infrastructure session). Regression anchors verified via `regressionAnchors.test.ts` passing in full suite run.
+  - **Phase 2 sweeper retest** — dispatched `kiba-token-sweeper` with canonical test 1 prompt from `.claude/agents/README.md:42-55`. Scored **4/5** success criteria: ✅ whitespace regex works (found both compact + spaced rgba forms), ✅ CRITICAL_OVERRIDE held (zero auto-edits, git clean), ✅ Human Review Needed lists both rgba sites, ✅ 0 hex hits (session 40 fixes preserved), ❌ step 7 orphan check did NOT fire (sweeper interpreted narrow prompt scope as permission to skip step 7 entirely). Also caught a spirit violation: sweeper added a "Recommendation: hairlineBorder" paragraph citing design.md:288 — WRONG token (misapplied thin-progress-bar pattern to a 28px container), would have steered user wrong. User overrode: proceed to Phase 3 with prior plan's chipSurface ruling, iterate sweeper .md as follow-up commit.
+  - **Phase 3 manual token edits (commit `60ce580`)** — 4 planned files + 1 latent-bug fix, all in one atomic commit:
+    - `src/components/TreatBatteryGauge.tsx:162` `barTrack` (28px container) → `Colors.chipSurface` (matches design.md:299-300 "physical container slot")
+    - `src/components/scoring/BenchmarkBar.tsx:195` `barHighlight` (5px decorative strip) → `Colors.chipSurface` (fill element, not structural line)
+    - `src/components/pantry/PantryCard.tsx`: `TouchableOpacity` → `Pressable` with absolute-positioned overlay View using `Colors.pressOverlay`. Function child Fragment pattern, `borderRadius: 12` matches existing `.card` style (NOT canonical 16), `pointerEvents="none"` on overlay
+    - `src/components/browse/BrowseProductRow.tsx`: same pattern, NO borderRadius (row has none). Re-indented cleanly inside the fragment
+    - `src/components/pet/PetShareCard.tsx`: **latent TypeScript bug fix** — added missing `import { Colors } from '../../utils/constants'`. Session 40 commit `04376aa` replaced `'#242424'` with `Colors.cardSurface` at PetShareCard.tsx:185 but never added the import. Sat undetected until session 41 `tsc --noEmit` verification. Bundled into Phase 3 commit as an in-scope token-work completion fix.
+  - **Phase 3.5 settings.json drift (commit `f26c415`)** — `.claude/settings.json:44` SessionStart banner: `Pure Balance (Dog) = 60` → `61`. One-character change. On-device value (reportedly 59) three-way drift is still open — out of scope, starts at `__tests__/services/scoring/regressionAnchors.test.ts`.
+  - **Phase 3.6 sweeper .md iteration 2 (commit `189a1b6`)** — 3 surgical patches to `.claude/agents/kiba-token-sweeper.md` responding to the 4/5 retest + the latent PetShareCard bug:
+    1. **Step 5** extended with import verification: after replacing a literal with a named-import reference (e.g., `'#242424'` → `Colors.cardSurface`), the sweeper MUST verify the file imports the namespace. If missing, add the import using `Grep` to find the canonical path; if undetermined, flag as "MISSING IMPORT" in Human Review Needed. The PetShareCard bug is now cited as permanent rationale in the .md.
+    2. **Step 6 CRITICAL_OVERRIDE** strengthened: now explicitly forbids (a) edits, (b) semantic recommendations, (c) citations to design.md/constants.ts/any reference, (d) prose explaining what values "probably mean". Must emit ONLY file path + line + literal match on ambiguous cases. Session 41's "Recommendation: hairlineBorder" violation is the canonical example in the .md text.
+    3. **Step 7** orphan check made MANDATORY on EVERY invocation. Explicit wording: "If you do not perform this check, your output is invalid." Addresses Haiku's narrow-scope interpretation bias.
+- **Commits (this session, 3 total on top of session 40's pre-commits `04376aa` + `22e5834`):**
+  - `60ce580` — M9: chipSurface for gauge+benchmark fills + pressOverlay wire-up on PantryCard/BrowseProductRow — 5 files, +66/-40
+  - `f26c415` — M9: settings.json — Pure Balance anchor drift 60 → 61 — 1 file, +1/-1
+  - `189a1b6` — M9: kiba-token-sweeper iteration 2 (unconditional step 7, stronger CRITICAL_OVERRIDE, step 5 import verification) — 1 file, +3/-3
+- **Files changed (unique across 3 commits, 7 total):**
+  - `src/components/TreatBatteryGauge.tsx` (rgba → chipSurface)
+  - `src/components/scoring/BenchmarkBar.tsx` (rgba → chipSurface)
+  - `src/components/pantry/PantryCard.tsx` (TouchableOpacity → Pressable + overlay View)
+  - `src/components/browse/BrowseProductRow.tsx` (TouchableOpacity → Pressable + overlay View)
+  - `src/components/pet/PetShareCard.tsx` (+1 Colors import — latent session 40 bug fix)
+  - `.claude/settings.json` (Pure Balance anchor 60 → 61)
+  - `.claude/agents/kiba-token-sweeper.md` (3 tightening patches)
+- **Tests:** 1445 passing / 63 suites (unchanged). `tsc --noEmit` clean in `src/` (pre-existing errors are in `docs/plans/search-uiux/*` prototype noise outside the tree). Regression anchors intact: Pure Balance = 61, Temptations = 0.
 - **Not done yet:**
-  - **Claude Code restart + walk `.claude/agents/README.md`** — all 4 agent tests pending because subagents only load at session start. This is the top next-session item.
-  - **Apply the 3 sweeper-found hex regressions** — `SubFilterChipRow.tsx:67,83` (#1C1C1E → `Colors.cardSurface`), `PetShareCard.tsx:185` (#242424 → `Colors.cardSurface`). Unambiguous. Can be done by the sweeper agent itself post-restart as a real-world validation, or manually.
-  - **Semantic decision on the 2 ambiguous rgba regressions** — `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` are both `rgba(255,255,255,0.12)` track backgrounds. Both likely want `Colors.chipSurface` (interactive fill), but confirm semantic intent before the edit.
-  - **`pressOverlay` orphan decision** — defined in `constants.ts:17`, zero references. Either wire it up on PantryCard/BrowseProductRow tap states, or delete the definition.
-  - **Settings.json regression anchor drift** — `.claude/settings.json:44` SessionStart message says Pure Balance = 60 but actual anchor is **61**. Pre-existing nit, one-line follow-up.
-  - **Git committer identity** — all 4 session 40 commits show `stevendiaz@mac.mynetworksettings.com` (auto-generated). User needs to run `git config --global user.email "your@email"` themselves — Claude Code is blocked from touching git config per CLAUDE.md rules.
-  - **Session 39 carry-overs still pending:** chipSurface visual QA at 0.12 across all 20 sites, TopPicksCarousel populated-state border check, on-device fuzzy search stress test (also a session 38 carry-over).
-  - **M9 carry-overs:** HomeScreen visual overhaul, same-brand disambiguation for `getConversationalName`, custom icon rollout (5 pending v2 bold variants), Search UX overhaul on HomeScreen, affiliate enrollment (flip `affiliateConfig.ts enabled: true` after Chewy/Amazon partner enrollment), migration squashing (38 files is getting thick).
+  - **Sweeper iteration 2 validation** — `189a1b6` is invisible to the running sweeper until session restart. Retest post-restart. **NOTE:** original test 1 fixture (2 rgba sites) is now clean after `60ce580`, so retest needs (a) a fresh regression, (b) a different prompt exercising step 7 unconditionally ("Run a Matte Premium audit — flag orphan tokens"), or (c) skip sweeper retest and walk tests 2-4 directly. Option (b) validates iteration 2 directly.
+  - **Walk remaining agent tests 2-4** — migration-writer, code-reviewer, scoring-architect (README tests 2-4). Sweeper test 1 done after session 41 iteration 2.
+  - **On-device QA for session 41 token edits** — tap PantryCard + BrowseProductRow to confirm subtle 5% white press lift reads; visual sanity on TreatBatteryGauge (PetHubScreen) + BenchmarkBar (ResultScreen) chipSurface swap — nothing broken.
+  - **Git committer identity** — session 41 commits still show `stevendiaz@mac.mynetworksettings.com` auto-generated. User runs `git config --global user.email "..."` themselves (Claude Code blocked from touching git config per CLAUDE.md).
+  - **Session 39 carry-overs still pending:** chipSurface visual QA at 0.12 across 20 sites, TopPicksCarousel populated-state border check, on-device fuzzy search stress test.
+  - **M9 carry-overs:** HomeScreen visual overhaul, Search UX overhaul, custom icon rollout (5 v2 bold variants), same-brand disambiguation for `getConversationalName`, affiliate enrollment, migration squashing (38 files getting thick).
   - **Untracked scratch files still present:** `m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `m9walkthrough2.md`, `ts_output.txt` — carry-over from session 38+.
 - **Next session should start with:**
-  1. **Restart Claude Code** so `.claude/agents/*.md` is picked up
-  2. **Run `/agents`** — confirm all 4 agents appear with correct model badges (kiba-scoring-architect: opus, kiba-code-reviewer: opus, kiba-migration-writer: sonnet, kiba-token-sweeper: haiku)
-  3. **Walk `.claude/agents/README.md`** tests 1–4 in order (sweeper → migration-writer → code-reviewer → scoring-architect). README has exact test prompts + success criteria + failure-mode tables
-  4. For any test that fails, map the failure to the system prompt fix in the README's tables, commit the fix, restart, re-test
-  5. After validation: apply the 3 unambiguous hex regressions via sweeper (real-world test), then resume session 39 carry-overs
+  1. **Restart Claude Code** so `189a1b6` sweeper .md iteration 2 is loaded
+  2. **Run `/agents`** — confirm all 4 agents load with correct model badges
+  3. **Sweeper retest** via orphan-audit prompt (option b above) — validates iteration 2 without needing fake regressions. Expect: all 4 canonical tokens now have ≥1 consumer (pressOverlay wired in `60ce580`), so step 7 should return "0 orphans" as a clean pass. If sweeper skips step 7 again, iteration 3 needed.
+  4. **Walk remaining agent tests 2-4** from `.claude/agents/README.md` in order
+  5. **On-device QA** for session 41 token edits (PantryCard + BrowseProductRow press feedback, TreatBatteryGauge + BenchmarkBar chipSurface swap)
 - **Gotchas:**
-  - **Subagents don't hot-reload.** `.claude/agents/*.md` is scanned at session start only. Files added or modified mid-session are NOT picked up. This is why session 40 validation is entirely post-restart.
-  - **`.agent/` is no longer gitignored.** Commit `9b224e2` un-ignores the directory. Any scratch writes to `.agent/*` from now on are tracked — if you want a scratch subdirectory there, add `.agent/scratch/` to `.gitignore` explicitly.
-  - **Engine copy trap** — `src/services/scoring/` has a mirrored copy at `supabase/functions/batch-score/scoring/` (7 `.ts` files). `protect-scoring.sh` only guards the `src/` side. `scripts/verify-engine-copy.ts` is the sync-verification script. The `kiba-scoring-architect` agent surfaces this on every design, but manual scoring edits outside the agent workflow still need to mirror both. This trap was a material blind spot in the original plan — caught by Ultraplan and patched into the architect's system prompt.
-  - **Natural-language invocation is preferred** for agent auto-discovery. If Claude Code routes to `general-purpose` instead of the specific Kiba agent, the agent's `description` field needs more specific keywords.
-  - **chipSurface and hairlineBorder share alpha 0.12** (session 39 carry-over, still load-bearing) — intentional. Semantic distinction: `chipSurface` for interactive fills, `hairlineBorder` for structural lines. Don't conflate — a future divergence of values is possible.
+  - **Subagents don't hot-reload.** `.claude/agents/*.md` is scanned at session start only. Iteration 2 from `189a1b6` is invisible until restart.
+  - **Engine copy trap** — `src/services/scoring/` mirrored at `supabase/functions/batch-score/scoring/`. Manual scoring edits outside the `kiba-scoring-architect` agent workflow still need to mirror both.
+  - **PetShareCard.tsx latent bug is canonical** — the sweeper made a partial fix in session 40 (hex replaced, import missing) that sat undetected for one full session cycle. This is the permanent example in the sweeper .md for why step 5(b) import verification exists.
+  - **Pressable overlay pattern is new** — `.agent/design.md` doesn't document it yet. Session 41 introduced it on PantryCard + BrowseProductRow as the first consumers of `pressOverlay`. Follow-up: add canonical "Press States" section to design.md with the absoluteFill + pointerEvents="none" + Fragment wrapping template.
+  - **PantryCard borderRadius is 12** (not canonical 16) — session 41 overlay matches existing radius. Future polish: align to canonical 16 as standalone session-21-style frame pass item.
+  - **chipSurface and hairlineBorder share alpha 0.12** — intentional semantic distinction: chipSurface for interactive fills (chips, Switch tracks, progress bar housings), hairlineBorder for structural 1-2px lines (borders, dividers). Do not conflate.
+  - **Natural-language invocation preferred** for agent auto-discovery. If routing falls back to `general-purpose`, the agent's `description` field needs keyword tuning.
   - **`Colors.card` and `Colors.cardBorder` are FULLY REMOVED** from `constants.ts` (session 39) — any reference is a TypeScript compile error. Don't re-add.
 - **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure infrastructure session — new `.claude/agents/` directory + un-gitignored `.agent/` directory + Vertex AI plan doc. Regression anchors unchanged: Pure Balance (Dog) = 61, Temptations (Cat Treat) = 0, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
 
