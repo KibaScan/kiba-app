@@ -51,7 +51,7 @@ const CENTER = RING_SIZE / 2;                           // 100
 const RADIUS = (RING_SIZE - RING_BORDER) / 2;            // 96
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ARC_270 = CIRCUMFERENCE * 0.75;
-const TRACK_COLOR = Colors.cardBorder;
+const TRACK_COLOR = Colors.chipSurface;
 const ANIMATION_DURATION = 900;
 
 // Enlarged SVG canvas for blur headroom

@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   // ── Divider between stats and voting ──
   divider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
     marginVertical: Spacing.md,
   },
 

@@ -4,8 +4,6 @@
 
 export const Colors = {
   background: '#1A1A1A',
-  card: '#242424',
-  cardBorder: '#333333',
   textPrimary: '#FFFFFF',
   textSecondary: '#A0A0A0',
   textTertiary: '#666666',
@@ -14,6 +12,7 @@ export const Colors = {
 
   // Matte Premium surfaces
   cardSurface: '#242424',                      // elevated card background
+  chipSurface: 'rgba(255,255,255,0.12)',       // chip fills, tracks, drag handles
   hairlineBorder: 'rgba(255,255,255,0.12)',    // crisp inner border
   pressOverlay: 'rgba(255,255,255,0.05)',      // touch feedback underlay
 

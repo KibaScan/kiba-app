@@ -273,6 +273,8 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     backgroundColor: Colors.cardSurface,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.sm,
     gap: 4,
   },
@@ -321,6 +323,8 @@ const styles = StyleSheet.create({
   zeroStateCard: {
     backgroundColor: Colors.cardSurface,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.lg,
     alignItems: 'center',
     gap: Spacing.sm,

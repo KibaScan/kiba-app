@@ -357,7 +357,7 @@ function ToggleRow({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
-        trackColor={{ false: Colors.cardBorder, true: Colors.accent }}
+        trackColor={{ false: Colors.chipSurface, true: Colors.accent }}
         thumbColor="#FFFFFF"
       />
     </View>

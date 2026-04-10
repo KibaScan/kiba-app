@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     borderRadius: 1.5,
   },
   dotTouchable: {

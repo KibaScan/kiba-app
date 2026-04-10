@@ -32,7 +32,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
 
               <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('dry_only')}>
-                  <View style={[styles.iconBox, { backgroundColor: Colors.cardBorder }]}>
+                  <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
                     <Ionicons name="nutrition" size={24} color={Colors.textPrimary} />
                   </View>
                   <View style={styles.optionTextContainer}>
@@ -43,7 +43,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
                 </Pressable>
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('dry_and_wet')}>
-                  <View style={[styles.iconBox, { backgroundColor: Colors.cardBorder }]}>
+                  <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
                     <Ionicons name="water" size={24} color={Colors.textPrimary} />
                   </View>
                   <View style={styles.optionTextContainer}>
@@ -54,7 +54,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
                 </Pressable>
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('wet_only')}>
-                  <View style={[styles.iconBox, { backgroundColor: Colors.cardBorder }]}>
+                  <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
                     <Ionicons name="fish" size={24} color={Colors.textPrimary} />
                   </View>
                   <View style={styles.optionTextContainer}>
@@ -65,7 +65,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
                 </Pressable>
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('custom')}>
-                  <View style={[styles.iconBox, { backgroundColor: Colors.cardBorder }]}>
+                  <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
                     <Ionicons name="options" size={24} color={Colors.textPrimary} />
                   </View>
                   <View style={styles.optionTextContainer}>

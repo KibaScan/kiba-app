@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 8,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     borderRadius: 4,
     overflow: 'hidden',
   },

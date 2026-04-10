@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   noPetWarning: {
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     padding: Spacing.md,
     borderRadius: 8,
     marginBottom: Spacing.sm,

@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   connector: {
     width: 2,
     flex: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
     marginTop: 4,
   },
   entryContent: {

@@ -374,7 +374,7 @@ const ss = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     alignSelf: 'center',
     marginBottom: Spacing.md,
   },

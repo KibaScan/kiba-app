@@ -435,7 +435,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
                   <Switch
                     value={notificationsOn}
                     onValueChange={handleNotificationsToggle}
-                    trackColor={{ false: Colors.hairlineBorder, true: Colors.accent }}
+                    trackColor={{ false: Colors.chipSurface, true: Colors.accent }}
                     thumbColor="#FFFFFF"
                   />
                 </View>

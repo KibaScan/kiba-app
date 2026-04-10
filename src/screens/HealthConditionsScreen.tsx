@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   // Section divider
   sectionDivider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.hairlineBorder,
     marginVertical: Spacing.lg,
   },
 

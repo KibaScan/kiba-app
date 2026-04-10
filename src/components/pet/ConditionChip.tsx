@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     borderRadius: 10,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     paddingHorizontal: Spacing.sm + 2, // 10px
     gap: 6,
   },

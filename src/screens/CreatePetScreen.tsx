@@ -527,7 +527,7 @@ export default function CreatePetScreen({ navigation, route }: Props) {
               <Switch
                 value={isNeutered}
                 onValueChange={setIsNeutered}
-                trackColor={{ false: Colors.cardBorder, true: Colors.accent }}
+                trackColor={{ false: Colors.chipSurface, true: Colors.accent }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 10,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   weightChip: {
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.chipSurface,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
