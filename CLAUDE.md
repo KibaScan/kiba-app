@@ -30,6 +30,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/specs/PORTION_CALCULATOR_SPEC.md` | RER/DER math, goal weight, cat safety guards |
 | `docs/specs/PANTRY_SPEC.md` | M5 Pantry schema, depletion, UI, edge cases |
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
+| `docs/plans/VERTEX_AI_BACKFILL_PLAN.md` | **Post-M9** — Vertex AI Gemini Pro backfills for ingredient TLDRs/citations + Amazon A+ image GA extraction |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 | `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 

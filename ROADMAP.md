@@ -712,6 +712,16 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
+## Post-M9 Data Enrichment (Parallel to M10)
+
+> Goal: Close two data quality gaps using Vertex AI Gemini Pro before launch. See `docs/plans/VERTEX_AI_BACKFILL_PLAN.md`.
+
+- [ ] **Workstream 1 — Ingredient TLDR + citation backfill** (`ingredients_dict.tldr`, `detail_body`, `citations_display`). Whitelisted reference corpus. Human review gate before data trusted by Rule #6 penalty attribution.
+- [ ] **Workstream 2 — Amazon A+ image → GA extraction** (`products.ga_*` for `asin IS NOT NULL AND ga_protein_pct IS NULL`). Requires A+ image URL scrape as prerequisite. DMB recompute downstream.
+- [ ] Budget: ~$300 in Vertex credits (free ceiling). Rough spend estimate ~$60 worst case.
+
+---
+
 ## M10: Community Points (Lite)
 
 > Goal: Lightweight engagement loop — points and streaks only. Cosmetics and leaderboard deferred.

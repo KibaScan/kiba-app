@@ -219,6 +219,7 @@
   - **Pancreatitis per-condition cap is 15** (not the default 8). Only pancreatitis has this override via `conditionName === 'pancreatitis'` check in `applyConditionCaps`. Total penalty cap raised to -25 so pancreatitis doesn't swallow other condition penalties.
   - **`CURRENT_SCORING_VERSION = '4'`** — forces full cache rebuild on next app launch. Migration 036 also wiped `pet_product_scores`.
   - **Carry-overs:** 17 non-border `cardBorder` token decision, same-brand disambiguation, custom icon rollout, affiliate enrollment, HomeScreen visual overhaul, search UX overhaul.
+  - **Post-M9 queued work:** Vertex AI backfill plan drafted — `docs/plans/VERTEX_AI_BACKFILL_PLAN.md`. Two workstreams (ingredient TLDR/citation backfill + Amazon A+ image → GA extraction) using Gemini Pro on Vertex AI. Funded by ~$300 in GCP credits. **Do not start until M9 closes.** See plan doc for scope, budget, open questions, and sequencing.
   - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
 - **Decision/scoring changes:** No new D-numbers (129). **Scoring engine changed:** caution 8→10, danger 15→20, pancreatitis -5/-8→-8/-15, per-condition cap override for pancreatitis (15), total penalty cap -15→-25. Regression anchors: Pure Balance = 60, Temptations = 0.
 
