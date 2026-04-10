@@ -796,8 +796,7 @@ const styles = StyleSheet.create({
   },
   carouselContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: 0,
-    paddingBottom: 2,
+    paddingVertical: Spacing.sm,
     gap: 10,
     alignItems: 'center',
   },
