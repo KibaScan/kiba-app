@@ -80,7 +80,6 @@ data/
 *:Zone.Identifier
 
 # AI Artifacts
-.agent/
 M6_COMPARE_SCREEN_PROMPT.md
 implementation_plan.md
 walkthrough.md
