@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     top: 10,
     height: 8,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: Colors.chipSurface,
   },
   segment: {
     height: '100%',
