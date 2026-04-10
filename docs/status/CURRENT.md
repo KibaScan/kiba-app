@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-08 (session 35)
+# Project Status — Last updated 2026-04-10 (session 40)
 
 ## Active Milestone
 
@@ -76,6 +76,12 @@
 
 ## Up Next
 
+- **Restart Claude Code + walk through `.claude/agents/README.md`** — session 40 landed the custom subagent starter roster (4 agents), but subagents only load at session start. Restart the CLI, run `/agents` to confirm all 4 appear with correct model badges, then walk through the README's 4 test prompts in order (sweeper → migration-writer → code-reviewer → scoring-architect). Failure-mode tables in the README map each bad output to a specific system prompt fix.
+- **Apply the 3 sweeper-found hex regressions** (discovered during in-session simulation) — `SubFilterChipRow.tsx:67,83` (`#1C1C1E` → `Colors.cardSurface`), `PetShareCard.tsx:185` (`#242424` → `Colors.cardSurface`). Also report-only: `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` (ambiguous rgba — need semantic decision: `chipSurface` or `hairlineBorder`). And flag: `pressOverlay` is defined in `constants.ts:17` with zero references anywhere — architectural orphan, decide wire-up or delete.
+- **Settings.json regression anchor drift** — `.claude/settings.json:44` SessionStart message says `Pure Balance = 60` but actual anchor is **61**. Pre-existing nit, unrelated to session 40 work. Fix in a one-line follow-up.
+- **Chipsurface visual QA (session 39 carry-over)** — `CreatePet`/`EditPet` Switches + segment buttons + weight chips, `NotificationPreferences` toggles, drag handles (`CompareProductPickerSheet`, `WeightEstimateSheet`), `WeightGoalSlider.rail`, `ScoreRing.track`, `VoteBarChart.track`, `ConditionChip`, `KibaIndexSection.noPetWarning`, `HealthConditionsScreen.sectionDivider`, `FeedbackCard.divider`, `FormulaChangeTimeline.connector`, `FeedingStyleSetupSheet` iconBoxes — all need eyeballs at 0.12. Watch for any site that reads too strong.
+- **TopPicksCarousel populated-state border check (session 39 carry-over)** — inner `card` border was added based on same reasoning as `zeroStateCard`, but only zero state was visually verified.
+- **On-device fuzzy search stress test (session 38 carry-over)** — typos, partial brand names, wrong word order. Verify relevance ranking.
 - **Final visual QA pass on session 21 matte frame work** — user walked most of it during the session, but a full end-to-end scan through ResultScreen + HomeScreen category cards on a real device would close the loop. Specifically: scan one daily food, one treat, one supplement, one vet diet, one recalled product — confirm all bypass paths still render their cards cleanly (CollapsibleSection underlies Advisories, Treat Battery, Score Breakdown, Ingredients, Insights, Kiba Index).
 - **PantryScreen.tsx:435 chip-background visual review** — still a carry-over from session 20. The `cardBorder → hairlineBorder` swap at line 435 is the only non-border use (chip unselected state background). `rgba(255,255,255,0.12)` may read too faint vs `#333333`. If unselected filter chips look broken or invisible, revert that single line to a dedicated chip-surface token.
 - **Stale browse scores** — CategoryBrowseScreen cache maturity check isn't form-aware (freeze-dried and other minority forms never get scored). Fix in both Edge Function and `batchScoreOnDevice.ts`.
@@ -97,57 +103,61 @@
 
 ## Last Session
 
-- **Date:** 2026-04-10 (session 39)
+- **Date:** 2026-04-10 (session 40)
 - **Accomplished:**
-  - **chipSurface token migration (M9 polish)** — Introduced `chipSurface` token in `src/utils/constants.ts` (initially `rgba(255,255,255,0.08)`, bumped to `0.12` after on-device visual regression on `EditPantryItemScreen` Switch). Routed 3 structural dividers to `hairlineBorder`: `HealthConditionsScreen.sectionDivider`, `FeedbackCard.divider`, `FormulaChangeTimeline.connector`. Swept 19 fills/tracks/handles to `chipSurface`: 4 Switch `trackColor` sites (`CreatePet`, `EditPet`, `NotificationPreferences`, `EditPantryItem` — the latter was a normalization from `hairlineBorder`, not `cardBorder`), 4 chip/segment fills (`CreatePet.segmentButton` + `.weightChip`, `EditPet.segmentButton` + `.weightChip`), 2 drag handles (`CompareProductPickerSheet.handleBar`, `WeightEstimateSheet.handleBar`), 3 rails/tracks (`WeightGoalSlider.rail`, `ScoreRing.TRACK_COLOR`, `VoteBarChart.track`), `ConditionChip.chip` background, `KibaIndexSection.noPetWarning`, 4 inline iconBoxes in `FeedingStyleSetupSheet` (nutrition / water / fish / options icons). Audit correction: CURRENT.md claimed 17 non-border cardBorder uses, workflow Step 7 claimed 22 — actual was **21 cardBorder sites + 1 hairlineBorder→chipSurface Switch normalization**.
-  - **Orphaned legacy tokens removed from `constants.ts`** — `Colors.card` (`#242424`) and `Colors.cardBorder` (`#333333`) both deleted. `Colors.card` was already zero-referenced (session 25 migrated all uses but left the definition in place). `npx tsc --noEmit` clean on migration-related errors — any future regression will now surface as a TypeScript compile error. `tabBarBorder: '#333333'` kept intact (separate semantic token for tab bar).
-  - **chipSurface bumped 0.08 → 0.12** — Initial value of `rgba(255,255,255,0.08)` proved too faint on the `EditPantryItemScreen` Switch (it was previously on `hairlineBorder 0.12`, so the normalization was a visual step backward). Bumped global `chipSurface` to `0.12` — matches `hairlineBorder`'s alpha. Both tokens now share a value; distinction is purely semantic (`chipSurface` for interactive fills, `hairlineBorder` for structural lines). All 20 `chipSurface` sites pick up the brighter value automatically with no further edits.
-  - **TopPicksCarousel missing borders fixed (pre-existing bugs, unrelated to migration)** — `zeroStateCard` (the "Unlock [Pet]'s Top Picks" empty-state card on HomeScreen) had `cardSurface` + `borderRadius: 16` but no border. Inner carousel `card` (the compact Ultimates/MAEV-style product cards shown on populated state) same issue — `cardSurface` + `borderRadius: 12` with no border. Both fixed with `borderWidth: 1, borderColor: Colors.hairlineBorder`. Now consistent with HomeScreen category cards and Buster's Pantry row.
-  - **CURRENT.md updates** — Added "What Works" entry for the session 39 migration. Removed "17 non-border cardBorder uses" carry-over from Up Next. Removed "22 non-border cardBorder uses" carry-over from session 38 "Not done yet" block.
-- **Files changed (18 modified):**
-  - `src/utils/constants.ts` (3 mutations: + chipSurface, − card + cardBorder, chipSurface 0.08 → 0.12)
-  - `src/screens/CreatePetScreen.tsx` (Switch trackColor, segmentButton, weightChip)
-  - `src/screens/EditPetScreen.tsx` (Switch trackColor, segmentButton, weightChip)
-  - `src/screens/NotificationPreferencesScreen.tsx` (Switch trackColor)
-  - `src/screens/EditPantryItemScreen.tsx` (Switch trackColor — hairlineBorder → chipSurface normalization)
-  - `src/screens/HealthConditionsScreen.tsx` (sectionDivider → hairlineBorder)
-  - `src/components/compare/CompareProductPickerSheet.tsx` (handleBar)
-  - `src/components/WeightEstimateSheet.tsx` (handleBar)
-  - `src/components/WeightGoalSlider.tsx` (rail)
-  - `src/components/scoring/ScoreRing.tsx` (TRACK_COLOR const)
-  - `src/components/pet/ConditionChip.tsx` (chip bg)
-  - `src/components/result/KibaIndexSection.tsx` (noPetWarning)
-  - `src/components/result/kiba-index/FeedbackCard.tsx` (divider → hairlineBorder)
-  - `src/components/result/kiba-index/VoteBarChart.tsx` (track)
-  - `src/components/ui/FormulaChangeTimeline.tsx` (connector → hairlineBorder)
-  - `src/components/pantry/FeedingStyleSetupSheet.tsx` (4 inline iconBox backgrounds)
-  - `src/components/browse/TopPicksCarousel.tsx` (zeroStateCard border + inner card border)
-  - `docs/status/CURRENT.md` (What Works entry, carry-over cleanup, session 39 handoff)
-- **Tests:** 1445 passing / 63 suites (unchanged — pure UI token migration, no test updates needed, regression anchors verified via `regressionAnchors.test.ts`).
+  - **Vertex AI backfill plan + doc hooks** — committed the session 39 dirty tree: new `docs/plans/VERTEX_AI_BACKFILL_PLAN.md` (269 lines) plus CLAUDE.md spec-table row, ROADMAP.md "Post-M9 Data Enrichment" section, CURRENT.md carry-over line. Two workstreams: ingredient TLDR/citation backfill, Amazon A+ image → GA extraction. Routed through Vertex AI to use existing ~$300 GCP credits. Commit `89797bc`.
+  - **Tag cleanup** — deleted stale `m5-complete` git tag (pointed to `fc86a8e`) that was colliding with the branch name and producing `src refspec m5-complete matches more than one` on push. Tag deleted locally + on origin. The commit it pointed to is still reachable in history; re-tag with `git tag m5-complete fc86a8e` if ever needed.
+  - **Custom Claude Code subagent starter roster (4 agents)** — new `.claude/agents/` directory, commit `4152de9`:
+    - `kiba-scoring-architect.md` (opus, read-only) — design-time validator for scoring changes. Enforces all 4 regression anchors, brand-blindness (D-019), affiliate isolation (D-020), Rule #6 citations, DMB conversion, `cluster_id` splitting, `position_reduction_eligible`, layer architecture (D-011), and the **engine copy trap** (the `src/services/scoring/` → `supabase/functions/batch-score/scoring/` mirror). Refuses to write code — output is always a structured design doc.
+    - `kiba-code-reviewer.md` (opus, read-only) — pre-commit domain-aware reviewer. Enforces all 13 CLAUDE.md non-negotiables plus 8 additional Kiba-specific checks (engine copy sync, decision supersession drift, cache invalidation misses, pantry offline handling, auto-deplete idempotency, behavioral feeding model, Matte Premium tokens, hardcoded hex regressions). Report-only — never edits.
+    - `kiba-migration-writer.md` (sonnet, read+write) — end-to-end Supabase migration owner. Coordinates schema SQL + RLS policies + backfills + `pet_product_scores` invalidation + TypeScript type alignment in `src/types/` as ONE commit. Refuses to touch `src/services/scoring/` or the mirrored copy.
+    - `kiba-token-sweeper.md` (haiku, read+edit) — mechanical multi-file sweeps for design token migrations and card anatomy enforcement. Stop-on-ambiguity rule. Step 7 added in polish commit: **flag zero-use tokens as architectural orphans**.
+  - **Committed `.agent/` directory** (previously gitignored). Un-gitignores `.agent/design.md` (622 lines) + 7 workflow templates (`boot.md`, `handoff.md`, `review.md`, `design.md`, `ios.md`, `legacy-token-migration.md`, `README.md`). Prerequisite for sweeper/reviewer agents to read the canonical Matte Premium design system on any fresh clone. Commit `9b224e2` (9 files, +1174).
+  - **`.claude/agents/README.md`** — 258-line testing walkthrough for validating all 4 agents post-restart. Natural-language + explicit invocation + success criteria + failure-mode tables (mapping specific bad outputs to specific system prompt fixes) per agent. Rollout order: sweeper → migration-writer → code-reviewer → scoring-architect. Commit `88f90fb` (bundled with the sweeper step 7 patch).
+  - **In-session sweeper validation (manual simulation)** — because Claude Code doesn't hot-reload `.claude/agents/` mid-session, manually walked the sweeper's workflow as the main Claude. Real findings: 5 hex regressions across 4 files (`SubFilterChipRow.tsx:67,83` #1C1C1E, `PetShareCard.tsx:185` #242424 inlined, `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` rgba ambiguous), plus `pressOverlay` orphan (defined in `constants.ts:17`, zero references anywhere in `src/`). The orphan finding surfaced a gap in the sweeper's system prompt — no explicit "flag zero-use tokens" rule — which was patched as step 7 in commit `88f90fb`.
+- **Commits (this session, 4 total):**
+  - `89797bc` — M9: Vertex AI backfill plan (post-M9 data enrichment) — 4 files, +281
+  - `9b224e2` — M9: commit .agent/ — Matte Premium design system + workflow templates — 9 files, +1174
+  - `4152de9` — M9: custom subagent starter roster (4 agents) — 4 files, +549
+  - `88f90fb` — M9: kiba-token-sweeper polish + agents README for testing — 2 files, +259
+- **Files changed (unique, 20 total across the 4 commits):**
+  - CLAUDE.md (Vertex AI plan spec row)
+  - ROADMAP.md (Post-M9 Data Enrichment section)
+  - docs/status/CURRENT.md (Vertex AI carry-over, plus this handoff)
+  - docs/plans/VERTEX_AI_BACKFILL_PLAN.md (new, 269 lines)
+  - .gitignore (removed `.agent/` line)
+  - .agent/design.md (newly tracked, 622 lines)
+  - .agent/workflows/{README,boot,handoff,design,ios,legacy-token-migration,review}.md (newly tracked, 7 files)
+  - .claude/agents/kiba-scoring-architect.md (new)
+  - .claude/agents/kiba-code-reviewer.md (new)
+  - .claude/agents/kiba-migration-writer.md (new)
+  - .claude/agents/kiba-token-sweeper.md (new + step 7 polish in commit 88f90fb)
+  - .claude/agents/README.md (new, 258 lines)
+- **Tests:** 1445 passing / 63 suites (unchanged — zero source code touched, pure infrastructure session). Regression anchors verified via `regressionAnchors.test.ts` passing in full suite run.
 - **Not done yet:**
-  - **Full visual QA sweep with chipSurface at 0.12** — `EditPantryItemScreen` Switch was spot-checked and the bump looks right, but `CreatePet`/`EditPet` Switches + segment buttons + weight chips, `NotificationPreferences` toggles, drag handles (`CompareProductPickerSheet`, `WeightEstimateSheet`), `WeightGoalSlider.rail`, `ScoreRing.track`, `VoteBarChart.track`, `ConditionChip`, `KibaIndexSection.noPetWarning`, `HealthConditionsScreen.sectionDivider`, `FeedbackCard.divider`, `FormulaChangeTimeline.connector`, and `FeedingStyleSetupSheet` iconBoxes all need eyeballs. Watch for any element that now reads too strong at 0.12.
-  - **TopPicksCarousel populated-state border check** — inner `card` border was added based on the same design reasoning as the `zeroStateCard`, but only the zero state was visually verified. Populated state (Ultimates + MAEV example) should be re-checked to confirm the border doesn't compete with the white image stage.
-  - **On-device fuzzy search stress test** — carry-over from session 38. Try typos (`temptashuns`), partial brand names (`blue buff`), wrong word order. Verify relevance ranking.
-  - **HomeScreen visual overhaul** (custom assets, layout polish) — M9 carry-over.
-  - **Same-brand disambiguation for `getConversationalName`** — session 19 carry-over.
-  - **Custom icon rollout** (5 pending v2 bold variants) — M9 carry-over.
-  - **Search UX overhaul on HomeScreen** — M9 carry-over.
-  - **Affiliate enrollment** — flip `affiliateConfig.ts` enabled: true after Chewy/Amazon partner enrollment.
-  - **Migration squashing** — 38 files is getting thick, flagged session 38 by Mottle.
-  - **Gemini scratch files still untracked:** `m9*.md`, `ts_output.txt`.
+  - **Claude Code restart + walk `.claude/agents/README.md`** — all 4 agent tests pending because subagents only load at session start. This is the top next-session item.
+  - **Apply the 3 sweeper-found hex regressions** — `SubFilterChipRow.tsx:67,83` (#1C1C1E → `Colors.cardSurface`), `PetShareCard.tsx:185` (#242424 → `Colors.cardSurface`). Unambiguous. Can be done by the sweeper agent itself post-restart as a real-world validation, or manually.
+  - **Semantic decision on the 2 ambiguous rgba regressions** — `BenchmarkBar.tsx:195` + `TreatBatteryGauge.tsx:162` are both `rgba(255,255,255,0.12)` track backgrounds. Both likely want `Colors.chipSurface` (interactive fill), but confirm semantic intent before the edit.
+  - **`pressOverlay` orphan decision** — defined in `constants.ts:17`, zero references. Either wire it up on PantryCard/BrowseProductRow tap states, or delete the definition.
+  - **Settings.json regression anchor drift** — `.claude/settings.json:44` SessionStart message says Pure Balance = 60 but actual anchor is **61**. Pre-existing nit, one-line follow-up.
+  - **Git committer identity** — all 4 session 40 commits show `stevendiaz@mac.mynetworksettings.com` (auto-generated). User needs to run `git config --global user.email "your@email"` themselves — Claude Code is blocked from touching git config per CLAUDE.md rules.
+  - **Session 39 carry-overs still pending:** chipSurface visual QA at 0.12 across all 20 sites, TopPicksCarousel populated-state border check, on-device fuzzy search stress test (also a session 38 carry-over).
+  - **M9 carry-overs:** HomeScreen visual overhaul, same-brand disambiguation for `getConversationalName`, custom icon rollout (5 pending v2 bold variants), Search UX overhaul on HomeScreen, affiliate enrollment (flip `affiliateConfig.ts enabled: true` after Chewy/Amazon partner enrollment), migration squashing (38 files is getting thick).
+  - **Untracked scratch files still present:** `m9pantryphaseDwalkthrough.md`, `m9pantryplan.md`, `m9pantrywalkthorough.md`, `m9task.md`, `m9walkthrough2.md`, `ts_output.txt` — carry-over from session 38+.
 - **Next session should start with:**
-  - Visual QA sweep of all `chipSurface` sites with the 0.12 value — start with `CreatePet`/`EditPet` Switches + chip fills, then drag handles, then rails/tracks. Any site that now reads too strong can be moved to a dedicated softer token or reverted to 0.08 locally.
-  - `TopPicksCarousel` populated-state border check (re-view the Ultimates/MAEV carousel with the new inner `card` border).
-  - Then pick between: HomeScreen visual overhaul, same-brand disambiguation, or fuzzy search stress test.
+  1. **Restart Claude Code** so `.claude/agents/*.md` is picked up
+  2. **Run `/agents`** — confirm all 4 agents appear with correct model badges (kiba-scoring-architect: opus, kiba-code-reviewer: opus, kiba-migration-writer: sonnet, kiba-token-sweeper: haiku)
+  3. **Walk `.claude/agents/README.md`** tests 1–4 in order (sweeper → migration-writer → code-reviewer → scoring-architect). README has exact test prompts + success criteria + failure-mode tables
+  4. For any test that fails, map the failure to the system prompt fix in the README's tables, commit the fix, restart, re-test
+  5. After validation: apply the 3 unambiguous hex regressions via sweeper (real-world test), then resume session 39 carry-overs
 - **Gotchas:**
-  - **`chipSurface` and `hairlineBorder` now share the same alpha (0.12)** — this is intentional. Semantic distinction: `chipSurface` for interactive element fills (chips, Switches, rails, tracks, drag handles, icon boxes), `hairlineBorder` for structural lines (1–2px borders, dividers, connectors). If a future reader wonders why two tokens have the same value, the `// chip fills, tracks, drag handles` and `// crisp inner border` comments in `constants.ts:17-18` document the intent. The values may diverge again in the future if one surface type needs tuning.
-  - **`Colors.card` and `Colors.cardBorder` are FULLY REMOVED** — any future write that references them will be a TypeScript compile error. This is the deliberate safety net. Do NOT re-add either token; use `cardSurface` / `chipSurface` / `hairlineBorder` instead.
-  - **`EditPantryItemScreen` Switch was never on `cardBorder`** — it was written fresh on `hairlineBorder` in an earlier session. The session 39 normalization to `chipSurface` was bundled for consistency across all 4 Switches in the app, not as a `cardBorder` migration. Session 39's audit (via Explore agent) confirmed this and the Gemini-proposed edit correctly accounted for it.
-  - **`TopPicksCarousel` borders were pre-existing bugs, not from this migration** — the `zeroStateCard` and inner carousel `card` styles were missing borders since their creation. Session 39 just caught them during on-device visual QA. Nothing to revert if issues surface — they're unrelated to the token migration.
-  - **`tabBarBorder: '#333333'` still exists** in `constants.ts` — it's a separate semantic token for the tab bar, not part of the card anatomy. Keep as-is.
-  - **chipSurface at 0.12 on `#242424` card composites to ~`#3E3E3E`** — slightly brighter than the old `cardBorder` `#333333`. So elements that used to read as `#333333` now read as ~`#3E3E3E`. This is the intended improvement, not a bug.
-  - **Audit miscount history:** CURRENT.md "Up Next" line claimed 17 non-border cardBorder uses; session 22's workflow Step 7 claimed 22; actual audit (session 39) via Explore agent + Grep found 21. Both prior counts were drift. The 21 figure is ground truth.
-- **Decision/scoring changes:** No new D-numbers (129). No scoring engine changes. No new migrations (38). Pure UI token work. Regression anchors unchanged: Pure Balance (Dog) = 61, Temptations (Cat Treat) = 0.
+  - **Subagents don't hot-reload.** `.claude/agents/*.md` is scanned at session start only. Files added or modified mid-session are NOT picked up. This is why session 40 validation is entirely post-restart.
+  - **`.agent/` is no longer gitignored.** Commit `9b224e2` un-ignores the directory. Any scratch writes to `.agent/*` from now on are tracked — if you want a scratch subdirectory there, add `.agent/scratch/` to `.gitignore` explicitly.
+  - **Engine copy trap** — `src/services/scoring/` has a mirrored copy at `supabase/functions/batch-score/scoring/` (7 `.ts` files). `protect-scoring.sh` only guards the `src/` side. `scripts/verify-engine-copy.ts` is the sync-verification script. The `kiba-scoring-architect` agent surfaces this on every design, but manual scoring edits outside the agent workflow still need to mirror both. This trap was a material blind spot in the original plan — caught by Ultraplan and patched into the architect's system prompt.
+  - **Natural-language invocation is preferred** for agent auto-discovery. If Claude Code routes to `general-purpose` instead of the specific Kiba agent, the agent's `description` field needs more specific keywords.
+  - **chipSurface and hairlineBorder share alpha 0.12** (session 39 carry-over, still load-bearing) — intentional. Semantic distinction: `chipSurface` for interactive fills, `hairlineBorder` for structural lines. Don't conflate — a future divergence of values is possible.
+  - **`Colors.card` and `Colors.cardBorder` are FULLY REMOVED** from `constants.ts` (session 39) — any reference is a TypeScript compile error. Don't re-add.
+- **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure infrastructure session — new `.claude/agents/` directory + un-gitignored `.agent/` directory + Vertex AI plan doc. Regression anchors unchanged: Pure Balance (Dog) = 61, Temptations (Cat Treat) = 0, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
 
 ---
 [Previous session 38 block retained below for reference]
