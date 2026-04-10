@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"systemMessage\": \"Scoring regression anchors: Pure Balance (Dog) = 60, Temptations (Cat Treat) = 0. Verify after any scoring changes.\"}'"
+            "command": "echo '{\"systemMessage\": \"Scoring regression anchors: Pure Balance (Dog) = 61, Temptations (Cat Treat) = 0. Verify after any scoring changes.\"}'"
           }
         ]
       }
