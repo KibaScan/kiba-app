@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: Colors.cardSurface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
   },
   chipInactive: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: Colors.cardSurface,
   },
   chipText: {
     fontSize: FontSizes.sm,

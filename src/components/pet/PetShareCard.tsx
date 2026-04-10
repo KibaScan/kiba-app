@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
 
   // ─── Score Block
   scoreBlock: {
-    backgroundColor: '#242424',
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 16,
