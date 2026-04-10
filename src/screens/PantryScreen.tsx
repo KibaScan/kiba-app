@@ -803,27 +803,26 @@ const styles = StyleSheet.create({
   },
   carouselItem: {
     alignItems: 'center',
-    width: 52,
+    width: 56,
   },
   carouselAvatar: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.cardSurface,
-    overflow: 'hidden',
+    backgroundColor: Colors.background,
   },
   carouselAvatarActive: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 2,
     borderColor: Colors.accent,
-    backgroundColor: Colors.background,
+    padding: 3, // Story Ring cutout — matches .agent/design.md:218-242 + PetHubStyles canonical pattern
   },
   carouselAvatarInactive: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    opacity: 0.6,
+    opacity: 0.5,
   },
   carouselPhoto: {
     borderRadius: 22,
