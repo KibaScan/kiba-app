@@ -36,9 +36,7 @@ import SwipeableRow from '../components/ui/SwipeableRow';
 import { canUseSafeSwaps } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
-import { getActiveSwitchForPet } from '../services/safeSwitchService';
 import type { PantryCardData, DietCompletenessResult } from '../types/pantry';
-import type { SafeSwitchCardData } from '../types/safeSwitch';
 import type { PantryStackParamList } from '../types/navigation';
 import type { Product } from '../types';
 
@@ -153,6 +151,7 @@ export default function PantryScreen({ navigation }: Props) {
 
   const items = usePantryStore(s => s.items);
   const dietStatus = usePantryStore(s => s.dietStatus);
+  const activeSwitchData = usePantryStore(s => s.activeSwitchData);
   const loading = usePantryStore(s => s.loading);
   const loadPantry = usePantryStore(s => s.loadPantry);
   const removeItem = usePantryStore(s => s.removeItem);
@@ -167,7 +166,6 @@ export default function PantryScreen({ navigation }: Props) {
   const [removeSheetItem, setRemoveSheetItem] = useState<PantryCardData | null>(null);
   const [logFeedingItem, setLogFeedingItem] = useState<PantryCardData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
   const [wetTransition, setWetTransition] = useState<WetTransitionRecord | null>(null);
 
   // ── Derived data ──
@@ -214,15 +212,16 @@ export default function PantryScreen({ navigation }: Props) {
     useCallback(() => {
       if (!activePetId) return;
       let cancelled = false;
-      loadPantry(activePetId).then(() => { if (cancelled) return; });
-      // Load active safe switch, then wet transition (sequential — mutual exclusion)
-      getActiveSwitchForPet(activePetId).then(async (data) => {
+      // loadPantry now owns items + dietStatus + activeSwitchData (with per-pet
+      // cache + stale-while-revalidate). Once it resolves, reconcile the wet
+      // transition card against the authoritative safe-switch state.
+      loadPantry(activePetId).then(async () => {
         if (cancelled) return;
-        setActiveSwitchData(data);
-        if (data) {
+        const hasSwitch = !!usePantryStore.getState().activeSwitchData;
+        if (hasSwitch) {
           // Mutual exclusion: clear stale wet transition when Safe Switch is active
           await clearWetTransition(activePetId);
-          setWetTransition(null);
+          if (!cancelled) setWetTransition(null);
         } else {
           const wt = await getWetTransition(activePetId);
           if (!cancelled) setWetTransition(wt);

@@ -15,18 +15,28 @@ import {
   sharePantryItem,
   evaluateDietCompleteness,
 } from '../services/pantryService';
+import { getActiveSwitchForPet } from '../services/safeSwitchService';
+import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { useActivePetStore } from './useActivePetStore';
 import type { Product } from '../types';
 import { useTreatBatteryStore, resolveTreatKcal } from './useTreatBatteryStore';
 import { rescheduleAllFeeding } from '../services/feedingNotificationScheduler';
 import { canUseGoalWeight } from '../utils/permissions';
 
+interface CachedPetPantry {
+  items: PantryCardData[];
+  dietStatus: DietCompletenessResult | null;
+  activeSwitchData: SafeSwitchCardData | null;
+}
+
 interface PantryState {
   items: PantryCardData[];
   dietStatus: DietCompletenessResult | null;
+  activeSwitchData: SafeSwitchCardData | null;
   loading: boolean;
   error: string | null;
   _petId: string | null;
+  _petCache: Record<string, CachedPetPantry>;
 
   loadPantry: (petId: string) => Promise<void>;
   addItem: (
@@ -49,21 +59,67 @@ function getPetName(petId: string): string {
 export const usePantryStore = create<PantryState>()((set, get) => ({
   items: [],
   dietStatus: null,
+  activeSwitchData: null,
   loading: false,
   error: null,
   _petId: null,
+  _petCache: {},
 
   loadPantry: async (petId) => {
-    set({ loading: true, error: null, _petId: petId });
+    const cached = get()._petCache[petId];
+
+    if (cached) {
+      // Cache hit: render instantly from cache, refresh in background
+      set({
+        items: cached.items,
+        dietStatus: cached.dietStatus,
+        activeSwitchData: cached.activeSwitchData,
+        loading: false,
+        error: null,
+        _petId: petId,
+      });
+    } else {
+      // Cache miss: clear the previous pet's data so it can't leak under
+      // the new pet's header, and show the spinner via the
+      // `loading && items.length === 0` guard in PantryScreen.
+      set({
+        items: [],
+        dietStatus: null,
+        activeSwitchData: null,
+        loading: true,
+        error: null,
+        _petId: petId,
+      });
+    }
+
     try {
-      const [items, dietStatus] = await Promise.all([
+      const [items, dietStatus, activeSwitchData] = await Promise.all([
         getPantryForPet(petId),
         evaluateDietCompleteness(petId, getPetName(petId)),
+        getActiveSwitchForPet(petId),
       ]);
-      set({ items, dietStatus, loading: false });
+
+      // User may have switched pets while this fetch was in flight —
+      // the store's _petId is the authoritative "current pet".
+      if (get()._petId !== petId) return;
+
+      set({
+        items,
+        dietStatus,
+        activeSwitchData,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [petId]: { items, dietStatus, activeSwitchData },
+        },
+      });
     } catch (e) {
+      if (get()._petId !== petId) return;
       console.error('[usePantryStore] loadPantry failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to load pantry.', loading: false });
+      set({
+        error: e instanceof PantryOfflineError ? e.message : 'Failed to load pantry.',
+        loading: false,
+      });
     }
   },
 
@@ -77,7 +133,16 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      set({ items, dietStatus, loading: false });
+      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      set({
+        items,
+        dietStatus,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
+        },
+      });
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] addItem failed:', e);
@@ -99,7 +164,16 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      set({ items, dietStatus, loading: false });
+      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      set({
+        items,
+        dietStatus,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
+        },
+      });
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       const msg = (e as Error).message ?? 'Failed to remove item.';
@@ -118,7 +192,16 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      set({ items, dietStatus, loading: false });
+      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      set({
+        items,
+        dietStatus,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
+        },
+      });
     } catch (e) {
       console.error('[usePantryStore] restockItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to restock item.', loading: false });
@@ -134,7 +217,16 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      set({ items, dietStatus, loading: false });
+      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      set({
+        items,
+        dietStatus,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
+        },
+      });
     } catch (e) {
       console.error('[usePantryStore] updateItem failed:', e);
       set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to update item.', loading: false });
@@ -150,7 +242,16 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      set({ items, dietStatus, loading: false });
+      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      set({
+        items,
+        dietStatus,
+        loading: false,
+        _petCache: {
+          ...get()._petCache,
+          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
+        },
+      });
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] shareItem failed:', e);
