@@ -243,14 +243,18 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
       const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
+      // Share also rebalances/refreshes the target pet's assignments server-side
+      // (rebalanceBaseShares + refreshWetReserve) — invalidate its cache entry
+      // so the next switch to that pet fetches fresh data. If petId === pid
+      // (defensive), the subsequent reassignment wins and the entry is rebuilt.
+      const nextCache = { ...get()._petCache };
+      delete nextCache[petId];
+      nextCache[pid] = { items, dietStatus, activeSwitchData: existingSwitch };
       set({
         items,
         dietStatus,
         loading: false,
-        _petCache: {
-          ...get()._petCache,
-          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
-        },
+        _petCache: nextCache,
       });
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
@@ -267,9 +271,8 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     const newQty = Math.max(0, item.quantity_remaining - 1);
     const kcal = resolveTreatKcal(item.product);
 
-    // Optimistic update
-    set({
-      items: items.map(i =>
+    const applyTreatDeduction = (arr: PantryCardData[]) =>
+      arr.map(i =>
         i.id === itemId
           ? {
               ...i,
@@ -277,8 +280,21 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
               is_empty: newQty <= 0,
               is_low_stock: newQty > 0 && newQty <= 5,
             }
-          : i
-      ),
+          : i,
+      );
+
+    // Capture pre-mutation cache entry so revert can restore it exactly.
+    const cachedBefore = get()._petCache[petId];
+
+    // Optimistic update — live items + cache entry (if cached).
+    set({
+      items: applyTreatDeduction(items),
+      _petCache: cachedBefore
+        ? {
+            ...get()._petCache,
+            [petId]: { ...cachedBefore, items: applyTreatDeduction(cachedBefore.items) },
+          }
+        : get()._petCache,
     });
 
     // Track in battery
@@ -287,8 +303,13 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     try {
       await updatePantryItem(itemId, { quantity_remaining: newQty });
     } catch {
-      // Revert optimistic update
-      set({ items });
+      // Revert optimistic update — live items + cache entry.
+      set({
+        items,
+        _petCache: cachedBefore
+          ? { ...get()._petCache, [petId]: cachedBefore }
+          : get()._petCache,
+      });
     }
   },
 
