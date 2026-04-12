@@ -66,6 +66,7 @@ export type MeStackParamList = {
   BCSReference: { petId: string };
   Medications: undefined;
   MedicalRecords: undefined;
+  HealthRecordForm: { defaultRecordType?: import('./appointment').HealthRecordType } | undefined;
   Appointments: undefined;
   CreateAppointment: undefined;
   AppointmentDetail: { appointmentId: string };

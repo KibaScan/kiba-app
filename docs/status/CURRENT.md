@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-10 (session 40)
+# Project Status — Last updated 2026-04-12 (session 44)
 
 ## Active Milestone
 
@@ -105,38 +105,96 @@
 
 ## Last Session
 
+- **Date:** 2026-04-12 (session 44)
+- **Accomplished:**
+  - **QA walkthrough Path 1 (Me tab) — Health Conditions card refactor + icon pipeline overhaul.** User drove multiple iterative UI polish passes on PetHubScreen focused on the "Me card" (Health Conditions section, activity/feeding stat chips, Daily Calories card, feeding style picker).
+    - **Health Conditions card refactor:** whole-card tap → View with conditional "See All →" header link. Condition chips restyled to amber-tint pill (`severityAmberTint` bg, 8px radius, 16px icons, amber text). Disclaimer color `textTertiary` → `textSecondary` (WCAG AA contrast fix, 4.5:1 floor).
+    - **Icon pipeline — 3-tier render priority:** `CONDITION_SVG_ICONS` (new) → `CONDITION_ICONS` (PNG) → Ionicon fallback. Registry-driven, swap-at-source.
+      - `src/components/icons/conditionSvgIcons.tsx` — 11 condition SVG components (gi_sensitive, joint, pancreatitis, ckd, urinary, diabetes, hypothyroid, liver, seizures, allergy, skin). Mix of 1024×1024 illustrations + SF Symbol exports (small viewBoxes like 26×21, 24×24, 19×19). SF Symbol path data inlined.
+      - `src/components/icons/speciesIcons.tsx` — 5 components (DogIcon, CatIcon for species-aware rendering; DailyFoodIcon, DailyDryIcon, DailyWetIcon for food type slots).
+      - `src/constants/iconMaps.ts` — `CONDITION_ICONS` PNG map restored/populated (11 entries, V1 thin-stroke PNGs kept as fallback tier).
+    - **Icon swaps (Ionicon level):**
+      - `cardiac`: `heart-outline` → `fitness-outline` (matches joint SF Symbol family, reads better at chip size)
+      - `underweight`: `trending-down-outline` → `scale-outline` (matches overweight SF Symbol family)
+      - BCS link in Daily Calories card: `body-outline` → `clipboard-outline`
+      - Activity chip: `walk-outline` Ionicon → species-aware `DogIcon`/`CatIcon` SVG at 16px
+      - Feeding style chip: `nutrition-outline` → `DailyFoodIcon` at size 24
+      - Feeding advisory (PortionCard): `nutrition-outline` → `DailyFoodIcon` at size 20
+      - FeedingStyleSetupSheet: all 4 options (dry/mixed/wet/custom) now use custom SVGs (DailyDryIcon 48, DailyFoodIcon 40, DailyWetIcon 40, Ionicons `options` 24 for custom). Option titles recolored `textPrimary` → `accent` (cyan).
+    - **Daily Calories card polish:** removed `paddingBottom: Spacing.sm` from `goalSection` to tighten bottom spacing after SF Symbol icon swap.
+    - **Established icon sizing rule:** custom 1024×1024 SVGs have inherent blank-space padding vs tightly-cropped SF Symbols. Custom icons need ~1.5× size bump to read proportionally (40-48 vs 24-32 for SF Symbols in the same visual role). Applied to FeedingStyleSetupSheet option cards, PetHubScreen custom stat chip, PortionCard advisory.
+    - **New design token:** `Colors.severityAmberTint = 'rgba(245,158,11,0.15)'` for amber pill fills (condition chips, tracked tags). Sits alongside `severityAmber` (solid).
+  - **"Add Health Record" full-screen conversion (QA walkthrough Path 1, closing session).** User flagged visual inconsistency: New Appointment and Add Medication are full-screen pages, but Add Health Record was a bottom sheet — awkward asymmetry in the "+ Add" family.
+    - Created `src/screens/HealthRecordFormScreen.tsx` mirroring `MedicationFormScreen` pattern (SafeAreaView + KeyboardAvoidingView + header + ScrollView + anchored footer). Type chip (Vaccine/Deworming), vaccine/treatment name, date administered (spinner picker), next-due follow-up chips (1yr/3yr/Custom/None for vaccines; 3mo/6mo/1yr/Custom/None for dewormings) with custom date sub-picker, vet/clinic field, Save Record button.
+    - Added `HealthRecordForm: { defaultRecordType?: HealthRecordType } | undefined` to `MeStackParamList`.
+    - Registered route in `src/navigation/index.tsx` between `MedicalRecords` and `Appointments`.
+    - **Migrated 2 of 3 callers** to navigate instead of opening the sheet:
+      - `PetHubScreen` — dropped `HealthRecordLogSheet` import, `manualRecordVisible`/`defaultRecordType` state, and the sheet render block at line ~1014. Both "Add a medical record" / "Add Medical Record" links now `navigation.navigate('HealthRecordForm')`. Focus effect reloads records on return.
+      - `MedicalRecordsScreen` — same pattern. Header "+" button and empty-state CTA both navigate.
+    - **Left `HealthRecordLogSheet` intact for `AppointmentDetailScreen`** — that caller is the completion-flow prompt after marking an appointment complete. Staying as a contextual sheet is correct (it's a flow continuation, not a standalone "Add" action). Component still lives at `src/components/appointments/HealthRecordLogSheet.tsx` with its Modal/BlurView/ScrollView anatomy.
+  - **EditPantryItemScreen card borders fix.** User flagged missing borders on the Quantity / Feeding Configuration / Schedule cards — Matte Premium violation. One-line fix: `src/screens/EditPantryItemScreen.tsx` shared `card` style at line 667 gained `borderWidth: 1, borderColor: Colors.hairlineBorder`. All three cards inherit (single style definition).
+- **Files changed (uncommitted at handoff start — all session 44 work since `77a449d`):**
+  - **Created:**
+    - `src/screens/HealthRecordFormScreen.tsx` (new full-screen form, ~365 lines)
+    - `src/components/icons/conditionSvgIcons.tsx` (11 condition SVG components + CONDITION_SVG_ICONS registry)
+    - `src/components/icons/speciesIcons.tsx` (DogIcon, CatIcon, DailyFoodIcon, DailyDryIcon, DailyWetIcon — 5 components)
+    - `assets/Icons/conditions-svg/` (11 SVG files — SF Symbols + custom illustrations)
+    - `assets/Icons/conditions/` (V1 thin-stroke PNG fallbacks — re-added to tree)
+    - `assets/Icons/placeholder/` (3 food-type SVGs: dailybold, DailyDry, Dailywet)
+  - **Modified:**
+    - `src/screens/PetHubScreen.tsx` — icon swaps, Health Conditions card refactor, species-aware activity chip, DailyFoodIcon stat chip, removed HealthRecordLogSheet manual-mode render + state. (+140/-98 net)
+    - `src/screens/pethub/PetHubStyles.ts` — condition chip restyle (amber-tint pill, 8px radius), Health Conditions card layout, disclaimer color bump. (+33/-22)
+    - `src/components/PortionCard.tsx` — BCS link icon swap, feeding advisory DailyFoodIcon, goalSection bottom padding tightened. (+6/-0)
+    - `src/components/pantry/FeedingStyleSetupSheet.tsx` — all 4 option icons to custom SVGs, titles recolored cyan. (+11/-0)
+    - `src/screens/MedicalRecordsScreen.tsx` — removed HealthRecordLogSheet add-sheet; header "+" and empty-state CTA now navigate. (+20/-0 net; -15 effective since sheet removed)
+    - `src/screens/EditPantryItemScreen.tsx` — added `borderWidth: 1 + borderColor: hairlineBorder` to `card` style (one-line Matte Premium fix). (+2/-0)
+    - `src/data/conditions.ts` — cardiac `heart-outline` → `fitness-outline`, underweight `trending-down-outline` → `scale-outline`. (+4/-0)
+    - `src/constants/iconMaps.ts` — `CONDITION_ICONS` PNG map + `ConditionKey` type. (+21/-0)
+    - `src/utils/constants.ts` — new `severityAmberTint` token. (+1/-0)
+    - `src/navigation/index.tsx` — HealthRecordFormScreen import + route registration. (+2/-0)
+    - `src/types/navigation.ts` — `HealthRecordForm` route type. (+1/-0)
+    - `docs/status/CURRENT.md` — this handoff.
+- **Tests:** 1445 passing / 63 suites (unchanged — UI polish + screen conversion; no business logic touched). 3 snapshots. Regression anchors verified: Pure Balance (Dog) = 61 ✓, Temptations (Cat Treat) = 0 ✓. TypeScript clean in `src/` (pre-existing errors confined to `docs/plans/search-uiux/*` prototype noise).
+- **Not done yet (QA walkthrough sessions-39-43 remaining paths):**
+  - **Path 1 (Me tab) — remaining sites:** CreatePet switches/chips/segments visual QA, EditPet switches/chips/segments, WeightGoalSlider rail (chipSurface swap), NotificationPreferences Switch tracks, TreatBatteryGauge barTrack visual QA. Health Conditions card + activity/feeding chips + Daily Calories + HealthRecordForm closed this session.
+  - **Path 2 (Pantry tab) — not started:** PantryScreen filter chip:514 (session 20 carry-over), pet carousel visual QA, PantryCard press-lift + inner-button flash check, BrowseProductRow press lift, session 43 cache edge cases (stale-share + stale-treat reproducers), FeedingStyleSetupSheet iconBoxes (just touched — verify chipSurface reads right), WeightEstimateSheet drag handle, EditPantryItem Switch.
+  - **Path 3 (ResultScreen) — not started:** 15+ sites (matte frame final pass, ScoreRing chipSurface, BenchmarkBar chipSurface, PositionMap, ConditionChip, bypass paths for vet diet / species mismatch / variety pack / recalled product).
+  - **Path 4 (Home tab) — not started:** category cards visual QA, TopPicksCarousel populated-state border check, fuzzy search stress test.
+  - **Custom icon V2 bold rollout (5 pending):** user reuploaded thicker DailyDry + DailyWet mid-session; 3 placeholder icons likely need similar bold-variant pass. Check `assets/Icons/placeholder/` naming + content before next icon swap.
+  - **Git committer identity** — still `stevendiaz@mac.mynetworksettings.com`. Carry-over from session 41/42/43. User runs `git config --global user.email "..."` themselves (Claude Code blocked from touching git config).
+- **Next session should start with:**
+  1. **Confirm the commit + push landed cleanly on `m5-complete`** — branch state should be ahead of `77a449d` by one squash/combined commit covering all session 44 work.
+  2. **Pick the next QA walkthrough path.** Recommended order (aligns with left-to-right tab bar + most-touched surface last):
+     - Path 1 remainder (CreatePet / EditPet / NotificationPreferences switches + chips) — we're already in Me-tab context, cheapest continuation.
+     - Path 2 (Pantry tab) — has the session 43 cache edge cases to validate, highest-risk area untouched.
+     - Path 3 (ResultScreen) — biggest scope, best tackled in a dedicated session.
+     - Path 4 (Home tab) — smaller scope, can be a short closing session.
+  3. **Watch for icon regressions on device** — the 3-tier priority chain (SVG → PNG → Ionicon) is new. If any condition chip renders blank or wrong icon, check (a) tag match between DB `condition_tag` and `CONDITION_SVG_ICONS` keys in `conditionSvgIcons.tsx`, (b) SF Symbol viewBox wasn't force-converted to 1024×1024 (SF Symbol SVGs use their native small viewBoxes).
+- **Gotchas:**
+  - **Icon sizing rule is now canon:** custom 1024×1024 SVGs need ~1.5× size bump vs SF Symbols / Ionicons in the same visual role. Applied asymmetrically across FeedingStyleSetupSheet (40-48 for custom, 24 for Ionicon options), PetHubScreen stat chips (24 for DailyFoodIcon, 16 for SF Symbols), PortionCard (20 for DailyFoodIcon, 14 for clipboard Ionicon). If future icon adjustments happen, honor this rule — don't size-normalize blindly.
+  - **3-tier icon render priority on condition chips:** `CONDITION_SVG_ICONS[tag] → CONDITION_ICONS[tag] (PNG) → Ionicon fallback from conditions.ts`. PNG map at `src/constants/iconMaps.ts` is now populated for the 11 conditions with assets (`allergy` and `hyperthyroid` skip to Ionicon). Adding a new condition = add SVG component + registry entry; PNG tier is fallback only.
+  - **HealthRecordLogSheet still used by AppointmentDetailScreen.** Do NOT delete the component file or mark it orphan — it's the completion-flow sheet after marking an appointment complete (contextual continuation, correctly stays as a sheet). Only the manual-mode callers were migrated to the full-screen form.
+  - **HealthRecordForm route optionally accepts `defaultRecordType`** (`'vaccination' | 'deworming'`). Currently no caller passes it — form defaults to `'vaccination'` and exposes the type toggle. Future entry points (e.g., quick-action shortcut for deworming from a reminder notification) can pre-seed via `navigation.navigate('HealthRecordForm', { defaultRecordType: 'deworming' })`.
+  - **`severityAmberTint` is a new token at `rgba(245,158,11,0.15)`** — used for amber pill fills (condition chips, "tracked" tags). Sits alongside `severityAmber` (solid). If future amber-tint surfaces appear, reuse this token rather than inlining the rgba.
+  - **Icon components live in `src/components/icons/`** — a new directory created this session. `conditionSvgIcons.tsx` and `speciesIcons.tsx` are the canonical homes. Do NOT dump future SVG components under `src/components/` root.
+  - **Engine copy trap still stands** — `src/services/scoring/` mirrored at `supabase/functions/batch-score/scoring/`. Manual scoring edits outside the `kiba-scoring-architect` agent workflow still need to mirror both.
+  - **`Colors.card` and `Colors.cardBorder` are FULLY REMOVED** from `constants.ts` — any reference is a TypeScript compile error. Don't re-add. (Unchanged from sessions 39+.)
+- **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure UI polish + screen conversion session. Regression anchors unchanged: Pure Balance = 61 ✓, Temptations = 0 ✓, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
+
+---
+[Previous session 43 block retained below for reference]
+
 - **Date:** 2026-04-11 (session 43)
 - **Accomplished:**
   - **/boot** — read CLAUDE.md, DECISIONS.md header, ROADMAP.md M9 scope, CURRENT.md. Confirmed 129 decisions + 38 migrations + M9 in progress. Branch `m5-complete` clean at `bc8d8a0`.
-  - **Sweeper iteration 3 validated — PASS.** Dispatched `kiba-token-sweeper` with a real Matte Premium color regression sweep across `src/components/` + `src/screens/` (3 patterns: `#1C1C1E`, `#242424`, `rgba(255,255,255,0.12)`). Sweep result: 0 hits in scope — all `#242424` + `rgba(255,255,255,0.12)` matches were in `src/utils/constants.ts` canonical token definitions, outside scope. Step 7 orphan check fired unprompted per iteration 2's mandate, with correct binary labels: `cardSurface` 150 consumers ACTIVE, `chipSurface` 22 ACTIVE, `hairlineBorder` 163 ACTIVE, `pressOverlay` **2 ACTIVE**. Zero orphans. **`pressOverlay` correctly labeled ACTIVE** — this was the canonical failure mode from session 42 where the sweeper self-invented a "solo consumer orphan" category and mislabeled pressOverlay (2 consumers). Iteration 3's strict binary-label rule (0 = orphan, ≥1 = not orphan) holds. Agent infrastructure validated "in anger".
-  - **Pantry pet-switch latency fix shipped** across 2 commits on new branch `fix/pantry-pet-switch-latency`:
-    - **`8b2f510` — primary latency fix.** Per-pet cache `_petCache: Record<string, CachedPetPantry>` with stale-while-revalidate semantics in `loadPantry`. Cache hit renders instantly, cache miss clears previous-pet state + shows spinner. `getActiveSwitchForPet` joined into the existing Promise.all (4 sequential → 3 parallel on cold cache). Race guard (`if (get()._petId !== petId) return`) handles rapid pet switching. `PantryScreen.tsx` focus effect simplified — `loadPantry` owns items + diet + active switch; wet-transition reconciliation stays local and reads authoritative state via `usePantryStore.getState().activeSwitchData`. Mutation helpers (add/remove/restock/update/share) preserve `activeSwitchData` via `get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData` without unnecessary refetch. 2 files, +118/-18. **Origin:** `/ultraplan` remote web session executed the plan on its ephemeral filesystem (no remotes configured in the web clone). Commit was ferried to local by pasting the diff as text into chat, saving to `/tmp/pantry-pet-switch.patch`, applying with `git apply`, then re-committing locally with a new SHA.
-    - **`c8ba5db` — follow-up cache staleness closure.** Two edge cases introduced by the per-pet cache, both self-correcting via background refresh but worth closing while context was fresh. `shareItem` now deletes `_petCache[targetPetId]` in the same `set()` transaction that writes active pet's fresh data — invalidation is correct because `sharePantryItem` calls `rebalanceBaseShares` + `refreshWetReserve` on the target pet, mutating OTHER assignments we can't reconstruct from the returned `PantryPetAssignment` alone. `logTreat` extracts the optimistic transform into a local `applyTreatDeduction` helper and applies it to both live `items` and `_petCache[petId].items`; revert-on-error mirrors identically via captured `cachedBefore` snapshot. Handles "cache not yet populated" case via ternary fallback. 1 file, +32/-11. Planned in plan mode via `/Users/stevendiaz/.claude/plans/drifting-herding-hanrahan.md`, user-approved, executed in this session.
-  - **On-device QA confirmed** — user: "device feels better" after the fix.
-- **Files changed:**
-  - `src/screens/PantryScreen.tsx` (primary commit only)
-  - `src/stores/usePantryStore.ts` (both commits — primary refactor + follow-up cache fixes)
-  - `docs/status/CURRENT.md` (this handoff)
-- **Tests:** 1445 passing / 63 suites (unchanged — the pantry refactor has no unit test coverage, and no test files were touched). 3 snapshots. Regression anchors intact: Pure Balance (Dog) = 61 ✓, Temptations (Cat Treat) = 0 ✓.
-- **Not done yet:**
-  - **`fix/pantry-pet-switch-latency` branch merge + PR strategy** — branch has 3 commits on top of `bc8d8a0`: `8b2f510` (primary fix), `c8ba5db` (follow-up), and this CURRENT.md handoff commit. After push, PR creation + merge to `m5-complete` is user's call.
-  - **`usePantryStore` unit tests** — the refactor added nontrivial cache semantics (cache hit/miss, race guards, stale-while-revalidate, mutation-helper preservation of activeSwitchData) with no test coverage. Could be a standalone "add store tests" commit later. Not a blocker — existing test suite catches regressions at the scoring/pantry-service boundary.
-  - **On-device QA for follow-up edge cases** — stale-share repro (share from PetA to PetB, immediately switch to PetB) and stale-treat repro (log treat on PetA, switch away and back) weren't specifically walked. User confirmed pet-switch latency feels better broadly, but the follow-up edge cases are subtler.
-  - **Session 42 carry-overs still pending:** visual QA items (chipSurface at ~20 sites, PantryCard/BrowseProductRow press lift, TreatBatteryGauge/BenchmarkBar/PositionMap chipSurface swap, broader Matte Premium alpha audit ~17 sites at non-0.12 alphas, PantryScreen.tsx:435 chip-background, session 21 matte frame final pass, TopPicksCarousel populated-state border, on-device fuzzy search stress test).
-  - **Git committer identity** — commits still show auto-generated `stevendiaz@mac.mynetworksettings.com`. Carry-over from session 41. User runs `git config --global user.email "..."` themselves (Claude Code blocked from touching git config).
-- **Next session should start with:**
-  1. **Verify branch merge + origin state.** If `fix/pantry-pet-switch-latency` was merged to `m5-complete`, confirm the tree is clean and history reads sanely. If still open, decide on merge strategy (squash vs rebase).
-  2. **Pick next M9 work item.** Top candidates from the slimmed Up Next: HomeScreen visual overhaul (custom assets + layout polish), Search UX overhaul on HomeScreen, custom icon rollout (5 v2 bold variants), broader Matte Premium alpha audit (dedicated session for ~17 non-0.12 alpha sites), Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`).
-  3. **Consider `usePantryStore` unit tests** as a standalone commit if any cache-related regressions surface in the wild.
-- **Gotchas:**
-  - **Engine copy trap still stands** — `src/services/scoring/` mirrored at `supabase/functions/batch-score/scoring/`. Manual scoring edits outside the `kiba-scoring-architect` agent workflow still need to mirror both. (Unchanged from session 42.)
-  - **`Colors.card` and `Colors.cardBorder` are FULLY REMOVED** from `constants.ts` — any reference is a TypeScript compile error. (Unchanged from session 42.)
-  - **Web `/ultraplan` sessions use ephemeral filesystems with no remotes.** To ferry work from a web session to local: (a) in the web session's "Tell Claude what to do instead", ask it to paste the full diff as plain text in chat; (b) save to `/tmp/<name>.patch` locally; (c) `git apply`; (d) re-commit locally. Session SHAs will differ between web and local — that's expected. Do NOT use "teleport back to terminal" approve path if the local terminal has been chatting during the remote run — it silently stops waiting for the plan and disables both teleport options.
-  - **Pantry store race guards are load-bearing.** The `if (get()._petId !== petId) return` guard at `loadPantry` lines 104 + 117 prevents stale fetches from overwriting newer pet data during rapid switching. Don't remove these "defensive" checks — they enable the stale-while-revalidate pattern to work correctly.
-  - **Cache invalidation pattern is new to the codebase.** `shareItem`'s `delete nextCache[targetId]` + `nextCache[activeId] = {...}` in a single `set()` transaction is the canonical pattern for "invalidate cache entry on cross-entity write" — no prior idiom to mirror. If future cross-pet operations surface (transfer item, copy assignment, etc.), apply the same pattern.
-  - **`logTreat` capture-before-mutation pattern is load-bearing for revert.** Capture `cachedBefore` at function entry, restore on catch path. Concurrent treat logs each capture their own `cachedBefore`; the final cache state is internally consistent with what the user sees.
-  - **Sweeper iteration 3 is now validated "in anger"** — use the agent freely for future token regression sweeps without running canonical tests first. The binary-label rule is stable.
-- **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure data-layer refactor + UI simplification. Regression anchors unchanged: Pure Balance = 61, Temptations = 0, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
+  - **Sweeper iteration 3 validated — PASS.** Dispatched `kiba-token-sweeper` with a real Matte Premium color regression sweep across `src/components/` + `src/screens/` (3 patterns: `#1C1C1E`, `#242424`, `rgba(255,255,255,0.12)`). Sweep result: 0 hits in scope. Step 7 orphan check fired unprompted with correct binary labels: `cardSurface` 150 ACTIVE, `chipSurface` 22 ACTIVE, `hairlineBorder` 163 ACTIVE, `pressOverlay` 2 ACTIVE. Zero orphans. Agent infrastructure validated "in anger".
+  - **Pantry pet-switch latency fix shipped** across 2 commits (`8b2f510` + `c8ba5db`): per-pet cache + stale-while-revalidate + Promise.all parallelization + race guards. 4 sequential → 3 parallel on cold cache. User confirmed "device feels better".
+- **Files changed:** `src/screens/PantryScreen.tsx`, `src/stores/usePantryStore.ts`, `docs/status/CURRENT.md`.
+- **Tests:** 1445 / 63 suites. Anchors intact.
+- **Gotchas carried forward:**
+  - Pantry store race guards load-bearing — `if (get()._petId !== petId) return` in `loadPantry` prevents stale overwrites during rapid switching.
+  - Cache invalidation pattern: `shareItem`'s `delete nextCache[targetId]` + `nextCache[activeId] = {...}` in a single `set()` transaction is canonical for cross-entity writes.
+  - `logTreat` capture-before-mutation pattern load-bearing for revert.
 
 ---
 [Previous session 42 block retained below for reference]

@@ -30,11 +30,11 @@ const SHARED_CONDITIONS: ConditionDef[] = [
   { tag: 'allergy', label: 'Food allergies', icon: 'alert-circle-outline' },
   { tag: 'gi_sensitive', label: 'Sensitive stomach', icon: 'medical-outline' },
   { tag: 'obesity', label: 'Overweight', icon: 'scale-outline' },
-  { tag: 'underweight', label: 'Underweight', icon: 'trending-down-outline' },
+  { tag: 'underweight', label: 'Underweight', icon: 'scale-outline' },
   { tag: 'diabetes', label: 'Diabetes', icon: 'water-outline' },
   { tag: 'ckd', label: 'Kidney disease', icon: 'medkit-outline' },
   { tag: 'urinary', label: 'Urinary issues', icon: 'flask-outline' },
-  { tag: 'cardiac', label: 'Heart disease', icon: 'heart-outline' },
+  { tag: 'cardiac', label: 'Heart disease', icon: 'fitness-outline' },
   { tag: 'pancreatitis', label: 'Pancreatitis', icon: 'bandage-outline' },
   { tag: 'skin', label: 'Skin & coat issues', icon: 'leaf-outline' },
 ];

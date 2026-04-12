@@ -26,6 +26,7 @@ import { updatePetAssignment } from '../services/pantryService';
 import { getAdjustedDER, WEIGHT_GOAL_MULTIPLIERS } from '../utils/weightGoal';
 import { getConditionFeedingAdvisory } from '../utils/pantryHelpers';
 import WeightGoalSlider from './WeightGoalSlider';
+import { DailyFoodIcon } from './icons/speciesIcons';
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -314,7 +315,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
       {/* Condition-based feeding frequency advisory */}
       {feedingAdvisory && (
         <View style={styles.feedingAdvisory}>
-          <Ionicons name="nutrition-outline" size={14} color={Colors.accent} />
+          <DailyFoodIcon size={20} color={Colors.accent} />
           <Text style={styles.feedingAdvisoryText}>
             {feedingAdvisory.mealsPerDay} smaller meals per day may support {feedingAdvisory.reason}
           </Text>
@@ -354,7 +355,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental, 
           />
           {onBCSPress && (
             <TouchableOpacity onPress={onBCSPress} style={styles.bcsLink} activeOpacity={0.7}>
-              <Ionicons name="body-outline" size={14} color={Colors.accent} />
+              <Ionicons name="clipboard-outline" size={14} color={Colors.accent} />
               <Text style={styles.bcsLinkText}>What's my pet's body condition?</Text>
             </TouchableOpacity>
           )}
@@ -455,7 +456,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     marginTop: Spacing.xs,
     gap: Spacing.xs,
-    paddingBottom: Spacing.sm,
   },
   bcsLink: {
     flexDirection: 'row',

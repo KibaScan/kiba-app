@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { chipToggle } from '../../utils/haptics';
 import type { FeedingStyle } from '../../types/pet';
+import { DailyDryIcon, DailyFoodIcon, DailyWetIcon } from '../icons/speciesIcons';
 
 interface FeedingStyleSetupSheetProps {
   isVisible: boolean;
@@ -33,7 +34,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
               <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('dry_only')}>
                   <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
-                    <Ionicons name="nutrition" size={24} color={Colors.textPrimary} />
+                    <DailyDryIcon size={48} color={Colors.accent} />
                   </View>
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Dry food only</Text>
@@ -44,7 +45,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('dry_and_wet')}>
                   <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
-                    <Ionicons name="water" size={24} color={Colors.textPrimary} />
+                    <DailyFoodIcon size={40} color={Colors.accent} />
                   </View>
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Mixed feeding</Text>
@@ -55,7 +56,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('wet_only')}>
                   <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
-                    <Ionicons name="fish" size={24} color={Colors.textPrimary} />
+                    <DailyWetIcon size={40} color={Colors.accent} />
                   </View>
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Wet food only</Text>
@@ -66,7 +67,7 @@ export function FeedingStyleSetupSheet({ isVisible, petName, onSelect, onDismiss
 
                 <Pressable style={styles.optionCard} onPress={() => handleSelect('custom')}>
                   <View style={[styles.iconBox, { backgroundColor: Colors.chipSurface }]}>
-                    <Ionicons name="options" size={24} color={Colors.textPrimary} />
+                    <Ionicons name="options" size={24} color={Colors.accent} />
                   </View>
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Custom split</Text>
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: Colors.accent,
     marginBottom: 4,
   },
   optionSubtitle: {

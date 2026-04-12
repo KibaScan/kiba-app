@@ -667,6 +667,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.cardSurface,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,

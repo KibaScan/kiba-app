@@ -308,20 +308,35 @@ export const styles = StyleSheet.create({
   conditionChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    columnGap: Spacing.md,
+    rowGap: Spacing.sm,
     marginTop: Spacing.sm,
   },
   conditionChip: {
-    backgroundColor: Colors.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.severityAmberTint,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    gap: 6,
+  },
+  conditionChipIcon: {
+    width: 16,
+    height: 16,
+    tintColor: Colors.severityAmber,
   },
   conditionChipText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textPrimary,
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.severityAmber,
+  },
+  conditionChipOverflow: {
+    marginTop: Spacing.xs,
+  },
+  conditionChipOverflowText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
   },
   allergenCount: {
     fontSize: FontSizes.sm,
@@ -403,7 +418,7 @@ export const styles = StyleSheet.create({
   },
   healthDisclaimer: {
     fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
+    color: Colors.textSecondary,  // WCAG AA: #A0A0A0 on #1A1A1A = 7:1 (was #666666 = 3.4:1, failing)
     textAlign: 'center',
     marginBottom: Spacing.lg,
     paddingHorizontal: Spacing.md,

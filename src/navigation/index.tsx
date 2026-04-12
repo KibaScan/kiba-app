@@ -24,6 +24,7 @@ import MedicationFormScreen from '../screens/MedicationFormScreen';
 import MedicationsListScreen from '../screens/MedicationsListScreen';
 import AppointmentsListScreen from '../screens/AppointmentsListScreen';
 import MedicalRecordsScreen from '../screens/MedicalRecordsScreen';
+import HealthRecordFormScreen from '../screens/HealthRecordFormScreen';
 import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
@@ -126,6 +127,7 @@ function MeStackScreen() {
       <MeStack.Screen name="MedicationForm" component={MedicationFormScreen} />
       <MeStack.Screen name="Medications" component={MedicationsListScreen} />
       <MeStack.Screen name="MedicalRecords" component={MedicalRecordsScreen} />
+      <MeStack.Screen name="HealthRecordForm" component={HealthRecordFormScreen} />
       <MeStack.Screen name="Appointments" component={AppointmentsListScreen} />
       <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
       <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />

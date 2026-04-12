@@ -19,7 +19,6 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { getHealthRecords, deleteHealthRecord } from '../services/appointmentService';
 import SwipeableRow from '../components/ui/SwipeableRow';
 import { useActivePetStore } from '../stores/useActivePetStore';
-import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import HealthRecordDetailSheet from '../components/appointments/HealthRecordDetailSheet';
 import type { PetHealthRecord, HealthRecordType } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
@@ -51,7 +50,6 @@ export default function MedicalRecordsScreen() {
     const pets = s.pets;
     return pets.find((p) => p.id === s.activePetId) ?? pets[0] ?? null;
   });
-  const pets = useActivePetStore((s) => s.pets);
 
   const [records, setRecords] = useState<PetHealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,9 +57,6 @@ export default function MedicalRecordsScreen() {
   // Detail/edit sheet
   const [selectedRecord, setSelectedRecord] = useState<PetHealthRecord | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
-
-  // Add record sheet
-  const [addVisible, setAddVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!activePet) return;
@@ -135,7 +130,7 @@ export default function MedicalRecordsScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medical Records</Text>
-        <TouchableOpacity onPress={() => setAddVisible(true)} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.navigate('HealthRecordForm')} hitSlop={12}>
           <Ionicons name="add" size={26} color={Colors.accent} />
         </TouchableOpacity>
       </View>
@@ -160,7 +155,7 @@ export default function MedicalRecordsScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyCta}
-                onPress={() => setAddVisible(true)}
+                onPress={() => navigation.navigate('HealthRecordForm')}
                 activeOpacity={0.7}
               >
                 <Text style={styles.emptyCtaText}>Add Medical Record</Text>
@@ -169,17 +164,6 @@ export default function MedicalRecordsScreen() {
           }
         />
       )}
-
-      {/* Add record sheet */}
-      <HealthRecordLogSheet
-        visible={addVisible}
-        appointment={null}
-        petNames={new Map(pets.map((p) => [p.id, p.name]))}
-        onComplete={() => {
-          setAddVisible(false);
-          loadData();
-        }}
-      />
 
       {/* Detail/edit sheet */}
       <HealthRecordDetailSheet

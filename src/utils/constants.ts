@@ -19,6 +19,7 @@ export const Colors = {
   // Severity (D-136 unified palette)
   severityRed: '#EF4444',
   severityAmber: '#F59E0B',
+  severityAmberTint: 'rgba(245,158,11,0.15)',  // 15% amber — condition chips, "tracked" tags
   severityGreen: '#4ADE80',   // green-400: inline indicators (rows, dots, badges)
   severityNone: '#6B7280',
 

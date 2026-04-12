@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CatIcon, DogIcon, DailyFoodIcon } from '../components/icons/speciesIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
@@ -36,6 +37,8 @@ import {
   deleteMedication,
 } from '../services/petService';
 import { getConditionsForSpecies } from '../data/conditions';
+import { CONDITION_ICONS } from '../constants/iconMaps';
+import { CONDITION_SVG_ICONS } from '../components/icons/conditionSvgIcons';
 import { getWeightUnitPref, computePetDer } from '../utils/pantryHelpers';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
@@ -44,12 +47,11 @@ import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerSheet';
 import { getHealthRecords, getUpcomingAppointments, deleteHealthRecord, deleteAppointment } from '../services/appointmentService';
 import { supabase } from '../services/supabase';
-import HealthRecordLogSheet from '../components/appointments/HealthRecordLogSheet';
 import HealthRecordDetailSheet from '../components/appointments/HealthRecordDetailSheet';
 import WeightEstimateSheet from '../components/WeightEstimateSheet';
 import { KCAL_PER_LB } from '../utils/weightGoal';
 import type { Pet, PetCondition, PetAllergen, PetMedication } from '../types/pet';
-import type { Appointment, PetHealthRecord, HealthRecordType } from '../types/appointment';
+import type { Appointment, PetHealthRecord } from '../types/appointment';
 import type { MeStackParamList } from '../types/navigation';
 import { PetHubShareCard } from '../components/pet/PetShareCard';
 import { captureAndShare } from '../utils/shareCard';
@@ -174,8 +176,6 @@ export default function PetHubScreen({ navigation }: Props) {
 
   // ─── Health records (D-163) ────────────────────────────
   const [healthRecords, setHealthRecords] = useState<PetHealthRecord[]>([]);
-  const [manualRecordVisible, setManualRecordVisible] = useState(false);
-  const [defaultRecordType, setDefaultRecordType] = useState<HealthRecordType>('vaccination');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // Health record detail sheet
@@ -277,11 +277,17 @@ export default function PetHubScreen({ navigation }: Props) {
     ? capitalizeFirst(activePet.life_stage)
     : null;
 
-  // Condition label lookup
+  // Condition label + icon lookup. Returns {tag, label, ionicon} for chip rendering.
+  // Custom PNG icons (CONDITION_ICONS) are preferred; ionicon is the fallback when
+  // a condition has no matching asset (e.g. allergy, hyperthyroid).
   const conditionDefs = getConditionsForSpecies(activePet.species);
-  const conditionLabels = conditions.map((c) => {
+  const conditionItems = conditions.map((c) => {
     const def = conditionDefs.find((d) => d.tag === c.condition_tag);
-    return def?.label ?? c.condition_tag;
+    return {
+      tag: c.condition_tag,
+      label: def?.label ?? c.condition_tag,
+      ionicon: (def?.icon ?? 'ellipsis-horizontal-circle-outline') as string,
+    };
   });
 
   const conditionTags = conditions.map((c) => c.condition_tag);
@@ -527,11 +533,11 @@ export default function PetHubScreen({ navigation }: Props) {
         {/* (e) Quick stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statChip}>
-            <Ionicons
-              name="walk-outline"
-              size={16}
-              color={Colors.accent}
-            />
+            {activePet.species === 'cat' ? (
+              <CatIcon size={16} color={Colors.accent} />
+            ) : (
+              <DogIcon size={16} color={Colors.accent} />
+            )}
             <Text style={styles.statValue}>{activityLabel}</Text>
           </View>
           <View style={styles.statChip}>
@@ -571,7 +577,7 @@ export default function PetHubScreen({ navigation }: Props) {
             activeOpacity={0.6}
             onPress={() => setFeedingStyleSheetVisible(true)}
           >
-            <Ionicons name="nutrition-outline" size={16} color={Colors.accent} />
+            <DailyFoodIcon size={24} color={Colors.accent} />
             <Text style={styles.statValue}>
               {FEEDING_STYLE_LABELS[activePet.feeding_style] ?? 'Dry only'}
             </Text>
@@ -601,23 +607,24 @@ export default function PetHubScreen({ navigation }: Props) {
         </View>
 
         {/* (f) Health conditions summary */}
-        <TouchableOpacity
-          style={styles.healthCard}
-          onPress={() =>
-            navigation.navigate('HealthConditions', {
-              petId: activePet.id,
-              fromCreate: false,
-            })
-          }
-          activeOpacity={0.7}
-        >
-          <View style={styles.healthHeader}>
-            <Text style={styles.healthTitle}>Health Conditions</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={Colors.textTertiary}
-            />
+        <View style={styles.healthRecordCard}>
+          <View style={styles.healthRecordHeader}>
+            <Text style={styles.healthRecordTitle}>Health Conditions</Text>
+            {activePet.health_reviewed_at != null && (
+              <TouchableOpacity
+                style={styles.headerSeeAll}
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigation.navigate('HealthConditions', {
+                    petId: activePet.id,
+                    fromCreate: false,
+                  })
+                }
+              >
+                <Text style={styles.seeAllLinkText}>See All</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {healthLoading ? (
@@ -627,9 +634,19 @@ export default function PetHubScreen({ navigation }: Props) {
               style={styles.loadingSpinner}
             />
           ) : activePet.health_reviewed_at == null ? (
-            <Text style={styles.healthPrompt}>
-              Set up health conditions for {activePet.name}
-            </Text>
+            <TouchableOpacity
+              style={styles.addRecordLink}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate('HealthConditions', {
+                  petId: activePet.id,
+                  fromCreate: false,
+                })
+              }
+            >
+              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
+              <Text style={styles.addRecordLinkText}>Set up health conditions</Text>
+            </TouchableOpacity>
           ) : conditions.length === 0 ? (
             <View style={styles.healthyBadge}>
               <Ionicons
@@ -642,15 +659,33 @@ export default function PetHubScreen({ navigation }: Props) {
           ) : (
             <View>
               <View style={styles.conditionChips}>
-                {conditionLabels.slice(0, 4).map((label) => (
-                  <View key={label} style={styles.conditionChip}>
-                    <Text style={styles.conditionChipText}>{label}</Text>
-                  </View>
-                ))}
-                {conditionLabels.length > 4 && (
-                  <View style={styles.conditionChip}>
-                    <Text style={styles.conditionChipText}>
-                      +{conditionLabels.length - 4} more
+                {conditionItems.slice(0, 4).map(({ tag, label, ionicon }) => {
+                  // Priority: SVG component > PNG asset > Ionicon fallback.
+                  // SVG wins when present because vector paths stay crisp at
+                  // any size, unlike the V1 thin-stroke PNGs.
+                  const SvgIcon = CONDITION_SVG_ICONS[tag];
+                  const customIcon = CONDITION_ICONS[tag];
+                  return (
+                    <View key={tag} style={styles.conditionChip}>
+                      {SvgIcon ? (
+                        <SvgIcon size={16} color={Colors.severityAmber} />
+                      ) : customIcon ? (
+                        <Image source={customIcon} style={styles.conditionChipIcon} />
+                      ) : (
+                        <Ionicons
+                          name={ionicon as any}
+                          size={16}
+                          color={Colors.severityAmber}
+                        />
+                      )}
+                      <Text style={styles.conditionChipText}>{label}</Text>
+                    </View>
+                  );
+                })}
+                {conditionItems.length > 4 && (
+                  <View style={styles.conditionChipOverflow}>
+                    <Text style={styles.conditionChipOverflowText}>
+                      +{conditionItems.length - 4} more
                     </Text>
                   </View>
                 )}
@@ -662,7 +697,7 @@ export default function PetHubScreen({ navigation }: Props) {
               )}
             </View>
           )}
-        </TouchableOpacity>
+        </View>
 
         {/* Appointments */}
         <View style={styles.healthRecordCard}>
@@ -862,7 +897,7 @@ export default function PetHubScreen({ navigation }: Props) {
             <TouchableOpacity
               style={styles.addRecordLink}
               activeOpacity={0.7}
-              onPress={() => { setDefaultRecordType('vaccination'); setManualRecordVisible(true); }}
+              onPress={() => navigation.navigate('HealthRecordForm')}
             >
               <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
               <Text style={styles.addRecordLinkText}>Add a medical record</Text>
@@ -911,7 +946,7 @@ export default function PetHubScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
                 activeOpacity={0.7}
-                onPress={() => { setDefaultRecordType('vaccination'); setManualRecordVisible(true); }}
+                onPress={() => navigation.navigate('HealthRecordForm')}
               >
                 <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
                 <Text style={styles.addRecordLinkText}>Add Medical Record</Text>
@@ -970,21 +1005,6 @@ export default function PetHubScreen({ navigation }: Props) {
         onScanNew={() => {
           useScanStore.getState().setTreatLogging(true);
           (navigation.getParent() as any)?.navigate('Scan', { screen: 'ScanMain' });
-        }}
-      />
-
-      {/* Manual health record sheet (D-163) */}
-      <HealthRecordLogSheet
-        visible={manualRecordVisible}
-        appointment={null}
-        defaultRecordType={defaultRecordType}
-        petNames={new Map(pets.map((p) => [p.id, p.name]))}
-        onComplete={() => {
-          setManualRecordVisible(false);
-          // Reload health records
-          if (activePet) {
-            getHealthRecords(activePet.id).then(setHealthRecords).catch(() => { });
-          }
         }}
       />
 
