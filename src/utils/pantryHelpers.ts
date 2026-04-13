@@ -64,12 +64,12 @@ export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
  * cron's 113.4 g/cup density for consistent client/server depletion math.
  */
 export function resolveDryKcalPerCup(product: Product): number | null {
-  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+  if (product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0) {
     return product.ga_kcal_per_cup;
   }
   if (
     product.product_form === 'dry' &&
-    product.ga_kcal_per_kg &&
+    product.ga_kcal_per_kg != null &&
     product.ga_kcal_per_kg > 0
   ) {
     return product.ga_kcal_per_kg * DRY_KIBBLE_KG_PER_CUP;
@@ -398,9 +398,10 @@ export function computeBehavioralServing(params: {
   // Apply split PCT to budget
   const finalKcal = budgetedKcal * (dryFoodSplitPct / 100);
 
-  // Convert to unit
-  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
-    return { amount: finalKcal / product.ga_kcal_per_cup, unit: 'cups', basisKcal: finalKcal };
+  // Convert to unit — prefer cups (scraped, or derived for dry products)
+  const kcalPerCup = resolveDryKcalPerCup(product);
+  if (kcalPerCup != null) {
+    return { amount: finalKcal / kcalPerCup, unit: 'cups', basisKcal: finalKcal };
   }
 
   const cal = resolveCalories(product);

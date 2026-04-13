@@ -1053,6 +1053,39 @@ describe('computeBehavioralServing', () => {
     expect(result?.basisKcal).toBe(0);
     expect(result?.amount).toBe(0);
   });
+
+  test('dry product missing ga_kcal_per_cup derives cups from ga_kcal_per_kg (new fallback)', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_only' as const };
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_cup: null,
+      ga_kcal_per_kg: 4000, // derived kcal/cup = 4000 × 0.1134 = 453.6
+      kcal_per_unit: null,
+    });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // DER = 1018, derived kcal/cup = 453.6 → amount = 1018 / 453.6 ≈ 2.244
+    expect(result?.unit).toBe('cups');
+    expect(result?.amount).toBeCloseTo(1018 / 453.6);
+    expect(result?.basisKcal).toBe(1018);
+  });
+
+  test('wet product missing ga_kcal_per_cup falls through to units (regression guard, no dry fallback)', () => {
+    const pet = { ...defaultPet, feeding_style: 'wet_only' as const };
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_cup: null,
+      ga_kcal_per_kg: 1200,
+      kcal_per_unit: 100,
+    });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'rotational', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // DER = 1018, kcal_per_unit = 100 → amount = 10.18, unit = 'units'
+    expect(result?.unit).toBe('units');
+    expect(result?.amount).toBeCloseTo(1018 / 100);
+  });
 });
 
 describe('computeBehavioralBudgetWarning', () => {
