@@ -137,11 +137,11 @@ export function resolveDisplayUnit(
   if (assignment?.serving_size_unit === 'cups') return 'cups';
   if (assignment?.serving_size_unit === 'scoops') return 'scoops';
   if (assignment?.serving_size_unit === 'units') {
-    return pantryItem?.unit_label ?? 'cans/pouches';
+    return pantryItem?.unit_label ?? 'servings';
   }
   // No assignment match: derive by form
   if (product?.product_form === 'dry') return 'cups';
-  return pantryItem?.unit_label ?? 'cans/pouches';
+  return pantryItem?.unit_label ?? 'servings';
 }
 
 // In the component:
@@ -235,10 +235,10 @@ No migrations. No DECISIONS changes (D-166 stands; this augments the primary ser
 
 ### `resolveDisplayUnit` pure helper (exported from FedThisTodaySheet.tsx)
 - `assignment.serving_size_unit = 'cups'` → `'cups'`
-- `assignment.serving_size_unit = 'units'`, `pantryItem.unit_label = 'pouches'` → `'pouches'`
-- `assignment.serving_size_unit = 'units'`, no unit_label → `'cans/pouches'`
+- `assignment.serving_size_unit = 'units'`, `pantryItem.unit_label = 'servings'` → `'servings'`
+- `assignment.serving_size_unit = 'units'`, no unit_label → `'servings'`
 - No assignment, `product.product_form = 'dry'` → `'cups'`
-- No assignment, `product.product_form = 'wet'` → `'cans/pouches'` (default)
+- No assignment, `product.product_form = 'wet'` → `'servings'` (default, D-164)
 
 ### Regression
 - Run `__tests__/services/scoring/regressionTrace.test.ts` — Pure Balance = 61, Temptations = 0 must hold.

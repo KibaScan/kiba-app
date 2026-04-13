@@ -164,18 +164,18 @@ describe('resolveDisplayUnit', () => {
     expect(resolveDisplayUnit(assignment, item, product)).toBe('scoops');
   });
 
-  test('assignment.serving_size_unit = units with unit_label = pouches → pouches', () => {
+  test('assignment.serving_size_unit = units with unit_label = servings → servings', () => {
     const assignment = makeAssignment({ serving_size_unit: 'units' });
-    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'pouches' });
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'servings' });
     const product = makeProduct({ product_form: 'wet' });
-    expect(resolveDisplayUnit(assignment, item, product)).toBe('pouches');
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('servings');
   });
 
-  test('assignment.serving_size_unit = units, no unit_label → cans/pouches default', () => {
+  test('assignment.serving_size_unit = units, no unit_label → servings default', () => {
     const assignment = makeAssignment({ serving_size_unit: 'units' });
     const item = makePantryItem({ quantity_unit: 'units', unit_label: null });
     const product = makeProduct({ product_form: 'wet' });
-    expect(resolveDisplayUnit(assignment, item, product)).toBe('cans/pouches');
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('servings');
   });
 
   test('no assignment, dry product → cups fallback', () => {
@@ -184,19 +184,19 @@ describe('resolveDisplayUnit', () => {
     expect(resolveDisplayUnit(null, item, product)).toBe('cups');
   });
 
-  test('no assignment, wet product with unit_label = pouches → pouches', () => {
-    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'pouches' });
+  test('no assignment, wet product with unit_label = servings → servings', () => {
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'servings' });
     const product = makeProduct({ product_form: 'wet' });
-    expect(resolveDisplayUnit(null, item, product)).toBe('pouches');
+    expect(resolveDisplayUnit(null, item, product)).toBe('servings');
   });
 
-  test('no assignment, wet product without unit_label → cans/pouches default', () => {
+  test('no assignment, wet product without unit_label → servings default', () => {
     const item = makePantryItem({ quantity_unit: 'units', unit_label: null });
     const product = makeProduct({ product_form: 'wet' });
-    expect(resolveDisplayUnit(null, item, product)).toBe('cans/pouches');
+    expect(resolveDisplayUnit(null, item, product)).toBe('servings');
   });
 
-  test('everything null → cans/pouches default (safe fallback)', () => {
-    expect(resolveDisplayUnit(null, null, null)).toBe('cans/pouches');
+  test('everything null → servings default (safe fallback)', () => {
+    expect(resolveDisplayUnit(null, null, null)).toBe('servings');
   });
 });

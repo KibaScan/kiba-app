@@ -36,11 +36,11 @@ export function resolveDisplayUnit(
   if (assignment?.serving_size_unit === 'cups') return 'cups';
   if (assignment?.serving_size_unit === 'scoops') return 'scoops';
   if (assignment?.serving_size_unit === 'units') {
-    return pantryItem?.unit_label ?? 'cans/pouches';
+    return pantryItem?.unit_label ?? 'servings';
   }
   // No assignment match: derive by product form
   if (product?.product_form === 'dry') return 'cups';
-  return pantryItem?.unit_label ?? 'cans/pouches';
+  return pantryItem?.unit_label ?? 'servings';
 }
 
 interface FedThisTodaySheetProps {
