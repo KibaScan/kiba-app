@@ -4,7 +4,7 @@
 
 **Goal:** Normalize per-feeding unit to `cups` across AddToPantrySheet, PantryCard, and FedThisTodaySheet for dry food. Bag inventory stays in lbs; per-feeding is always cups.
 
-**Architecture:** Two surgical fixes. (1) In `src/utils/pantryHelpers.ts`, extract a new `resolveKcalPerCup(product)` helper that returns `ga_kcal_per_cup` when present, else derives `ga_kcal_per_kg × 0.1134 kg/cup` for dry products (matches auto-deplete cron's precedent). Update `computeBehavioralServing` to prefer this, so new pantry additions write `serving_size_unit: 'cups'`. (2) In `src/components/pantry/FedThisTodaySheet.tsx`, stop reading the bag's `quantity_unit` (inventory unit, can be lbs) for the stepper label. Instead, read the pet's `serving_size_unit` from the assignment and fall back to `cups` for `product_form === 'dry'`. Branch kcal resolution by display unit.
+**Architecture:** Two surgical fixes. (1) In `src/utils/pantryHelpers.ts`, extract a new `resolveDryKcalPerCup(product)` helper that returns `ga_kcal_per_cup` when present, else derives `ga_kcal_per_kg × 0.1134 kg/cup` for dry products (matches auto-deplete cron's precedent). Update `computeBehavioralServing` to prefer this, so new pantry additions write `serving_size_unit: 'cups'`. (2) In `src/components/pantry/FedThisTodaySheet.tsx`, stop reading the bag's `quantity_unit` (inventory unit, can be lbs) for the stepper label. Instead, read the pet's `serving_size_unit` from the assignment and fall back to `cups` for `product_form === 'dry'`. Branch kcal resolution by display unit.
 
 **Tech Stack:** TypeScript 5.9 (strict), React Native 0.83, Expo SDK 55, Jest via jest-expo. No new deps.
 
@@ -22,25 +22,25 @@
 
 | File | Purpose | Action |
 |------|---------|--------|
-| `src/utils/pantryHelpers.ts` | Pure pantry math | Modify — add `DRY_KIBBLE_KG_PER_CUP` constant + `resolveKcalPerCup` helper; update `computeBehavioralServing` to use it |
+| `src/utils/pantryHelpers.ts` | Pure pantry math | Modify — add `DRY_KIBBLE_KG_PER_CUP` constant + `resolveDryKcalPerCup` helper; update `computeBehavioralServing` to use it |
 | `src/components/pantry/FedThisTodaySheet.tsx` | Bottom sheet for manual feeding log | Modify — add `assignment` prop, export pure helpers `singularize` + `resolveDisplayUnit`, replace inline unit/kcal logic, add zero-kcal guard |
 | `src/screens/PantryScreen.tsx` | Pantry list + sheet host | Modify — pass `assignment` prop into `<FedThisTodaySheet>` (~3 lines at line 711) |
-| `__tests__/utils/pantryHelpers.test.ts` | Existing pure-helper tests | Modify — add `resolveKcalPerCup` describe block; extend `computeBehavioralServing` describe with 2 new cases |
+| `__tests__/utils/pantryHelpers.test.ts` | Existing pure-helper tests | Modify — add `resolveDryKcalPerCup` describe block; extend `computeBehavioralServing` describe with 2 new cases |
 | `__tests__/components/FedThisTodaySheet.test.ts` | New — pure helper tests for the sheet | Create — test `singularize` + `resolveDisplayUnit` |
 
 **Helper location decision:** `singularize` and `resolveDisplayUnit` live **as named exports at the top of `src/components/pantry/FedThisTodaySheet.tsx`**. Precedent: `AddToPantrySheet.tsx` already does this pattern (see `isTreat`, `getDefaultFeedingsPerDay`, `isFormValid`, `buildAddToPantryInput` exported near the top of that file). Keeps the helpers co-located with the component they serve while remaining unit-testable.
 
 ---
 
-## Task 1: Add `DRY_KIBBLE_KG_PER_CUP` constant and `resolveKcalPerCup` helper (TDD)
+## Task 1: Add `DRY_KIBBLE_KG_PER_CUP` constant and `resolveDryKcalPerCup` helper (TDD)
 
 **Files:**
-- Modify: `__tests__/utils/pantryHelpers.test.ts` (add tests for `resolveKcalPerCup`, add import)
+- Modify: `__tests__/utils/pantryHelpers.test.ts` (add tests for `resolveDryKcalPerCup`, add import)
 - Modify: `src/utils/pantryHelpers.ts` (add constant + helper, export)
 
-- [ ] **Step 1.1: Add `resolveKcalPerCup` to the import list in the test file**
+- [ ] **Step 1.1: Add `resolveDryKcalPerCup` to the import list in the test file**
 
-Open `__tests__/utils/pantryHelpers.test.ts`. In the import block at lines 11-37, add `resolveKcalPerCup` alongside the other named imports:
+Open `__tests__/utils/pantryHelpers.test.ts`. In the import block at lines 11-37, add `resolveDryKcalPerCup` alongside the other named imports:
 
 ```ts
 import {
@@ -69,52 +69,52 @@ import {
   computeBehavioralBudgetWarning,
   computePerServingKcal,
   shouldShowCalorieText,
-  resolveKcalPerCup,  // NEW
+  resolveDryKcalPerCup,
 } from '../../src/utils/pantryHelpers';
 ```
 
-- [ ] **Step 1.2: Write failing tests for `resolveKcalPerCup`**
+- [ ] **Step 1.2: Write failing tests for `resolveDryKcalPerCup`**
 
 Append this describe block to the end of `__tests__/utils/pantryHelpers.test.ts` (after the last existing describe block):
 
 ```ts
-// ─── resolveKcalPerCup ──────────────────────────────────
+// ─── resolveDryKcalPerCup ──────────────────────────────────
 
-describe('resolveKcalPerCup', () => {
+describe('resolveDryKcalPerCup', () => {
   test('returns scraped ga_kcal_per_cup when present', () => {
     const product = makeProduct({ ga_kcal_per_cup: 420, ga_kcal_per_kg: 3500, product_form: 'dry' });
-    expect(resolveKcalPerCup(product)).toBe(420);
+    expect(resolveDryKcalPerCup(product)).toBe(420);
   });
 
   test('returns scraped ga_kcal_per_cup even for non-dry products', () => {
     const product = makeProduct({ ga_kcal_per_cup: 180, ga_kcal_per_kg: 1200, product_form: 'wet' });
-    expect(resolveKcalPerCup(product)).toBe(180);
+    expect(resolveDryKcalPerCup(product)).toBe(180);
   });
 
   test('derives from ga_kcal_per_kg × 0.1134 for dry product missing ga_kcal_per_cup', () => {
     const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4000, product_form: 'dry' });
     // 4000 × 0.1134 = 453.6
-    expect(resolveKcalPerCup(product)).toBeCloseTo(453.6);
+    expect(resolveDryKcalPerCup(product)).toBeCloseTo(453.6);
   });
 
   test('returns null for wet product missing ga_kcal_per_cup (no dry fallback)', () => {
     const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 1200, product_form: 'wet' });
-    expect(resolveKcalPerCup(product)).toBeNull();
+    expect(resolveDryKcalPerCup(product)).toBeNull();
   });
 
   test('returns null for freeze-dried product missing ga_kcal_per_cup (scope-gated to dry)', () => {
     const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4800, product_form: 'freeze-dried' });
-    expect(resolveKcalPerCup(product)).toBeNull();
+    expect(resolveDryKcalPerCup(product)).toBeNull();
   });
 
   test('returns null when both ga_kcal_per_cup and ga_kcal_per_kg missing', () => {
     const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: null, product_form: 'dry' });
-    expect(resolveKcalPerCup(product)).toBeNull();
+    expect(resolveDryKcalPerCup(product)).toBeNull();
   });
 
   test('returns null when ga_kcal_per_kg is 0 (guards against divide-by-zero downstream)', () => {
     const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 0, product_form: 'dry' });
-    expect(resolveKcalPerCup(product)).toBeNull();
+    expect(resolveDryKcalPerCup(product)).toBeNull();
   });
 });
 ```
@@ -123,10 +123,10 @@ describe('resolveKcalPerCup', () => {
 
 Run:
 ```bash
-npx jest --testPathPattern=pantryHelpers -t resolveKcalPerCup
+npx jest --testPathPattern=pantryHelpers -t resolveDryKcalPerCup
 ```
 
-Expected: **FAIL** with a message like `TypeError: resolveKcalPerCup is not a function` or import error `"resolveKcalPerCup" is not exported from "'../../src/utils/pantryHelpers'"`.
+Expected: **FAIL** with a message like `TypeError: resolveDryKcalPerCup is not a function` or import error `"resolveDryKcalPerCup" is not exported from "'../../src/utils/pantryHelpers'"`.
 
 - [ ] **Step 1.4: Implement the constant and helper**
 
@@ -147,7 +147,7 @@ export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
  * For dry products missing ga_kcal_per_cup, derives from ga_kcal_per_kg × DRY_KIBBLE_KG_PER_CUP.
  * Returns null when no derivation is possible (wet/other forms without scraped cup, or no kcal data).
  */
-export function resolveKcalPerCup(product: Product): number | null {
+export function resolveDryKcalPerCup(product: Product): number | null {
   if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
     return product.ga_kcal_per_cup;
   }
@@ -168,7 +168,7 @@ The `Product` type is already imported at line 18 (`import type { Product } from
 
 Run:
 ```bash
-npx jest --testPathPattern=pantryHelpers -t resolveKcalPerCup
+npx jest --testPathPattern=pantryHelpers -t resolveDryKcalPerCup
 ```
 
 Expected: **PASS** — all 7 test cases green.
@@ -187,7 +187,7 @@ Expected: all pre-existing tests still pass (should show +7 tests vs baseline).
 ```bash
 git add src/utils/pantryHelpers.ts __tests__/utils/pantryHelpers.test.ts
 git commit -m "$(cat <<'EOF'
-M9: add resolveKcalPerCup helper with dry-food density fallback
+M9: add resolveDryKcalPerCup helper with dry-food density fallback
 
 Extracts kcal-per-cup resolution into a pure helper. For dry products
 missing scraped ga_kcal_per_cup, derives from ga_kcal_per_kg × 0.1134
@@ -202,7 +202,7 @@ EOF
 
 ---
 
-## Task 2: Update `computeBehavioralServing` to use `resolveKcalPerCup` (TDD)
+## Task 2: Update `computeBehavioralServing` to use `resolveDryKcalPerCup` (TDD)
 
 **Files:**
 - Modify: `__tests__/utils/pantryHelpers.test.ts` (extend existing `computeBehavioralServing` describe block)
@@ -256,7 +256,7 @@ npx jest --testPathPattern=pantryHelpers -t "computeBehavioralServing"
 
 Expected: the two new tests **FAIL** with something like `Expected: "cups", Received: "units"` (the dry product currently falls through to `kcal_per_unit`/`null` path and returns `null` or `'units'`). The existing 7 `computeBehavioralServing` tests should still pass.
 
-- [ ] **Step 2.3: Update `computeBehavioralServing` to use `resolveKcalPerCup`**
+- [ ] **Step 2.3: Update `computeBehavioralServing` to use `resolveDryKcalPerCup`**
 
 Open `src/utils/pantryHelpers.ts`. Find `computeBehavioralServing`. Locate the block at lines 369-384 (the "Convert to unit" section after `const finalKcal = budgetedKcal * (dryFoodSplitPct / 100);`):
 
@@ -285,7 +285,7 @@ Replace with:
 
 ```ts
   // Convert to unit — prefer cups (scraped, or derived for dry products)
-  const kcalPerCup = resolveKcalPerCup(product);
+  const kcalPerCup = resolveDryKcalPerCup(product);
   if (kcalPerCup != null) {
     return { amount: finalKcal / kcalPerCup, unit: 'cups', basisKcal: finalKcal };
   }
@@ -330,7 +330,7 @@ Expected: all tests in the file pass.
 ```bash
 git add src/utils/pantryHelpers.ts __tests__/utils/pantryHelpers.test.ts
 git commit -m "$(cat <<'EOF'
-M9: computeBehavioralServing uses resolveKcalPerCup for dry-food cups
+M9: computeBehavioralServing uses resolveDryKcalPerCup for dry-food cups
 
 Dry products missing ga_kcal_per_cup now derive cups from ga_kcal_per_kg
 × 0.1134 instead of falling through to kcal_per_unit and returning
@@ -786,7 +786,7 @@ Find the `calories` useMemo block (around lines 42-46):
 Replace with a new `displayUnitPlural` and `kcalPerQuantity` computation. First, add the helper import at the top of the file (below the existing `getWetFoodKcal` import at line 9):
 
 ```ts
-import { getWetFoodKcal, resolveKcalPerCup } from '../../utils/pantryHelpers';
+import { getWetFoodKcal, resolveDryKcalPerCup } from '../../utils/pantryHelpers';
 ```
 
 Then replace the `calories` block with:
@@ -800,7 +800,7 @@ Then replace the `calories` block with:
   const kcalPerQuantity = useMemo(() => {
     if (!product) return 0;
     if (displayUnitPlural === 'cups' || displayUnitPlural === 'scoops') {
-      return resolveKcalPerCup(product) ?? 0;
+      return resolveDryKcalPerCup(product) ?? 0;
     }
     const wet = getWetFoodKcal(product);
     return wet?.kcal ?? 0;
@@ -947,7 +947,7 @@ M9: FedThisTodaySheet reads per-feeding unit from assignment, not bag
 Replaces inline unitLabel (which read pantryItem.quantity_unit — bag
 inventory unit, 'lbs' for dry kibble) with resolveDisplayUnit +
 singularize. Kcal resolution now branches by display unit: cups/scoops
-use resolveKcalPerCup (supports dry-food density fallback), units use
+use resolveDryKcalPerCup (supports dry-food density fallback), units use
 getWetFoodKcal.
 
 Adds zero-kcal safety guard to handleLog with user-visible error text
@@ -1057,7 +1057,7 @@ Run:
 npx jest
 ```
 
-Expected: all tests pass. Test count should be **baseline 1473 + 22 new = 1495** (7 for `resolveKcalPerCup` + 2 for `computeBehavioralServing` + 7 for `singularize` + 8 for `resolveDisplayUnit`).
+Expected: all tests pass. Test count should be **baseline 1473 + 22 new = 1495** (7 for `resolveDryKcalPerCup` + 2 for `computeBehavioralServing` + 7 for `singularize` + 8 for `resolveDisplayUnit`).
 
 64 suites (baseline 63 + 1 new file `__tests__/components/FedThisTodaySheet.test.ts`).
 
@@ -1131,7 +1131,7 @@ Expected: pre-existing 79 errors confined to `docs/plans/search-uiux/*` prototyp
 ## Self-review (completed)
 
 **Spec coverage:**
-- ✅ Part 1 (`resolveKcalPerCup` + `computeBehavioralServing` update) → Tasks 1-2
+- ✅ Part 1 (`resolveDryKcalPerCup` + `computeBehavioralServing` update) → Tasks 1-2
 - ✅ Part 2 (FedThisTodaySheet props + unit routing + kcal branching + zero-kcal guard) → Tasks 3-5
 - ✅ Part 3 (caller update) → Task 6
 - ✅ Tests for all helpers → Tasks 1, 2, 3, 4
@@ -1141,7 +1141,7 @@ Expected: pre-existing 79 errors confined to `docs/plans/search-uiux/*` prototyp
 **Placeholder scan:** no TBD/TODO/similar-to-task-N. All code blocks are complete.
 
 **Type consistency:**
-- `resolveKcalPerCup: (product: Product) => number | null` — consistent across Tasks 1, 2, 5
+- `resolveDryKcalPerCup: (product: Product) => number | null` — consistent across Tasks 1, 2, 5
 - `resolveDisplayUnit: (assignment, pantryItem, product) => string` — consistent across Tasks 4, 5
 - `singularize: (plural: string) => string` — consistent
 - `DRY_KIBBLE_KG_PER_CUP = 0.1134` — consistent with `supabase/functions/auto-deplete/index.ts:45`
