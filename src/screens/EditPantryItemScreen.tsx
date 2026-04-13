@@ -737,12 +737,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontWeight: '500',
   },
-  infoSubtext: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    marginTop: Spacing.sm,
-    fontStyle: 'italic',
-  },
   // Dimmed role pill — read-only indicator, not a tappable chip.
   // Editing lives in Custom Splits; linked via editSplitsLink below.
   rolePill: {
