@@ -380,7 +380,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
         <View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: Colors.pressOverlay, borderRadius: 12 },
+            { backgroundColor: Colors.pressOverlay, borderRadius: 16 },
           ]}
           pointerEvents="none"
         />
@@ -442,7 +442,9 @@ function ScoreBadge({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
     gap: Spacing.sm,
   },
