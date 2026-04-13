@@ -113,6 +113,13 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     return d;
   });
 
+  // Hide global tab bar on this screen (matches CustomFeedingStyle + CompareScreen).
+  useEffect(() => {
+    const parent = (navigation as any).getParent?.();
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
+    return () => { parent?.setOptions({ tabBarStyle: undefined }); };
+  }, [navigation]);
+
   const product = item?.product ?? null;
   const isRecalled = product?.is_recalled ?? false;
   const isEmpty = item?.is_empty ?? false;
