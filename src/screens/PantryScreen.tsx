@@ -712,6 +712,11 @@ export default function PantryScreen({ navigation }: Props) {
         isVisible={logFeedingItem !== null}
         petId={activePetId}
         pantryItem={logFeedingItem}
+        assignment={
+          logFeedingItem && activePet
+            ? logFeedingItem.assignments.find(a => a.pet_id === activePet.id) ?? null
+            : null
+        }
         product={logFeedingItem?.product as unknown as Product}
         onDismiss={() => setLogFeedingItem(null)}
         onSuccess={() => {
