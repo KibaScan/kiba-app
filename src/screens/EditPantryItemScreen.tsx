@@ -3,7 +3,7 @@
 // D-155: Empty item states. D-158: Recalled item states. D-157: Remove nudge.
 // D-084: Zero emoji. D-094: Score framing. D-095: UPVM compliant.
 
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 
 import type { PantryStackParamList } from '../types/navigation';
 import type { PantryCardData, FeedingFrequency } from '../types/pantry';
@@ -113,12 +114,17 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     return d;
   });
 
-  // Hide global tab bar on this screen (matches CustomFeedingStyle + CompareScreen).
-  useEffect(() => {
-    const parent = (navigation as any).getParent?.();
-    parent?.setOptions({ tabBarStyle: { display: 'none' } });
-    return () => { parent?.setOptions({ tabBarStyle: undefined }); };
-  }, [navigation]);
+  // Hide global tab bar on this screen.
+  // useFocusEffect (not plain useEffect) so the hide re-applies when we return
+  // from a pushed child like CustomFeedingStyle, which unmounts and restores
+  // the parent tab bar on its own cleanup.
+  useFocusEffect(
+    useCallback(() => {
+      const parent = (navigation as any).getParent?.();
+      parent?.setOptions({ tabBarStyle: { display: 'none' } });
+      return () => { parent?.setOptions({ tabBarStyle: undefined }); };
+    }, [navigation]),
+  );
 
   const product = item?.product ?? null;
   const isRecalled = product?.is_recalled ?? false;
