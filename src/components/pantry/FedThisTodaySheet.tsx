@@ -10,6 +10,19 @@ import { getWetFoodKcal } from '../../utils/pantryHelpers';
 import { stripBrandFromName } from '../../utils/formatters';
 import { logWetFeeding } from '../../services/pantryService';
 
+// ─── Exported Pure Helpers ──────────────────────────────
+
+/**
+ * Convert a plural unit label to its singular form.
+ * Handles special cases (cans/pouches → can/pouch) and trailing-s stripping.
+ */
+export function singularize(plural: string): string {
+  if (plural === 'cans/pouches') return 'can/pouch';
+  if (plural.endsWith('ches')) return plural.slice(0, -2); // pouches → pouch
+  if (plural.endsWith('s')) return plural.slice(0, -1);
+  return plural;
+}
+
 interface FedThisTodaySheetProps {
   isVisible: boolean;
   petId: string | null;
