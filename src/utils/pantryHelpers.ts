@@ -48,17 +48,22 @@ export function convertFromKg(kg: number, unit: QuantityUnit): number {
 
 /**
  * Standard dry kibble density fallback: 1 cup ≈ 113.4 g.
- * Matches supabase/functions/auto-deplete/index.ts:45 and D-166's reference density.
+ * Matches supabase/functions/auto-deplete/index.ts:45 (server-side depletion cron) for consistent client/server math.
  * Used only when a dry product has ga_kcal_per_kg but no scraped ga_kcal_per_cup.
  */
 export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
 
 /**
- * Resolve kcal-per-cup for a product, preferring scraped label data.
+ * Resolve kcal-per-cup for a DRY product, preferring scraped label data.
  * For dry products missing ga_kcal_per_cup, derives from ga_kcal_per_kg × DRY_KIBBLE_KG_PER_CUP.
- * Returns null when no derivation is possible (wet/other forms without scraped cup, or no kcal data).
+ * Returns null for non-dry forms or when no derivation is possible.
+ *
+ * Note: This is distinct from resolveKcalPerCup() in calorieEstimation.ts, which returns
+ * a richer struct with isEstimated for UI disclosure and handles all product forms via
+ * Atwater fallback at 110 g/cup. This pantry-side version aligns with the auto-deplete
+ * cron's 113.4 g/cup density for consistent client/server depletion math.
  */
-export function resolveKcalPerCup(product: Product): number | null {
+export function resolveDryKcalPerCup(product: Product): number | null {
   if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
     return product.ga_kcal_per_cup;
   }
