@@ -375,11 +375,11 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
           {/* ── Feeding Details ── */}
           <View style={[styles.card, { opacity: feedingOpacity }]} pointerEvents={feedingDisabled ? 'none' : 'auto'}>
             <Text style={styles.cardTitle}>Feeding Configuration</Text>
-            
+
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Role</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
+              <View style={styles.rolePill}>
+                <Text style={styles.rolePillText}>
                   {myAssignment.feeding_role === 'base' ? 'Base Diet' : myAssignment.feeding_role === 'rotational' ? 'Rotational Food' : 'Treat / Supplement'}
                 </Text>
               </View>
@@ -396,10 +396,17 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               <Text style={styles.infoLabel}>Auto-Deplete</Text>
               <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
             </View>
-            
-            <Text style={styles.infoSubtext}>
-               To update roles and behavioral settings, remove this item and add it again.
-            </Text>
+
+            <TouchableOpacity
+              style={styles.editSplitsLink}
+              onPress={() => navigation.navigate('CustomFeedingStyle', { petId: activePetId! })}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Edit splits in Custom Splits screen"
+            >
+              <Text style={styles.editSplitsText}>Edit in Custom Splits</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
+            </TouchableOpacity>
           </View>
 
           {/* ── Schedule Card ── */}
@@ -712,13 +719,28 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     fontStyle: 'italic',
   },
-  badge: {
+  // Dimmed role pill — read-only indicator, not a tappable chip.
+  // Editing lives in Custom Splits; linked via editSplitsLink below.
+  rolePill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: `${Colors.accent}1A`,
+    backgroundColor: Colors.chipSurface,
   },
-  badgeText: {
+  rolePillText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    fontWeight: '600',
+  },
+  editSplitsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  editSplitsText: {
     fontSize: FontSizes.sm,
     color: Colors.accent,
     fontWeight: '600',
