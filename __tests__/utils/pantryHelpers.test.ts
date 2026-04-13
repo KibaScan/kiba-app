@@ -536,6 +536,24 @@ describe('computeAutoServingSize', () => {
     const result = computeAutoServingSize(0, 2, product);
     expect(result).toEqual({ amount: 0, unit: 'cups' });
   });
+
+  test('returns null when feedings_per_day is 0', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    expect(computeAutoServingSize(1200, 0, product)).toBeNull();
+  });
+
+  test('returns null when feedings_per_day is negative', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    expect(computeAutoServingSize(1200, -1, product)).toBeNull();
+  });
+
+  test('preserves fractional precision for small kcal amounts', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 400 });
+    // 37 kcal / 2 feedings / 400 kcal per cup = 0.04625 cups
+    const result = computeAutoServingSize(37, 2, product);
+    expect(result!.unit).toBe('cups');
+    expect(result!.amount).toBeCloseTo(0.04625, 5);
+  });
 });
 
 // ─── computeBudgetWarning ───────────────────────────────

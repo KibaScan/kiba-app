@@ -10,6 +10,7 @@ import {
   sharePantryItem,
   getPantryForPet,
   getPantryAnchor,
+  updateCalorieShares,
 } from '../../src/services/pantryService';
 import { PantryOfflineError } from '../../src/types/pantry';
 
@@ -274,5 +275,260 @@ describe('removePantryItem active-switch guard', () => {
 
     // Should resolve without throwing (exact flow tested by getPantryForPet tests elsewhere)
     await expect(removePantryItem('pi-1', 'pet-1')).resolves.toBeUndefined();
+  });
+});
+
+// ─── updateCalorieShares ────────────────────────────────
+
+describe('updateCalorieShares', () => {
+  type Row = {
+    id: string;
+    feedings_per_day: number | null;
+    serving_size: number | null;
+    calorie_share_pct: number | null;
+    pantry_items: { products: Record<string, unknown> } | null;
+  };
+
+  function wireShares(rows: Row[], petFeedingStyle: string = 'custom') {
+    const pantryChain = mockChain({ data: rows, error: null });
+    const petsChain = mockChain({ data: { feeding_style: petFeedingStyle }, error: null });
+
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'pantry_pet_assignments') return pantryChain;
+      if (table === 'pets') return petsChain;
+      return mockChain({ data: null, error: null });
+    });
+
+    return { pantryChain, petsChain };
+  }
+
+  test('throws PantryOfflineError when offline', async () => {
+    (isOnline as jest.Mock).mockResolvedValue(false);
+    await expect(
+      updateCalorieShares('pet-1', [
+        { assignmentId: 'a-1', calorie_share_pct: 100 },
+      ]),
+    ).rejects.toThrow(PantryOfflineError);
+  });
+
+  test('target_kcal=0 writes serving_size=0 via computeAutoServingSize', async () => {
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 1,
+        calorie_share_pct: 50,
+        pantry_items: { products: { ga_kcal_per_cup: 400 } },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 0, target_kcal: 0 },
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls).toHaveLength(1);
+    expect(updateCalls[0][0]).toMatchObject({
+      calorie_share_pct: 0,
+      serving_size: 0,
+      serving_size_unit: 'cups',
+    });
+  });
+
+  test('feedings_per_day=null falls back to 1 feeding/day for back-calc', async () => {
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: null,
+        serving_size: 1,
+        calorie_share_pct: 100,
+        pantry_items: { products: { ga_kcal_per_cup: 400 } },
+      },
+    ]);
+
+    // 400 kcal / 1 feeding / 400 kcal_per_cup = 1 cup
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 100, target_kcal: 400 },
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls[0][0]).toMatchObject({
+      serving_size: 1,
+      serving_size_unit: 'cups',
+    });
+  });
+
+  test('null-kcal product uses proportional fallback from existing serving_size', async () => {
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 2,
+        calorie_share_pct: 100,
+        pantry_items: {
+          products: {
+            ga_kcal_per_cup: null,
+            ga_kcal_per_kg: null,
+            kcal_per_unit: null,
+            unit_weight_g: null,
+            ga_protein_pct: null,
+            ga_fat_pct: null,
+          },
+        },
+      },
+    ]);
+
+    // oldServing=2, oldShare=100, newShare=50 → 2 * (50/100) = 1
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 50, target_kcal: 200 },
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls[0][0]).toMatchObject({
+      calorie_share_pct: 50,
+      serving_size: 1,
+    });
+    // serving_size_unit not touched when using proportional fallback
+    expect(updateCalls[0][0]).not.toHaveProperty('serving_size_unit');
+  });
+
+  test('mixed shares — one with target_kcal uses back-calc, one without uses proportional', async () => {
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 1,
+        calorie_share_pct: 50,
+        pantry_items: { products: { ga_kcal_per_cup: 300 } },
+      },
+      {
+        id: 'a-2',
+        feedings_per_day: 2,
+        serving_size: 2,
+        calorie_share_pct: 50,
+        pantry_items: { products: { ga_kcal_per_cup: 400 } },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 75, target_kcal: 600 }, // back-calc: 600/2/300 = 1 cup
+      { assignmentId: 'a-2', calorie_share_pct: 25 },                   // proportional: 2 * (25/50) = 1
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls).toHaveLength(2);
+    // Calls come from Promise.all → order matches shares[] order
+    expect(updateCalls[0][0]).toMatchObject({
+      calorie_share_pct: 75,
+      serving_size: 1,
+      serving_size_unit: 'cups',
+    });
+    expect(updateCalls[1][0]).toMatchObject({
+      calorie_share_pct: 25,
+      serving_size: 1,
+    });
+    expect(updateCalls[1][0]).not.toHaveProperty('serving_size_unit');
+  });
+
+  test('old share 0 + null-kcal product — skips serving_size and warns', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 0,
+        calorie_share_pct: 0,
+        pantry_items: {
+          products: { ga_kcal_per_cup: null, ga_kcal_per_kg: null, kcal_per_unit: null, unit_weight_g: null },
+        },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 50, target_kcal: 200 },
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls[0][0]).toEqual({ calorie_share_pct: 50 });
+    expect(updateCalls[0][0]).not.toHaveProperty('serving_size');
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('a-1'));
+
+    warnSpy.mockRestore();
+  });
+
+  test('absent target_kcal with null-kcal product and no prior serving — leaves serving_size untouched silently', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: null,
+        calorie_share_pct: 0,
+        pantry_items: { products: { ga_kcal_per_cup: null } },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 50 }, // no target_kcal
+    ]);
+
+    const updateCalls = pantryChain.update.mock.calls;
+    expect(updateCalls[0][0]).toEqual({ calorie_share_pct: 50 });
+    // No target_kcal → silent skip, no warn
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  test('includes feeding_role/frequency/auto_deplete when provided', async () => {
+    const { pantryChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 1,
+        calorie_share_pct: 100,
+        pantry_items: { products: { ga_kcal_per_cup: 400 } },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      {
+        assignmentId: 'a-1',
+        calorie_share_pct: 0,
+        target_kcal: 0,
+        feeding_role: 'rotational',
+        feeding_frequency: 'as_needed',
+        auto_deplete_enabled: false,
+      },
+    ]);
+
+    expect(pantryChain.update.mock.calls[0][0]).toMatchObject({
+      feeding_role: 'rotational',
+      feeding_frequency: 'as_needed',
+      auto_deplete_enabled: false,
+    });
+  });
+
+  test('invokes refreshWetReserve after all writes (queries pets table)', async () => {
+    const { petsChain } = wireShares([
+      {
+        id: 'a-1',
+        feedings_per_day: 2,
+        serving_size: 1,
+        calorie_share_pct: 100,
+        pantry_items: { products: { ga_kcal_per_cup: 400 } },
+      },
+    ]);
+
+    await updateCalorieShares('pet-1', [
+      { assignmentId: 'a-1', calorie_share_pct: 100, target_kcal: 800 },
+    ]);
+
+    // refreshWetReserve early-returns on non-dry_and_wet feeding styles, but the
+    // pets.select('feeding_style') call is the observable side-effect we can assert on.
+    expect(supabase.from).toHaveBeenCalledWith('pets');
+    expect(petsChain.select).toHaveBeenCalledWith('feeding_style');
   });
 });

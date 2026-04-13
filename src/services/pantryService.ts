@@ -21,6 +21,7 @@ import {
   getCalorieContext,
   getWetFoodKcal,
   computePerServingKcal,
+  computeAutoServingSize,
 } from '../utils/pantryHelpers';
 import type { Pet, FeedingStyle } from '../types/pet';
 import type { Product } from '../types';
@@ -539,28 +540,104 @@ export async function checkDuplicateUpc(
  * Batch-updates calorie_share_pct (and optionally feeding_role/frequency/auto-deplete)
  * for multiple assignments. Used by CustomFeedingStyleScreen to save user-defined splits
  * and V2-2 role toggles.
+ *
+ * When target_kcal is provided on a share, serving_size + serving_size_unit are
+ * back-calculated via computeAutoServingSize so downstream consumers (PantryCard display,
+ * auto-deplete cron) stay in sync with the configured calorie split.
+ *
+ * Fallback when target_kcal is absent OR computeAutoServingSize returns null (product
+ * has no ga_kcal_per_cup and no kcal_per_unit): proportionally scale the existing
+ * serving_size by (new_share / old_share). If old share is 0 or serving_size is null/0,
+ * the field is left untouched and a warning is logged.
+ *
+ * After all writes commit, refreshWetReserve is invoked so rotational blends stay current.
  */
+type AssignmentWithProduct = {
+  id: string;
+  feedings_per_day: number | null;
+  serving_size: number | null;
+  calorie_share_pct: number | null;
+  pantry_items: { products: Product } | null;
+};
+
 export async function updateCalorieShares(
   petId: string,
   shares: Array<{
     assignmentId: string;
     calorie_share_pct: number;
+    target_kcal?: number;
     feeding_role?: FeedingRole;
     feeding_frequency?: FeedingFrequency;
     auto_deplete_enabled?: boolean;
   }>,
 ): Promise<void> {
   await requireOnline();
-  for (const s of shares) {
+
+  // Batch-fetch existing assignment + product data for every share (needed for both
+  // target_kcal back-calc and proportional-scale fallback).
+  const assignmentMap = new Map<string, AssignmentWithProduct>();
+  if (shares.length > 0) {
+    const { data } = await supabase
+      .from('pantry_pet_assignments')
+      .select('id, feedings_per_day, serving_size, calorie_share_pct, pantry_items(products(*))')
+      .in('id', shares.map(s => s.assignmentId));
+    if (data) {
+      for (const row of data as unknown as AssignmentWithProduct[]) {
+        assignmentMap.set(row.id, row);
+      }
+    }
+  }
+
+  const writes = shares.map(async (s) => {
     const update: Record<string, unknown> = { calorie_share_pct: s.calorie_share_pct };
     if (s.feeding_role !== undefined) update.feeding_role = s.feeding_role;
     if (s.feeding_frequency !== undefined) update.feeding_frequency = s.feeding_frequency;
     if (s.auto_deplete_enabled !== undefined) update.auto_deplete_enabled = s.auto_deplete_enabled;
-    await supabase
+
+    const row = assignmentMap.get(s.assignmentId);
+    const product = row?.pantry_items?.products;
+
+    // Preferred path: target_kcal provided + product has resolvable calorie density.
+    let servingResolved = false;
+    if (s.target_kcal !== undefined && s.target_kcal >= 0 && product) {
+      const feedingsPerDay = row?.feedings_per_day || 1;
+      const autoServing = computeAutoServingSize(s.target_kcal, feedingsPerDay, product);
+      if (autoServing) {
+        update.serving_size = Math.round(autoServing.amount * 10000) / 10000;
+        update.serving_size_unit = autoServing.unit;
+        servingResolved = true;
+      }
+    }
+
+    // Fallback: proportional scaling when target_kcal is absent, or when the product
+    // lacks calorie data and back-calc returned null. Keeps serving_size in sync with
+    // the new share instead of leaving stale values that PantryCard / auto-deplete read.
+    if (!servingResolved) {
+      const oldShare = row?.calorie_share_pct ?? 0;
+      const oldServing = row?.serving_size ?? 0;
+      if (oldShare > 0 && oldServing > 0 && s.calorie_share_pct >= 0) {
+        const scaled = oldServing * (s.calorie_share_pct / oldShare);
+        update.serving_size = Math.round(scaled * 10000) / 10000;
+      } else if (s.target_kcal !== undefined && s.target_kcal >= 0) {
+        // target_kcal was set but both primary and fallback paths couldn't resolve.
+        // Leave serving_size alone but log so we can detect products missing calorie data.
+        console.warn(
+          `[updateCalorieShares] Could not resolve serving_size for assignment ${s.assignmentId}`
+          + ` (product has no calorie density and no prior serving to scale from)`,
+        );
+      }
+    }
+
+    return supabase
       .from('pantry_pet_assignments')
       .update(update)
       .eq('id', s.assignmentId);
-  }
+  });
+
+  await Promise.all(writes);
+
+  // Rotational blends depend on base shares — refresh the reserve after splits change.
+  await refreshWetReserve(petId);
 }
 
 /**

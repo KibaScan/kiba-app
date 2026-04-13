@@ -15,6 +15,8 @@ export const Colors = {
   chipSurface: 'rgba(255,255,255,0.12)',       // chip fills, tracks, drag handles
   hairlineBorder: 'rgba(255,255,255,0.12)',    // crisp inner border
   pressOverlay: 'rgba(255,255,255,0.05)',      // touch feedback underlay
+  accentTint: 'rgba(0,180,216,0.10)',          // 10% accent — soft info banners
+  productStage: '#FFFFFF',                      // white product-photo thumbnail stage
 
   // Severity (D-136 unified palette)
   severityRed: '#EF4444',

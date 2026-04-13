@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-12 (session 44)
+# Project Status — Last updated 2026-04-12 (session 45)
 
 ## Active Milestone
 
@@ -64,7 +64,7 @@
 
 ## Numbers
 
-- **Tests:** 1445 passing / 63 suites
+- **Tests:** 1457 passing / 63 suites
 - **Decisions:** 129
 - **Migrations:** 38 (001–038)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -104,6 +104,57 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-12 (session 45)
+- **Accomplished:**
+  - **/boot** — read CLAUDE.md, DECISIONS.md header, ROADMAP.md M9 scope, CURRENT.md. Confirmed 129 decisions, 38 migrations, M9 in progress. Branch `m5-complete` dirty with two uncommitted files from prior Gemini sub-session (`CustomFeedingStyleScreen.tsx` + `pantryService.ts`) — the "Custom Splits" feature documented at `m9customfeedingwalkthrough.md`.
+  - **CLAUDE.md migration count fix** — line 37 said "`supabase/migrations/` (001–034)", actual was 038. Corrected to `001–038`. Doc drift only, no code impact.
+  - **Reviewed the uncommitted Custom Feeding Style + pantryService work** — dispatched 3 parallel Explore agents (save-path correctness, Matte Premium design-system alignment, test coverage + regression risk). Confirmed Gemini's headline "Mathematical Disconnect" fix (kcal→serving_size back-calc) is real and load-bearing: `supabase/functions/auto-deplete/index.ts:438` and `src/components/pantry/PantryCard.tsx:135` both read `serving_size` directly, so the old code's drift was a genuine user-facing bug. But the implementation had 5 correctness gaps + multiple design-system drifts + zero test coverage.
+  - **Plan at `/Users/stevendiaz/.claude/plans/eager-swimming-liskov.md`** — ultraplan attempted (bundle upload timeout on GitHub — didn't block). User locked 3 open questions: (1) proportional-scaling fallback for null-kcal products, (2) inline-fix modal instead of extracting a `BottomSheet` component, (3) tokenize `accentTint` without promoting to `.agent/design.md` canon. All Phase A–D fixes landed.
+  - **Phase A (correctness):**
+    - `pantryService.ts:544-640` — `updateCalorieShares` rewritten. Typed `AssignmentWithProduct` replaces `Record<string, any>` (CLAUDE.md rule #8). Batch-fetch extended to also pull `serving_size` + `calorie_share_pct` (needed for fallback). Sequential `for` loop → `Promise.all` (fixes N+1 atomicity). **Proportional-scaling fallback** when `target_kcal` absent OR `computeAutoServingSize` returns null: `newServing = oldServing × (newShare / oldShare)`; edge cases (old share 0, existing serving_size null/0) leave the field untouched and only warn when `target_kcal` was explicitly set. `await refreshWetReserve(petId)` wired in at the tail so rotational blends don't drift after splits change.
+    - `CustomFeedingStyleScreen.tsx` — `roleChip` gained `borderWidth: 1 / borderColor: 'transparent'` so the `roleChipActive` accent border actually renders (was declaring `borderColor` with no `borderWidth`, invisible).
+  - **Phase B (design-system alignment):**
+    - `src/utils/constants.ts` — two new tokens: `Colors.accentTint = 'rgba(0,180,216,0.10)'` (soft info banners) and `Colors.productStage = '#FFFFFF'` (product thumbnail white stage, matches TopPicksCarousel precedent).
+    - `CustomFeedingStyleScreen.tsx` modal — converted from plain `<Modal>` with hardcoded `rgba(0,0,0,0.5)` backdrop to canonical bottom-sheet pattern (matches `src/components/appointments/HealthRecordDetailSheet.tsx:216-223`): BlurView backdrop (`intensity={40} tint="dark"`), drag handle (40×4, `textTertiary`), `useSafeAreaInsets()`-aware bottom padding, radius 16→20, correct sheetContainer/sheet layering.
+    - Token-drift fixes: input `borderRadius 8→12` + `paddingHorizontal sm→md`; `foodCard.marginBottom sm→md`; `cardImageStage.borderRadius 6→8`; `modalImageStage.padding 8→12`. Hardcoded `#FFFFFF` / `rgba(0,180,216,0.10)` references swapped for tokens (5 call sites).
+    - A11y: back button gained `activeOpacity={0.7}` + `accessibilityRole="button"` + `accessibilityLabel`. Modal close button gained `accessibilityRole="button"` + `accessibilityLabel="Close product details"`.
+  - **Phase C (tests):** 12 new tests, all passing.
+    - `__tests__/services/pantryService.test.ts` — 9 new `updateCalorieShares` cases: offline guard, `target_kcal=0` writes `serving_size=0`, `feedings_per_day=null` falls back to 1, null-kcal product uses proportional fallback, mixed shares (one with + one without `target_kcal`), old-share-0 + null-kcal warns and skips `serving_size`, absent-`target_kcal` + null-kcal + no prior serving skips silently (no warn), feeding_role/frequency/auto_deplete fields pass through, `refreshWetReserve` invoked (queries `pets` table).
+    - `__tests__/utils/pantryHelpers.test.ts` — 3 new `computeAutoServingSize` edge cases: `feedings_per_day=0` returns null, negative returns null, fractional precision preserved (`0.04625` cups from tiny kcal budget).
+  - **Phase D (polish):** Removed double-load on save — `handleSave` was calling `usePantryStore.getState().loadPantry(petId)` explicitly before `navigation.goBack()`, but the parent `PantryScreen`'s `useFocusEffect` re-fires on focus return. Dropped the explicit call + unused `usePantryStore` import.
+- **Files changed (6, uncommitted at handoff start):**
+  - **Modified:**
+    - `src/services/pantryService.ts` — `updateCalorieShares` rewritten with typed fetch + proportional fallback + Promise.all + refreshWetReserve wiring. Net +49/-20.
+    - `src/screens/CustomFeedingStyleScreen.tsx` — includes Gemini's original uncommitted work (Custom Splits UI overhaul) + this session's fixes on top (bottom-sheet canonicalization, role chip border, token drift, a11y, token swaps, double-load removal). Net +238/-60 vs `b6e8b29` baseline.
+    - `src/utils/constants.ts` — 2 new Colors tokens. +2/-0.
+    - `__tests__/utils/pantryHelpers.test.ts` — 3 new tests. +18/-0.
+    - `__tests__/services/pantryService.test.ts` — 9 new tests + import. +200/-0.
+    - `CLAUDE.md` — migration range 034→038 typo fix. +1/-1.
+- **Tests:** 1457 passing / 63 suites (+12 from 1445). 3 snapshots. Regression anchors verified: Pure Balance (Dog) = 61 ✓, Temptations (Cat Treat) = 0 ✓. TypeScript clean in `src/` + `__tests__/` (79 pre-existing errors confined to `docs/plans/search-uiux/*` prototype + `supabase/functions/batch-score/scoring/*.ts` Deno import-extension quirk — not introduced this session).
+- **Not done yet:**
+  - **On-device visual QA for the Custom Splits screen changes** — the most important validation since this session touched visuals. Scan for: (a) modal opens with BlurView backdrop + drag handle + safe-area bottom padding on notched devices, (b) role chip "Base"/"Rotational" active state renders with a visible cyan accent border (was invisible before), (c) accent-tint DER banner reads clean (soft cyan, no border, flame icon sits correctly), (d) input container at radius 12 + `Spacing.md` horizontal padding feels right at kcal + % mode, (e) product thumbnail 40×40 white stage with radius 8 reads cleanly, (f) detail modal 64×64 thumbnail with padding 12 doesn't shrink the image too much.
+  - **Functional QA on the kcal→serving_size back-calc + proportional fallback** — smallest test: enter custom mode with 2 base foods + 1 rotational. Set share 1 = 75%, share 2 = 25%, save. Navigate to PantryScreen → confirm PantryCard `feedingSummary` at line 135 shows updated serving_size (not the pre-edit value). Try again on a product with no `ga_kcal_per_cup` (some supplements qualify — though those should be filtered out of the custom-feeding screen via `!is_supplemental`, so this path is defensive).
+  - **Auto-deplete regression check** — trigger `supabase/functions/auto-deplete` manually post-custom-edit, confirm `quantity_remaining` decreases by the expected amount (`target_kcal / kcal_per_cup × feedings_per_day`). Not time-critical — the cron runs every 30min so natural fire will catch regressions within a day.
+  - **Session 44 Me-tab carry-overs still pending** (unchanged from prior handoff): CreatePet / EditPet / NotificationPreferences switches+chips+segments visual QA, WeightGoalSlider rail, TreatBatteryGauge barTrack.
+  - **QA walkthrough paths 2/3/4 not started** — Pantry, ResultScreen, Home tabs.
+  - **Ultraplan still times out** — GitHub app installed on KibaScan/kiba-app, cloud env created with `npm install` setup script, but bundle upload exceeds 120s × 3 retries. Either the `node_modules` + assets tree is too large for Claude Code on the web's uploader, or something else. Workaround: plan locally, execute locally.
+- **Next session should start with:**
+  1. **Confirm commit + push landed cleanly on `m5-complete`** — expected ahead of `b6e8b29` by one commit covering session 45 review+fix work (Custom Splits + pantryService + tests + doc touchups).
+  2. **On-device pass on the Custom Splits screen** (see QA list above). Fastest path to unblock M9 forward momentum — if anything regresses (e.g., modal animation feels wrong, role chip border reads too strong), iterate inline before moving on.
+  3. **Either (a) continue Phase 1 carry-overs** (CreatePet / EditPet chip + switch visual QA) to close the Me-tab polish fully, **or (b) move to Path 2 (Pantry tab)** which has the highest-risk untested surface area (session 43 cache edge cases still need reproducers validated).
+- **Gotchas:**
+  - **`AssignmentWithProduct` is a local type in `pantryService.ts`**, not exported. If another caller needs the same shape (batch fetches with `pantry_items(products(*))` nesting), either promote it to `src/types/pantry.ts` or redefine locally. Current pattern is one-shot.
+  - **`refreshWetReserve` now auto-runs after every `updateCalorieShares`** — one extra DB round-trip per save. Cheap (one `.select('feeding_style')` + early return unless `feeding_style === 'dry_and_wet'`) but if pets with rotational blends ever ship wide, it's a natural optimization point (skip the call when no share has a rotational role change in flight).
+  - **Proportional-scaling fallback path only warns when `target_kcal` was explicitly set but both paths failed** — absent `target_kcal` with no prior serving data to scale is treated as intentional silence. This keeps log noise low for legitimate rotational saves where no back-calc is expected.
+  - **Gemini's walkthrough was 80% accurate** — the "Mathematical Disconnect" bug claim (§8) was genuine and load-bearing, and most of the UI polish claims (badge consolidation, segmented control, SEO zombie elimination) held up on code inspection. But the "bottom sheet at canonical spec" claim (§6) was a clean miss — the modal was plain React Native `<Modal>` with hardcoded backdrop + no handle + no safe-area. Review lens caught 5 correctness bugs and 11 design-drift issues Gemini's self-report glossed over. Pattern: trust the bug-fix rationale, verify every "aligned with design system" claim against `.agent/design.md` + reference components.
+  - **`Colors.accentTint` and `Colors.productStage` are new tokens** — reuse for future soft-accent banners and product-thumbnail stages instead of inlining `rgba(0,180,216,0.10)` or `#FFFFFF`.
+  - **Bottom-sheet canonical pattern is now established twice** — `HealthRecordDetailSheet.tsx:216-223` (original) and `CustomFeedingStyleScreen.tsx` modal (this session). If a third screen needs a bottom sheet, extracting `src/components/ui/BottomSheet.tsx` becomes worth the scope. User explicitly deferred this in the plan — don't extract yet, revisit at the third caller.
+  - **Engine copy trap still stands** — `src/services/scoring/` mirrored at `supabase/functions/batch-score/scoring/`. No scoring changes this session, but the rule remains.
+- **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure review+fix session on uncommitted M9 Custom Feeding Style work. Regression anchors unchanged: Pure Balance = 61 ✓, Temptations = 0 ✓, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
+
+---
+[Previous session 44 block retained below for reference]
 
 - **Date:** 2026-04-12 (session 44)
 - **Accomplished:**

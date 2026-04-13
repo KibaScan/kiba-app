@@ -15,17 +15,21 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
+  Pressable,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { getConversationalName } from '../utils/formatters';
 import { computePetDer } from '../utils/pantryHelpers';
 import { getPantryForPet, updateCalorieShares } from '../services/pantryService';
 import { useActivePetStore } from '../stores/useActivePetStore';
-import { usePantryStore } from '../stores/usePantryStore';
 import { saveSuccess } from '../utils/haptics';
-import type { PantryCardData, PantryPetAssignment, FeedingRole, FeedingFrequency } from '../types/pantry';
+import type { FeedingRole, FeedingFrequency } from '../types/pantry';
 import type { Pet } from '../types/pet';
 
 // ─── Types ──────────────────────────────────────────────
@@ -35,6 +39,7 @@ interface FoodRow {
   pantryItemId: string;
   productName: string;
   productBrand: string;
+  productImage: string | null;
   calorie_share_pct: number;
   feedingRole: FeedingRole;
 }
@@ -53,6 +58,7 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const [foods, setFoods] = useState<FoodRow[]>([]);
+  const [selectedFoodDetail, setSelectedFoodDetail] = useState<FoodRow | null>(null);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [roleOverrides, setRoleOverrides] = useState<Record<string, FeedingRole>>({});
   const [inputMode, setInputMode] = useState<'kcal' | 'pct'>('kcal');
@@ -102,6 +108,7 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
             pantryItemId: item.id,
             productName: item.product.name,
             productBrand: item.product.brand,
+            productImage: item.product.image_url,
             calorie_share_pct: sharePct,
             feedingRole: role,
           });
@@ -158,10 +165,15 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
         const entry: {
           assignmentId: string;
           calorie_share_pct: number;
+          target_kcal?: number;
           feeding_role?: FeedingRole;
           feeding_frequency?: FeedingFrequency;
           auto_deplete_enabled?: boolean;
-        } = { assignmentId: f.assignmentId, calorie_share_pct: pct };
+        } = { 
+          assignmentId: f.assignmentId, 
+          calorie_share_pct: pct,
+          target_kcal: Math.round(kcal),
+        };
 
         // Include role fields if role changed from original
         if (role !== f.feedingRole) {
@@ -174,7 +186,7 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
       });
 
       await updateCalorieShares(petId, shares);
-      usePantryStore.getState().loadPantry(petId);
+      // PantryScreen's useFocusEffect will reload on goBack — no need to reload here.
       saveSuccess();
       navigation.goBack();
     } catch (e) {
@@ -222,16 +234,27 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
 
     // Display value depends on input mode
     const displayValue = inputMode === 'pct' ? String(pct) : kcalStr;
-    const inputLabel = inputMode === 'pct' ? '%' : 'kcal';
-    const badgeText = inputMode === 'pct' ? `${Math.round(kcal)}` : `${pct}%`;
-    const badgeLabel = inputMode === 'pct' ? 'kcal' : '';
+    const inputLabel = inputMode === 'pct' ? 'Percent' : 'Amount';
+    const convertedValueStr = inputMode === 'pct' ? `${Math.round(kcal)} kcal` : `${pct}%`;
 
     return (
       <View style={styles.foodCard}>
-        <View style={styles.foodInfo}>
-          <Text style={styles.foodBrand} numberOfLines={1}>{item.productBrand}</Text>
-          <Text style={styles.foodName} numberOfLines={2}>{item.productName}</Text>
-        </View>
+        <TouchableOpacity style={styles.foodInfo} onPress={() => setSelectedFoodDetail(item)} activeOpacity={0.7}>
+          {item.productImage ? (
+            <View style={styles.cardImageStage}>
+              <Image source={{ uri: item.productImage }} style={styles.cardThumbnailImage} />
+            </View>
+          ) : (
+            <View style={[styles.cardImageStage, { justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.chipSurface }]}>
+              <Ionicons name="cube-outline" size={16} color={Colors.textTertiary} />
+            </View>
+          )}
+          <View style={styles.cardTextStack}>
+            <Text style={styles.foodBrand} numberOfLines={1}>{item.productBrand}</Text>
+            <Text style={styles.foodName} numberOfLines={1}>{getConversationalName({ brand: item.productBrand, name: item.productName })}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} style={styles.cardChevron} />
+        </TouchableOpacity>
 
         {/* V2-2: Role toggle chips */}
         <View style={styles.roleRow}>
@@ -258,20 +281,21 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
           </View>
         ) : (
           <View style={styles.inputRow}>
-            <TextInput
-              style={styles.kcalInput}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              value={displayValue}
-              onChangeText={(v) => updateInputConverted(item.assignmentId, v)}
-              placeholderTextColor={Colors.textTertiary}
-              selectTextOnFocus
-            />
-            <Text style={styles.kcalLabel}>{inputLabel}</Text>
-            <View style={styles.pctBadge}>
-              <Text style={styles.pctText}>{badgeText}</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLeftLabel}>{inputLabel}</Text>
+              <TextInput
+                style={styles.kcalInput}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                value={displayValue}
+                onChangeText={(v) => updateInputConverted(item.assignmentId, v)}
+                placeholderTextColor={Colors.textTertiary}
+                selectTextOnFocus
+              />
             </View>
-            {badgeLabel ? <Text style={styles.badgeSuffix}>{badgeLabel}</Text> : null}
+            <View style={styles.convertedBadge}>
+              <Text style={styles.convertedBadgeText}>{convertedValueStr}</Text>
+            </View>
           </View>
         )}
       </View>
@@ -286,22 +310,37 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <TouchableOpacity
+            onPress={navigation.goBack}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Custom Splits</Text>
-          <TouchableOpacity
-            style={styles.modeToggle}
-            onPress={() => setInputMode(m => m === 'kcal' ? 'pct' : 'kcal')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.modeToggleText}>{inputMode === 'kcal' ? 'kcal' : '%'}</Text>
-          </TouchableOpacity>
+          <View style={styles.segmentedContainer}>
+            <TouchableOpacity
+              style={[styles.segmentedPill, inputMode === 'pct' && styles.segmentedPillActive]}
+              onPress={() => setInputMode('pct')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.segmentedPillText, inputMode === 'pct' && styles.segmentedPillTextActive]}>%</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.segmentedPill, inputMode === 'kcal' && styles.segmentedPillActive]}
+              onPress={() => setInputMode('kcal')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.segmentedPillText, inputMode === 'kcal' && styles.segmentedPillTextActive]}>kcal</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* DER banner */}
         <View style={styles.derBanner}>
-          <Ionicons name="flame-outline" size={18} color={Colors.accent} />
+          <Ionicons name="flame" size={18} color={Colors.accent} />
           <Text style={styles.derText}>
             {pet.name}'s daily energy: <Text style={styles.derValue}>{Math.round(der)} kcal/day</Text>
           </Text>
@@ -368,6 +407,47 @@ export default function CustomFeedingStyleScreen({ route, navigation }: Props) {
           </>
         )}
       </KeyboardAvoidingView>
+
+      {/* Product Detail Bottom Sheet */}
+      <Modal
+        visible={!!selectedFoodDetail}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedFoodDetail(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setSelectedFoodDetail(null)}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        </Pressable>
+        <View style={styles.modalSheetContainer}>
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) + Spacing.md }]}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeaderRow}>
+              {selectedFoodDetail?.productImage ? (
+                <View style={styles.modalImageStage}>
+                  <Image source={{ uri: selectedFoodDetail.productImage }} style={styles.modalProductImage} />
+                </View>
+              ) : (
+                <View style={[styles.modalImageStage, { justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.chipSurface }]}>
+                  <Ionicons name="cube-outline" size={24} color={Colors.textTertiary} />
+                </View>
+              )}
+              <View style={styles.modalHeaderTextContainer}>
+                <Text style={styles.modalBrandText} numberOfLines={1}>{selectedFoodDetail?.productBrand}</Text>
+                <Text style={styles.modalNameText}>{selectedFoodDetail?.productName}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setSelectedFoodDetail(null)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Close product details"
+            >
+              <Text style={styles.modalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -399,10 +479,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
-    backgroundColor: Colors.cardSurface,
+    backgroundColor: Colors.accentTint,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
   },
   derText: {
     fontSize: FontSizes.sm,
@@ -422,10 +500,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   foodInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.sm,
+  },
+  cardImageStage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: Colors.productStage,
+    padding: 4,
+    marginRight: Spacing.sm,
+  },
+  cardThumbnailImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  cardTextStack: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  cardChevron: {
+    marginLeft: Spacing.xs,
   },
   foodBrand: {
     fontSize: FontSizes.xs,
@@ -444,30 +544,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
   },
-  kcalInput: {
+  inputContainer: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.hairlineBorder,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  inputLeftLabel: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+  kcalInput: {
+    flex: 1,
     paddingVertical: Spacing.xs,
+    paddingLeft: Spacing.sm,
     fontSize: FontSizes.lg,
     fontWeight: '600',
     color: Colors.textPrimary,
     textAlign: 'right',
   },
-  kcalLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  pctBadge: {
-    backgroundColor: Colors.background,
+  convertedBadge: {
+    backgroundColor: Colors.chipSurface,
     borderRadius: 8,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 70,
   },
-  pctText: {
+  convertedBadgeText: {
     fontSize: FontSizes.md,
     fontWeight: '600',
     color: Colors.textSecondary,
@@ -550,23 +659,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: Spacing.xs,
   },
-  modeToggle: {
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    paddingHorizontal: Spacing.xs + 2,
-    paddingVertical: 2,
+  segmentedContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    padding: 2,
   },
-  modeToggleText: {
+  segmentedPill: {
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  segmentedPillActive: {
+    backgroundColor: Colors.accent,
+  },
+  segmentedPillText: {
     fontSize: FontSizes.xs,
     fontWeight: '700',
-    color: Colors.accent,
-  },
-  badgeSuffix: {
-    fontSize: FontSizes.sm,
     color: Colors.textTertiary,
-    marginLeft: 4,
+  },
+  segmentedPillTextActive: {
+    color: Colors.textPrimary,
   },
   roleRow: {
     flexDirection: 'row',
@@ -578,8 +691,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    backgroundColor: Colors.chipSurface,
   },
   roleChipActive: {
     backgroundColor: Colors.accent,
@@ -608,5 +721,70 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
     marginTop: 2,
+  },
+  modalOverlay: { ...StyleSheet.absoluteFillObject },
+  modalSheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: Colors.cardSurface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    maxHeight: '85%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.textTertiary,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  modalImageStage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: Colors.productStage,
+    padding: 12,
+    marginRight: Spacing.md,
+  },
+  modalProductImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  modalHeaderTextContainer: {
+    flex: 1,
+  },
+  modalBrandText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  modalNameText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  modalCloseButton: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: 12,
+    backgroundColor: Colors.chipSurface,
+  },
+  modalCloseText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
 });
