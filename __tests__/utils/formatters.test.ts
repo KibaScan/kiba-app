@@ -6,6 +6,7 @@ import {
   resolveLifeStageLabel,
   formatRelativeTime,
   getConversationalName,
+  formatServing,
 } from '../../src/utils/formatters';
 
 // ─── toDisplayName ────────────────────────────────────────
@@ -262,5 +263,50 @@ describe('formatRelativeTime', () => {
 
   test('much older date', () => {
     expect(formatRelativeTime('2026-01-05T08:00:00Z')).toBe('Jan 5');
+  });
+});
+
+// ─── formatServing ────────────────────────────────────────
+
+describe('formatServing', () => {
+  test('returns "0" for null', () => {
+    expect(formatServing(null)).toBe('0');
+  });
+
+  test('returns "0" for undefined', () => {
+    expect(formatServing(undefined)).toBe('0');
+  });
+
+  test('returns "0" for NaN', () => {
+    expect(formatServing(NaN)).toBe('0');
+  });
+
+  test('returns "0" for 0', () => {
+    expect(formatServing(0)).toBe('0');
+  });
+
+  test('drops trailing zero for whole numbers', () => {
+    expect(formatServing(1)).toBe('1');
+    expect(formatServing(1.0)).toBe('1');
+    expect(formatServing(4)).toBe('4');
+  });
+
+  test('clamps to 1 decimal place', () => {
+    expect(formatServing(6.4485)).toBe('6.4');
+    expect(formatServing(6.449999)).toBe('6.4');
+    expect(formatServing(6.45)).toBe('6.5');
+  });
+
+  test('rounds 0.04 down to 0', () => {
+    expect(formatServing(0.04)).toBe('0');
+  });
+
+  test('rounds 0.05 up to 0.1', () => {
+    expect(formatServing(0.05)).toBe('0.1');
+  });
+
+  test('preserves negative values (caller responsible for validation)', () => {
+    expect(formatServing(-1)).toBe('-1');
+    expect(formatServing(-1.5)).toBe('-1.5');
   });
 });
