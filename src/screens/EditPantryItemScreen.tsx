@@ -917,13 +917,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-    borderStyle: 'dashed',
+    backgroundColor: Colors.chipSurface,
   },
   addTimeText: {
     fontSize: FontSizes.sm,
     color: Colors.accent,
+    fontWeight: '600',
   },
 
   // Depletion row
