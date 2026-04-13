@@ -180,7 +180,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
               </View>
               {product.is_supplemental && (
                 <View style={styles.supplementalBadge}>
-                  <Text style={styles.supplementalBadgeText}>Supplemental</Text>
+                  <Text style={styles.supplementalBadgeText}>Topper</Text>
                 </View>
               )}
             </View>
