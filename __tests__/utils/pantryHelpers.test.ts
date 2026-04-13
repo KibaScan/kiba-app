@@ -33,6 +33,7 @@ import {
   computeBehavioralServing,
   computeBehavioralBudgetWarning,
   computePerServingKcal,
+  shouldShowCalorieText,
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -1196,4 +1197,41 @@ describe('computeBehavioralServing — custom mode', () => {
   });
 });
 
+// ─── shouldShowCalorieText ────────────────────────────────
+
+describe('shouldShowCalorieText', () => {
+  test('shows for base role with positive share', () => {
+    expect(shouldShowCalorieText('base', 15)).toBe(true);
+    expect(shouldShowCalorieText('base', 100)).toBe(true);
+    expect(shouldShowCalorieText('base', 0.5)).toBe(true);
+  });
+
+  test('suppresses for base role with zero share (ghost-text case)', () => {
+    expect(shouldShowCalorieText('base', 0)).toBe(false);
+  });
+
+  test('suppresses for base role with null/undefined share', () => {
+    expect(shouldShowCalorieText('base', null)).toBe(false);
+    expect(shouldShowCalorieText('base', undefined)).toBe(false);
+  });
+
+  test('suppresses for base role with negative share', () => {
+    expect(shouldShowCalorieText('base', -1)).toBe(false);
+  });
+
+  test('suppresses for rotational role regardless of share', () => {
+    expect(shouldShowCalorieText('rotational', 0)).toBe(false);
+    expect(shouldShowCalorieText('rotational', 15)).toBe(false);
+    expect(shouldShowCalorieText('rotational', null)).toBe(false);
+  });
+
+  test('suppresses for null role (legacy/treat/supplement data)', () => {
+    expect(shouldShowCalorieText(null, 15)).toBe(false);
+    expect(shouldShowCalorieText(null, null)).toBe(false);
+  });
+
+  test('suppresses for undefined role', () => {
+    expect(shouldShowCalorieText(undefined, 15)).toBe(false);
+  });
+});
 

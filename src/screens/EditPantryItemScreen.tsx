@@ -3,7 +3,7 @@
 // D-155: Empty item states. D-158: Recalled item states. D-157: Remove nudge.
 // D-084: Zero emoji. D-094: Score framing. D-095: UPVM compliant.
 
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 
 import type { PantryStackParamList } from '../types/navigation';
 import type { PantryCardData, FeedingFrequency } from '../types/pantry';
@@ -39,7 +40,7 @@ import {
   calculateDepletionBreakdown,
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
-import { stripBrandFromName } from '../utils/formatters';
+import { stripBrandFromName, formatServing } from '../utils/formatters';
 import { shouldShowD157Nudge } from './PantryScreen';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -113,6 +114,18 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
     return d;
   });
 
+  // Hide global tab bar on this screen.
+  // useFocusEffect (not plain useEffect) so the hide re-applies when we return
+  // from a pushed child like CustomFeedingStyle, which unmounts and restores
+  // the parent tab bar on its own cleanup.
+  useFocusEffect(
+    useCallback(() => {
+      const parent = (navigation as any).getParent?.();
+      parent?.setOptions({ tabBarStyle: { display: 'none' } });
+      return () => { parent?.setOptions({ tabBarStyle: undefined }); };
+    }, [navigation]),
+  );
+
   const product = item?.product ?? null;
   const isRecalled = product?.is_recalled ?? false;
   const isEmpty = item?.is_empty ?? false;
@@ -169,12 +182,20 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
 
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
-    if (!isNaN(val) && val >= 0) saveItemField('quantity_remaining', val);
+    if (!isNaN(val) && val >= 0) {
+      const clamped = Math.round(val * 10) / 10;
+      setQtyRemaining(formatServing(clamped));
+      saveItemField('quantity_remaining', clamped);
+    }
   }, [qtyRemaining, saveItemField]);
 
   const handleQtyOriginalBlur = useCallback(() => {
     const val = parseFloat(qtyOriginal);
-    if (!isNaN(val) && val > 0) saveItemField('quantity_original', val);
+    if (!isNaN(val) && val > 0) {
+      const clamped = Math.round(val * 10) / 10;
+      setQtyOriginal(formatServing(clamped));
+      saveItemField('quantity_original', clamped);
+    }
   }, [qtyOriginal, saveItemField]);
 
   // D-164: handleUnitLabelChange removed — unit label is always 'servings'
@@ -375,11 +396,11 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
           {/* ── Feeding Details ── */}
           <View style={[styles.card, { opacity: feedingOpacity }]} pointerEvents={feedingDisabled ? 'none' : 'auto'}>
             <Text style={styles.cardTitle}>Feeding Configuration</Text>
-            
+
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Role</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
+              <View style={styles.rolePill}>
+                <Text style={styles.rolePillText}>
                   {myAssignment.feeding_role === 'base' ? 'Base Diet' : myAssignment.feeding_role === 'rotational' ? 'Rotational Food' : 'Treat / Supplement'}
                 </Text>
               </View>
@@ -392,14 +413,28 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Auto-Deplete</Text>
-              <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
-            </View>
-            
-            <Text style={styles.infoSubtext}>
-               To update roles and behavioral settings, remove this item and add it again.
-            </Text>
+            {/* Auto-Deplete row — hidden for daily frequency.
+                The auto-deplete cron (supabase/functions/auto-deplete/index.ts:370)
+                always processes daily items regardless of the flag, so showing
+                a toggle state here would be misleading. The row is only
+                meaningful for 'as_needed' cadences. */}
+            {feedingFrequency !== 'daily' && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Auto-Deplete</Text>
+                <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.editSplitsLink}
+              onPress={() => navigation.navigate('CustomFeedingStyle', { petId: activePetId! })}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Edit splits in Custom Splits screen"
+            >
+              <Text style={styles.editSplitsText}>Edit in Custom Splits</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
+            </TouchableOpacity>
           </View>
 
           {/* ── Schedule Card ── */}
@@ -490,49 +525,58 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           )}
 
-          {/* ── Actions ── */}
+          {/* ── Actions ──
+              Adaptive hierarchy per 2026-04-12 polish spec:
+              - Restock: primary cyan fill when empty/low, chipSurface secondary otherwise.
+              - Share: always chipSurface secondary.
+              - Remove: red text-link (no background, no border). */}
           <View style={styles.actions}>
-            {!isRecalled && (
-              <TouchableOpacity
-                style={[
-                  styles.actionBtn,
-                  isEmpty ? styles.actionBtnPrimary : styles.actionBtnOutline,
-                ]}
-                onPress={handleRestock}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={18}
-                  color={isEmpty ? '#FFFFFF' : Colors.accent}
-                />
-                <Text style={[
-                  styles.actionBtnText,
-                  isEmpty ? styles.actionBtnTextPrimary : styles.actionBtnTextOutline,
-                ]}>
-                  Restock
-                </Text>
-              </TouchableOpacity>
-            )}
+            {!isRecalled && (() => {
+              const restockIsPrimary = isEmpty || item.is_low_stock;
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    restockIsPrimary ? styles.actionBtnPrimary : styles.actionBtnSecondary,
+                  ]}
+                  onPress={handleRestock}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name="refresh-outline"
+                    size={18}
+                    color={restockIsPrimary ? '#FFFFFF' : Colors.accent}
+                  />
+                  <Text style={[
+                    styles.actionBtnText,
+                    restockIsPrimary ? styles.actionBtnTextPrimary : styles.actionBtnTextSecondary,
+                  ]}>
+                    Restock
+                  </Text>
+                </TouchableOpacity>
+              );
+            })()}
 
             {!isRecalled && (
               <TouchableOpacity
-                style={styles.actionBtnOutline}
+                style={[styles.actionBtn, styles.actionBtnSecondary]}
                 onPress={() => setShareSheetVisible(true)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="people-outline" size={18} color={Colors.accent} />
-                <Text style={styles.actionBtnTextOutline}>Share with other pets</Text>
+                <Text style={[styles.actionBtnText, styles.actionBtnTextSecondary]}>
+                  Share with other pets
+                </Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity
-              style={styles.actionBtnDanger}
+              style={styles.actionBtnLink}
               onPress={handleRemovePress}
               activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color={SEVERITY_COLORS.danger} />
-              <Text style={styles.actionBtnTextDanger}>Remove from Pantry</Text>
+              <Ionicons name="trash-outline" size={16} color={SEVERITY_COLORS.danger} />
+              <Text style={styles.actionBtnTextLink}>Remove from Pantry</Text>
             </TouchableOpacity>
           </View>
 
@@ -706,19 +750,28 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontWeight: '500',
   },
-  infoSubtext: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    marginTop: Spacing.sm,
-    fontStyle: 'italic',
-  },
-  badge: {
+  // Dimmed role pill — read-only indicator, not a tappable chip.
+  // Editing lives in Custom Splits; linked via editSplitsLink below.
+  rolePill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: `${Colors.accent}1A`,
+    backgroundColor: Colors.chipSurface,
   },
-  badgeText: {
+  rolePillText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textTertiary,
+    fontWeight: '600',
+  },
+  editSplitsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  editSplitsText: {
     fontSize: FontSizes.sm,
     color: Colors.accent,
     fontWeight: '600',
@@ -886,13 +939,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-    borderStyle: 'dashed',
+    backgroundColor: Colors.chipSurface,
   },
   addTimeText: {
     fontSize: FontSizes.sm,
     color: Colors.accent,
+    fontWeight: '600',
   },
 
   // Depletion row
@@ -927,7 +979,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Actions
+  // Actions — adaptive hierarchy (2026-04-12 polish spec)
   actions: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
@@ -944,25 +996,15 @@ const styles = StyleSheet.create({
   actionBtnPrimary: {
     backgroundColor: Colors.accent,
   },
-  actionBtnOutline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.accent,
+  actionBtnSecondary: {
+    backgroundColor: Colors.chipSurface,
   },
-  actionBtnDanger: {
+  actionBtnLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: SEVERITY_COLORS.danger,
+    gap: 6,
+    paddingVertical: Spacing.md,
   },
   actionBtnText: {
     fontSize: FontSizes.md,
@@ -971,15 +1013,14 @@ const styles = StyleSheet.create({
   actionBtnTextPrimary: {
     color: '#FFFFFF',
   },
-  actionBtnTextOutline: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
+  actionBtnTextSecondary: {
     color: Colors.accent,
   },
-  actionBtnTextDanger: {
+  actionBtnTextLink: {
     fontSize: FontSizes.md,
     fontWeight: '600',
     color: SEVERITY_COLORS.danger,
+    textAlign: 'center',
   },
 
   // Modals

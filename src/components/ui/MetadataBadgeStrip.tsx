@@ -58,7 +58,7 @@ function getAafcoBadge(aafcoStatement: string | null): Badge {
 function getCategoryBadge(category: 'daily_food' | 'treat', isSupplemental: boolean): Badge {
   if (isSupplemental) {
     return {
-      label: 'Supplemental',
+      label: 'Topper',
       textColor: TEAL,
       bgColor: TEAL + OPACITY_12,
     };

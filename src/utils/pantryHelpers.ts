@@ -764,3 +764,21 @@ export function pickBaseForSwap(
   });
   return sorted[0];
 }
+
+/**
+ * Decides whether PantryCard should render calorie-context text for an item.
+ *
+ * Rules:
+ *   - Only base-role items show calorie text (rotational contributes via Wet Reserve).
+ *   - Base items with 0 / null / negative share are ambiguous (data gap or
+ *     unsaved); suppress to avoid the "0% of daily target (~0 kcal)" ghost text.
+ *   - Null/undefined role (legacy data, treats, supplements) always suppress.
+ */
+export function shouldShowCalorieText(
+  feedingRole: FeedingRole | undefined,
+  allocationPct: number | null | undefined,
+): boolean {
+  if (feedingRole !== 'base') return false;
+  if (allocationPct == null || allocationPct <= 0) return false;
+  return true;
+}

@@ -261,3 +261,16 @@ export function formatRelativeTime(isoDate: string): string {
   if (dayDiff >= 2 && dayDiff <= 6) return `${dayDiff}d ago`;
   return `${SHORT_MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
+
+// ─── Serving Size Formatting ────────────────────────────
+
+/**
+ * Clamp a serving/cup value to 1 decimal place for display.
+ * Returns '0' for null/undefined/NaN. Trailing zeros are not rendered
+ * (so 1.0 prints as '1'). Negative values are preserved — caller is
+ * responsible for semantic validation.
+ */
+export function formatServing(value: number | null | undefined): string {
+  if (value == null || isNaN(value)) return '0';
+  return String(Math.round(value * 10) / 10);
+}

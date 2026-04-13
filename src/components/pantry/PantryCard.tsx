@@ -22,7 +22,8 @@ import {
   SEVERITY_COLORS,
   getScoreColor,
 } from '../../utils/constants';
-import { stripBrandFromName } from '../../utils/formatters';
+import { formatServing, getConversationalName } from '../../utils/formatters';
+import { shouldShowCalorieText } from '../../utils/pantryHelpers';
 import { AFFILIATE_CONFIG } from '../../config/affiliateConfig';
 
 // ─── Props ──────────────────────────────────────────────
@@ -115,7 +116,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
   const isRotational = myAssignment?.feeding_role === 'rotational';
   const isFedToday = item.last_deducted_at ? new Date(item.last_deducted_at).toDateString() === new Date().toDateString() : false;
 
-  const displayName = stripBrandFromName(product.brand, product.name);
+  const displayName = getConversationalName({ brand: product.brand, name: product.name });
   const remaining = getRemainingText(item, isTreat);
 
   // Depletion bar
@@ -132,7 +133,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
     const unit = myAssignment.serving_size_unit === 'units'
       ? (product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 ? 'cups' : (item.unit_label ?? 'units'))
       : myAssignment.serving_size_unit;
-    feedingSummary = `${myAssignment.feedings_per_day}x daily \u00B7 ${myAssignment.serving_size} ${unit}`;
+    feedingSummary = `${myAssignment.feedings_per_day}x daily \u00B7 ${formatServing(myAssignment.serving_size)} ${unit}`;
   }
 
   // Form + category badge text
@@ -179,7 +180,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
               </View>
               {product.is_supplemental && (
                 <View style={styles.supplementalBadge}>
-                  <Text style={styles.supplementalBadgeText}>Supplemental</Text>
+                  <Text style={styles.supplementalBadgeText}>Topper</Text>
                 </View>
               )}
             </View>
@@ -231,13 +232,6 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           <View style={styles.alertRecalled}>
             <Ionicons name="warning-outline" size={14} color={Colors.severityRed} />
             <Text style={styles.alertRecalledText}>Recalled — tap for details</Text>
-          </View>
-        )}
-        {item.is_low_stock && !item.is_empty && !isTreat && (
-          <View style={styles.alertLowStock}>
-            <Text style={styles.alertLowStockText}>
-              Running low{item.days_remaining != null ? ` — ~${Math.ceil(item.days_remaining)} days remaining` : ''}
-            </Text>
           </View>
         )}
         {/* Affiliate reorder button — D-065: surfaces when low stock + affiliate data exists */}
@@ -296,12 +290,12 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           </Text>
         )}
 
-        {/* Calorie context */}
-        {!isTreat && item.calorie_context && (
+        {/* Calorie context — role-aware per 2026-04-12 polish spec.
+            Rotational items contribute via Wet Reserve (suppress).
+            Base items with 0/null share are ambiguous (suppress). */}
+        {!isTreat && item.calorie_context && shouldShowCalorieText(myAssignment?.feeding_role, item.calorie_context.allocation_pct) && (
           <Text style={styles.calorieText}>
-            {item.calorie_context.allocation_pct != null
-              ? `${item.calorie_context.allocation_pct}% of daily target (~${item.calorie_context.daily_kcal} kcal)`
-              : `~${item.calorie_context.daily_kcal} kcal/day of ${item.calorie_context.target_kcal} kcal target`}
+            {`${item.calorie_context.allocation_pct}% of daily target (~${item.calorie_context.daily_kcal} kcal)`}
           </Text>
         )}
 
@@ -386,7 +380,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
         <View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: Colors.pressOverlay, borderRadius: 12 },
+            { backgroundColor: Colors.pressOverlay, borderRadius: 16 },
           ]}
           pointerEvents="none"
         />
@@ -448,7 +442,9 @@ function ScoreBadge({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
     padding: Spacing.md,
     gap: Spacing.sm,
   },
@@ -586,17 +582,6 @@ const styles = StyleSheet.create({
   alertRecalledText: {
     fontSize: FontSizes.xs,
     color: Colors.severityRed,
-    fontWeight: '500',
-  },
-  alertLowStock: {
-    backgroundColor: `${SEVERITY_COLORS.caution}1F`,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  alertLowStockText: {
-    fontSize: FontSizes.xs,
-    color: Colors.severityAmber,
     fontWeight: '500',
   },
 
