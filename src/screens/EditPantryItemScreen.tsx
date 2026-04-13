@@ -39,7 +39,7 @@ import {
   calculateDepletionBreakdown,
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
-import { stripBrandFromName } from '../utils/formatters';
+import { stripBrandFromName, formatServing } from '../utils/formatters';
 import { shouldShowD157Nudge } from './PantryScreen';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -176,12 +176,20 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
 
   const handleQtyRemainingBlur = useCallback(() => {
     const val = parseFloat(qtyRemaining);
-    if (!isNaN(val) && val >= 0) saveItemField('quantity_remaining', val);
+    if (!isNaN(val) && val >= 0) {
+      const clamped = Math.round(val * 10) / 10;
+      setQtyRemaining(formatServing(clamped));
+      saveItemField('quantity_remaining', clamped);
+    }
   }, [qtyRemaining, saveItemField]);
 
   const handleQtyOriginalBlur = useCallback(() => {
     const val = parseFloat(qtyOriginal);
-    if (!isNaN(val) && val > 0) saveItemField('quantity_original', val);
+    if (!isNaN(val) && val > 0) {
+      const clamped = Math.round(val * 10) / 10;
+      setQtyOriginal(formatServing(clamped));
+      saveItemField('quantity_original', clamped);
+    }
   }, [qtyOriginal, saveItemField]);
 
   // D-164: handleUnitLabelChange removed — unit label is always 'servings'
