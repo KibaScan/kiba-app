@@ -497,49 +497,58 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           )}
 
-          {/* ── Actions ── */}
+          {/* ── Actions ──
+              Adaptive hierarchy per 2026-04-12 polish spec:
+              - Restock: primary cyan fill when empty/low, chipSurface secondary otherwise.
+              - Share: always chipSurface secondary.
+              - Remove: red text-link (no background, no border). */}
           <View style={styles.actions}>
-            {!isRecalled && (
-              <TouchableOpacity
-                style={[
-                  styles.actionBtn,
-                  isEmpty ? styles.actionBtnPrimary : styles.actionBtnOutline,
-                ]}
-                onPress={handleRestock}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={18}
-                  color={isEmpty ? '#FFFFFF' : Colors.accent}
-                />
-                <Text style={[
-                  styles.actionBtnText,
-                  isEmpty ? styles.actionBtnTextPrimary : styles.actionBtnTextOutline,
-                ]}>
-                  Restock
-                </Text>
-              </TouchableOpacity>
-            )}
+            {!isRecalled && (() => {
+              const restockIsPrimary = isEmpty || item.is_low_stock;
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    restockIsPrimary ? styles.actionBtnPrimary : styles.actionBtnSecondary,
+                  ]}
+                  onPress={handleRestock}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name="refresh-outline"
+                    size={18}
+                    color={restockIsPrimary ? '#FFFFFF' : Colors.accent}
+                  />
+                  <Text style={[
+                    styles.actionBtnText,
+                    restockIsPrimary ? styles.actionBtnTextPrimary : styles.actionBtnTextSecondary,
+                  ]}>
+                    Restock
+                  </Text>
+                </TouchableOpacity>
+              );
+            })()}
 
             {!isRecalled && (
               <TouchableOpacity
-                style={styles.actionBtnOutline}
+                style={[styles.actionBtn, styles.actionBtnSecondary]}
                 onPress={() => setShareSheetVisible(true)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="people-outline" size={18} color={Colors.accent} />
-                <Text style={styles.actionBtnTextOutline}>Share with other pets</Text>
+                <Text style={[styles.actionBtnText, styles.actionBtnTextSecondary]}>
+                  Share with other pets
+                </Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity
-              style={styles.actionBtnDanger}
+              style={styles.actionBtnLink}
               onPress={handleRemovePress}
               activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color={SEVERITY_COLORS.danger} />
-              <Text style={styles.actionBtnTextDanger}>Remove from Pantry</Text>
+              <Ionicons name="trash-outline" size={16} color={SEVERITY_COLORS.danger} />
+              <Text style={styles.actionBtnTextLink}>Remove from Pantry</Text>
             </TouchableOpacity>
           </View>
 
@@ -949,7 +958,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Actions
+  // Actions — adaptive hierarchy (2026-04-12 polish spec)
   actions: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
@@ -966,25 +975,15 @@ const styles = StyleSheet.create({
   actionBtnPrimary: {
     backgroundColor: Colors.accent,
   },
-  actionBtnOutline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.accent,
+  actionBtnSecondary: {
+    backgroundColor: Colors.chipSurface,
   },
-  actionBtnDanger: {
+  actionBtnLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: SEVERITY_COLORS.danger,
+    gap: 6,
+    paddingVertical: Spacing.md,
   },
   actionBtnText: {
     fontSize: FontSizes.md,
@@ -993,15 +992,14 @@ const styles = StyleSheet.create({
   actionBtnTextPrimary: {
     color: '#FFFFFF',
   },
-  actionBtnTextOutline: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
+  actionBtnTextSecondary: {
     color: Colors.accent,
   },
-  actionBtnTextDanger: {
+  actionBtnTextLink: {
     fontSize: FontSizes.md,
     fontWeight: '600',
     color: SEVERITY_COLORS.danger,
+    textAlign: 'center',
   },
 
   // Modals
