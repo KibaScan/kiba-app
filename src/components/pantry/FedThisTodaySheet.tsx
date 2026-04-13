@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { chipToggle, saveSuccess, scanWarning } from '../../utils/haptics';
-import type { PantryItem } from '../../types/pantry';
+import type { PantryItem, PantryPetAssignment } from '../../types/pantry';
 import type { Product } from '../../types';
 import { getWetFoodKcal } from '../../utils/pantryHelpers';
 import { stripBrandFromName } from '../../utils/formatters';
@@ -21,6 +21,26 @@ export function singularize(plural: string): string {
   if (plural.endsWith('ches')) return plural.slice(0, -2); // pouches → pouch
   if (plural.endsWith('s')) return plural.slice(0, -1);
   return plural;
+}
+
+/**
+ * Resolve the per-feeding display unit for the stepper label.
+ * Priority: assignment.serving_size_unit → fall back by product_form.
+ * Never reads pantryItem.quantity_unit (that's bag inventory, often 'lbs' for dry).
+ */
+export function resolveDisplayUnit(
+  assignment: PantryPetAssignment | null,
+  pantryItem: PantryItem | null,
+  product: Product | null
+): string {
+  if (assignment?.serving_size_unit === 'cups') return 'cups';
+  if (assignment?.serving_size_unit === 'scoops') return 'scoops';
+  if (assignment?.serving_size_unit === 'units') {
+    return pantryItem?.unit_label ?? 'cans/pouches';
+  }
+  // No assignment match: derive by product form
+  if (product?.product_form === 'dry') return 'cups';
+  return pantryItem?.unit_label ?? 'cans/pouches';
 }
 
 interface FedThisTodaySheetProps {

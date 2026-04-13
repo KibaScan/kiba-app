@@ -146,3 +146,57 @@ describe('singularize', () => {
     expect(singularize('can/pouch')).toBe('can/pouch');
   });
 });
+
+// ─── resolveDisplayUnit ─────────────────────────────────
+
+describe('resolveDisplayUnit', () => {
+  test('assignment.serving_size_unit = cups → cups', () => {
+    const assignment = makeAssignment({ serving_size_unit: 'cups' });
+    const item = makePantryItem({ quantity_unit: 'lbs' });
+    const product = makeProduct({ product_form: 'dry' });
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('cups');
+  });
+
+  test('assignment.serving_size_unit = scoops → scoops', () => {
+    const assignment = makeAssignment({ serving_size_unit: 'scoops' });
+    const item = makePantryItem({ quantity_unit: 'lbs' });
+    const product = makeProduct({ product_form: 'dry' });
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('scoops');
+  });
+
+  test('assignment.serving_size_unit = units with unit_label = pouches → pouches', () => {
+    const assignment = makeAssignment({ serving_size_unit: 'units' });
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'pouches' });
+    const product = makeProduct({ product_form: 'wet' });
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('pouches');
+  });
+
+  test('assignment.serving_size_unit = units, no unit_label → cans/pouches default', () => {
+    const assignment = makeAssignment({ serving_size_unit: 'units' });
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: null });
+    const product = makeProduct({ product_form: 'wet' });
+    expect(resolveDisplayUnit(assignment, item, product)).toBe('cans/pouches');
+  });
+
+  test('no assignment, dry product → cups fallback', () => {
+    const item = makePantryItem({ quantity_unit: 'lbs' });
+    const product = makeProduct({ product_form: 'dry' });
+    expect(resolveDisplayUnit(null, item, product)).toBe('cups');
+  });
+
+  test('no assignment, wet product with unit_label = pouches → pouches', () => {
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: 'pouches' });
+    const product = makeProduct({ product_form: 'wet' });
+    expect(resolveDisplayUnit(null, item, product)).toBe('pouches');
+  });
+
+  test('no assignment, wet product without unit_label → cans/pouches default', () => {
+    const item = makePantryItem({ quantity_unit: 'units', unit_label: null });
+    const product = makeProduct({ product_form: 'wet' });
+    expect(resolveDisplayUnit(null, item, product)).toBe('cans/pouches');
+  });
+
+  test('everything null → cans/pouches default (safe fallback)', () => {
+    expect(resolveDisplayUnit(null, null, null)).toBe('cans/pouches');
+  });
+});
