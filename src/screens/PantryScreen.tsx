@@ -112,7 +112,7 @@ const FILTER_CHIPS: { key: FilterChip; label: string }[] = [
   { key: 'dry', label: 'Dry' },
   { key: 'wet', label: 'Wet' },
   { key: 'treats', label: 'Treats' },
-  { key: 'supplemental', label: 'Supplemental' },
+  { key: 'supplemental', label: 'Toppers' },
   { key: 'recalled', label: 'Recalled' },
   { key: 'running_low', label: 'Running Low' },
 ];
@@ -135,7 +135,7 @@ const SORT_OPTIONS: { key: SortOption; label: string }[] = [
 
 const FILTER_LABEL_MAP: Record<FilterChip, string> = {
   all: '', dry: 'dry', wet: 'wet', treats: 'treat',
-  supplemental: 'supplemental', recalled: 'recalled', running_low: 'low stock',
+  supplemental: 'topper', recalled: 'recalled', running_low: 'low stock',
 };
 
 // ─── Component ──────────────────────────────────────────
@@ -372,7 +372,7 @@ export default function PantryScreen({ navigation }: Props) {
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={{ marginLeft: Spacing.sm }}
             >
-              <Ionicons name="options-outline" size={22} color={Colors.accent} />
+              <Ionicons name="pie-chart-outline" size={22} color={Colors.accent} />
             </TouchableOpacity>
           )}
           {!hasMultiplePets && (
