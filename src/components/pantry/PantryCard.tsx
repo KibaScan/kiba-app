@@ -234,13 +234,6 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
             <Text style={styles.alertRecalledText}>Recalled — tap for details</Text>
           </View>
         )}
-        {item.is_low_stock && !item.is_empty && !isTreat && (
-          <View style={styles.alertLowStock}>
-            <Text style={styles.alertLowStockText}>
-              Running low{item.days_remaining != null ? ` — ~${Math.ceil(item.days_remaining)} days remaining` : ''}
-            </Text>
-          </View>
-        )}
         {/* Affiliate reorder button — D-065: surfaces when low stock + affiliate data exists */}
         {item.is_low_stock && !item.is_empty && !isTreat && !isRecalled && (() => {
           const p = item.product;
@@ -587,17 +580,6 @@ const styles = StyleSheet.create({
   alertRecalledText: {
     fontSize: FontSizes.xs,
     color: Colors.severityRed,
-    fontWeight: '500',
-  },
-  alertLowStock: {
-    backgroundColor: `${SEVERITY_COLORS.caution}1F`,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  alertLowStockText: {
-    fontSize: FontSizes.xs,
-    color: Colors.severityAmber,
     fontWeight: '500',
   },
 
