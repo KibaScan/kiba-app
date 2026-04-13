@@ -34,6 +34,7 @@ import {
   computeBehavioralBudgetWarning,
   computePerServingKcal,
   shouldShowCalorieText,
+  resolveKcalPerCup,  // NEW
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -1232,6 +1233,46 @@ describe('shouldShowCalorieText', () => {
 
   test('suppresses for undefined role', () => {
     expect(shouldShowCalorieText(undefined, 15)).toBe(false);
+  });
+});
+
+// ─── resolveKcalPerCup ──────────────────────────────────
+
+describe('resolveKcalPerCup', () => {
+  test('returns scraped ga_kcal_per_cup when present', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 420, ga_kcal_per_kg: 3500, product_form: 'dry' });
+    expect(resolveKcalPerCup(product)).toBe(420);
+  });
+
+  test('returns scraped ga_kcal_per_cup even for non-dry products', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 180, ga_kcal_per_kg: 1200, product_form: 'wet' });
+    expect(resolveKcalPerCup(product)).toBe(180);
+  });
+
+  test('derives from ga_kcal_per_kg × 0.1134 for dry product missing ga_kcal_per_cup', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4000, product_form: 'dry' });
+    // 4000 × 0.1134 = 453.6
+    expect(resolveKcalPerCup(product)).toBeCloseTo(453.6);
+  });
+
+  test('returns null for wet product missing ga_kcal_per_cup (no dry fallback)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 1200, product_form: 'wet' });
+    expect(resolveKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null for freeze-dried product missing ga_kcal_per_cup (scope-gated to dry)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4800, product_form: 'freeze-dried' });
+    expect(resolveKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null when both ga_kcal_per_cup and ga_kcal_per_kg missing', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: null, product_form: 'dry' });
+    expect(resolveKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null when ga_kcal_per_kg is 0 (guards against divide-by-zero downstream)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 0, product_form: 'dry' });
+    expect(resolveKcalPerCup(product)).toBeNull();
   });
 });
 

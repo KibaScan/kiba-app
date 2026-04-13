@@ -44,6 +44,34 @@ export function convertFromKg(kg: number, unit: QuantityUnit): number {
   }
 }
 
+// ─── Density Constants ──────────────────────────────────
+
+/**
+ * Standard dry kibble density fallback: 1 cup ≈ 113.4 g.
+ * Matches supabase/functions/auto-deplete/index.ts:45 and D-166's reference density.
+ * Used only when a dry product has ga_kcal_per_kg but no scraped ga_kcal_per_cup.
+ */
+export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
+
+/**
+ * Resolve kcal-per-cup for a product, preferring scraped label data.
+ * For dry products missing ga_kcal_per_cup, derives from ga_kcal_per_kg × DRY_KIBBLE_KG_PER_CUP.
+ * Returns null when no derivation is possible (wet/other forms without scraped cup, or no kcal data).
+ */
+export function resolveKcalPerCup(product: Product): number | null {
+  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
+    return product.ga_kcal_per_cup;
+  }
+  if (
+    product.product_form === 'dry' &&
+    product.ga_kcal_per_kg &&
+    product.ga_kcal_per_kg > 0
+  ) {
+    return product.ga_kcal_per_kg * DRY_KIBBLE_KG_PER_CUP;
+  }
+  return null;
+}
+
 // ─── Weight Unit Preference ──────────────────────────────
 const WEIGHT_UNIT_KEY = '@kiba/weight_unit';
 
