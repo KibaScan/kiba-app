@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-12 (session 45)
+# Project Status — Last updated 2026-04-12 (session 46)
 
 ## Active Milestone
 
@@ -64,7 +64,7 @@
 
 ## Numbers
 
-- **Tests:** 1457 passing / 63 suites
+- **Tests:** 1473 passing / 63 suites
 - **Decisions:** 129
 - **Migrations:** 38 (001–038)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -87,6 +87,7 @@
 - **Final visual QA pass on session 21 matte frame work** — user walked most of it during the session, but a full end-to-end scan through ResultScreen + HomeScreen category cards on a real device would close the loop. Specifically: scan one daily food, one treat, one supplement, one vet diet, one recalled product — confirm all bypass paths still render their cards cleanly (CollapsibleSection underlies Advisories, Treat Battery, Score Breakdown, Ingredients, Insights, Kiba Index).
 - **PantryScreen.tsx:435 chip-background visual review** — still a carry-over from session 20. The `cardBorder → hairlineBorder` swap at line 435 is the only non-border use (chip unselected state background). `rgba(255,255,255,0.12)` may read too faint vs `#333333`. If unselected filter chips look broken or invisible, revert that single line to a dedicated chip-surface token.
 - **Stale browse scores** — CategoryBrowseScreen cache maturity check isn't form-aware (freeze-dried and other minority forms never get scored). Fix in both Edge Function and `batchScoreOnDevice.ts`.
+- **Pantry unit model gap (deferred spec)** — wet food as BASE in Custom Splits returns 0 servings; dry food lbs-vs-cups display unclear. Full analysis + 6 open questions + 5 proposed directions at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`. Pick up post-M9 or whenever user data motivates it.
 - Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`)
 - HomeScreen visual overhaul (custom assets, layout polish)
 - Custom icon rollout (5 pending v2 bold variants)
@@ -104,6 +105,69 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-12 (session 46)
+- **Branch:** `m9-pantry-polish` (first session using the new "branch per unit of work" workflow; reset `m5-complete` local pointer back to `origin/m5-complete` = `cc00f67` mid-session after extracting work to the feature branch).
+- **PR:** [#4](https://github.com/KibaScan/kiba-app/pull/4) — M9 pantry polish. Opened, reviewed (bot review flagged 1 valid tab-bar regression, fixed inline), awaiting merge at handoff.
+- **Accomplished:**
+  - **Pantry polish, full brainstorm → spec → plan → implement cycle.**
+    - `superpowers:brainstorming` — validated Gemini + Grok teardown of PantryScreen, PantryCard, EditPantryItemScreen against actual code (several pieces of feedback turned out wrong; documented in spec). Resolved 7 clarifying questions.
+    - `superpowers:writing-plans` — 11-task TDD plan with bite-sized steps and a spec-coverage matrix.
+    - `superpowers:subagent-driven-development` — dispatched per-task implementer + spec reviewer + code quality reviewer subagents. Clean pipeline across all 11 tasks.
+    - Final end-to-end review → APPROVED.
+  - **14 polish commits + 3 review/QA fixes + 1 deferred spec = 18 commits on PR #4:**
+    - `4cadc39` `formatServing` helper (TDD, 9 tests)
+    - `3e3d644` `shouldShowCalorieText` helper (TDD, 7 tests)
+    - `2d5845b` PantryCard role-aware calorie + formatServing + `getConversationalName`
+    - `8d66d7d` delete redundant Running Low block (brown tint box; top-right amber text + bar ramp already carry signal)
+    - `1da566f` PantryScreen pie-chart-outline icon + "Supplemental" → "Toppers" filter rename
+    - `2e73e49` extend Topper rename to PantryCard + MetadataBadgeStrip badges (user confirmed scope mid-review)
+    - `5d1c57d` EditPantryItem — dim role pill to `chipSurface`/`textTertiary` + "Edit in Custom Splits →" link (kills delete-to-edit trap)
+    - `4b97923` adaptive action hierarchy (Restock primary when empty/low, Share secondary, Remove red text-link)
+    - `fc14d88` solid Add-Time pill (drop dashed border)
+    - `003b900` hide global tab bar via `useEffect` (later replaced — see `a92db92`)
+    - `0745022` clamp EditPantryItem quantity inputs to 1 decimal on blur
+    - `7b34cb5` remove orphaned `infoSubtext` style key
+    - `a92db92` **review-fix:** `useEffect` → `useFocusEffect` for tab bar (fixes regression flagged by code review: tab bar reappeared on return from CustomFeedingStyle)
+    - `33be370` **QA-fix:** PantryCard matte frame anatomy (`borderRadius: 16`, `borderWidth: 1`, `borderColor: hairlineBorder` — was missing vs PetHubStyles.summaryCard reference)
+    - `2b7d48b` **QA-fix:** hide Auto-Deplete row on daily-frequency items (UI was lying — cron ignores flag for daily via `.or()` clause at `supabase/functions/auto-deplete/index.ts:370`)
+    - `da0f8d5` deferred spec for pantry unit model gap (wet-as-base in Custom Splits returns 0 servings)
+    - Plus: `08dd369` design spec + `76e3ecf` implementation plan at session start.
+  - **Workflow infrastructure shipped.**
+    - Created `docs/superpowers/specs/` + `docs/superpowers/plans/` tree.
+    - Established feature-branch-per-session workflow. `m5-complete` was dirty with 15 session-start commits at mid-session; extracted cleanly to `m9-pantry-polish` via `git checkout -b m9-pantry-polish` + `git branch -f m5-complete origin/m5-complete` + `git push -u origin m9-pantry-polish`. No commits lost.
+    - Saved `feedback_branch_per_session.md` to auto-memory so future sessions start on a feature branch by default.
+  - **Deferred pantry unit model spec** at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`. Captures two symptoms (dry-food lbs display + wet-as-base 0-servings), traces root cause through `updateCalorieShares` → `computeAutoServingSize` proportional-scaling fallback → no-prior-serving edge, identifies `refreshWetReserve` at `pantryService.ts:863-950` as the "374 kcal/serving" source for rotational wet, lists 6 open questions + 5 proposed directions (A-E), explicit "do not fix in-flight" note.
+- **Files changed (session 46 commits on `m9-pantry-polish`):**
+  - New: `docs/superpowers/specs/2026-04-12-pantry-polish-design.md` (307 lines), `docs/superpowers/plans/2026-04-12-pantry-polish.md` (1,307 lines), `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md` (128 lines).
+  - Modified: `src/components/pantry/PantryCard.tsx` (role-aware render + formatServing + conversationalName + matte frame + delete low-stock block + Topper badge), `src/components/ui/MetadataBadgeStrip.tsx` (Topper rename), `src/screens/PantryScreen.tsx` (pie-chart icon + Toppers + map), `src/screens/EditPantryItemScreen.tsx` (dim role + Edit link + action hierarchy + solid Add-Time + useFocusEffect + decimal inputs + hide Auto-Deplete + orphan style delete), `src/utils/formatters.ts` (new `formatServing`), `src/utils/pantryHelpers.ts` (new `shouldShowCalorieText`), `__tests__/utils/formatters.test.ts` (+9 tests), `__tests__/utils/pantryHelpers.test.ts` (+7 tests).
+  - Net: 11 files, +1991/-108.
+- **Tests:** 1473 passing / 63 suites (+16 from baseline 1457: 9 formatServing + 7 shouldShowCalorieText). 3 snapshots. Regression anchors verified via `__tests__/services/scoring/regressionTrace.test.ts`: Pure Balance (Dog) = 61 ✓, Temptations (Cat Treat) = 0 ✓. TypeScript clean in `src/` + `__tests__/` (79 pre-existing errors confined to `docs/plans/search-uiux/*` + Deno scoring imports — unchanged from session 45).
+- **Not done yet:**
+  - **Merge PR #4** — owner to merge (or this session will merge per /handoff args).
+  - **On-device QA of PR #4 changes on top of prior Custom Splits QA** — user walked two sanity checks mid-session (matte frames + Auto-Deplete row hide) but a full sweep across all polish changes hasn't happened. Scan list is in the PR body's "On-device QA" checklist.
+  - **Dry-food "lbs" display Symptom 1 from deferred spec** — needs on-device reproduction with a specific screen + assignment row dump to classify (data / UI / copy).
+  - **Wet-food base in Custom Splits (Symptom 2)** — full deferred; see spec.
+  - **Session 44/45 Me-tab carry-overs still pending** (unchanged): CreatePet / EditPet / NotificationPreferences switches+chips+segments visual QA, WeightGoalSlider rail, TreatBatteryGauge barTrack. Pantry tab and ResultScreen QA paths also carry.
+- **Next session should start with:**
+  1. `/boot` — refresh context + confirm PR #4 is merged (or pending) and `m5-complete` is at the new baseline.
+  2. **Create a feature branch before any commit** per the auto-memory rule: `git checkout m5-complete && git pull && git checkout -b m9-<short-slug>`.
+  3. **Pick the next unit of work.** Candidates in priority order:
+     - **Reproduce + classify deferred-spec Symptom 1 on-device.** Single screen + field + assignment row state dump. Cheapest path to resolving one of the six open questions in `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`.
+     - Continue Me-tab / Pantry-tab QA walkthrough from session 44/45 carry-overs.
+     - HomeScreen visual overhaul (larger scope, M9 remaining).
+- **Gotchas:**
+  - **Branching workflow is now canon.** Memory at `feedback_branch_per_session.md`. Next session commits go on a new feature branch, NOT on `m5-complete` directly. I extracted 15 commits mid-session to a feature branch after the user flagged `/code-review` was unreviewable with too many lines — don't let that happen again.
+  - **Auto-Deplete cron ignores `auto_deplete_enabled = false` for daily-frequency items.** Structural gap at `supabase/functions/auto-deplete/index.ts:370` (`.or('feeding_frequency.eq.daily,auto_deplete_enabled.eq.true')`). This session hid the misleading UI row for daily items but did NOT change cron behavior. If a future session wants to honor the flag for daily, that's an Edge Function patch + careful UX design, not a drive-by.
+  - **Tab bar hide on EditPantryItem uses `useFocusEffect` (not plain `useEffect`).** Code review caught the regression where returning from `CustomFeedingStyle` restored the parent tab bar. Don't convert back to `useEffect` for EditPantryItem. `CustomFeedingStyle` and `CompareScreen` can stay on plain `useEffect` since nothing navigates deeper from them into another tab-bar-hiding screen.
+  - **"Topper" is now the display label for `is_supplemental = true` products across filter chip + PantryCard badge + MetadataBadgeStrip.** Filter key `'supplemental'` and DB column unchanged (zero migration). "Topper" is a sub-type within the "Supplemental" umbrella — analogous to "Dry" within "Daily Food".
+  - **`formatServing` + `shouldShowCalorieText` are reusable pure helpers.** Reuse from `src/utils/formatters.ts` + `src/utils/pantryHelpers.ts` for future cup/serving displays and role-aware calorie rendering. Don't re-implement.
+  - **Deferred spec at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`** — future sessions must run brainstorm → spec → plan cycle, not hot-patch `updateCalorieShares` / `refreshWetReserve`. The spec explicitly marks "do not fix in-flight."
+  - **Engine copy trap still stands** — `src/services/scoring/` mirrored at `supabase/functions/batch-score/scoring/`. No scoring changes this session, but the rule remains.
+- **Decision/scoring changes:** No new D-numbers (still 129, D-001 → D-167 with gaps). No scoring engine changes. No new migrations (still 38). Pure UI polish + new pure-helper utilities + a deferred-work spec. Regression anchors unchanged: Pure Balance = 61 ✓, Temptations = 0 ✓, Pure Balance + cardiac = 0, Pure Balance + pancreatitis = 53.
+
+---
+[Previous session 45 block retained below for reference]
 
 - **Date:** 2026-04-12 (session 45)
 - **Accomplished:**
