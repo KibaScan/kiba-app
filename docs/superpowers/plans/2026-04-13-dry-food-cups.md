@@ -1128,6 +1128,21 @@ Expected: pre-existing 79 errors confined to `docs/plans/search-uiux/*` prototyp
 
 ---
 
+## Task 9: Live cup estimate in AddToPantrySheet (added mid-session)
+
+Added during on-device QA after observing the bag-size section provided no feedback
+on how many cups a given weight represents.
+
+- Replaced the collapsed-state `TouchableOpacity` display (pre-answer bag-size hint)
+  with a live `~N cups` estimate rendered directly beneath the weight input
+- Uses `estimateBagCups` (same helper as Tasks 1-2) via a `useMemo` in `AddToPantrySheet`
+- Removed the gate condition `(inferredRole !== 'base' || isMixable || isNewToDiet !== null)`
+  that had hidden the bag-size section for discrete wet-base foods pre-answer; the section
+  now always renders for non-treat products
+- Style: `cupEstimate` in `AddToPantryStyles.ts`; orphan `cupEquivalent` style removed
+
+---
+
 ## Self-review (completed)
 
 **Spec coverage:**

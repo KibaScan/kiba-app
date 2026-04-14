@@ -133,11 +133,14 @@ export function estimateBagCups(
   const kg = convertToKg(qty, unit);
   if (kg <= 0) return null;
 
-  // Path 1: label-based density (use both kcal fields)
-  if (product.ga_kcal_per_kg != null && product.ga_kcal_per_kg > 0 &&
-      product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0) {
-    return (kg * product.ga_kcal_per_kg) / product.ga_kcal_per_cup;
-  }
+  // Path 1: label-based density (reuse existing helper)
+  const labelBased = convertWeightToCups(
+    qty,
+    unit,
+    product.ga_kcal_per_kg,
+    product.ga_kcal_per_cup,
+  );
+  if (labelBased != null) return labelBased;
 
   // Path 2: density-only fallback for dry products
   if (product.product_form === 'dry') {

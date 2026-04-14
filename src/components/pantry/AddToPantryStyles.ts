@@ -138,11 +138,6 @@ export const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
   },
-  cupEquivalent: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    marginTop: Spacing.xs,
-  },
   servingsLink: {
     fontSize: FontSizes.xs,
     color: Colors.accent,

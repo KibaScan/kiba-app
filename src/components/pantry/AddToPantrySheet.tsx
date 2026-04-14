@@ -441,25 +441,23 @@ export function AddToPantrySheet({
                     </View>
                   )}
 
-                  {(inferredRole !== 'base' || isMixable || isNewToDiet !== null) && (
-                    <View style={styles.section}>
-                      <Text style={styles.label}>{servingMode === 'weight' ? 'Bag Size' : 'Quantity'}</Text>
-                      <View style={styles.inputRow}>
-                        <TextInput style={styles.numberInput} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={quantityValue} onChangeText={setQuantityValue} />
-                        <View style={styles.chipRow}>
-                          {servingMode === 'weight'
-                            ? WEIGHT_UNITS.map((u) => renderChip(u, quantityUnit === u, () => { chipToggle(); setQuantityUnit(u); }))
-                            : <Text style={styles.unitSuffix}>{quantityUnit}</Text>
-                          }
-                        </View>
+                  <View style={styles.section}>
+                    <Text style={styles.label}>{servingMode === 'weight' ? 'Bag Size' : 'Quantity'}</Text>
+                    <View style={styles.inputRow}>
+                      <TextInput style={styles.numberInput} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={Colors.textTertiary} value={quantityValue} onChangeText={setQuantityValue} />
+                      <View style={styles.chipRow}>
+                        {servingMode === 'weight'
+                          ? WEIGHT_UNITS.map((u) => renderChip(u, quantityUnit === u, () => { chipToggle(); setQuantityUnit(u); }))
+                          : <Text style={styles.unitSuffix}>{quantityUnit}</Text>
+                        }
                       </View>
-                      {servingMode === 'weight' && estimatedCups != null && (
-                        <Text style={styles.cupEstimate}>
-                          ≈ {Math.round(estimatedCups)} cups
-                        </Text>
-                      )}
                     </View>
-                  )}
+                    {servingMode === 'weight' && estimatedCups != null && (
+                      <Text style={styles.cupEstimate}>
+                        ~{Math.round(estimatedCups)} cups
+                      </Text>
+                    )}
+                  </View>
 
                   <View style={{ marginTop: Spacing.md }} />
 
