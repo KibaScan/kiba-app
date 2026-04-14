@@ -4,16 +4,50 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { chipToggle, saveSuccess, scanWarning } from '../../utils/haptics';
-import type { PantryItem } from '../../types/pantry';
+import type { PantryItem, PantryPetAssignment } from '../../types/pantry';
 import type { Product } from '../../types';
-import { getWetFoodKcal } from '../../utils/pantryHelpers';
+import { getWetFoodKcal, resolveDryKcalPerCup } from '../../utils/pantryHelpers';
 import { stripBrandFromName } from '../../utils/formatters';
 import { logWetFeeding } from '../../services/pantryService';
+
+// ─── Exported Pure Helpers ──────────────────────────────
+
+/**
+ * Convert a plural unit label to its singular form.
+ * Handles special cases (cans/pouches → can/pouch) and trailing-s stripping.
+ */
+export function singularize(plural: string): string {
+  if (plural === 'cans/pouches') return 'can/pouch';
+  if (plural.endsWith('ches')) return plural.slice(0, -2); // pouches → pouch
+  if (plural.endsWith('s')) return plural.slice(0, -1);
+  return plural;
+}
+
+/**
+ * Resolve the per-feeding display unit for the stepper label.
+ * Priority: assignment.serving_size_unit → fall back by product_form.
+ * Never reads pantryItem.quantity_unit (that's bag inventory, often 'lbs' for dry).
+ */
+export function resolveDisplayUnit(
+  assignment: PantryPetAssignment | null,
+  pantryItem: PantryItem | null,
+  product: Product | null
+): string {
+  if (assignment?.serving_size_unit === 'cups') return 'cups';
+  if (assignment?.serving_size_unit === 'scoops') return 'scoops';
+  if (assignment?.serving_size_unit === 'units') {
+    return pantryItem?.unit_label ?? 'servings';
+  }
+  // No assignment match: derive by product form
+  if (product?.product_form === 'dry') return 'cups';
+  return pantryItem?.unit_label ?? 'servings';
+}
 
 interface FedThisTodaySheetProps {
   isVisible: boolean;
   petId: string | null;
   pantryItem: PantryItem | null;
+  assignment: PantryPetAssignment | null;
   product: Product | null;
   onDismiss: () => void;
   onSuccess: () => void;
@@ -23,36 +57,53 @@ export function FedThisTodaySheet({
   isVisible,
   petId,
   pantryItem,
+  assignment,
   product,
   onDismiss,
   onSuccess,
 }: FedThisTodaySheetProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantityStr, setQuantityStr] = useState('1');
+  const [error, setError] = useState<string | null>(null);
 
-  // Reset quantity when opened
+  // Reset quantity and error when opened
   React.useEffect(() => {
     if (isVisible) {
       setQuantityStr('1');
+      setError(null);
     } else {
       setIsSubmitting(false);
     }
   }, [isVisible]);
 
-  const calories = useMemo(() => {
+  const displayUnitPlural = useMemo(
+    () => resolveDisplayUnit(assignment, pantryItem, product),
+    [assignment, pantryItem, product]
+  );
+
+  const kcalPerQuantity = useMemo(() => {
     if (!product) return 0;
-    const resolved = getWetFoodKcal(product);
-    return resolved?.kcal ?? 0;
-  }, [product]);
+    if (displayUnitPlural === 'cups' || displayUnitPlural === 'scoops') {
+      return resolveDryKcalPerCup(product) ?? 0;
+    }
+    const wet = getWetFoodKcal(product);
+    return wet?.kcal ?? 0;
+  }, [product, displayUnitPlural]);
 
   const qty = parseFloat(quantityStr) || 1;
-  const totalKcal = Math.round(calories * qty);
+  const totalKcal = Math.round(kcalPerQuantity * qty);
 
   const handleLog = async () => {
     if (!petId || !pantryItem || !product || isSubmitting) return;
 
     if (qty <= 0) {
       scanWarning();
+      return;
+    }
+
+    if (totalKcal <= 0) {
+      scanWarning();
+      setError('Cannot log — kcal data missing for this product.');
       return;
     }
 
@@ -81,7 +132,6 @@ export function FedThisTodaySheet({
   const handleDecrement = () => { chipToggle(); setQuantityStr(String(Math.max(0.5, qty - 0.5))); };
 
   const productName = product ? stripBrandFromName(product.brand, product.name) : '';
-  const unitLabel = pantryItem?.quantity_unit === 'units' ? 'cans/pouches' : pantryItem?.quantity_unit || 'units';
 
   return (
     <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onDismiss}>
@@ -104,13 +154,17 @@ export function FedThisTodaySheet({
                   </Pressable>
                   <View style={styles.valueDisplay}>
                     <Text style={styles.valueText}>{qty.toString().replace(/0$/, '').replace(/\.$/, '')}</Text>
-                    <Text style={styles.unitText}>{qty === 1 ? unitLabel.replace(/s\/?pouches$/, '/pouch').replace(/s$/, '') : unitLabel}</Text>
+                    <Text style={styles.unitText}>{qty === 1 ? singularize(displayUnitPlural) : displayUnitPlural}</Text>
                   </View>
                   <Pressable style={styles.stepperButton} onPress={handleIncrement}>
                     <Ionicons name="add" size={24} color={Colors.textPrimary} />
                   </Pressable>
                 </View>
               </View>
+
+              {error && (
+                <Text style={styles.errorText}>{error}</Text>
+              )}
 
               <View style={styles.summaryBox}>
                 <Ionicons name="flame" size={20} color={Colors.severityAmber} style={styles.summaryIcon} />
@@ -249,5 +303,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: FontSizes.md,
     fontWeight: '600',
+  },
+  errorText: {
+    fontSize: FontSizes.sm,
+    color: Colors.severityRed,
+    textAlign: 'center',
+    marginVertical: Spacing.sm,
   },
 });

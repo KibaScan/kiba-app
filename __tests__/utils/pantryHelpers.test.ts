@@ -34,6 +34,8 @@ import {
   computeBehavioralBudgetWarning,
   computePerServingKcal,
   shouldShowCalorieText,
+  resolveDryKcalPerCup,
+  estimateBagCups,
 } from '../../src/utils/pantryHelpers';
 import type { PantryPetAssignment, PantryCardData, PantryAnchor } from '../../src/types/pantry';
 import type { Product } from '../../src/types';
@@ -322,6 +324,41 @@ describe('calculateDepletionBreakdown', () => {
   test('treat → null', () => {
     const product = makeProduct({ category: Category.Treat });
     expect(calculateDepletionBreakdown(1, 'units', 2, 24, 'units', 'servings', product)).toBeNull();
+  });
+
+  test('unit mode with servingSize = 0 returns daysText null (no Infinity)', () => {
+    const product = makeProduct({ category: Category.DailyFood, product_form: 'wet', ga_kcal_per_cup: null });
+    const result = calculateDepletionBreakdown(
+      0,       // servingSize = 0 (stale data)
+      'units', // servingSizeUnit
+      1,       // feedingsPerDay
+      12,      // totalQuantity (e.g. 12 cans)
+      'units', // quantityUnit
+      null,    // unitLabel
+      product,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.daysText).toBeNull();
+  });
+
+  test('weight mode with servingSize = 0 returns daysText null (no Infinity)', () => {
+    const product = makeProduct({
+      category: Category.DailyFood,
+      product_form: 'dry',
+      ga_kcal_per_kg: 4000,
+      ga_kcal_per_cup: 400,
+    });
+    const result = calculateDepletionBreakdown(
+      0,       // servingSize = 0 (stale data)
+      'cups',  // servingSizeUnit
+      2,       // feedingsPerDay (so dailyServings = 0 × 2 = 0)
+      10,      // totalQuantity (10 lbs)
+      'lbs',   // quantityUnit
+      null,    // unitLabel
+      product,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.daysText).toBeNull();
   });
 });
 
@@ -1052,6 +1089,39 @@ describe('computeBehavioralServing', () => {
     expect(result?.basisKcal).toBe(0);
     expect(result?.amount).toBe(0);
   });
+
+  test('dry product missing ga_kcal_per_cup derives cups from ga_kcal_per_kg (new fallback)', () => {
+    const pet = { ...defaultPet, feeding_style: 'dry_only' as const };
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_cup: null,
+      ga_kcal_per_kg: 4000, // derived kcal/cup = 4000 × 0.1134 = 453.6
+      kcal_per_unit: null,
+    });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'base', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // DER = 1018, derived kcal/cup = 453.6 → amount = 1018 / 453.6 ≈ 2.244
+    expect(result?.unit).toBe('cups');
+    expect(result?.amount).toBeCloseTo(1018 / 453.6);
+    expect(result?.basisKcal).toBe(1018);
+  });
+
+  test('wet product missing ga_kcal_per_cup falls through to units (regression guard, no dry fallback)', () => {
+    const pet = { ...defaultPet, feeding_style: 'wet_only' as const };
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_cup: null,
+      ga_kcal_per_kg: 1200,
+      kcal_per_unit: 100,
+    });
+    const result = computeBehavioralServing({
+      pet, product, feedingRole: 'rotational', dailyWetFedKcal: 0, dryFoodSplitPct: 100, isPremiumGoalWeight: false
+    });
+    // DER = 1018, kcal_per_unit = 100 → amount = 10.18, unit = 'units'
+    expect(result?.unit).toBe('units');
+    expect(result?.amount).toBeCloseTo(1018 / 100);
+  });
 });
 
 describe('computeBehavioralBudgetWarning', () => {
@@ -1232,6 +1302,135 @@ describe('shouldShowCalorieText', () => {
 
   test('suppresses for undefined role', () => {
     expect(shouldShowCalorieText(undefined, 15)).toBe(false);
+  });
+});
+
+// ─── resolveDryKcalPerCup ──────────────────────────────────
+
+describe('resolveDryKcalPerCup', () => {
+  test('returns scraped ga_kcal_per_cup when present', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 420, ga_kcal_per_kg: 3500, product_form: 'dry' });
+    expect(resolveDryKcalPerCup(product)).toBe(420);
+  });
+
+  test('returns scraped ga_kcal_per_cup even for non-dry products', () => {
+    const product = makeProduct({ ga_kcal_per_cup: 180, ga_kcal_per_kg: 1200, product_form: 'wet' });
+    expect(resolveDryKcalPerCup(product)).toBe(180);
+  });
+
+  test('derives from ga_kcal_per_kg × 0.1134 for dry product missing ga_kcal_per_cup', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4000, product_form: 'dry' });
+    // 4000 × 0.1134 = 453.6
+    expect(resolveDryKcalPerCup(product)).toBeCloseTo(453.6);
+  });
+
+  test('returns null for wet product missing ga_kcal_per_cup (no dry fallback)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 1200, product_form: 'wet' });
+    expect(resolveDryKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null for freeze-dried product missing ga_kcal_per_cup (scope-gated to dry)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 4800, product_form: 'freeze-dried' });
+    expect(resolveDryKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null when both ga_kcal_per_cup and ga_kcal_per_kg missing', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: null, product_form: 'dry' });
+    expect(resolveDryKcalPerCup(product)).toBeNull();
+  });
+
+  test('returns null when ga_kcal_per_kg is 0 (guards against divide-by-zero downstream)', () => {
+    const product = makeProduct({ ga_kcal_per_cup: null, ga_kcal_per_kg: 0, product_form: 'dry' });
+    expect(resolveDryKcalPerCup(product)).toBeNull();
+  });
+});
+
+// ─── estimateBagCups ────────────────────────────────────
+
+describe('estimateBagCups', () => {
+  test('label-based: dry product with both ga_kcal_per_kg and ga_kcal_per_cup', () => {
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_kg: 4000,
+      ga_kcal_per_cup: 400, // → density = 0.1 kg/cup
+    });
+    // 5 lbs = 2.268 kg, cups = (2.268 × 4000) / 400 = 22.68
+    expect(estimateBagCups(product, 5, 'lbs')).toBeCloseTo(22.68, 1);
+  });
+
+  test('density fallback: dry product with only ga_kcal_per_kg', () => {
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_kg: 4000,
+      ga_kcal_per_cup: null,
+    });
+    // 5 lbs = 2.268 kg, cups = 2.268 / 0.1134 = 20
+    expect(estimateBagCups(product, 5, 'lbs')).toBeCloseTo(20, 1);
+  });
+
+  test('density fallback: dry product with no kcal data at all', () => {
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_kg: null,
+      ga_kcal_per_cup: null,
+    });
+    // Still works — density-only needs only the weight
+    expect(estimateBagCups(product, 5, 'lbs')).toBeCloseTo(20, 1);
+  });
+
+  test('unit conversion: same product, different bag units yield equivalent cups', () => {
+    const product = makeProduct({
+      product_form: 'dry',
+      ga_kcal_per_kg: 4000,
+      ga_kcal_per_cup: 400,
+    });
+    const cupsLbs = estimateBagCups(product, 5, 'lbs');
+    const cupsKg = estimateBagCups(product, 5 / 2.205, 'kg');
+    const cupsOz = estimateBagCups(product, 5 * 16, 'oz');
+    const cupsG = estimateBagCups(product, 5000 / 2.205, 'g');
+    expect(cupsLbs).toBeCloseTo(cupsKg!, 1);
+    expect(cupsLbs).toBeCloseTo(cupsOz!, 1);
+    expect(cupsLbs).toBeCloseTo(cupsG!, 1);
+  });
+
+  test('returns null for wet product missing ga_kcal_per_cup (no density fallback for wet)', () => {
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_kg: 1200,
+      ga_kcal_per_cup: null,
+    });
+    expect(estimateBagCups(product, 5, 'lbs')).toBeNull();
+  });
+
+  test('uses label-based for wet product with BOTH fields present', () => {
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_kg: 1200,
+      ga_kcal_per_cup: 180,
+    });
+    // 1 kg, cups = (1 × 1200) / 180 = 6.67
+    expect(estimateBagCups(product, 1, 'kg')).toBeCloseTo(6.67, 1);
+  });
+
+  test('returns null for freeze-dried without label data (scope-gated to dry fallback)', () => {
+    const product = makeProduct({
+      product_form: 'freeze-dried',
+      ga_kcal_per_kg: 4800,
+      ga_kcal_per_cup: null,
+    });
+    expect(estimateBagCups(product, 1, 'lbs')).toBeNull();
+  });
+
+  test('returns null for zero or negative quantity', () => {
+    const product = makeProduct({ product_form: 'dry', ga_kcal_per_kg: 4000 });
+    expect(estimateBagCups(product, 0, 'lbs')).toBeNull();
+    expect(estimateBagCups(product, -1, 'lbs')).toBeNull();
+  });
+
+  test('returns null for unit mode (quantity_unit = "units")', () => {
+    const product = makeProduct({ product_form: 'dry', ga_kcal_per_kg: 4000 });
+    // convertToKg returns 0 for 'units' mode — cups derivation must return null
+    expect(estimateBagCups(product, 5, 'units')).toBeNull();
   });
 });
 

@@ -138,11 +138,6 @@ export const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
   },
-  cupEquivalent: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    marginTop: Spacing.xs,
-  },
   servingsLink: {
     fontSize: FontSizes.xs,
     color: Colors.accent,
@@ -460,29 +455,10 @@ export const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
 
-  // Collapsed Bag Size
-  bagSizeCollapsed: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.hairlineBorder,
-    marginTop: Spacing.lg,
-  },
-  bagSizeLabel: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  bagSizeValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  bagSizeValue: {
-    fontSize: FontSizes.md,
+  cupEstimate: {
+    fontSize: FontSizes.sm,
     color: Colors.textSecondary,
+    marginTop: Spacing.xs,
   },
 
   // Overrides / Utils

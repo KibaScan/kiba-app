@@ -44,6 +44,39 @@ export function convertFromKg(kg: number, unit: QuantityUnit): number {
   }
 }
 
+// ─── Density Constants ──────────────────────────────────
+
+/**
+ * Standard dry kibble density fallback: 1 cup ≈ 113.4 g.
+ * Matches supabase/functions/auto-deplete/index.ts:45 (server-side depletion cron) for consistent client/server math.
+ * Used only when a dry product has ga_kcal_per_kg but no scraped ga_kcal_per_cup.
+ */
+export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
+
+/**
+ * Resolve kcal-per-cup for a DRY product, preferring scraped label data.
+ * For dry products missing ga_kcal_per_cup, derives from ga_kcal_per_kg × DRY_KIBBLE_KG_PER_CUP.
+ * Returns null for non-dry forms or when no derivation is possible.
+ *
+ * Note: This is distinct from resolveKcalPerCup() in calorieEstimation.ts, which returns
+ * a richer struct with isEstimated for UI disclosure and handles all product forms via
+ * Atwater fallback at 110 g/cup. This pantry-side version aligns with the auto-deplete
+ * cron's 113.4 g/cup density for consistent client/server depletion math.
+ */
+export function resolveDryKcalPerCup(product: Product): number | null {
+  if (product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0) {
+    return product.ga_kcal_per_cup;
+  }
+  if (
+    product.product_form === 'dry' &&
+    product.ga_kcal_per_kg != null &&
+    product.ga_kcal_per_kg > 0
+  ) {
+    return product.ga_kcal_per_kg * DRY_KIBBLE_KG_PER_CUP;
+  }
+  return null;
+}
+
 // ─── Weight Unit Preference ──────────────────────────────
 const WEIGHT_UNIT_KEY = '@kiba/weight_unit';
 
@@ -77,6 +110,44 @@ export function convertWeightToServings(
   const cups = convertWeightToCups(qty, unit, kcalPerKg, kcalPerCup);
   if (cups == null || cupsPerFeeding <= 0) return null;
   return cups / cupsPerFeeding;
+}
+
+/**
+ * Estimate total cups in a bag from its weight.
+ *
+ * Priority:
+ * 1. Label-based density: (kg × ga_kcal_per_kg) / ga_kcal_per_cup — most accurate when both fields exist.
+ * 2. Fallback density for dry products: kg / DRY_KIBBLE_KG_PER_CUP — works when ga_kcal_per_cup is missing.
+ *
+ * Returns null when derivation isn't possible:
+ * - quantity <= 0
+ * - unit is 'units' (non-weight mode)
+ * - non-dry product missing ga_kcal_per_cup
+ */
+export function estimateBagCups(
+  product: Product,
+  qty: number,
+  unit: QuantityUnit,
+): number | null {
+  if (qty <= 0) return null;
+  const kg = convertToKg(qty, unit);
+  if (kg <= 0) return null;
+
+  // Path 1: label-based density (reuse existing helper)
+  const labelBased = convertWeightToCups(
+    qty,
+    unit,
+    product.ga_kcal_per_kg,
+    product.ga_kcal_per_cup,
+  );
+  if (labelBased != null) return labelBased;
+
+  // Path 2: density-only fallback for dry products
+  if (product.product_form === 'dry') {
+    return kg / DRY_KIBBLE_KG_PER_CUP;
+  }
+
+  return null;
 }
 
 function formatFraction(n: number): string {
@@ -365,9 +436,10 @@ export function computeBehavioralServing(params: {
   // Apply split PCT to budget
   const finalKcal = budgetedKcal * (dryFoodSplitPct / 100);
 
-  // Convert to unit
-  if (product.ga_kcal_per_cup && product.ga_kcal_per_cup > 0) {
-    return { amount: finalKcal / product.ga_kcal_per_cup, unit: 'cups', basisKcal: finalKcal };
+  // Convert to unit — prefer cups (scraped, or derived for dry products)
+  const kcalPerCup = resolveDryKcalPerCup(product);
+  if (kcalPerCup != null) {
+    return { amount: finalKcal / kcalPerCup, unit: 'cups', basisKcal: finalKcal };
   }
 
   const cal = resolveCalories(product);
@@ -692,8 +764,11 @@ export function calculateDepletionBreakdown(
       ? (dailyServings <= 1 ? 'cup' : 'cups')
       : (dailyServings <= 1 ? 'serving' : 'servings');
     const rateText = `${formatFraction(dailyServings)} ${labelStr}/day`;
-    const days = totalQuantity / dailyServings;
-    return { rateText, daysText: `~${Math.floor(days)} days` };
+    if (dailyServings > 0 && Number.isFinite(totalQuantity / dailyServings)) {
+      const days = totalQuantity / dailyServings;
+      return { rateText, daysText: `~${Math.floor(days)} days` };
+    }
+    return { rateText, daysText: null };
   }
 
   // Weight mode
@@ -703,7 +778,7 @@ export function calculateDepletionBreakdown(
   const rateText = `${formatFraction(dailyServings)} ${unitStr}/day`;
 
   const totalCups = convertWeightToCups(totalQuantity, quantityUnit, product.ga_kcal_per_kg, product.ga_kcal_per_cup);
-  if (totalCups != null) {
+  if (totalCups != null && dailyServings > 0 && Number.isFinite(totalCups / dailyServings)) {
     const days = totalCups / dailyServings;
     return { rateText, daysText: `~${Math.floor(days)} days` };
   }
