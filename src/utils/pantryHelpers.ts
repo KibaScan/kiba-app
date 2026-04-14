@@ -112,6 +112,41 @@ export function convertWeightToServings(
   return cups / cupsPerFeeding;
 }
 
+/**
+ * Estimate total cups in a bag from its weight.
+ *
+ * Priority:
+ * 1. Label-based density: (kg × ga_kcal_per_kg) / ga_kcal_per_cup — most accurate when both fields exist.
+ * 2. Fallback density for dry products: kg / DRY_KIBBLE_KG_PER_CUP — works when ga_kcal_per_cup is missing.
+ *
+ * Returns null when derivation isn't possible:
+ * - quantity <= 0
+ * - unit is 'units' (non-weight mode)
+ * - non-dry product missing ga_kcal_per_cup
+ */
+export function estimateBagCups(
+  product: Product,
+  qty: number,
+  unit: QuantityUnit,
+): number | null {
+  if (qty <= 0) return null;
+  const kg = convertToKg(qty, unit);
+  if (kg <= 0) return null;
+
+  // Path 1: label-based density (use both kcal fields)
+  if (product.ga_kcal_per_kg != null && product.ga_kcal_per_kg > 0 &&
+      product.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0) {
+    return (kg * product.ga_kcal_per_kg) / product.ga_kcal_per_cup;
+  }
+
+  // Path 2: density-only fallback for dry products
+  if (product.product_form === 'dry') {
+    return kg / DRY_KIBBLE_KG_PER_CUP;
+  }
+
+  return null;
+}
+
 function formatFraction(n: number): string {
   if (n === Math.floor(n)) return String(n);
   const whole = Math.floor(n);
