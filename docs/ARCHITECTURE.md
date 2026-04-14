@@ -35,7 +35,7 @@ supabase/
     ├── upc-lookup/       External UPC lookup for the database-miss flow
     └── weekly-digest/    User activity digest (daily / weekly modes)
 
-__tests__/                Jest, 1473 tests / 63 suites, regression anchors tracked
+__tests__/                Jest, 1508 tests / 64 suites, regression anchors tracked
 docs/
 ├── references/           Scoring rules, dataset mapping, design system
 ├── specs/                Product specs (pantry, nutrition, portion calc, breed mods)

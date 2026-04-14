@@ -10,7 +10,7 @@
 ![TypeScript 5.9 strict](https://img.shields.io/badge/typescript-5.9%20strict-3178C6)
 ![Expo SDK 55](https://img.shields.io/badge/expo-SDK%2055-000020)
 ![React Native 0.83](https://img.shields.io/badge/react--native-0.83-61DAFB)
-![1473 tests](https://img.shields.io/badge/jest-1473%20tests-99425B)
+![1508 tests](https://img.shields.io/badge/jest-1508%20tests-99425B)
 ![License UNLICENSED](https://img.shields.io/badge/license-UNLICENSED-red)
 
 ---
@@ -71,7 +71,7 @@ Supabase + RevenueCat accounts not included here. What does work cold:
 
 ```bash
 npm install
-npm test            # 1473 passing / 63 suites
+npm test            # 1508 passing / 64 suites
 npx tsc --noEmit    # clean in src/ + __tests__/
 ```
 
