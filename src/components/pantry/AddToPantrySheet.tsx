@@ -35,6 +35,7 @@ import {
   parseProductSize,
   computePetDer,
   computeBehavioralServing,
+  estimateBagCups,
 } from '../../utils/pantryHelpers';
 import { usePantryStore } from '../../stores/usePantryStore';
 import { canUseGoalWeight } from '../../utils/permissions';
@@ -140,8 +141,7 @@ export function AddToPantrySheet({
   const [servingMode, setServingMode] = useState<ServingMode>('weight');
   const [quantityValue, setQuantityValue] = useState('');
   const [quantityUnit, setQuantityUnit] = useState<QuantityUnit>('lbs');
-  const [bagCollapsed, setBagCollapsed] = useState(false);
-  
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -174,7 +174,6 @@ export function AddToPantrySheet({
     setAutoMode(true);
     setSubmitting(false);
     setError(null);
-    setBagCollapsed(false);
 
     const mode = treat ? 'unit' : defaultServingMode(product.product_form);
     setServingMode(mode);
@@ -185,10 +184,8 @@ export function AddToPantrySheet({
     if (parsed) {
       setQuantityValue(String(parsed.quantity));
       if (parsed.unit !== 'units' && mode === 'weight') setQuantityUnit(parsed.unit);
-      setBagCollapsed(true);
     } else {
       setQuantityValue('');
-      setBagCollapsed(false);
     }
 
     if (pantryPetId !== pet.id) {
@@ -235,6 +232,12 @@ export function AddToPantrySheet({
     }) != null;
   }, [pet, product]);
 
+  const estimatedCups = useMemo(() => {
+    const qty = parseFloat(quantityValue);
+    if (isNaN(qty) || qty <= 0) return null;
+    return estimateBagCups(product, qty, quantityUnit);
+  }, [product, quantityValue, quantityUnit]);
+
   const effectiveServingSize = autoMode && autoServingResult ? autoServingResult.amount : manualServingSize;
   const effectiveServingUnit = autoMode && autoServingResult ? autoServingResult.unit : manualServingUnit;
 
@@ -260,7 +263,6 @@ export function AddToPantrySheet({
   const handlePillSwitch = (val: boolean) => {
     chipToggle();
     setIsNewToDiet(val);
-    if (!val && !bagValid) setBagCollapsed(false);
   };
 
   const handleCTA = async () => {
@@ -451,17 +453,12 @@ export function AddToPantrySheet({
                           }
                         </View>
                       </View>
+                      {servingMode === 'weight' && estimatedCups != null && (
+                        <Text style={styles.cupEstimate}>
+                          ≈ {Math.round(estimatedCups)} cups
+                        </Text>
+                      )}
                     </View>
-                  )}
-                  
-                  {isNewToDiet !== true && bagValid && bagCollapsed && inferredRole === 'base' && (
-                    <TouchableOpacity style={styles.bagSizeCollapsed} onPress={() => { chipToggle(); setBagCollapsed(false); }} activeOpacity={0.7}>
-                      <Text style={styles.bagSizeLabel}>Bag Size</Text>
-                      <View style={styles.bagSizeValueRow}>
-                        <Text style={styles.bagSizeValue}>{quantityValue} {quantityUnit}</Text>
-                        <Ionicons name="chevron-down" size={16} color={Colors.textTertiary} />
-                      </View>
-                    </TouchableOpacity>
                   )}
 
                   <View style={{ marginTop: Spacing.md }} />
