@@ -1,7 +1,14 @@
 {
   "name": "kiba",
   "version": "1.0.0",
+  "description": "iOS pet food scanner with ingredient-level, species-specific scoring",
   "main": "index.ts",
+  "author": "Steven Diaz <steven.diaz08@gmail.com>",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KibaScan/kiba-app.git"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
