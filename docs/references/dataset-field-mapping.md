@@ -1,16 +1,16 @@
 # Dataset Field Mapping — Product Data → Supabase
 
-> Documents which fields from the scraped datasets were imported into the products table,
+> Documents which fields from the source datasets were imported into the products table,
 > which were dropped, and why.
 >
-> Last updated: March 26, 2026 (v7 reimport — migration 020, 19,058 products from Chewy + Amazon + Walmart)
+> Last updated: March 26, 2026 (v7 reimport — migration 020, 19,058 products from publicly available retailer product pages)
 
 ---
 
 ## Source
 
-- **Current dataset:** v7 reimport (March 25, 2026) — 19,058 products from Chewy, Amazon, Walmart
-- **Previous:** v6 merged (9,089 records, Chewy only) — fully superseded by v7
+- **Current dataset:** v7 reimport (March 25, 2026) — 19,058 products
+- **Previous:** v6 merged (9,089 records, single-source) — fully superseded by v7
 - **Import script:** `scripts/import/import_products.py`
 - **Latest enrichment (migration 020):** Pre-computed DMB columns, AAFCO inference audit trail, retailer dedup IDs
 
