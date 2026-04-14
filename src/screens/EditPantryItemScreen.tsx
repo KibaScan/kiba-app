@@ -425,16 +425,18 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            <TouchableOpacity
-              style={styles.editSplitsLink}
-              onPress={() => navigation.navigate('CustomFeedingStyle', { petId: activePetId! })}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Edit splits in Custom Splits screen"
-            >
-              <Text style={styles.editSplitsText}>Edit in Custom Splits</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
-            </TouchableOpacity>
+            {activePet?.feeding_style === 'custom' && (
+              <TouchableOpacity
+                style={styles.editSplitsLink}
+                onPress={() => navigation.navigate('CustomFeedingStyle', { petId: activePetId! })}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Edit splits in Custom Splits screen"
+              >
+                <Text style={styles.editSplitsText}>Edit in Custom Splits</Text>
+                <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── Schedule Card ── */}

@@ -325,6 +325,41 @@ describe('calculateDepletionBreakdown', () => {
     const product = makeProduct({ category: Category.Treat });
     expect(calculateDepletionBreakdown(1, 'units', 2, 24, 'units', 'servings', product)).toBeNull();
   });
+
+  test('unit mode with servingSize = 0 returns daysText null (no Infinity)', () => {
+    const product = makeProduct({ category: Category.DailyFood, product_form: 'wet', ga_kcal_per_cup: null });
+    const result = calculateDepletionBreakdown(
+      0,       // servingSize = 0 (stale data)
+      'units', // servingSizeUnit
+      1,       // feedingsPerDay
+      12,      // totalQuantity (e.g. 12 cans)
+      'units', // quantityUnit
+      null,    // unitLabel
+      product,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.daysText).toBeNull();
+  });
+
+  test('weight mode with servingSize = 0 returns daysText null (no Infinity)', () => {
+    const product = makeProduct({
+      category: Category.DailyFood,
+      product_form: 'dry',
+      ga_kcal_per_kg: 4000,
+      ga_kcal_per_cup: 400,
+    });
+    const result = calculateDepletionBreakdown(
+      0,       // servingSize = 0 (stale data)
+      'cups',  // servingSizeUnit
+      2,       // feedingsPerDay (so dailyServings = 0 × 2 = 0)
+      10,      // totalQuantity (10 lbs)
+      'lbs',   // quantityUnit
+      null,    // unitLabel
+      product,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.daysText).toBeNull();
+  });
 });
 
 // ─── getCalorieContext ──────────────────────────────────

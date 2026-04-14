@@ -764,8 +764,11 @@ export function calculateDepletionBreakdown(
       ? (dailyServings <= 1 ? 'cup' : 'cups')
       : (dailyServings <= 1 ? 'serving' : 'servings');
     const rateText = `${formatFraction(dailyServings)} ${labelStr}/day`;
-    const days = totalQuantity / dailyServings;
-    return { rateText, daysText: `~${Math.floor(days)} days` };
+    if (dailyServings > 0 && Number.isFinite(totalQuantity / dailyServings)) {
+      const days = totalQuantity / dailyServings;
+      return { rateText, daysText: `~${Math.floor(days)} days` };
+    }
+    return { rateText, daysText: null };
   }
 
   // Weight mode
@@ -775,7 +778,7 @@ export function calculateDepletionBreakdown(
   const rateText = `${formatFraction(dailyServings)} ${unitStr}/day`;
 
   const totalCups = convertWeightToCups(totalQuantity, quantityUnit, product.ga_kcal_per_kg, product.ga_kcal_per_cup);
-  if (totalCups != null) {
+  if (totalCups != null && dailyServings > 0 && Number.isFinite(totalCups / dailyServings)) {
     const days = totalCups / dailyServings;
     return { rateText, daysText: `~${Math.floor(days)} days` };
   }
