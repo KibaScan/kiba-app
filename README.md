@@ -61,7 +61,7 @@ Full walkthrough: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | `docs/references/scoring-rules.md`      | Authoritative scoring math: AAFCO thresholds, DMB, curves.  |
 | `.agent/design.md`                      | Design system. Tokens, card anatomy, anti-patterns.         |
 | `supabase/migrations/`                  | 38 migrations. RLS applied per user-data table.             |
-| `__tests__/services/scoring/regressionTrace.test.ts` | Regression anchors — Pure Balance = 61, Temptations = 0. |
+| `__tests__/services/scoring/regressionAnchors.test.ts` | Regression anchors — Pure Balance = 61, Temptations = 0. |
 | `docs/ARCHITECTURE.md`                  | One-page tour of layout, pipeline, and "where to look."     |
 
 ## Running locally
@@ -75,23 +75,23 @@ npm test            # 1473 passing / 63 suites
 npx tsc --noEmit    # clean in src/ + __tests__/
 ```
 
-If you want the app to build, you'd need to provision a Supabase
-project (schema is in `supabase/migrations/`), a RevenueCat account,
-and fill in `.env` from `.env.example`.
+To boot the app you need a Supabase project (schema in
+`supabase/migrations/`) and a RevenueCat account. Copy `.env.example`
+to `.env` and fill in the keys.
 
 ## Regression anchors
 
-Deterministic scoring is the product. These are checked on every
-scoring change:
+Deterministic scoring is the product. Two canonical anchors are
+hard-asserted on every scoring change:
 
-| Input                                    | Expected score |
-|------------------------------------------|----------------|
-| Pure Balance (Dog, daily food)           | 61             |
-| Temptations (Cat Treat)                  | 0              |
-| Pure Balance + cardiac dog (DCM zero-out) | 0              |
-| Pure Balance + pancreatitis dog (fat penalty) | 53        |
+| Input                          | Expected score | Asserted in                                                |
+|--------------------------------|----------------|------------------------------------------------------------|
+| Pure Balance (Dog, daily food) | 61             | `__tests__/services/scoring/regressionAnchors.test.ts`     |
+| Temptations (Cat Treat)        | 0              | `__tests__/services/scoring/regressionAnchors.test.ts`     |
 
-Test: `__tests__/services/scoring/regressionTrace.test.ts`.
+Condition-modifier behavior (e.g., Pure Balance + cardiac dog → 0 via
+DCM zero-out, + pancreatitis → 53 via fat penalty) is covered by
+`conditionScoring.test.ts` and `HealthConditionAdvisories.test.ts`.
 
 ## Data & IP
 
