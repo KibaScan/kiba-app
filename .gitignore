@@ -84,3 +84,6 @@ M6_COMPARE_SCREEN_PROMPT.md
 implementation_plan.md
 walkthrough.md
 task.md
+
+# local-only backup of files removed during repo cleanup — never tracked
+_scratch/
