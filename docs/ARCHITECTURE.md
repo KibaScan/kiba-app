@@ -19,7 +19,11 @@ src/
 ├── stores/               Zustand global state (active pet, pantry cache, treat battery)
 ├── utils/                Pure helpers (constants, pantryHelpers, weightGoal, network)
 ├── types/                Shared TypeScript types (single source of truth)
-└── navigation/           React Navigation stacks + param lists
+├── navigation/           React Navigation stacks + param lists
+├── data/                 Static datasets (breeds, conditions, allergens)
+├── constants/            App-wide constants not tied to a domain module
+├── config/               Feature-flag and integration config (e.g. affiliate)
+└── content/              User-facing copy and explainer content
 
 supabase/
 ├── migrations/           38 migrations (001–038), RLS enforced on every user table
@@ -27,6 +31,8 @@ supabase/
     ├── batch-score/      Bulk scoring with delta optimization + two-phase execution
     ├── auto-deplete/     pg_cron-triggered pantry depletion + push notifications
     ├── parse-ingredients/ Haiku-backed OCR parse + classification
+    ├── recall-check/     FDA recall lookup (D-125: always free, no paywall)
+    ├── upc-lookup/       External UPC lookup for the database-miss flow
     └── weekly-digest/    User activity digest (daily / weekly modes)
 
 __tests__/                Jest, 1473 tests / 63 suites, regression anchors tracked
@@ -115,9 +121,9 @@ outbound calls go through Supabase Edge Functions (D-127).
 | Offline writes                | `src/utils/network.ts` + `PantryOfflineError`             |
 | Batch scoring                 | `supabase/functions/batch-score/` + `src/services/topMatches.ts` |
 | Push notifications            | `src/utils/notifications.ts` + `src/services/*Scheduler.ts` |
-| Score framing (D-094)         | `src/utils/constants.ts::getScoreColor()` + `ScoreRing.tsx` |
+| Score framing (D-094)         | `src/utils/constants.ts::getScoreColor()` + `src/components/scoring/ScoreRing.tsx` |
 | UPVM compliance (D-095)       | Never say prescribe / treat / cure / prevent / diagnose in UI copy |
-| Regression targets            | `__tests__/services/scoring/regressionTrace.test.ts`      |
+| Regression targets            | `__tests__/services/scoring/regressionAnchors.test.ts`    |
 
 ## Non-negotiable rules
 
