@@ -16,7 +16,7 @@ The cleanup is presentation-focused, not functional. Source code under `src/`, s
 ## Goals
 
 - Repo root reads cleanly: no obvious scratch files, no stale config, no ambiguous AI guidance.
-- GitHub default branch (`main`) reflects current M9 state, not an M0-era snapshot.
+- GitHub default branch points at current M9 work (`m5-complete`), not the M0-era `main`.
 - `README.md` gives a recruiter an honest, useful first impression in ≤2 minutes.
 - Scraping provenance is softened in one external-facing file and the public AI briefing. Internal decision logs left as-is.
 - No secrets leak. No raw scraped data leaks. (Already true via gitignore; verify.)
@@ -37,6 +37,12 @@ The cleanup is presentation-focused, not functional. Source code under `src/`, s
 ## Design
 
 ### Section 1 — Cleanup (deletions + softening)
+
+**Pre-delete preservation: `_scratch/` local backup**
+
+Before any `git rm`, copy every file being removed into a new `_scratch/` directory at repo root. Add `_scratch/` to `.gitignore` in the same commit so it is never tracked. Result: all removed files remain on Steven's local disk, outside version control, trivially accessible without `git show` archaeology. The directory is ignored on every machine that pulls the repo, so public viewers never see it. This is cheap insurance; no blast radius.
+
+The implementation plan will encode this as the first step of the cleanup commit sequence.
 
 **Delete from git + disk (20 root-level scratch markdown files):**
 
@@ -178,17 +184,14 @@ All values pulled from `package.json` and `docs/status/CURRENT.md`. No CI requir
 
 **The problem:** `main` has not been updated since M0 era. All M1-M9 work lives on `m5-complete`. A recruiter lands on GitHub and sees `main` by default, reading code that does not reflect current work. This is the worst first impression in the repo.
 
-**The fix:**
+**The fix:** change GitHub's default branch from `main` to `m5-complete` via repo settings. No git operations, no fast-forward, no merge back. Preserves Steven's existing branch-per-session workflow (which depends on `m5-complete` being the active trunk).
 
 1. Cleanup work happens on `m9-repo-public-cleanup` (already created, branched from `m5-complete`).
 2. When complete, merge `m9-repo-public-cleanup` → `m5-complete` via PR (standard flow, matches Steven's branch-per-session workflow).
-3. Fast-forward `main` to `m5-complete`:
-   ```
-   git checkout main
-   git merge --ff-only m5-complete
-   git push origin main
-   ```
-   Result: `main` reflects current M9 state. GitHub default branch shows the good stuff.
+3. On GitHub, change the repo's default branch to `m5-complete`:
+   - Settings → Branches → Default branch → switch to `m5-complete` → confirm.
+   - Or via CLI: `gh api -X PATCH repos/KibaScan/kiba-app -f default_branch=m5-complete`.
+   Result: recruiters land on `m5-complete` on every fresh visit, which reflects current work. `main` stays frozen at its old state but is no longer the face of the repo.
 4. Delete merged remote feature branches before the public window opens:
    - `origin/m4.5-cleanup` — superseded long ago (confirmed ancestor of `m5-complete`)
    - `origin/fix/pantry-pet-switch-latency` — merged into m5-complete (session 43)
@@ -203,7 +206,7 @@ All values pulled from `package.json` and `docs/status/CURRENT.md`. No CI requir
 
 - No `git filter-repo`, `git filter-branch`, rebase, or force-push. History stays honest.
 - No squashing session commits into milestone commits. Per-session commits with thoughtful messages are better signal than artificially-cleaned history.
-- No changes to the default branch name (`main` remains `main`).
+- No modifying `main` itself. We leave `main` frozen at its current SHA and change only the GitHub default-branch pointer. `main` can be cleaned up later if Steven wants to, but it is not a prerequisite for going public.
 - No orphan branch or fresh-history approach.
 
 ### Final polish (small items bundled into the implementation plan)
@@ -221,7 +224,8 @@ All values pulled from `package.json` and `docs/status/CURRENT.md`. No CI requir
 |------|------------|
 | Retailer legal team finds the repo via search and sends C&D | Delete explicit scraping playbook (`V7_REIMPORT_INSTRUCTIONS.md`), soften 2 other tracked files. One-week public window reduces practical exposure. Raw scraped data never hit git. |
 | Secret leaks via transcripts or screenshares | Rotate 3 high-value keys before going public. Rotation is a user action, not blocking for the PR, but called out in the implementation plan. |
-| Recruiter bounces off stale `main` | Fast-forward `main` to `m5-complete` as part of the same cleanup PR flow. |
+| Recruiter bounces off stale `main` | Change GitHub default branch to `m5-complete` (no merge, no history change). Recruiters land on current work. |
+| Deleted file needed later | Every removed file is copied to local gitignored `_scratch/` before `git rm`. Also recoverable from git history. |
 | Recruiter reads `DECISIONS.md` and sees retailer references | Accepted risk. Scrubbing megabytes of decision logs is not worth the time for a one-week window, and engineering-rigor signal exceeds provenance softening value. |
 | `README.md` overclaims or misleads | Keep README tightly grounded in checkable facts (commit hashes, file paths, test count from `docs/status/CURRENT.md`). All numbers link to source. |
 
@@ -236,18 +240,19 @@ This is pure content and file-hygiene work; no runtime behavior changes. Validat
 
 ## Rollout Sequence (will drive the implementation plan)
 
-1. **Deletions + softening** on branch `m9-repo-public-cleanup`. Commit in logical chunks (scratch markdown deletion, PNG deletion, `.cursorrules` deletion, scraping playbook deletion, retailer-name softening, `.DS_Store` tidy).
-2. **`LICENSE`** committed.
-3. **`package.json` metadata** additions committed.
-4. **`docs/ARCHITECTURE.md`** committed.
-5. **`README.md`** committed (last, because it references everything above).
-6. **PR `m9-repo-public-cleanup` → `m5-complete`**, normal review cadence.
-7. **Steven rotates secrets** (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, SCRAPEDO_API_KEY) via provider dashboards.
-8. **Fast-forward `main`** from `m5-complete`.
-9. **Delete merged remote feature branches.**
-10. **Set GitHub repo description + topics.**
-11. **Flip repo visibility to public** via GitHub settings.
-12. (One week later) **Flip back to private**, no cleanup required.
+1. **Create `_scratch/` local backup** of every file about to be removed, and add `_scratch/` to `.gitignore` in the same commit.
+2. **Deletions + softening** on branch `m9-repo-public-cleanup`. Commit in logical chunks (scratch markdown deletion, PNG deletion, `.cursorrules` deletion, scraping playbook deletion, retailer-name softening, `.DS_Store` tidy).
+3. **`LICENSE`** committed.
+4. **`package.json` metadata** additions committed.
+5. **`docs/ARCHITECTURE.md`** committed.
+6. **`README.md`** committed (last, because it references everything above).
+7. **PR `m9-repo-public-cleanup` → `m5-complete`**, normal review cadence.
+8. **Steven rotates secrets** (SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, SCRAPEDO_API_KEY) via provider dashboards.
+9. **Change GitHub default branch** from `main` to `m5-complete` via repo Settings → Branches (or `gh api -X PATCH repos/KibaScan/kiba-app -f default_branch=m5-complete`).
+10. **Delete merged remote feature branches** (verified via `gh pr list --state merged --head <branch>`).
+11. **Set GitHub repo description + topics.**
+12. **Flip repo visibility to public** via GitHub settings.
+13. (One week later) **Flip back to private**, no cleanup required.
 
 ## Open Questions
 
@@ -271,7 +276,8 @@ Before merge:
 - [ ] `package.json` has description / author / license / repository fields.
 - [ ] `npm test` passes (1473 / 63 suites baseline).
 - [ ] `npx tsc --noEmit` clean in `src/` + `__tests__/`.
-- [ ] `main` is fast-forwarded from `m5-complete` on remote.
+- [ ] GitHub default branch switched from `main` to `m5-complete`.
+- [ ] Every file removed in this PR has a copy in local `_scratch/`, and `_scratch/` is gitignored.
 - [ ] Merged remote feature branches (`m4.5-cleanup`, `fix/pantry-pet-switch-latency`, `m9-dry-food-cups`, `m9-pantry-polish`) deleted.
 - [ ] GitHub repo description + topics set.
 - [ ] Secrets rotated (Supabase service role, Anthropic, Scrape.do). **User action.**
