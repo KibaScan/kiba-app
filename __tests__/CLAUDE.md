@@ -14,7 +14,8 @@
 | New utility/helper | Unit test | Pure logic, fast, isolated |
 | New scoring rule | Unit + regression anchors | Verify logic AND check anchor scores don't drift |
 | New API endpoint | Integration | Needs DB, auth, middleware |
-| UI component | Snapshot | Catch unintended visual regressions |
+| UI component w/ logic | Extract helper → unit test | Default — keep logic out of JSX (`.test.ts`) |
+| Pure-presentation sheet/card | Render test (`@testing-library/react-native`) | `.test.tsx`; use when no helper to extract |
 | Bug fix | Regression test | Prove fix, prevent recurrence |
 | Refactor (no behavior change) | Run existing suite | Don't write new — existing tests are the gate |
 
