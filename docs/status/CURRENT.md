@@ -64,7 +64,7 @@
 
 ## Numbers
 
-- **Tests:** 1473 passing / 63 suites
+- **Tests:** 1508 passing / 64 suites
 - **Decisions:** 129
 - **Migrations:** 38 (001–038)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
