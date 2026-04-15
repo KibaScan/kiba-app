@@ -241,7 +241,7 @@ export async function updatePantryItem(
 
 export async function updatePetAssignment(
   assignmentId: string,
-  updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency' | 'feeding_times' | 'notifications_on'>>,
+  updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency' | 'feeding_times' | 'notifications_on' | 'auto_deplete_enabled'>>,
 ): Promise<PantryPetAssignment> {
   await requireOnline();
 

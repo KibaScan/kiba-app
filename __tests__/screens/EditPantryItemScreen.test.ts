@@ -57,7 +57,7 @@ jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn().mockResolvedValue(true),
 }));
 
-import { formatTime } from '../../src/screens/EditPantryItemScreen';
+import { formatTime, buildFrequencyUpdate } from '../../src/screens/EditPantryItemScreen';
 
 // ─── formatTime ────────────────────────────────────────
 
@@ -92,6 +92,31 @@ describe('formatTime', () => {
 
   test('midnight 0:00 AM', () => {
     expect(formatTime('00:00')).toBe('12:00 AM');
+  });
+});
+
+// ─── buildFrequencyUpdate ──────────────────────────────
+// Schedule toggle is the single source of truth for both feeding_frequency
+// AND auto_deplete_enabled. Daily leaves notifications_on untouched;
+// as_needed forces notifications_on=false alongside the flip.
+
+describe('buildFrequencyUpdate', () => {
+  test('daily → auto_deplete_enabled=true and does not touch notifications_on', () => {
+    const result = buildFrequencyUpdate('daily');
+    expect(result).toEqual({
+      feeding_frequency: 'daily',
+      auto_deplete_enabled: true,
+    });
+    expect(result).not.toHaveProperty('notifications_on');
+  });
+
+  test('as_needed → auto_deplete_enabled=false and notifications_on=false', () => {
+    const result = buildFrequencyUpdate('as_needed');
+    expect(result).toEqual({
+      feeding_frequency: 'as_needed',
+      auto_deplete_enabled: false,
+      notifications_on: false,
+    });
   });
 });
 

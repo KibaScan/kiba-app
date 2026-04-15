@@ -68,6 +68,27 @@ export function formatTime(time24: string): string {
 
 // D-164: unit label is always 'servings' — picker removed
 
+/**
+ * Build the assignment update payload for a schedule-toggle change.
+ * Schedule is the single source of truth for both feeding_frequency AND
+ * auto_deplete_enabled (daily → true, as_needed → false). Toggling to
+ * as_needed also forces notifications_on=false; toggling to daily leaves
+ * notifications_on untouched so the user's existing preference is preserved.
+ */
+export function buildFrequencyUpdate(
+  freq: FeedingFrequency,
+): Parameters<typeof updatePetAssignment>[1] {
+  const isDaily = freq === 'daily';
+  const updates: Parameters<typeof updatePetAssignment>[1] = {
+    feeding_frequency: freq,
+    auto_deplete_enabled: isDaily,
+  };
+  if (!isDaily) {
+    updates.notifications_on = false;
+  }
+  return updates;
+}
+
 // ─── Component ──────────────────────────────────────────
 
 export default function EditPantryItemScreen({ navigation, route }: Props) {
@@ -203,11 +224,11 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
     setFeedingFrequency(freq);
-    saveAssignmentField({ feeding_frequency: freq });
-    if (freq === 'as_needed') {
+    const updates = buildFrequencyUpdate(freq);
+    if (freq !== 'daily') {
       setNotificationsOn(false);
-      saveAssignmentField({ feeding_frequency: freq, notifications_on: false });
     }
+    saveAssignmentField(updates);
     rescheduleAllFeeding().catch(() => {});
   }, [saveAssignmentField]);
 
