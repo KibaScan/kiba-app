@@ -1123,6 +1123,36 @@ describe('computeBehavioralServing', () => {
     expect(result?.unit).toBe('units');
     expect(result?.amount).toBeCloseTo(1018 / 100);
   });
+
+  test('dry_only pet + rotational role returns null (topper path)', () => {
+    // When a dry_only pet has a rotational item (topper or intent-sheet-
+    // routed extras), the serving must be null so PantryCard surfaces the
+    // "Log feeding" button instead of computing a full-DER meal.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      weight_current_lbs: 50,
+      is_neutered: true,
+      activity_level: 'moderate',
+      life_stage: 'adult',
+      wet_reserve_kcal: 0,
+    });
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_kg: 1000,
+      is_supplemental: true,
+    });
+
+    const result = computeBehavioralServing({
+      pet,
+      product,
+      feedingRole: 'rotational',
+      dailyWetFedKcal: 0,
+      dryFoodSplitPct: 100,
+      isPremiumGoalWeight: false,
+    });
+
+    expect(result).toBeNull();
+  });
 });
 
 describe('computeBehavioralBudgetWarning', () => {

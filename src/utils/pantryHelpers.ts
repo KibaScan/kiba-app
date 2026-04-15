@@ -416,6 +416,7 @@ export function computeBehavioralServing(params: {
   let budgetedKcal = 0;
 
   if (style === 'dry_only') {
+    if (feedingRole === 'rotational') return null;
     budgetedKcal = der;
   } else if (style === 'dry_and_wet') {
     if (feedingRole === 'base') {
