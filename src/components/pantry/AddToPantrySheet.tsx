@@ -273,8 +273,14 @@ export function AddToPantrySheet({
   }, [persistWetIntentResolved]);
 
   const handleIntentDismiss = useCallback(() => {
-    handleIntentTopperExtras();
-  }, [handleIntentTopperExtras]);
+    // Dismiss (tap-outside / Android back) = cancel the entire add flow.
+    // Do NOT persist wet_intent_resolved_at — the intercept fires again on
+    // the next add attempt. Accidental dismiss used to silently force topper
+    // AND permanently disable the intercept for that pet, making subsequent
+    // wet adds route as base+daily (overfeed). This is the safer behavior.
+    setShowIntentSheet(false);
+    onClose();
+  }, [onClose]);
 
   // Reset & Init
   useEffect(() => {

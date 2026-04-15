@@ -114,6 +114,10 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
     ?? item.assignments[0];
 
   const isRotational = myAssignment?.feeding_role === 'rotational';
+  // Log-driven signal — any as_needed item (rotational or base) exposes the
+  // Log feeding button. Mirrors EditPantryItem's Fed This Today Featured Card
+  // visibility so users see the same entry point on both surfaces.
+  const isAsNeeded = myAssignment?.feeding_frequency === 'as_needed';
   const isFedToday = item.last_deducted_at ? new Date(item.last_deducted_at).toDateString() === new Date().toDateString() : false;
 
   const displayName = getConversationalName({ brand: product.brand, name: product.name });
@@ -320,8 +324,8 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           </TouchableOpacity>
         )}
 
-        {/* Behavioral Rotational Food action */}
-        {isRotational && !item.is_empty && onLogFeeding && !isFedToday && (
+        {/* Behavioral Rotational / as-needed Food action */}
+        {isAsNeeded && !item.is_empty && onLogFeeding && !isFedToday && (
           <TouchableOpacity
             style={styles.gaveTreatButton}
             onPress={() => onLogFeeding(item)}
@@ -333,7 +337,7 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
         )}
 
         {/* Behavioral Fed Today Badge */}
-        {isRotational && !item.is_empty && isFedToday && (
+        {isAsNeeded && !item.is_empty && isFedToday && (
           <View style={[styles.lockedBadge, { backgroundColor: `${SEVERITY_COLORS.good}1A` }]}>
             <Ionicons name="checkmark-circle" size={12} color={SEVERITY_COLORS.good} />
             <Text style={[styles.lockedBadgeText, { color: SEVERITY_COLORS.good }]}>Fed today</Text>
