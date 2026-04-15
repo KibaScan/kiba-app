@@ -10,7 +10,46 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 1. Migration 040 — Cache `score_breakdown JSONB` on `pet_product_scores`
+## 1. Kiba Index as a Top Picks signal (display + tiebreaker, NOT a score modifier)
+
+**What:** Incorporate community `kiba_index_votes` (D-032, migration 026) as:
+
+1. **A new insight bullet** — `kind: 'kiba_index'`, copy `"Loved by {N}% of {species}s on Kiba"`. Taste-only for V1 (tummy brushes UPVM framing). Gated by `vote_count >= 10 AND taste_pct >= 75`.
+2. **A secondary sort tiebreaker** — `ORDER BY final_score DESC, kiba_taste_pct DESC NULLS LAST`. Breaks integer-score ties by community signal.
+3. **Priority slot** — between `life_stage` and `macro_fat/macro_protein`. Rationale: social proof is powerful once it exists but personalized facts (allergens, life stage) remain higher-priority for THIS pet.
+
+**Data plumbing:**
+- Extend `TopPickEntry` with `kiba_index: { taste_pct: number; tummy_pct: number | null; vote_count: number } | null`.
+- After top-20 query, call `get_kiba_index_stats(product_ids, species)` RPC (migration 026) to hydrate. Confirm the RPC accepts `UUID[]` batch; if not, add a batched variant or wrap with `Promise.all` over 20 IDs.
+- New helper `checkKibaIndex(entry, ctx): InsightBullet | null` alongside existing checks. Unit-tested with threshold + empty-data cases.
+
+**Compliance guardrails:**
+- Taste-only in V1 ("loved it" votes). Tummy votes imply GI outcome — defer until vet/legal review of copy.
+- `"Loved by"` is factual attribution (user voted "loved it"), not a therapeutic claim. Passes UPVM regex (no blocklist terms).
+- Parenthetical source attribution `(Kiba Index)` OR post-fix `on Kiba` — makes it clear this is community data, not editorial endorsement.
+- **Strict separation from the scoring engine.** Kiba Index MUST NOT feed into Layer 1/2/3. D-019 brand-blind + ingredient-based scoring stays intact. This is display-and-tiebreak only.
+
+**Why deferred:**
+- "Months or years to kick in" — vote density for any given product takes time to accumulate beyond the 10-vote threshold. V1 would mostly emit empty-state fallback anyway, so building it up-front adds complexity without user-visible payoff.
+- Vote-count telemetry needed first to tune threshold (currently a guess at 10).
+- Tummy integration requires independent compliance review.
+
+**Trigger to revisit:**
+- Telemetry shows ≥20% of daily-food products have `vote_count >= 10`, meaning the bullet would fire on a meaningful share of picks.
+- A community-growth feature (digest push encouraging voting, streak bonuses for voting) ships and needs downstream consumption points to justify user effort.
+- V1 static insights feel repetitive and users want more differentiation between picks (Kiba Index provides the social-proof angle that static signals lack).
+
+**Effort:** Small-medium. New field on `TopPickEntry` + one RPC call + one check function + ~4 unit tests + priority-order update. Biggest risk: RPC batching — need to confirm or add batched variant.
+
+**Future extensions** (further deferred):
+- Breed-filtered Kiba Index (`"Loved by 91% of {breed}s"` — requires breed tagging on votes, which isn't in migration 026 schema today).
+- Tummy integration with vet-reviewed copy (`"Well-tolerated by 88% of dogs"` — needs UPVM sign-off).
+- Recency weighting (last-90-day votes weighted higher to reflect current formulations).
+- Low-vote-count "Be the first to rate" CTA on hero/rank rows to drive voting.
+
+---
+
+## 2. Migration 040 — Cache `score_breakdown JSONB` on `pet_product_scores`
 
 **What:** Add a `score_breakdown JSONB` column to `pet_product_scores`, update the batch-score Edge Function + client scorer (`batchScoreHybrid`) to write the full `ScoredResult` shape (or a trimmed subset), and backfill for existing scored rows.
 
@@ -25,7 +64,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 2. Cross-category "Picks for {Pet}" hub (Option B — Apple-style rails)
+## 3. Cross-category "Picks for {Pet}" hub (Option B — Apple-style rails)
 
 **What:** A separate screen that aggregates Top Daily Food + Top Topper + Top Treat + Top Supplement into horizontal rails, one per category. Entry point from HomeScreen or MeScreen ("Picks for Troy" card).
 
@@ -40,7 +79,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 3. Inline "Add to Pantry" action on picks
+## 4. Inline "Add to Pantry" action on picks
 
 **What:** A primary CTA on the hero card + a quick-add affordance on each rank row that adds the product directly to the active pet's pantry without routing to `Result`.
 
@@ -54,7 +93,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 4. Self-healing `batchScoreHybrid()` trigger on empty state
+## 5. Self-healing `batchScoreHybrid()` trigger on empty state
 
 **What:** When `CategoryTopPicksScreen` mounts and the top-20 query returns 0 scored rows for the current filter, trigger `batchScoreHybrid(petId, pet, category, productForm)` with a 5–10s blocking spinner, then re-fetch. Mirror's `TopPicksCarousel`'s existing behavior.
 
@@ -68,7 +107,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 5. Screen-level integration test for `CategoryTopPicksScreen`
+## 6. Screen-level integration test for `CategoryTopPicksScreen`
 
 **What:** `__tests__/screens/CategoryTopPicksScreen.test.tsx` covering state transitions (loading → healthy / partial / empty), paywall gate, tab bar hide/restore on focus/blur, escape-hatch routing.
 
@@ -82,7 +121,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 6. Additional entry points (deep links, notifications, Safe Swap outcomes)
+## 7. Additional entry points (deep links, notifications, Safe Swap outcomes)
 
 **What:** Open `CategoryTopPicksScreen` from:
 - Weekly digest push (`"See Troy's top 20 for this week →"`)
@@ -99,7 +138,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 7. Condition-driven bullets
+## 8. Condition-driven bullets
 
 **What:** Expand the insight generator to emit bullets like:
 - `"Grain-free"` when the pet has wheat allergy (beyond just the ingredient match)
@@ -117,7 +156,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 8. Compare hook on hero
+## 9. Compare hook on hero
 
 **What:** Secondary CTA on the hero: `"Compare with last scanned"` → routes to `CompareScreen` with the Top Pick as the "new" side and the user's last scanned product as the "current" side.
 
@@ -131,7 +170,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 9. Feline carb bullet (D-014)
+## 10. Feline carb bullet (D-014)
 
 **What:** Emit `"Low carb ({X}% DMB)"` for cats when the product has low estimated carbs. Uses the same Atwater-based `carbEstimate` logic that powers `PortionCard`'s "Est. X% carbs" display.
 
@@ -145,7 +184,7 @@ This document tracks enhancements explicitly held back from the V1 `CategoryTopP
 
 ---
 
-## 10. Same-brand disambiguation for rank-row display names
+## 11. Same-brand disambiguation for rank-row display names
 
 **What:** When two rank-row picks share the same brand + identical first-two descriptor words, the short display name (`getConversationalName` output) can collide. Fall back to a longer disambiguation (add product size, flavor, or recipe identifier) when a collision is detected within the visible list.
 
