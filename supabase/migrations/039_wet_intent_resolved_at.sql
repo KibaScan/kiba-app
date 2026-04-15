@@ -5,7 +5,7 @@
 BEGIN;
 
 ALTER TABLE pets
-  ADD COLUMN wet_intent_resolved_at TIMESTAMPTZ DEFAULT NULL;
+  ADD COLUMN IF NOT EXISTS wet_intent_resolved_at TIMESTAMPTZ DEFAULT NULL;
 
 -- Backfill: existing pets skip the intercept on their next add.
 -- Applies to: pets already on non-dry_only feeding_style, OR pets with
