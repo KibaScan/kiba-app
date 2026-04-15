@@ -337,8 +337,19 @@ export function AddToPantrySheet({
     return estimateBagCups(product, qty, quantityUnit);
   }, [product, quantityValue, quantityUnit]);
 
-  const effectiveServingSize = autoMode && autoServingResult ? autoServingResult.amount : manualServingSize;
-  const effectiveServingUnit = autoMode && autoServingResult ? autoServingResult.unit : manualServingUnit;
+  // When user picks "Just a topper" in FeedingIntentSheet, autoServingResult was
+  // computed for role='base' (full DER) and would persist a misleading multi-unit
+  // serving on a rotational/as_needed item (EditPantryItem depletion row would
+  // read e.g. "3 units/day · ~7 days"). Force manual defaults so the topper
+  // lands with a sane 1-unit serving, mirroring the treat-path contract.
+  const effectiveServingSize =
+    autoMode && autoServingResult && !intentForcedTopper
+      ? autoServingResult.amount
+      : manualServingSize;
+  const effectiveServingUnit =
+    autoMode && autoServingResult && !intentForcedTopper
+      ? autoServingResult.unit
+      : manualServingUnit;
 
   // Wet transition schedule (discrete food only)
   const wetUnitsPerDay = useMemo(() => {
