@@ -64,9 +64,9 @@
 
 ## Numbers
 
-- **Tests:** 1508 passing / 64 suites
+- **Tests:** 1536 passing / 65 suites
 - **Decisions:** 129
-- **Migrations:** 38 (001–038)
+- **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
