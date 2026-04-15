@@ -79,6 +79,7 @@ export function buildAddToPantryInput(params: {
   feedingsPerDay: number;
   feedingFrequency: FeedingFrequency;
   feedingRole?: FeedingRole;
+  autoDeplete?: boolean;
 }): AddToPantryInput {
   return {
     product_id: params.productId,
@@ -91,7 +92,50 @@ export function buildAddToPantryInput(params: {
     feedings_per_day: params.feedingsPerDay,
     feeding_frequency: params.feedingFrequency,
     feeding_role: params.feedingRole,
+    ...(params.autoDeplete !== undefined ? { auto_deplete_enabled: params.autoDeplete } : {}),
   };
+}
+
+export interface InferredAssignmentDefaults {
+  isSimpleAdd: boolean;           // treat/topper/supplement — simple add form layout
+  inferredRole: FeedingRole;
+  inferredFreq: FeedingFrequency;
+  inferredAutoDeplete: boolean;
+}
+
+/**
+ * Classifies a product + pet feeding style into assignment defaults.
+ * Replaces the previous conflated `treat = isTreat || is_supplemental`
+ * flag that broke topper and dry_only + wet routing.
+ *
+ * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §4b.
+ */
+export function inferAssignmentDefaults(
+  pet: Pick<Pet, 'feeding_style'>,
+  product: Pick<Product, 'category' | 'is_supplemental' | 'product_form'>,
+): InferredAssignmentDefaults {
+  const isTreat = product.category === Category.Treat;
+  const isTopper = product.is_supplemental === true && !isTreat;
+  const isSupplement = product.category === Category.Supplement;
+  const isSimpleAdd = isTreat || isTopper || isSupplement;
+
+  let inferredRole: FeedingRole;
+  if (isTreat || isSupplement) {
+    inferredRole = null;
+  } else if (isTopper) {
+    inferredRole = 'rotational';
+  } else if (pet.feeding_style === 'wet_only') {
+    inferredRole = 'base';
+  } else if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') {
+    inferredRole = 'rotational';
+  } else {
+    inferredRole = 'base';
+  }
+
+  const inferredFreq: FeedingFrequency = inferredRole === 'base' ? 'daily' : 'as_needed';
+  const inferredAutoDeplete = inferredFreq === 'daily';
+
+  return { isSimpleAdd, inferredRole, inferredFreq, inferredAutoDeplete };
 }
 
 // ─── Props ──────────────────────────────────────────────
@@ -113,7 +157,18 @@ export function AddToPantrySheet({
   onAdded,
   conditions,
 }: AddToPantrySheetProps) {
-  const treat = isTreat(product.category) || product.is_supplemental;
+  // Routing classification — splits treat/topper/supplement/main-food
+  // so toppers can route as rotational + as_needed + auto_deplete=false.
+  // Legacy `treat` alias preserved so downstream form-layout JSX is unchanged.
+  const {
+    isSimpleAdd: treat,
+    inferredRole,
+    inferredFreq: feedingFrequency,
+    inferredAutoDeplete,
+  } = useMemo(
+    () => inferAssignmentDefaults(pet, product),
+    [pet.feeding_style, product.category, product.is_supplemental, product.product_form],
+  );
 
   // Store data
   const pantryItems = usePantryStore(s => s.items);
@@ -193,16 +248,6 @@ export function AddToPantrySheet({
     }
   }, [visible, product, pet, treat]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Behavioral Feeding Role Inference
-  const inferredRole: FeedingRole = useMemo(() => {
-    if (treat) return null;
-    if (pet.feeding_style === 'wet_only') return 'base';
-    if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') return 'rotational';
-    return 'base';
-  }, [treat, pet.feeding_style, product.product_form]);
-
-  const feedingFrequency: FeedingFrequency = treat ? 'as_needed' : (inferredRole === 'rotational' ? 'as_needed' : 'daily');
-
   // Discrete units (cans, pouches, trays) can't be mixed — no Safe Switch math.
   // Bulk/mixable forms (dry, fresh, raw, freeze-dried) support gradual mixing.
   const DISCRETE_FORMS = ['wet'];
@@ -269,7 +314,7 @@ export function AddToPantrySheet({
     setSubmitting(true);
     setError(null);
 
-    // Treat / Supplement Path
+    // Treat / Topper / Supplement Path (simple add form layout)
     if (treat) {
       try {
         const input = buildAddToPantryInput({
@@ -280,7 +325,9 @@ export function AddToPantrySheet({
           servingSize: manualServingSize,
           servingSizeUnit: manualServingUnit,
           feedingsPerDay: 1,
-          feedingFrequency: 'as_needed',
+          feedingFrequency,
+          feedingRole: inferredRole,
+          autoDeplete: inferredAutoDeplete,
         });
         await addItemWithRebalance(input, pet.id);
         saveSuccess();
@@ -306,6 +353,7 @@ export function AddToPantrySheet({
         feedingsPerDay: 1,
         feedingFrequency,
         feedingRole: inferredRole,
+        autoDeplete: inferredAutoDeplete,
       });
 
       await addItemWithRebalance(input, pet.id);

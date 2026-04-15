@@ -38,8 +38,31 @@ import {
   getDefaultFeedingFrequency,
   isFormValid,
   buildAddToPantryInput,
+  inferAssignmentDefaults,
 } from '../../../src/components/pantry/AddToPantrySheet';
 import { Category } from '../../../src/types';
+import type { Pet, FeedingStyle } from '../../../src/types/pet';
+import type { Product } from '../../../src/types';
+
+// ─── Minimal test fixtures ──────────────────────────────
+// inferAssignmentDefaults consumes only Pick<Pet, 'feeding_style'>
+// and Pick<Product, 'category' | 'is_supplemental' | 'product_form'>.
+
+function makePet(overrides: { feeding_style: FeedingStyle }): Pick<Pet, 'feeding_style'> {
+  return { feeding_style: overrides.feeding_style };
+}
+
+function makeProduct(overrides: {
+  category: Category;
+  is_supplemental: boolean;
+  product_form?: string | null;
+}): Pick<Product, 'category' | 'is_supplemental' | 'product_form'> {
+  return {
+    category: overrides.category,
+    is_supplemental: overrides.is_supplemental,
+    product_form: overrides.product_form ?? null,
+  };
+}
 
 // ─── isTreat ────────────────────────────────────────────
 
@@ -205,5 +228,107 @@ describe('buildAddToPantryInput', () => {
 
     expect(input.quantity_original).toBe(4.5);
     expect(input.quantity_unit).toBe('kg');
+  });
+});
+
+// ─── inferAssignmentDefaults ────────────────────────────
+
+describe('inferAssignmentDefaults', () => {
+  test('topper (is_supplemental=true, daily_food) routes as rotational + as_needed + auto_deplete=false', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('topper on dry_and_wet pet also routes as rotational + as_needed', () => {
+    const pet = makePet({ feeding_style: 'dry_and_wet' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'freeze-dried',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+  });
+
+  test('treat (category=treat) routes with feeding_role=null', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({ category: Category.Treat, is_supplemental: false });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBeNull();
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('supplement (category=supplement) routes with feeding_role=null (deferred scope)', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({ category: Category.Supplement, is_supplemental: false });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBeNull();
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('complete meal (non-dry, dry_and_wet pet) routes as rotational', () => {
+    const pet = makePet({ feeding_style: 'dry_and_wet' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(false);
+  });
+
+  test('complete meal (dry, any feeding_style) routes as base + daily', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
+    expect(result.inferredAutoDeplete).toBe(true);
+    expect(result.isSimpleAdd).toBe(false);
+  });
+
+  test('wet_only pet adding wet routes as base + daily', () => {
+    const pet = makePet({ feeding_style: 'wet_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
   });
 });
