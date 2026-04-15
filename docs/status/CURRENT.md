@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-15 (session 48 — PR #9 code review + doc fix)
+# Project Status — Last updated 2026-04-15 (session 49 — PR #9 → m5-complete + PR #2 → main merge cascade)
 
 ## Active Milestone
 
@@ -106,6 +106,49 @@
 
 ## Last Session
 
+- **Date:** 2026-04-15 (session 49 — merge cascade)
+- **Branch:** local on `m5-complete` (auto-switched by `gh pr merge`). No new local commits this session — merges executed via `gh pr merge` GitHub-side.
+- **PRs merged this session:** [#9](https://github.com/KibaScan/kiba-app/pull/9) + [#2](https://github.com/KibaScan/kiba-app/pull/2). Both now MERGED.
+- **Accomplished — `/boot` + full merge cascade landing M5–M9 on `main`.**
+  - **`/boot`:** confirmed numbers still matched reality pre-merge (1538 tests, 129 decisions, 39 migrations — no drift since session 48). Verified PR #9 still OPEN + MERGEABLE with 0 reviewer comments.
+  - **User confirmed migration 039 applied to production Supabase.** Cleared the pre-merge blocker called out in sessions 47 + 48.
+  - **Step 1 — PR #9 squash-merged** `m9-wet-food-extras → m5-complete` as commit `92450b1` at 2026-04-15T16:57:45Z. Remote branch deleted, stale remote-tracking refs pruned, memory entry `[In-flight PR #9]` removed from `MEMORY.md` index.
+  - **Step 2 — PR #2 merged to `main`.** Discovered PR #2 had been open against `main` since 2026-03-20 with title "M5 complete" + empty body, but had silently accumulated 137 commits spanning M5 + M6 + M7 + M8 + M9 (including today's PR #9 squash). Updated title → `M5–M9: behavioral feeding, pantry v5, Matte Premium, wet food extras` + wrote full release-notes body (per-milestone breakdown, migration range, regression anchors, test state). Merged via `--merge` (preserves PR #5–#9 squash commits on `main` history for bisect/blame) as merge commit `e94f3ad` at 2026-04-15T18:22:52Z.
+  - **Post-merge topology:** `origin/main` at `e94f3ad` — full M5–M9 shipped. `origin/m5-complete` at `92450b1` (one commit behind `main`; only delta is the merge commit itself, code-content identical). Local `main` fast-forwarded to match origin.
+- **No new commits on `m5-complete` this session.** Both merges happened on GitHub via `gh pr merge`.
+- **Numbers (unchanged, all verified green):** 1538 tests / 65 suites / 3 snapshots, 129 decisions, 39 migrations, 19,058 products. Full `npx jest` run confirmed — regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53).
+- **Not done yet (carry-overs):**
+  - Two deferred follow-ups from sessions 47 + 48 (still open):
+    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete; dry_only + no rotational + has daily → falls to style-mismatch branch).
+    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake` — a dry_only topper-only pet never reaches the accumulator. Not introduced by any recent branch.
+  - Open M9 remaining scope:
+    - Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`).
+    - HomeScreen visual overhaul (custom assets, layout polish).
+    - General UX friction fixes.
+  - Carry-over QA from session 41+ (inherited from session 48 "Up Next"):
+    - On-device QA for session 41 token edits (subtle press-overlay visual confirmation on PantryCard + BrowseProductRow).
+    - Broader Matte Premium alpha audit (~17 sites) — dedicated session to catalog + design 1-3 new tokens (`dividerBorder`, `nestedCardTint`).
+    - Chipsurface visual QA (session 39 carry-over) — ~14 touched surfaces need eyeballs at 0.12.
+    - TopPicksCarousel populated-state border check (only zero state visually verified).
+    - On-device fuzzy search stress test.
+    - PantryScreen.tsx:435 chip-background visual review (only non-border `cardBorder → hairlineBorder` swap).
+    - Form-aware cache maturity for stale browse scores.
+- **Start the next session by:**
+  1. **Branch decision:** continue on `m5-complete` (workflow memory pattern) or switch to `main` as the new base. Recommendation: keep `m5-complete` as the integration branch for M9 remainder + M10 scope; schedule the next `m5-complete → main` release PR when M9 fully closes or a themed batch is ready. `m5-complete` is functionally identical to `main` post-merge — only delta is the merge commit itself.
+  2. **Pick the next scope:** Top Picks dedicated screen (highest-leverage user-facing remaining M9 item, stub already wired) OR HomeScreen visual overhaul OR a dedicated carry-over QA sweep.
+  3. **Don't re-apply migration 039** — already live on production.
+- **Gotchas / context for next session:**
+  - **`m5-complete` is NOT stale.** At `92450b1`, functionally identical to `main` at `e94f3ad` (the only delta is the merge commit itself). New `m9-<feature>` branches should still branch off `m5-complete` per workflow memory — that pattern hasn't changed.
+  - **PR #2 is now MERGED + closed.** Future `m5-complete → main` sync will be a new PR number. Don't look for PR #2 as the integration target anymore.
+  - **Migration 039 is live on prod.** Don't attempt a re-apply.
+  - **Memory entry `project_inflight_pr9.md` removed from `MEMORY.md` index.** The file itself still exists on disk (couldn't `rm` this session due to permission-mode block) but no longer loads on `/boot`. Harmless orphan.
+  - **Session 48 gotcha still applies:** `__tests__/CLAUDE.md` now documents render tests directly. Don't drop the "Pure-presentation sheet/card → Render test" row if rewriting the testing pyramid table.
+  - **Session 47 gotchas still apply** to anything touching `FeedingIntentSheet`, `AddToPantrySheet` routing, or `wet_intent_resolved_at` — re-read the session 47 archive below before editing those code paths.
+
+---
+
+## Session 48
+
 - **Date:** 2026-04-15 (session 48 — short session)
 - **Branch:** `m9-wet-food-extras` off `m5-complete` (same branch as session 47). 1 new commit on top of session 47's work. Pushed to origin.
 - **PR:** [#9](https://github.com/KibaScan/kiba-app/pull/9) — still OPEN, still awaiting review + merge. Now 24 commits. No reviewer comments yet.
@@ -115,18 +158,9 @@
   - **Fix (`76b568d`):** replaced the single "UI component → Snapshot" row in `__tests__/CLAUDE.md` with two rows that encode the actual convention: `| UI component w/ logic | Extract helper → unit test | Default — keep logic out of JSX (.test.ts) |` + `| Pure-presentation sheet/card | Render test (@testing-library/react-native) | .test.tsx; use when no helper to extract |`. Pushed to `m9-wet-food-extras`. Future `/code-review` runs will read the updated table directly from the source of truth — no more relying on memory `project_render_tests_allowed.md` to silence a rule the code has already superseded.
 - **1 new commit on branch `m9-wet-food-extras`** (total now 24 including session 47's 23):
   - `76b568d` docs(tests): update testing pyramid for render-test convention
-- **Not done yet:**
-  - **PR #9 review + merge + migration 039 apply** — all still outstanding from session 47. No reviewers have looked at the PR in the ~4 hours since it opened.
-  - Same two deferred follow-ups from session 47:
-    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence.
-    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake`; a dry_only topper-only pet never reaches the accumulator.
-- **Start the next session by:**
-  1. **Check PR #9 status** first — `gh pr view 9`. If merged: delete branch, update CURRENT.md (move accomplishments into main M9 progress list, remove in-flight mention, drop memory `project_inflight_pr9.md`). If still open: address any review comments that appeared.
-  2. **Apply migration 039 to production Supabase** before merge (ideal) or immediately after (document the order).
-  3. Decide on the two deferred follow-ups from session 47.
-- **Gotchas / context for next session:**
-  - **`__tests__/CLAUDE.md` now documents render tests.** The convention used to live only in memory (`project_render_tests_allowed.md`); it's now encoded in the testing pyramid directly. If a future session rewrites `__tests__/CLAUDE.md`, don't drop the "Pure-presentation sheet/card → Render test" row.
-  - **All session-47 gotchas still apply** — same branch, same PR, no production database state changed. Re-read session 47's gotcha list below if touching FeedingIntentSheet, AddToPantrySheet routing, or `wet_intent_resolved_at`.
+- **Not done (at session 48 close — resolved in session 49):**
+  - PR #9 review + merge + migration 039 apply → **all resolved in session 49**.
+  - Two deferred follow-ups from session 47 still open (see session 49 "Not done yet" for status).
 
 ---
 
