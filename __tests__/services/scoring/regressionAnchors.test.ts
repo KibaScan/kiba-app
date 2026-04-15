@@ -103,6 +103,7 @@ function makePet(overrides: Partial<PetProfile> = {}): PetProfile {
     feeding_style: 'dry_only',
     wet_reserve_kcal: 0,
     wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,

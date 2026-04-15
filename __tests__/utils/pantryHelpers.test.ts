@@ -144,6 +144,7 @@ function makePet(overrides: Partial<Pet> = {}): Pet {
     feeding_style: 'dry_only',
     wet_reserve_kcal: 0,
     wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     health_reviewed_at: null,
     weight_goal_level: null,
     caloric_accumulator: null,
