@@ -200,6 +200,7 @@ export function AddToPantrySheet({
   const [showIntentSheet, setShowIntentSheet] = useState(false);
   const [showStyleSetup, setShowStyleSetup] = useState(false);
   const [intentForcedTopper, setIntentForcedTopper] = useState(false);
+  const [hasShownWetOnlyDryPrompt, setHasShownWetOnlyDryPrompt] = useState(false);
   const [isNewToDiet, setIsNewToDiet] = useState<boolean | null>(null);
   const [autoMode, setAutoMode] = useState(true);
 
@@ -221,6 +222,7 @@ export function AddToPantrySheet({
       setShowIntentSheet(false);
       setShowStyleSetup(false);
       setIntentForcedTopper(false);
+      setHasShownWetOnlyDryPrompt(false);
     }
   }, [visible]);
 
@@ -233,6 +235,22 @@ export function AddToPantrySheet({
       setShowIntentSheet(true);
     }
   }, [visible, treat, pet, product]);
+
+  // Preserve legacy wet_only + dry direction prompt — opens FeedingStyleSetupSheet
+  // directly (no new FeedingIntentSheet for this rare case). Per spec §5 non-goals.
+  useEffect(() => {
+    if (!visible || treat || hasShownWetOnlyDryPrompt) return;
+    if (
+      pet.feeding_style === 'wet_only' &&
+      product.product_form === 'dry' &&
+      product.category === 'daily_food' &&
+      !product.is_supplemental &&
+      !product.is_vet_diet
+    ) {
+      setShowStyleSetup(true);
+      setHasShownWetOnlyDryPrompt(true);
+    }
+  }, [visible, treat, pet, product, hasShownWetOnlyDryPrompt]);
 
   const persistWetIntentResolved = useCallback(async () => {
     try {

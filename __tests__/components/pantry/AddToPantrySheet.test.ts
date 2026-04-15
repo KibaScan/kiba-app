@@ -433,3 +433,23 @@ describe('shouldShowFeedingIntentSheet', () => {
     expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
   });
 });
+
+// ─── wet_only + dry direction (legacy preserved) ────────
+
+describe('wet_only + dry direction (legacy preserved)', () => {
+  test('should NOT trigger FeedingIntentSheet (handled separately)', () => {
+    // The new FeedingIntentSheet is for dry_only pets only.
+    // wet_only + dry uses the legacy direct-to-FeedingStyleSetupSheet path.
+    const pet = makePet({
+      feeding_style: 'wet_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+});
