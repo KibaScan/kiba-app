@@ -57,7 +57,7 @@ jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn().mockResolvedValue(true),
 }));
 
-import { formatTime, buildFrequencyUpdate } from '../../src/screens/EditPantryItemScreen';
+import { formatTime, buildFrequencyUpdate, shouldShowFedTodayCard } from '../../src/screens/EditPantryItemScreen';
 
 // ─── formatTime ────────────────────────────────────────
 
@@ -117,6 +117,58 @@ describe('buildFrequencyUpdate', () => {
       auto_deplete_enabled: false,
       notifications_on: false,
     });
+  });
+});
+
+// ─── shouldShowFedTodayCard ────────────────────────────
+// Featured Action Card visibility on EditPantryItemScreen.
+// Visible ONLY when: feedingFrequency='as_needed' AND !isEmpty AND isActive AND !isRecalled.
+// See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b.
+
+describe('shouldShowFedTodayCard', () => {
+  test('visible when as_needed + not empty + active + not recalled', () => {
+    expect(shouldShowFedTodayCard({
+      feedingFrequency: 'as_needed',
+      isEmpty: false,
+      isActive: true,
+      isRecalled: false,
+    })).toBe(true);
+  });
+
+  test('hidden when feedingFrequency is daily', () => {
+    expect(shouldShowFedTodayCard({
+      feedingFrequency: 'daily',
+      isEmpty: false,
+      isActive: true,
+      isRecalled: false,
+    })).toBe(false);
+  });
+
+  test('hidden when item is empty', () => {
+    expect(shouldShowFedTodayCard({
+      feedingFrequency: 'as_needed',
+      isEmpty: true,
+      isActive: true,
+      isRecalled: false,
+    })).toBe(false);
+  });
+
+  test('hidden when item is recalled', () => {
+    expect(shouldShowFedTodayCard({
+      feedingFrequency: 'as_needed',
+      isEmpty: false,
+      isActive: true,
+      isRecalled: true,
+    })).toBe(false);
+  });
+
+  test('hidden when item is soft-deleted (is_active=false)', () => {
+    expect(shouldShowFedTodayCard({
+      feedingFrequency: 'as_needed',
+      isEmpty: false,
+      isActive: false,
+      isRecalled: false,
+    })).toBe(false);
   });
 });
 
