@@ -11,6 +11,7 @@ import {
   getPantryForPet,
   getPantryAnchor,
   updateCalorieShares,
+  evaluateDietCompleteness,
 } from '../../src/services/pantryService';
 import { PantryOfflineError } from '../../src/types/pantry';
 
@@ -530,5 +531,46 @@ describe('updateCalorieShares', () => {
     // pets.select('feeding_style') call is the observable side-effect we can assert on.
     expect(supabase.from).toHaveBeenCalledWith('pets');
     expect(petsChain.select).toHaveBeenCalledWith('feeding_style');
+  });
+});
+
+// ─── evaluateDietCompleteness ───────────────────────────
+
+describe('evaluateDietCompleteness', () => {
+  function wireDiet(opts: {
+    assignments?: unknown[];
+    items?: unknown[];
+    feedingStyle?: string;
+  }) {
+    const assignChain = mockChain({ data: opts.assignments ?? [], error: null });
+    const petsChain = mockChain({ data: { feeding_style: opts.feedingStyle ?? 'dry_only' }, error: null });
+    const itemsChain = mockChain({ data: opts.items ?? [], error: null });
+
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'pantry_pet_assignments') return assignChain;
+      if (table === 'pets') return petsChain;
+      if (table === 'pantry_items') return itemsChain;
+      return mockChain({ data: null, error: null });
+    });
+  }
+
+  test('dry_only pet with only rotational items and no base returns info status with topper-aware message', async () => {
+    wireDiet({
+      feedingStyle: 'dry_only',
+      assignments: [{ pantry_item_id: 'pi-1', feeding_role: 'rotational' }],
+      items: [
+        {
+          id: 'pi-1',
+          products: { is_supplemental: true, category: 'daily_food' },
+        },
+      ],
+    });
+
+    const result = await evaluateDietCompleteness('pet-1', 'Rex');
+
+    expect(result.status).toBe('info');
+    expect(result.message).toContain('Toppers');
+    expect(result.message).toContain('Rex');
+    expect(result.message).toMatch(/extras|main food/i);
   });
 });
