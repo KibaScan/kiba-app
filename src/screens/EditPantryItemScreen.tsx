@@ -496,18 +496,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            {/* Auto-Deplete row — hidden for daily frequency.
-                The auto-deplete cron (supabase/functions/auto-deplete/index.ts:370)
-                always processes daily items regardless of the flag, so showing
-                a toggle state here would be misleading. The row is only
-                meaningful for 'as_needed' cadences. */}
-            {feedingFrequency !== 'daily' && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Auto-Deplete</Text>
-                <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
-              </View>
-            )}
-
             {activePet?.feeding_style === 'custom' && (
               <TouchableOpacity
                 style={styles.editSplitsLink}
