@@ -107,8 +107,8 @@
 ## Last Session
 
 - **Date:** 2026-04-14 → 2026-04-15 (session 47)
-- **Branch:** `m9-wet-food-extras` off `m5-complete`. 21 commits. NOT yet PR'd — awaiting final user sign-off on the last on-device round.
-- **PR:** Not opened. Ready to open against `m5-complete` once user confirms case #3 (re-arm via feeding_style change) on device.
+- **Branch:** `m9-wet-food-extras` off `m5-complete`. 23 commits. Pushed to origin.
+- **PR:** [#9](https://github.com/KibaScan/kiba-app/pull/9) — opened against `m5-complete`, awaiting review + merge. Migration 039 must be applied to production Supabase before or immediately after merge.
 - **Accomplished — full brainstorm → spec → plan → subagent-driven-execution cycle for the Wet Food Extras Path.**
   - **/boot:** caught 2 numbers drifts — test count 1473→1508 (CURRENT.md stale from PR #5/#6/#7/#8 merging since session 46) and migration count 38→39 (session 46 landed 038 but CURRENT.md hadn't rolled).
   - **Investigated wet-feeding plumbing gap:** user flagged "no docs/memory on how wet feedings work" — found `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` already existed but wasn't linked from CLAUDE.md spec table. Fixed: added pointer + saved memory file `project_behavioral_feeding_doc.md` so future sessions find it on boot.
@@ -145,16 +145,15 @@
     - `bd0579b` inferAssignmentDefaults honors prior topper intent
     - `92243e0` docs(pantry-spec): v5 — behavioral feeding + wet food extras path
 - **Not done yet:**
-  - **On-device re-test of case #3** (re-arm intercept via feeding_style change on a pet with existing toppers). Cases #1 + #2 confirmed working; user implicitly accepted case #3 behavior after understanding the "unlimited toppers by design" semantics.
-  - **PR not opened.** Once user greenlights, open against `m5-complete` with a summary of the 21 commits + links to the spec + plan docs.
-  - **Migration 039 application to Supabase.** The migration file is in the repo but has NOT been pushed to the live DB. Before the PR merges, either (a) include migration apply in the CI gate OR (b) document in PR description that maintainer must `supabase db push` migration 039 post-merge.
-  - **Deferred from final code review:**
-    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete, dry_only + no rotational + has daily → falls to style-mismatch branch). Nice-to-have hardening; skipped this session.
+  - **Migration 039 application to Supabase.** The migration file is in the repo + referenced in PR #9 body, but has NOT been pushed to the live DB. Before PR #9 merges, either (a) include migration apply in the CI gate OR (b) maintainer runs `supabase db push` post-merge. Flagged prominently in PR description.
+  - **PR #9 review + merge.** Opened 2026-04-15, awaiting review. No reviewer comments at handoff. Branch is clean and rebased on `m5-complete`.
+  - **Deferred from final code review (non-blocking):**
+    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete, dry_only + no rotational + has daily → falls to style-mismatch branch). Nice-to-have hardening.
     - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake`. A dry_only topper-only pet (empty base) won't appear in `petIntake`, so logged topper kcal never reach the accumulator. Not introduced by this branch; follow-up.
 - **Start the next session by:**
-  1. Confirming case #3 on device (edit pet → change feeding_style → add wet food → verify intercept re-fires). If it works, open PR. If not, dispatch a fix.
-  2. Apply migration 039 to production Supabase before merge (or stage it in CI).
-  3. Decide on scope of the pantry-followups thread: (a) 2 negative-case tests, (b) accumulator gap for topper-only pets. Neither is blocking.
+  1. **Check PR #9 status** first thing — `gh pr view 9`. If merged: delete local+remote branch, update CURRENT.md (remove in-flight PR mention, move accomplishments to main M9 progress list). If still open: address any review comments.
+  2. **Apply migration 039 to production Supabase** either before the merge (ideal — keeps DB and code aligned) or immediately after (document the order).
+  3. Decide on scope of the pantry-followups thread: (a) 2 negative-case tests, (b) accumulator gap for topper-only pets. Neither blocking.
 - **Gotchas / context for next session:**
   - **Render tests are now a supported pattern.** `@testing-library/react-native@12.9.0` + `react-test-renderer@19.2.0` installed 2026-04-14. Default to helper-extraction for components with logic; use render tests for pure-presentation sheets/cards. `.test.tsx` for JSX, `.test.ts` for pure helpers. See memory `project_render_tests_allowed.md`.
   - **Spec deviation documented in code:** `FeedingIntentSheet` dismiss now cancels add flow (not "forces topper" per spec §2 v1). The commit message on `1b225fa` explains. Future readers should not revert to spec v1 behavior without re-reading that commit + on-device feedback rationale.
