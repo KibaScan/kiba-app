@@ -1,6 +1,6 @@
 # Supabase Migrations
 
-38 migrations applied to the Kiba Supabase project in sequence. Each
+39 migrations applied to the Kiba Supabase project in sequence. Each
 file represents one deployed schema change: numbered, dated via git,
 reviewable in isolation. RLS policies live inside the migration that
 creates the table they protect — no cross-cutting auth migrations.
@@ -18,7 +18,7 @@ creates the table they protect — no cross-cutting auth migrations.
 
 ## Milestone map
 
-Not all 38 are equally interesting. The ones below are the load-bearing
+Not all 39 are equally interesting. The ones below are the load-bearing
 schema moments; the rest are incremental additions (columns, indexes,
 backfills) that sit on top of these foundations.
 
@@ -79,8 +79,9 @@ backfills) that sit on top of these foundations.
 |-----------|------|
 | `028_medication_reminders.sql` | D-167 reminder times + duration presets |
 | `029_category_browse.sql` | `is_variety_pack` + `get_browse_counts` RPC |
-| `034_behavioral_feeding.sql` | **Behavioral feeding rewrite.** `feeding_style` + `feeding_role` (base / rotational) replacing the rigid slot/meal-fraction system. Wet Reserve Engine + completeness engine refactor. |
+| `034_behavioral_feeding.sql` | **Behavioral feeding rewrite.** `feeding_style` + `feeding_role` (base / rotational) replacing the rigid slot/meal-fraction system. Wet Reserve Engine + completeness engine refactor. `feeding_log` table + `log_wet_feeding_atomic` / `undo_wet_feeding_atomic` RPCs for log-driven wet feedings. |
 | `038_fuzzy_search_rpc.sql` | `pg_trgm` fuzzy search for HomeScreen product text search |
+| `039_wet_intent_resolved_at.sql` | **Wet food extras path.** Nullable `wet_intent_resolved_at` TIMESTAMPTZ on `pets` gates the new `FeedingIntentSheet` one-time intercept. Backfill marks existing non-dry_only pets and pets with active cross-format pantry items as already-resolved so the intercept only fires for net-new dry_only state. Uses `ADD COLUMN IF NOT EXISTS` for re-run safety (pets-table convention per 022/028/029/031/035). |
 
 ### Data integrity fixes
 
