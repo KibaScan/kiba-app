@@ -61,6 +61,9 @@ export interface Pet {
   wet_reserve_kcal: number;
   wet_reserve_source: string | null;
 
+  // FeedingIntentSheet one-time resolution (migration 039)
+  wet_intent_resolved_at: string | null;
+
   created_at: string;
   updated_at: string;
 }

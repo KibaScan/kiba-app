@@ -164,6 +164,7 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       feeding_style: 'dry_only' as const,
       wet_reserve_kcal: 0,
       wet_reserve_source: null,
+      wet_intent_resolved_at: null,
       created_at: '2026-01-01', updated_at: '2026-01-01',
     };
 
@@ -208,6 +209,7 @@ describe('Supplemental E2E: 2 real-world-style products', () => {
       feeding_style: 'dry_only' as const,
       wet_reserve_kcal: 0,
       wet_reserve_source: null,
+      wet_intent_resolved_at: null,
       created_at: '2026-01-01', updated_at: '2026-01-01',
     };
 

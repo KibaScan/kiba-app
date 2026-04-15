@@ -241,7 +241,7 @@ export async function updatePantryItem(
 
 export async function updatePetAssignment(
   assignmentId: string,
-  updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency' | 'feeding_times' | 'notifications_on'>>,
+  updates: Partial<Pick<PantryPetAssignment, 'serving_size' | 'serving_size_unit' | 'feedings_per_day' | 'feeding_frequency' | 'feeding_times' | 'notifications_on' | 'auto_deplete_enabled'>>,
 ): Promise<PantryPetAssignment> {
   await requireOnline();
 
@@ -807,6 +807,7 @@ export async function evaluateDietCompleteness(
   const baseFoodsCount = dailyFoods.filter(i => roleMap.get(i.id) === 'base').length;
   const hasBase = baseFoodsCount > 0;
   const hasAnyDaily = dailyFoods.length > 0;
+  const rotationalCount = typedItems.filter(i => roleMap.get(i.id) === 'rotational').length;
 
   // evaluate completeness based on feeding style
   if (feedingStyle === 'dry_only' || feedingStyle === 'dry_and_wet') {
@@ -821,6 +822,15 @@ export async function evaluateDietCompleteness(
     if (hasAnyDaily) {
       return { status: 'complete', message: null };
     }
+  }
+
+  // dry_only pet has only rotational items (toppers or intent-routed extras) but no base food
+  // Distinguish "extras" from "no main food yet" before generic fallthrough.
+  if (feedingStyle === 'dry_only' && !hasBase && rotationalCount > 0) {
+    return {
+      status: 'info',
+      message: `Toppers are extras — add a dry main food to complete ${petName}'s diet.`,
+    };
   }
 
   // Has daily food but missing base → feeding style mismatch, not a critical issue

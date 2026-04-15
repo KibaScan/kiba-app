@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-12 (session 46)
+# Project Status — Last updated 2026-04-15 (session 48 — PR #9 code review + doc fix)
 
 ## Active Milestone
 
@@ -64,9 +64,9 @@
 
 ## Numbers
 
-- **Tests:** 1473 passing / 63 suites
+- **Tests:** 1538 passing / 65 suites
 - **Decisions:** 129
-- **Migrations:** 38 (001–038)
+- **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -105,6 +105,92 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-15 (session 48 — short session)
+- **Branch:** `m9-wet-food-extras` off `m5-complete` (same branch as session 47). 1 new commit on top of session 47's work. Pushed to origin.
+- **PR:** [#9](https://github.com/KibaScan/kiba-app/pull/9) — still OPEN, still awaiting review + merge. Now 24 commits. No reviewer comments yet.
+- **Accomplished — `/boot` + `/code-review` on PR #9 + one CLAUDE.md doc fix.**
+  - **`/boot`:** confirmed all numbers in CURRENT.md still match reality (1538 tests, 129 decisions, 39 migrations — no drift since session 47). PR #9 still OPEN, MERGEABLE, 0 reviewer comments.
+  - **`/code-review` on PR #9:** ran the full 4-agent pipeline (2 sonnet CLAUDE.md reviewers + 2 opus bug reviewers in parallel, then per-issue validation subagents). Both bug reviewers cleared — no syntax errors, no reversed conditionals, no migration SQL errors, no RLS gaps, no logic bugs. Both CLAUDE.md reviewers independently flagged the same one issue: `__tests__/components/pantry/FeedingIntentSheet.test.tsx` uses `@testing-library/react-native` render tests with no `toMatchSnapshot()`, violating `__tests__/CLAUDE.md:17` which said `| UI component | Snapshot | Catch unintended visual regressions |`. This was documentation drift — session 47 introduced render tests as an approved pattern (memory `project_render_tests_allowed.md`) but the pyramid table in `__tests__/CLAUDE.md` wasn't updated to match.
+  - **Fix (`76b568d`):** replaced the single "UI component → Snapshot" row in `__tests__/CLAUDE.md` with two rows that encode the actual convention: `| UI component w/ logic | Extract helper → unit test | Default — keep logic out of JSX (.test.ts) |` + `| Pure-presentation sheet/card | Render test (@testing-library/react-native) | .test.tsx; use when no helper to extract |`. Pushed to `m9-wet-food-extras`. Future `/code-review` runs will read the updated table directly from the source of truth — no more relying on memory `project_render_tests_allowed.md` to silence a rule the code has already superseded.
+- **1 new commit on branch `m9-wet-food-extras`** (total now 24 including session 47's 23):
+  - `76b568d` docs(tests): update testing pyramid for render-test convention
+- **Not done yet:**
+  - **PR #9 review + merge + migration 039 apply** — all still outstanding from session 47. No reviewers have looked at the PR in the ~4 hours since it opened.
+  - Same two deferred follow-ups from session 47:
+    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence.
+    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake`; a dry_only topper-only pet never reaches the accumulator.
+- **Start the next session by:**
+  1. **Check PR #9 status** first — `gh pr view 9`. If merged: delete branch, update CURRENT.md (move accomplishments into main M9 progress list, remove in-flight mention, drop memory `project_inflight_pr9.md`). If still open: address any review comments that appeared.
+  2. **Apply migration 039 to production Supabase** before merge (ideal) or immediately after (document the order).
+  3. Decide on the two deferred follow-ups from session 47.
+- **Gotchas / context for next session:**
+  - **`__tests__/CLAUDE.md` now documents render tests.** The convention used to live only in memory (`project_render_tests_allowed.md`); it's now encoded in the testing pyramid directly. If a future session rewrites `__tests__/CLAUDE.md`, don't drop the "Pure-presentation sheet/card → Render test" row.
+  - **All session-47 gotchas still apply** — same branch, same PR, no production database state changed. Re-read session 47's gotcha list below if touching FeedingIntentSheet, AddToPantrySheet routing, or `wet_intent_resolved_at`.
+
+---
+
+## Session 47
+
+- **Date:** 2026-04-14 → 2026-04-15 (session 47)
+- **Branch:** `m9-wet-food-extras` off `m5-complete`. 23 commits. Pushed to origin.
+- **PR:** [#9](https://github.com/KibaScan/kiba-app/pull/9) — opened against `m5-complete`, awaiting review + merge. Migration 039 must be applied to production Supabase before or immediately after merge.
+- **Accomplished — full brainstorm → spec → plan → subagent-driven-execution cycle for the Wet Food Extras Path.**
+  - **/boot:** caught 2 numbers drifts — test count 1473→1508 (CURRENT.md stale from PR #5/#6/#7/#8 merging since session 46) and migration count 38→39 (session 46 landed 038 but CURRENT.md hadn't rolled).
+  - **Investigated wet-feeding plumbing gap:** user flagged "no docs/memory on how wet feedings work" — found `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` already existed but wasn't linked from CLAUDE.md spec table. Fixed: added pointer + saved memory file `project_behavioral_feeding_doc.md` so future sessions find it on boot.
+  - **`superpowers:brainstorming`:** resolved user's ask ("wet food outside of custom can't be rotational; add Log feeding in EditPantryItem") into a full design. Pushed back on Gemini+Opus feedback that proposed re-building `rebalanceBaseShares` (already exists at `pantryService.ts:41`). User's terminology correction: `is_supplemental` = topper (NOT a complete meal), not `category = 'supplement'` (actual supplements, post-MVP deferred).
+  - **`superpowers:writing-plans`:** 10-task bite-sized TDD plan with exact code + SHAs + commit messages. Spec at `docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md`. Plan at `docs/superpowers/plans/2026-04-14-wet-food-extras-path.md`.
+  - **`superpowers:subagent-driven-development`:** per-task implementer + spec-compliance reviewer + kiba-code-reviewer subagents. One spec regression caught (commit `ccf2c48` accidentally dropped the legacy `wet_only + dry` direction prompt — spec §5 preserves it — fixed in `9950f48`). One architectural concern surfaced (Task 3 implementer added `@testing-library/react-native` + `react-test-renderer` devDeps — first render-test infra in the project; user approved option A, saved to memory as `project_render_tests_allowed.md`). Final reviewer flagged one Important issue that `intentForcedTopper` still persisted base-DER serving_size (fixed in `d97ac4a`).
+  - **On-device smoke test surfaced 2 more UX bugs + 1 subtle design flaw:**
+    - `handleIntentDismiss` was aliased to `handleIntentTopperExtras` (per spec v1), but real-device feedback showed accidental tap-outside → permanent intercept disable + silent overfeed on future wet adds. Changed to `onClose` (cancel entire add, no persistence). **Deviation from spec §2 documented in commit message.**
+    - PantryCard Log feeding button was gated on `feeding_role === 'rotational'` but should mirror EditPantryItem's Featured Card condition (`feeding_frequency === 'as_needed'`, role-agnostic). Fixed — now shows for base+as_needed items too.
+    - `inferAssignmentDefaults` had no memory of prior topper choice. Once `wet_intent_resolved_at` was set, subsequent wet adds fell into the `else → 'base'` branch (the same overfeed the intercept was supposed to prevent, one add later). Fixed with new branch: `dry_only + wet_intent_resolved_at != null + non-dry → rotational`.
+    - Horizontal action row: Replace this food + Log feeding now share `actionButtonsRow` (flexDirection row, flexWrap). Matches Matte Premium layout.
+    - Topper badge: expanded to include intent-routed rotational items (not just `is_supplemental=true` catalog products). Condition: `product.is_supplemental || (isRotational && isAsNeeded && !isTreat)`.
+    - Feeding style change reset: `petService.updatePet` now nulls `wet_intent_resolved_at` when feeding_style changes (skipped if caller explicitly includes the field, or if style isn't actually changing).
+  - **21 commits on branch `m9-wet-food-extras`:**
+    - `1609555` session start — test count + behavioral feeding doc pointer
+    - `a9c102a` design spec
+    - `9ba104b` implementation plan
+    - `90f126b` migration 039 — pets.wet_intent_resolved_at + Pet type
+    - `947be71` migration 039 — add IF NOT EXISTS for re-run safety
+    - `df67d54` computeBehavioralServing — dry_only + rotational returns null
+    - `531e7cf` new FeedingIntentSheet component
+    - `2470873` AddToPantrySheet — split treat conflation into topper-aware routing
+    - `ccf2c48` AddToPantrySheet — wire FeedingIntentSheet intercept
+    - `9950f48` AddToPantrySheet — restore wet_only + dry direction prompt (regression fix)
+    - `af43f17` EditPantryItem schedule toggle — wire auto_deplete_enabled
+    - `fb17d23` EditPantryItem — Fed This Today Featured Action Card
+    - `7da1d3d` EditPantryItem fedTodayCard — match screen card rhythm
+    - `28fc766` EditPantryItem — remove redundant Auto-Deplete info row
+    - `a7cf597` evaluateDietCompleteness — topper-aware copy for dry_only + extras
+    - `e9c69fc` bump test count + migration count after wet-food-extras path
+    - `d97ac4a` intentForcedTopper — bypass autoServingResult in effective serving (final-review fix)
+    - `1b225fa` two UX fixes from on-device smoke test (dismiss-cancels + PantryCard role-agnostic)
+    - `03107c1` three on-device UX follow-ups (horizontal row + Topper badge + feeding_style reset)
+    - `bd0579b` inferAssignmentDefaults honors prior topper intent
+    - `92243e0` docs(pantry-spec): v5 — behavioral feeding + wet food extras path
+- **Not done yet:**
+  - **Migration 039 application to Supabase.** The migration file is in the repo + referenced in PR #9 body, but has NOT been pushed to the live DB. Before PR #9 merges, either (a) include migration apply in the CI gate OR (b) maintainer runs `supabase db push` post-merge. Flagged prominently in PR description.
+  - **PR #9 review + merge.** Opened 2026-04-15, awaiting review. No reviewer comments at handoff. Branch is clean and rebased on `m5-complete`.
+  - **Deferred from final code review (non-blocking):**
+    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete, dry_only + no rotational + has daily → falls to style-mismatch branch). Nice-to-have hardening.
+    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake`. A dry_only topper-only pet (empty base) won't appear in `petIntake`, so logged topper kcal never reach the accumulator. Not introduced by this branch; follow-up.
+- **Start the next session by:**
+  1. **Check PR #9 status** first thing — `gh pr view 9`. If merged: delete local+remote branch, update CURRENT.md (remove in-flight PR mention, move accomplishments to main M9 progress list). If still open: address any review comments.
+  2. **Apply migration 039 to production Supabase** either before the merge (ideal — keeps DB and code aligned) or immediately after (document the order).
+  3. Decide on scope of the pantry-followups thread: (a) 2 negative-case tests, (b) accumulator gap for topper-only pets. Neither blocking.
+- **Gotchas / context for next session:**
+  - **Render tests are now a supported pattern.** `@testing-library/react-native@12.9.0` + `react-test-renderer@19.2.0` installed 2026-04-14. Default to helper-extraction for components with logic; use render tests for pure-presentation sheets/cards. `.test.tsx` for JSX, `.test.ts` for pure helpers. See memory `project_render_tests_allowed.md`.
+  - **Spec deviation documented in code:** `FeedingIntentSheet` dismiss now cancels add flow (not "forces topper" per spec §2 v1). The commit message on `1b225fa` explains. Future readers should not revert to spec v1 behavior without re-reading that commit + on-device feedback rationale.
+  - **`wet_intent_resolved_at` is a gate, not a value carrier.** The actual "topper intent" is inferred from (a) its non-null state + (b) pet.feeding_style still being dry_only. Both conditions together signal "user previously chose topper." Do NOT infer topper intent from a non-null timestamp alone — `wet_intent_resolved_at` is also set when user picked "Regular meal" (before they chose a style).
+  - **Behavioral feeding canonical doc:** `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` now linked from CLAUDE.md spec table. Always consult that first for `feeding_style`/`feeding_role`/Wet Reserve questions.
+  - **D-164 invariant:** `unit_label` on `pantry_items` is always `'servings'`. Cans/pouches semantics live in UI (resolved from `serving_size_unit` on assignments). Don't reintroduce 'cans'/'pouches' as stored values.
+  - **`petService.updatePet` auto-resets `wet_intent_resolved_at` on feeding_style change.** If callers need to change feeding_style AND preserve the intent timestamp (unusual but possible), they must explicitly include `wet_intent_resolved_at` in the same patch — the reset skips when the key is present.
+
+---
+
+## Session 46
 
 - **Date:** 2026-04-12 (session 46)
 - **Branch:** `m9-pantry-polish` (first session using the new "branch per unit of work" workflow; reset `m5-complete` local pointer back to `origin/m5-complete` = `cc00f67` mid-session after extracting work to the feature branch).

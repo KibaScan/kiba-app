@@ -43,6 +43,7 @@ import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName, formatServing } from '../utils/formatters';
 import { shouldShowD157Nudge } from './PantryScreen';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
+import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chipToggle } from '../utils/haptics';
 import {
@@ -67,6 +68,50 @@ export function formatTime(time24: string): string {
 }
 
 // D-164: unit label is always 'servings' — picker removed
+
+/**
+ * Build the assignment update payload for a schedule-toggle change.
+ * Schedule is the single source of truth for both feeding_frequency AND
+ * auto_deplete_enabled (daily → true, as_needed → false). Toggling to
+ * as_needed also forces notifications_on=false; toggling to daily leaves
+ * notifications_on untouched so the user's existing preference is preserved.
+ */
+export function buildFrequencyUpdate(
+  freq: FeedingFrequency,
+): Parameters<typeof updatePetAssignment>[1] {
+  const isDaily = freq === 'daily';
+  const updates: Parameters<typeof updatePetAssignment>[1] = {
+    feeding_frequency: freq,
+    auto_deplete_enabled: isDaily,
+  };
+  if (!isDaily) {
+    updates.notifications_on = false;
+  }
+  return updates;
+}
+
+export interface FedTodayCardVisibilityState {
+  feedingFrequency: FeedingFrequency;
+  isEmpty: boolean;
+  isActive: boolean;
+  isRecalled: boolean;
+}
+
+/**
+ * Returns true when the "Fed This Today" Featured Action Card should render
+ * at the top of EditPantryItemScreen. Gated to as_needed items that are
+ * meaningfully loggable — hides on daily (auto-deplete handles it), empty
+ * (nothing to deduct), recalled (bypass per D-158), or soft-deleted.
+ * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b.
+ */
+export function shouldShowFedTodayCard(state: FedTodayCardVisibilityState): boolean {
+  return (
+    state.feedingFrequency === 'as_needed' &&
+    !state.isEmpty &&
+    state.isActive &&
+    !state.isRecalled
+  );
+}
 
 // ─── Component ──────────────────────────────────────────
 
@@ -108,6 +153,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
+  const [logFeedingSheetVisible, setLogFeedingSheetVisible] = useState(false);
   const [pickerTime, setPickerTime] = useState(() => {
     const d = new Date();
     d.setHours(7, 0, 0, 0);
@@ -132,6 +178,17 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const isUnitMode = item?.serving_mode === 'unit';
   const displayName = product ? stripBrandFromName(product.brand, product.name) : '';
   const isShared = (item?.assignments?.length ?? 0) > 1;
+
+  // ── Featured Action Card visibility ──
+  const showFedTodayCard = useMemo(
+    () => shouldShowFedTodayCard({
+      feedingFrequency,
+      isEmpty,
+      isActive: item?.is_active ?? false,
+      isRecalled,
+    }),
+    [feedingFrequency, isEmpty, item?.is_active, isRecalled],
+  );
 
   // ── Derived: depletion ──
   const depletion = useMemo(() => {
@@ -203,11 +260,11 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
   const handleFrequencyToggle = useCallback((freq: FeedingFrequency) => {
     chipToggle();
     setFeedingFrequency(freq);
-    saveAssignmentField({ feeding_frequency: freq });
-    if (freq === 'as_needed') {
+    const updates = buildFrequencyUpdate(freq);
+    if (freq !== 'daily') {
       setNotificationsOn(false);
-      saveAssignmentField({ feeding_frequency: freq, notifications_on: false });
     }
+    saveAssignmentField(updates);
     rescheduleAllFeeding().catch(() => {});
   }, [saveAssignmentField]);
 
@@ -358,6 +415,32 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
             )}
           </View>
 
+          {/* ── Fed This Today (Featured Action Card) ──
+              Prominent accent-color CTA for as_needed + active + non-recalled items.
+              Closes the second-entry-point gap for topper / rotational items whose
+              PantryCard Log feeding button is one screen away.
+              See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b. */}
+          {showFedTodayCard && (
+            <TouchableOpacity
+              style={styles.fedTodayCard}
+              onPress={() => setLogFeedingSheetVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Log a feeding to deduct inventory"
+            >
+              <View style={styles.fedTodayIconBox}>
+                <Ionicons name="restaurant-outline" size={24} color="#FFFFFF" />
+              </View>
+              <View style={styles.fedTodayTextContainer}>
+                <Text style={styles.fedTodayTitle}>Fed This Today</Text>
+                <Text style={styles.fedTodaySubtitle}>
+                  Log a feeding to deduct inventory
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
+            </TouchableOpacity>
+          )}
+
           {/* ── Quantity Card ── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Quantity</Text>
@@ -410,18 +493,6 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Calorie Share</Text>
                 <Text style={styles.infoValue}>{myAssignment.calorie_share_pct}%</Text>
-              </View>
-            )}
-
-            {/* Auto-Deplete row — hidden for daily frequency.
-                The auto-deplete cron (supabase/functions/auto-deplete/index.ts:370)
-                always processes daily items regardless of the flag, so showing
-                a toggle state here would be misleading. The row is only
-                meaningful for 'as_needed' cadences. */}
-            {feedingFrequency !== 'daily' && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Auto-Deplete</Text>
-                <Text style={styles.infoValue}>{myAssignment.auto_deplete_enabled ? 'Enabled' : 'Disabled'}</Text>
               </View>
             )}
 
@@ -653,6 +724,20 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
         onClose={() => setShareSheetVisible(false)}
         onChanged={handleShareChanged}
       />
+
+      {/* ── Fed This Today Sheet ── */}
+      <FedThisTodaySheet
+        isVisible={logFeedingSheetVisible}
+        petId={activePetId}
+        pantryItem={item}
+        assignment={myAssignment}
+        product={product as unknown as Product}
+        onDismiss={() => setLogFeedingSheetVisible(false)}
+        onSuccess={() => {
+          setLogFeedingSheetVisible(false);
+          if (activePetId) loadPantry(activePetId);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -707,6 +792,40 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
+  },
+
+  // Fed This Today Featured Action Card
+  fedTodayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accent,
+    borderRadius: 16,
+    padding: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  fedTodayIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  fedTodayTextContainer: {
+    flex: 1,
+  },
+  fedTodayTitle: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  fedTodaySubtitle: {
+    fontSize: FontSizes.sm,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
   },
 
   // Cards

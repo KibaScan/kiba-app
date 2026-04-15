@@ -1,7 +1,7 @@
 // AddToPantrySheet — Bottom sheet for adding a product to a pet's pantry.
 // Phase C Redesign: Meal-based UX, Safe Switch handoff, auto-serving calculation.
 // Phase D Redesign: Behavioral Feeding, dynamic remaining budget.
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,7 @@ import { saveWetTransition } from '../../services/wetTransitionStorage';
 import { hasActiveSwitchForPet } from '../../services/safeSwitchService';
 import { styles } from './AddToPantryStyles';
 import { FeedingStyleSetupSheet } from './FeedingStyleSetupSheet';
+import { FeedingIntentSheet } from './FeedingIntentSheet';
 
 // ─── Exported Pure Helpers ──────────────────────────────
 
@@ -79,6 +80,7 @@ export function buildAddToPantryInput(params: {
   feedingsPerDay: number;
   feedingFrequency: FeedingFrequency;
   feedingRole?: FeedingRole;
+  autoDeplete?: boolean;
 }): AddToPantryInput {
   return {
     product_id: params.productId,
@@ -91,7 +93,83 @@ export function buildAddToPantryInput(params: {
     feedings_per_day: params.feedingsPerDay,
     feeding_frequency: params.feedingFrequency,
     feeding_role: params.feedingRole,
+    ...(params.autoDeplete !== undefined ? { auto_deplete_enabled: params.autoDeplete } : {}),
   };
+}
+
+export interface InferredAssignmentDefaults {
+  isSimpleAdd: boolean;           // treat/topper/supplement — simple add form layout
+  inferredRole: FeedingRole;
+  inferredFreq: FeedingFrequency;
+  inferredAutoDeplete: boolean;
+}
+
+/**
+ * Classifies a product + pet feeding style into assignment defaults.
+ * Replaces the previous conflated `treat = isTreat || is_supplemental`
+ * flag that broke topper and dry_only + wet routing.
+ *
+ * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §4b.
+ */
+export function inferAssignmentDefaults(
+  pet: Pick<Pet, 'feeding_style' | 'wet_intent_resolved_at'>,
+  product: Pick<Product, 'category' | 'is_supplemental' | 'product_form'>,
+): InferredAssignmentDefaults {
+  const isTreat = product.category === Category.Treat;
+  const isTopper = product.is_supplemental === true && !isTreat;
+  const isSupplement = product.category === Category.Supplement;
+  const isSimpleAdd = isTreat || isTopper || isSupplement;
+
+  let inferredRole: FeedingRole;
+  if (isTreat || isSupplement) {
+    inferredRole = null;
+  } else if (isTopper) {
+    inferredRole = 'rotational';
+  } else if (pet.feeding_style === 'wet_only') {
+    inferredRole = 'base';
+  } else if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') {
+    inferredRole = 'rotational';
+  } else if (
+    // Honor the user's prior "Just a topper" intent: on a dry_only pet with
+    // wet_intent_resolved_at set (and feeding_style unchanged from dry_only —
+    // otherwise my reset in petService.updatePet would have nulled it), the
+    // user previously chose topper. Future non-dry adds default to rotational
+    // rather than silently routing as base+daily (the overfeed bug the
+    // intercept exists to prevent, just one add later).
+    pet.feeding_style === 'dry_only' &&
+    pet.wet_intent_resolved_at != null &&
+    product.product_form !== 'dry'
+  ) {
+    inferredRole = 'rotational';
+  } else {
+    inferredRole = 'base';
+  }
+
+  const inferredFreq: FeedingFrequency = inferredRole === 'base' ? 'daily' : 'as_needed';
+  const inferredAutoDeplete = inferredFreq === 'daily';
+
+  return { isSimpleAdd, inferredRole, inferredFreq, inferredAutoDeplete };
+}
+
+/**
+ * Returns true when FeedingIntentSheet should fire for this pet+product combo.
+ * One-time per pet (gated by wet_intent_resolved_at). Toppers never trigger it
+ * (always extras by definition). Vet diets bypass the intercept (existing rule).
+ *
+ * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §2.
+ */
+export function shouldShowFeedingIntentSheet(
+  pet: Pick<Pet, 'feeding_style' | 'wet_intent_resolved_at'>,
+  product: Pick<Product, 'category' | 'is_supplemental' | 'product_form' | 'is_vet_diet'>,
+): boolean {
+  return (
+    pet.feeding_style === 'dry_only' &&
+    pet.wet_intent_resolved_at == null &&
+    product.category === 'daily_food' &&
+    product.is_supplemental === false &&
+    product.is_vet_diet === false &&
+    product.product_form !== 'dry'
+  );
 }
 
 // ─── Props ──────────────────────────────────────────────
@@ -113,26 +191,31 @@ export function AddToPantrySheet({
   onAdded,
   conditions,
 }: AddToPantrySheetProps) {
-  const treat = isTreat(product.category) || product.is_supplemental;
+  // Routing classification — splits treat/topper/supplement/main-food
+  // so toppers can route as rotational + as_needed + auto_deplete=false.
+  // Legacy `treat` alias preserved so downstream form-layout JSX is unchanged.
+  const {
+    isSimpleAdd: treat,
+    inferredRole,
+    inferredFreq: feedingFrequency,
+    inferredAutoDeplete,
+  } = useMemo(
+    () => inferAssignmentDefaults(pet, product),
+    [pet.feeding_style, pet.wet_intent_resolved_at, product.category, product.is_supplemental, product.product_form],
+  );
 
   // Store data
-  const pantryItems = usePantryStore(s => s.items);
   const pantryPetId = usePantryStore(s => s._petId);
   const addItemWithRebalance = usePantryStore(s => s.addItem);
 
-  const dailyFoodItems = useMemo(() => {
-    if (pantryPetId !== pet.id) return [];
-    return pantryItems.filter(i => i.product.category === 'daily_food' && !i.is_empty && !i.product.is_supplemental);
-  }, [pantryItems, pantryPetId, pet.id]);
-
-  const numDailyFoods = dailyFoodItems.length;
-
   // Local State
+  const [showIntentSheet, setShowIntentSheet] = useState(false);
   const [showStyleSetup, setShowStyleSetup] = useState(false);
-  const [hasSeenStyleSetup, setHasSeenStyleSetup] = useState(false);
+  const [intentForcedTopper, setIntentForcedTopper] = useState(false);
+  const [hasShownWetOnlyDryPrompt, setHasShownWetOnlyDryPrompt] = useState(false);
   const [isNewToDiet, setIsNewToDiet] = useState<boolean | null>(null);
   const [autoMode, setAutoMode] = useState(true);
-  
+
   // Manual overrides
   const [manualServingSize, setManualServingSize] = useState(1);
   const [manualServingUnit, setManualServingUnit] = useState<ServingSizeUnit>('cups');
@@ -145,27 +228,71 @@ export function AddToPantrySheet({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Behavioral Feeding Base Setup + Mismatch Detection
+  // Reset intercept state when sheet closes
+  useEffect(() => {
+    if (!visible) {
+      setShowIntentSheet(false);
+      setShowStyleSetup(false);
+      setIntentForcedTopper(false);
+      setHasShownWetOnlyDryPrompt(false);
+    }
+  }, [visible]);
+
+  // Intercept trigger — fires once per dry_only pet for non-dry complete meals.
+  // Persisted via pet.wet_intent_resolved_at (migration 039).
+  // See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §2.
   useEffect(() => {
     if (!visible || treat) return;
-
-    // Cold start: first daily food, prompt for feeding style
-    if (numDailyFoods === 0 && !hasSeenStyleSetup && pet.feeding_style === 'dry_only') {
-      setShowStyleSetup(true);
-      return;
+    if (shouldShowFeedingIntentSheet(pet, product)) {
+      setShowIntentSheet(true);
     }
+  }, [visible, treat, pet, product]);
 
-    // Mismatch: adding non-dry to dry_only, or dry to wet_only
-    // EC-3: Supplements (salmon oil, liquid probiotics) should never trigger mismatch
-    const isMismatch =
+  // Preserve legacy wet_only + dry direction prompt — opens FeedingStyleSetupSheet
+  // directly (no new FeedingIntentSheet for this rare case). Per spec §5 non-goals.
+  useEffect(() => {
+    if (!visible || treat || hasShownWetOnlyDryPrompt) return;
+    if (
+      pet.feeding_style === 'wet_only' &&
+      product.product_form === 'dry' &&
+      product.category === 'daily_food' &&
       !product.is_supplemental &&
-      ((pet.feeding_style === 'dry_only' && product.product_form !== 'dry') ||
-      (pet.feeding_style === 'wet_only' && product.product_form === 'dry'));
-
-    if (isMismatch && !hasSeenStyleSetup) {
+      !product.is_vet_diet
+    ) {
       setShowStyleSetup(true);
+      setHasShownWetOnlyDryPrompt(true);
     }
-  }, [visible, treat, numDailyFoods, hasSeenStyleSetup, pet.feeding_style, product.product_form]);
+  }, [visible, treat, pet, product, hasShownWetOnlyDryPrompt]);
+
+  const persistWetIntentResolved = useCallback(async () => {
+    try {
+      await updatePet(pet.id, { wet_intent_resolved_at: new Date().toISOString() });
+    } catch (e) {
+      console.warn('[AddToPantrySheet] Failed to persist wet_intent_resolved_at:', e);
+    }
+  }, [pet.id]);
+
+  const handleIntentRegularMeal = useCallback(() => {
+    setShowIntentSheet(false);
+    setShowStyleSetup(true);
+    persistWetIntentResolved();
+  }, [persistWetIntentResolved]);
+
+  const handleIntentTopperExtras = useCallback(() => {
+    setShowIntentSheet(false);
+    setIntentForcedTopper(true);
+    persistWetIntentResolved();
+  }, [persistWetIntentResolved]);
+
+  const handleIntentDismiss = useCallback(() => {
+    // Dismiss (tap-outside / Android back) = cancel the entire add flow.
+    // Do NOT persist wet_intent_resolved_at — the intercept fires again on
+    // the next add attempt. Accidental dismiss used to silently force topper
+    // AND permanently disable the intercept for that pet, making subsequent
+    // wet adds route as base+daily (overfeed). This is the safer behavior.
+    setShowIntentSheet(false);
+    onClose();
+  }, [onClose]);
 
   // Reset & Init
   useEffect(() => {
@@ -192,16 +319,6 @@ export function AddToPantrySheet({
       usePantryStore.getState().loadPantry(pet.id);
     }
   }, [visible, product, pet, treat]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Behavioral Feeding Role Inference
-  const inferredRole: FeedingRole = useMemo(() => {
-    if (treat) return null;
-    if (pet.feeding_style === 'wet_only') return 'base';
-    if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') return 'rotational';
-    return 'base';
-  }, [treat, pet.feeding_style, product.product_form]);
-
-  const feedingFrequency: FeedingFrequency = treat ? 'as_needed' : (inferredRole === 'rotational' ? 'as_needed' : 'daily');
 
   // Discrete units (cans, pouches, trays) can't be mixed — no Safe Switch math.
   // Bulk/mixable forms (dry, fresh, raw, freeze-dried) support gradual mixing.
@@ -238,8 +355,19 @@ export function AddToPantrySheet({
     return estimateBagCups(product, qty, quantityUnit);
   }, [product, quantityValue, quantityUnit]);
 
-  const effectiveServingSize = autoMode && autoServingResult ? autoServingResult.amount : manualServingSize;
-  const effectiveServingUnit = autoMode && autoServingResult ? autoServingResult.unit : manualServingUnit;
+  // When user picks "Just a topper" in FeedingIntentSheet, autoServingResult was
+  // computed for role='base' (full DER) and would persist a misleading multi-unit
+  // serving on a rotational/as_needed item (EditPantryItem depletion row would
+  // read e.g. "3 units/day · ~7 days"). Force manual defaults so the topper
+  // lands with a sane 1-unit serving, mirroring the treat-path contract.
+  const effectiveServingSize =
+    autoMode && autoServingResult && !intentForcedTopper
+      ? autoServingResult.amount
+      : manualServingSize;
+  const effectiveServingUnit =
+    autoMode && autoServingResult && !intentForcedTopper
+      ? autoServingResult.unit
+      : manualServingUnit;
 
   // Wet transition schedule (discrete food only)
   const wetUnitsPerDay = useMemo(() => {
@@ -269,7 +397,7 @@ export function AddToPantrySheet({
     setSubmitting(true);
     setError(null);
 
-    // Treat / Supplement Path
+    // Treat / Topper / Supplement Path (simple add form layout)
     if (treat) {
       try {
         const input = buildAddToPantryInput({
@@ -280,7 +408,9 @@ export function AddToPantrySheet({
           servingSize: manualServingSize,
           servingSizeUnit: manualServingUnit,
           feedingsPerDay: 1,
-          feedingFrequency: 'as_needed',
+          feedingFrequency,
+          feedingRole: inferredRole,
+          autoDeplete: inferredAutoDeplete,
         });
         await addItemWithRebalance(input, pet.id);
         saveSuccess();
@@ -295,6 +425,12 @@ export function AddToPantrySheet({
     }
 
     // Daily Food Path (Behavioral)
+    // FeedingIntentSheet "Just a topper" override: force rotational + as_needed
+    // + auto_deplete=false without changing pet.feeding_style.
+    const effectiveRole: FeedingRole = intentForcedTopper ? 'rotational' : inferredRole;
+    const effectiveFreq: FeedingFrequency = intentForcedTopper ? 'as_needed' : feedingFrequency;
+    const effectiveAutoDeplete: boolean = intentForcedTopper ? false : inferredAutoDeplete;
+
     try {
       const input = buildAddToPantryInput({
         productId: product.id,
@@ -304,15 +440,16 @@ export function AddToPantrySheet({
         servingSize: effectiveServingSize || 1,
         servingSizeUnit: effectiveServingUnit || 'cups',
         feedingsPerDay: 1,
-        feedingFrequency,
-        feedingRole: inferredRole,
+        feedingFrequency: effectiveFreq,
+        feedingRole: effectiveRole,
+        autoDeplete: effectiveAutoDeplete,
       });
 
       await addItemWithRebalance(input, pet.id);
 
       // Save wet transition guide for discrete base food switches
       // Skip if a Safe Switch is already active — don't create conflicting guides
-      if (isNewToDiet === true && inferredRole === 'base' && !isMixable && wetSchedule) {
+      if (isNewToDiet === true && effectiveRole === 'base' && !isMixable && wetSchedule) {
         const hasActiveSafeSwitch = await hasActiveSwitchForPet(pet.id).catch(() => false);
         if (!hasActiveSafeSwitch) {
           saveWetTransition({
@@ -346,7 +483,20 @@ export function AddToPantrySheet({
     </TouchableOpacity>
   );
 
-  // Show Loading if Style Setup Intercepts
+  // Intent intercept (one-time per dry_only pet adding non-dry complete meal)
+  if (showIntentSheet) {
+    return (
+      <FeedingIntentSheet
+        isVisible={showIntentSheet}
+        petName={pet.name}
+        onRegularMeal={handleIntentRegularMeal}
+        onTopperExtras={handleIntentTopperExtras}
+        onDismiss={handleIntentDismiss}
+      />
+    );
+  }
+
+  // Style Setup intercept (forwarded from "Regular meal" intent path)
   if (showStyleSetup) {
     return (
       <FeedingStyleSetupSheet
@@ -358,11 +508,9 @@ export function AddToPantrySheet({
           } catch (e) {
             // fail silently, proceed
           }
-          setHasSeenStyleSetup(true);
           setShowStyleSetup(false);
         }}
         onDismiss={() => {
-          setHasSeenStyleSetup(true);
           setShowStyleSetup(false);
         }}
       />

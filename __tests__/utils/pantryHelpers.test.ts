@@ -144,6 +144,7 @@ function makePet(overrides: Partial<Pet> = {}): Pet {
     feeding_style: 'dry_only',
     wet_reserve_kcal: 0,
     wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     health_reviewed_at: null,
     weight_goal_level: null,
     caloric_accumulator: null,
@@ -1121,6 +1122,36 @@ describe('computeBehavioralServing', () => {
     // DER = 1018, kcal_per_unit = 100 → amount = 10.18, unit = 'units'
     expect(result?.unit).toBe('units');
     expect(result?.amount).toBeCloseTo(1018 / 100);
+  });
+
+  test('dry_only pet + rotational role returns null (topper path)', () => {
+    // When a dry_only pet has a rotational item (topper or intent-sheet-
+    // routed extras), the serving must be null so PantryCard surfaces the
+    // "Log feeding" button instead of computing a full-DER meal.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      weight_current_lbs: 50,
+      is_neutered: true,
+      activity_level: 'moderate',
+      life_stage: 'adult',
+      wet_reserve_kcal: 0,
+    });
+    const product = makeProduct({
+      product_form: 'wet',
+      ga_kcal_per_kg: 1000,
+      is_supplemental: true,
+    });
+
+    const result = computeBehavioralServing({
+      pet,
+      product,
+      feedingRole: 'rotational',
+      dailyWetFedKcal: 0,
+      dryFoodSplitPct: 100,
+      isPremiumGoalWeight: false,
+    });
+
+    expect(result).toBeNull();
   });
 });
 

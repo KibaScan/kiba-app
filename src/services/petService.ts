@@ -179,6 +179,20 @@ export async function updatePet(
     patch.accumulator_last_reset_at = new Date().toISOString();
   }
 
+  // feeding_style change → reset wet_intent_resolved_at so the FeedingIntentSheet
+  // re-fires on next wet add. Covers the dry_only → dry_and_wet → back-to-dry_only
+  // edge case where a pet's intent choice is no longer relevant to their current
+  // feeding pattern. Skipped if the caller explicitly included wet_intent_resolved_at
+  // in the same patch (e.g., AddToPantrySheet persisting the user's intent) or if
+  // the style isn't actually changing.
+  if (
+    'feeding_style' in updates &&
+    !('wet_intent_resolved_at' in updates) &&
+    currentPet?.feeding_style !== updates.feeding_style
+  ) {
+    patch.wet_intent_resolved_at = null;
+  }
+
   // Re-derive breed_size when breed or weight changes
   if ('breed' in updates || 'weight_current_lbs' in updates) {
     const breed = (updates.breed ?? currentPet?.breed) ?? null;

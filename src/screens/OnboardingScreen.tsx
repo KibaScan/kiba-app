@@ -61,6 +61,7 @@ export default function OnboardingScreen() {
         feeding_style: 'dry_only',
         wet_reserve_kcal: 0,
         wet_reserve_source: null,
+        wet_intent_resolved_at: null,
       });
       completeOnboarding();
     } catch (err) {

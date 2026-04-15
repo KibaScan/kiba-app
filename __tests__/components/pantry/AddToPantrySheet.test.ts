@@ -38,8 +38,42 @@ import {
   getDefaultFeedingFrequency,
   isFormValid,
   buildAddToPantryInput,
+  inferAssignmentDefaults,
+  shouldShowFeedingIntentSheet,
 } from '../../../src/components/pantry/AddToPantrySheet';
 import { Category } from '../../../src/types';
+import type { Pet, FeedingStyle } from '../../../src/types/pet';
+import type { Product } from '../../../src/types';
+
+// ─── Minimal test fixtures ──────────────────────────────
+// inferAssignmentDefaults consumes only Pick<Pet, 'feeding_style'>
+// and Pick<Product, 'category' | 'is_supplemental' | 'product_form'>.
+// shouldShowFeedingIntentSheet additionally reads `wet_intent_resolved_at`
+// on the pet and `is_vet_diet` on the product — defaults keep older tests green.
+
+function makePet(overrides: {
+  feeding_style: FeedingStyle;
+  wet_intent_resolved_at?: string | null;
+}): Pick<Pet, 'feeding_style' | 'wet_intent_resolved_at'> {
+  return {
+    feeding_style: overrides.feeding_style,
+    wet_intent_resolved_at: overrides.wet_intent_resolved_at ?? null,
+  };
+}
+
+function makeProduct(overrides: {
+  category: Category;
+  is_supplemental: boolean;
+  product_form?: string | null;
+  is_vet_diet?: boolean;
+}): Pick<Product, 'category' | 'is_supplemental' | 'product_form' | 'is_vet_diet'> {
+  return {
+    category: overrides.category,
+    is_supplemental: overrides.is_supplemental,
+    product_form: overrides.product_form ?? null,
+    is_vet_diet: overrides.is_vet_diet ?? false,
+  };
+}
 
 // ─── isTreat ────────────────────────────────────────────
 
@@ -205,5 +239,260 @@ describe('buildAddToPantryInput', () => {
 
     expect(input.quantity_original).toBe(4.5);
     expect(input.quantity_unit).toBe('kg');
+  });
+});
+
+// ─── inferAssignmentDefaults ────────────────────────────
+
+describe('inferAssignmentDefaults', () => {
+  test('topper (is_supplemental=true, daily_food) routes as rotational + as_needed + auto_deplete=false', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('topper on dry_and_wet pet also routes as rotational + as_needed', () => {
+    const pet = makePet({ feeding_style: 'dry_and_wet' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'freeze-dried',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+  });
+
+  test('treat (category=treat) routes with feeding_role=null', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({ category: Category.Treat, is_supplemental: false });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBeNull();
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('supplement (category=supplement) routes with feeding_role=null (deferred scope)', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({ category: Category.Supplement, is_supplemental: false });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBeNull();
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(true);
+  });
+
+  test('complete meal (non-dry, dry_and_wet pet) routes as rotational', () => {
+    const pet = makePet({ feeding_style: 'dry_and_wet' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.isSimpleAdd).toBe(false);
+  });
+
+  test('complete meal (dry, any feeding_style) routes as base + daily', () => {
+    const pet = makePet({ feeding_style: 'dry_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
+    expect(result.inferredAutoDeplete).toBe(true);
+    expect(result.isSimpleAdd).toBe(false);
+  });
+
+  test('wet_only pet adding wet routes as base + daily', () => {
+    const pet = makePet({ feeding_style: 'wet_only' });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
+  });
+
+  test('dry_only pet with prior topper intent routes subsequent wet as rotational (honors persisted choice)', () => {
+    // Scenario: user previously picked "Just a topper" in FeedingIntentSheet,
+    // persisting wet_intent_resolved_at. The intercept won't re-fire for future
+    // wet adds (one-time per pet). Without this branch, inference would silently
+    // route new wet food as base+daily — the overfeed bug. The prior choice
+    // should be honored: default future non-dry adds to rotational + as_needed.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: '2026-04-14T12:00:00Z',
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+  });
+
+  test('dry_only pet with null wet_intent_resolved_at still routes wet as base (intercept has not fired yet)', () => {
+    // Counterpart to the test above: before the intercept fires, inference
+    // falls back to base+daily. The intercept is the guard for this path —
+    // inference only honors prior intent after it has been resolved.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
+  });
+});
+
+// ─── shouldShowFeedingIntentSheet ───────────────────────
+
+describe('shouldShowFeedingIntentSheet', () => {
+  test('fires when dry_only pet adds non-dry complete meal with null wet_intent_resolved_at', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+      is_vet_diet: false,
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(true);
+  });
+
+  test('does NOT fire when pet already resolved intent', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: '2026-04-01T00:00:00Z',
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for toppers (no ambiguity — always extras)', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for dry products', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for vet diets (existing bypass)', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+      is_vet_diet: true,
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for non-dry_only pets', () => {
+    const pet = makePet({
+      feeding_style: 'dry_and_wet',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+});
+
+// ─── wet_only + dry direction (legacy preserved) ────────
+
+describe('wet_only + dry direction (legacy preserved)', () => {
+  test('should NOT trigger FeedingIntentSheet (handled separately)', () => {
+    // The new FeedingIntentSheet is for dry_only pets only.
+    // wet_only + dry uses the legacy direct-to-FeedingStyleSetupSheet path.
+    const pet = makePet({
+      feeding_style: 'wet_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
   });
 });
