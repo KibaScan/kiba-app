@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-15 (session 47 — wet food extras path)
+# Project Status — Last updated 2026-04-15 (session 48 — PR #9 code review + doc fix)
 
 ## Active Milestone
 
@@ -105,6 +105,32 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-15 (session 48 — short session)
+- **Branch:** `m9-wet-food-extras` off `m5-complete` (same branch as session 47). 1 new commit on top of session 47's work. Pushed to origin.
+- **PR:** [#9](https://github.com/KibaScan/kiba-app/pull/9) — still OPEN, still awaiting review + merge. Now 24 commits. No reviewer comments yet.
+- **Accomplished — `/boot` + `/code-review` on PR #9 + one CLAUDE.md doc fix.**
+  - **`/boot`:** confirmed all numbers in CURRENT.md still match reality (1538 tests, 129 decisions, 39 migrations — no drift since session 47). PR #9 still OPEN, MERGEABLE, 0 reviewer comments.
+  - **`/code-review` on PR #9:** ran the full 4-agent pipeline (2 sonnet CLAUDE.md reviewers + 2 opus bug reviewers in parallel, then per-issue validation subagents). Both bug reviewers cleared — no syntax errors, no reversed conditionals, no migration SQL errors, no RLS gaps, no logic bugs. Both CLAUDE.md reviewers independently flagged the same one issue: `__tests__/components/pantry/FeedingIntentSheet.test.tsx` uses `@testing-library/react-native` render tests with no `toMatchSnapshot()`, violating `__tests__/CLAUDE.md:17` which said `| UI component | Snapshot | Catch unintended visual regressions |`. This was documentation drift — session 47 introduced render tests as an approved pattern (memory `project_render_tests_allowed.md`) but the pyramid table in `__tests__/CLAUDE.md` wasn't updated to match.
+  - **Fix (`76b568d`):** replaced the single "UI component → Snapshot" row in `__tests__/CLAUDE.md` with two rows that encode the actual convention: `| UI component w/ logic | Extract helper → unit test | Default — keep logic out of JSX (.test.ts) |` + `| Pure-presentation sheet/card | Render test (@testing-library/react-native) | .test.tsx; use when no helper to extract |`. Pushed to `m9-wet-food-extras`. Future `/code-review` runs will read the updated table directly from the source of truth — no more relying on memory `project_render_tests_allowed.md` to silence a rule the code has already superseded.
+- **1 new commit on branch `m9-wet-food-extras`** (total now 24 including session 47's 23):
+  - `76b568d` docs(tests): update testing pyramid for render-test convention
+- **Not done yet:**
+  - **PR #9 review + merge + migration 039 apply** — all still outstanding from session 47. No reviewers have looked at the PR in the ~4 hours since it opened.
+  - Same two deferred follow-ups from session 47:
+    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence.
+    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake`; a dry_only topper-only pet never reaches the accumulator.
+- **Start the next session by:**
+  1. **Check PR #9 status** first — `gh pr view 9`. If merged: delete branch, update CURRENT.md (move accomplishments into main M9 progress list, remove in-flight mention, drop memory `project_inflight_pr9.md`). If still open: address any review comments that appeared.
+  2. **Apply migration 039 to production Supabase** before merge (ideal) or immediately after (document the order).
+  3. Decide on the two deferred follow-ups from session 47.
+- **Gotchas / context for next session:**
+  - **`__tests__/CLAUDE.md` now documents render tests.** The convention used to live only in memory (`project_render_tests_allowed.md`); it's now encoded in the testing pyramid directly. If a future session rewrites `__tests__/CLAUDE.md`, don't drop the "Pure-presentation sheet/card → Render test" row.
+  - **All session-47 gotchas still apply** — same branch, same PR, no production database state changed. Re-read session 47's gotcha list below if touching FeedingIntentSheet, AddToPantrySheet routing, or `wet_intent_resolved_at`.
+
+---
+
+## Session 47
 
 - **Date:** 2026-04-14 → 2026-04-15 (session 47)
 - **Branch:** `m9-wet-food-extras` off `m5-complete`. 23 commits. Pushed to origin.
