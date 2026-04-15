@@ -39,6 +39,7 @@ import {
   isFormValid,
   buildAddToPantryInput,
   inferAssignmentDefaults,
+  shouldShowFeedingIntentSheet,
 } from '../../../src/components/pantry/AddToPantrySheet';
 import { Category } from '../../../src/types';
 import type { Pet, FeedingStyle } from '../../../src/types/pet';
@@ -47,20 +48,30 @@ import type { Product } from '../../../src/types';
 // ─── Minimal test fixtures ──────────────────────────────
 // inferAssignmentDefaults consumes only Pick<Pet, 'feeding_style'>
 // and Pick<Product, 'category' | 'is_supplemental' | 'product_form'>.
+// shouldShowFeedingIntentSheet additionally reads `wet_intent_resolved_at`
+// on the pet and `is_vet_diet` on the product — defaults keep older tests green.
 
-function makePet(overrides: { feeding_style: FeedingStyle }): Pick<Pet, 'feeding_style'> {
-  return { feeding_style: overrides.feeding_style };
+function makePet(overrides: {
+  feeding_style: FeedingStyle;
+  wet_intent_resolved_at?: string | null;
+}): Pick<Pet, 'feeding_style' | 'wet_intent_resolved_at'> {
+  return {
+    feeding_style: overrides.feeding_style,
+    wet_intent_resolved_at: overrides.wet_intent_resolved_at ?? null,
+  };
 }
 
 function makeProduct(overrides: {
   category: Category;
   is_supplemental: boolean;
   product_form?: string | null;
-}): Pick<Product, 'category' | 'is_supplemental' | 'product_form'> {
+  is_vet_diet?: boolean;
+}): Pick<Product, 'category' | 'is_supplemental' | 'product_form' | 'is_vet_diet'> {
   return {
     category: overrides.category,
     is_supplemental: overrides.is_supplemental,
     product_form: overrides.product_form ?? null,
+    is_vet_diet: overrides.is_vet_diet ?? false,
   };
 }
 
@@ -330,5 +341,95 @@ describe('inferAssignmentDefaults', () => {
 
     expect(result.inferredRole).toBe('base');
     expect(result.inferredFreq).toBe('daily');
+  });
+});
+
+// ─── shouldShowFeedingIntentSheet ───────────────────────
+
+describe('shouldShowFeedingIntentSheet', () => {
+  test('fires when dry_only pet adds non-dry complete meal with null wet_intent_resolved_at', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+      is_vet_diet: false,
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(true);
+  });
+
+  test('does NOT fire when pet already resolved intent', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: '2026-04-01T00:00:00Z',
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for toppers (no ambiguity — always extras)', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: true,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for dry products', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'dry',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for vet diets (existing bypass)', () => {
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+      is_vet_diet: true,
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
+  });
+
+  test('does NOT fire for non-dry_only pets', () => {
+    const pet = makePet({
+      feeding_style: 'dry_and_wet',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    expect(shouldShowFeedingIntentSheet(pet, product)).toBe(false);
   });
 });
