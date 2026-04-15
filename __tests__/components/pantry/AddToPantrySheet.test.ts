@@ -342,6 +342,49 @@ describe('inferAssignmentDefaults', () => {
     expect(result.inferredRole).toBe('base');
     expect(result.inferredFreq).toBe('daily');
   });
+
+  test('dry_only pet with prior topper intent routes subsequent wet as rotational (honors persisted choice)', () => {
+    // Scenario: user previously picked "Just a topper" in FeedingIntentSheet,
+    // persisting wet_intent_resolved_at. The intercept won't re-fire for future
+    // wet adds (one-time per pet). Without this branch, inference would silently
+    // route new wet food as base+daily — the overfeed bug. The prior choice
+    // should be honored: default future non-dry adds to rotational + as_needed.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: '2026-04-14T12:00:00Z',
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('rotational');
+    expect(result.inferredFreq).toBe('as_needed');
+    expect(result.inferredAutoDeplete).toBe(false);
+  });
+
+  test('dry_only pet with null wet_intent_resolved_at still routes wet as base (intercept has not fired yet)', () => {
+    // Counterpart to the test above: before the intercept fires, inference
+    // falls back to base+daily. The intercept is the guard for this path —
+    // inference only honors prior intent after it has been resolved.
+    const pet = makePet({
+      feeding_style: 'dry_only',
+      wet_intent_resolved_at: null,
+    });
+    const product = makeProduct({
+      category: Category.DailyFood,
+      is_supplemental: false,
+      product_form: 'wet',
+    });
+
+    const result = inferAssignmentDefaults(pet, product);
+
+    expect(result.inferredRole).toBe('base');
+    expect(result.inferredFreq).toBe('daily');
+  });
 });
 
 // ─── shouldShowFeedingIntentSheet ───────────────────────

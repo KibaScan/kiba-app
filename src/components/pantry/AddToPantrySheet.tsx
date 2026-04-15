@@ -112,7 +112,7 @@ export interface InferredAssignmentDefaults {
  * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §4b.
  */
 export function inferAssignmentDefaults(
-  pet: Pick<Pet, 'feeding_style'>,
+  pet: Pick<Pet, 'feeding_style' | 'wet_intent_resolved_at'>,
   product: Pick<Product, 'category' | 'is_supplemental' | 'product_form'>,
 ): InferredAssignmentDefaults {
   const isTreat = product.category === Category.Treat;
@@ -128,6 +128,18 @@ export function inferAssignmentDefaults(
   } else if (pet.feeding_style === 'wet_only') {
     inferredRole = 'base';
   } else if (pet.feeding_style === 'dry_and_wet' && product.product_form !== 'dry') {
+    inferredRole = 'rotational';
+  } else if (
+    // Honor the user's prior "Just a topper" intent: on a dry_only pet with
+    // wet_intent_resolved_at set (and feeding_style unchanged from dry_only —
+    // otherwise my reset in petService.updatePet would have nulled it), the
+    // user previously chose topper. Future non-dry adds default to rotational
+    // rather than silently routing as base+daily (the overfeed bug the
+    // intercept exists to prevent, just one add later).
+    pet.feeding_style === 'dry_only' &&
+    pet.wet_intent_resolved_at != null &&
+    product.product_form !== 'dry'
+  ) {
     inferredRole = 'rotational';
   } else {
     inferredRole = 'base';
@@ -189,7 +201,7 @@ export function AddToPantrySheet({
     inferredAutoDeplete,
   } = useMemo(
     () => inferAssignmentDefaults(pet, product),
-    [pet.feeding_style, product.category, product.is_supplemental, product.product_form],
+    [pet.feeding_style, pet.wet_intent_resolved_at, product.category, product.is_supplemental, product.product_form],
   );
 
   // Store data
