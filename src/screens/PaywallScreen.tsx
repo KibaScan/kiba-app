@@ -260,11 +260,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   planCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.lg,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     position: 'relative',
   },
   planCardSelected: {

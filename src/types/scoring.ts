@@ -158,7 +158,7 @@ export interface CarbEstimate {
 }
 
 /** Pipeline bypass reasons — scoring engine not run */
-export type BypassReason = 'vet_diet_bypass' | 'species_mismatch' | 'variety_pack';
+export type BypassReason = 'vet_diet_bypass' | 'species_mismatch' | 'recalled' | 'variety_pack';
 
 /** Orchestrator final output — composite of all layers */
 export interface ScoredResult {

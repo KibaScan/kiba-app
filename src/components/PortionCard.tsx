@@ -5,7 +5,7 @@
 // D-106: portions are display-only, never modify scores.
 // D-062: cat hepatic lipidosis amber warning card.
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Pet } from '../types/pet';
@@ -15,11 +15,18 @@ import {
   calculateRER,
   getDerMultiplier,
   calculateDailyPortion,
-  calculateGoalWeightPortion,
 } from '../services/portionCalculator';
 import { isPremium } from '../utils/permissions';
-import * as haptics from '../utils/haptics';
+import { updatePet } from '../services/petService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resolveCalories, resolveKcalPerCup } from '../utils/calorieEstimation';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { usePantryStore } from '../stores/usePantryStore';
+import { updatePetAssignment } from '../services/pantryService';
+import { getAdjustedDER, WEIGHT_GOAL_MULTIPLIERS } from '../utils/weightGoal';
+import { getConditionFeedingAdvisory } from '../utils/pantryHelpers';
+import WeightGoalSlider from './WeightGoalSlider';
+import { DailyFoodIcon } from './icons/speciesIcons';
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -28,6 +35,8 @@ interface PortionCardProps {
   product: Product | null;
   conditions: string[];
   isSupplemental?: boolean;
+  showPetName?: boolean;
+  onBCSPress?: () => void;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -72,6 +81,50 @@ function shortenProductName(name: string, maxLen = 40): string {
   return short.substring(0, maxLen - 1).trim() + '\u2026';
 }
 
+const PORTION_UNIT_KEY = 'portionUnit';
+
+/** Compute grams per cup from calorie density: (kcal_per_cup / kcal_per_kg) × 1000 */
+export function computeGramsPerCup(kcalPerCup: number, kcalPerKg: number): number {
+  return (kcalPerCup / kcalPerKg) * 1000;
+}
+
+/** Whether the product has sufficient calorie data for cups↔grams toggle. */
+export function canShowPortionToggle(product: Product | null): {
+  canToggle: boolean;
+  gramsPerCup: number | null;
+  isEstimated: boolean;
+} {
+  if (!product || product.ga_kcal_per_cup == null || product.ga_kcal_per_cup <= 0) {
+    return { canToggle: false, gramsPerCup: null, isEstimated: false };
+  }
+
+  // Label kcal_per_kg — best source
+  if (product.ga_kcal_per_kg != null && product.ga_kcal_per_kg > 0) {
+    return {
+      canToggle: true,
+      gramsPerCup: computeGramsPerCup(product.ga_kcal_per_cup, product.ga_kcal_per_kg),
+      isEstimated: false,
+    };
+  }
+
+  // Atwater fallback — resolveCalories short-circuits at priority 2 when cups
+  // exist, so null them to isolate the Atwater path (D-149)
+  const atwater = resolveCalories({
+    ...product,
+    ga_kcal_per_cup: null,
+    ga_kcal_per_kg: null,
+  } as Product);
+  if (atwater && atwater.kcalPerKg > 0) {
+    return {
+      canToggle: true,
+      gramsPerCup: computeGramsPerCup(product.ga_kcal_per_cup, atwater.kcalPerKg),
+      isEstimated: true,
+    };
+  }
+
+  return { canToggle: false, gramsPerCup: null, isEstimated: false };
+}
+
 /** Whether to show goal weight section. Premium-gated per permissions.ts. */
 export function shouldShowGoalWeight(
   weightGoalLbs: number | null,
@@ -89,8 +142,54 @@ export function shouldShowGoalWeight(
 
 // ─── Component ───────────────────────────────────────────
 
-export default function PortionCard({ pet, product, conditions, isSupplemental }: PortionCardProps) {
+export default function PortionCard({ pet, product, conditions, isSupplemental, showPetName = true, onBCSPress }: PortionCardProps) {
   const [showInfo, setShowInfo] = useState(false);
+  const [portionUnit, setPortionUnit] = useState<'cups' | 'grams'>('cups');
+
+  useEffect(() => {
+    AsyncStorage.getItem(PORTION_UNIT_KEY).then((val) => {
+      if (val === 'cups' || val === 'grams') setPortionUnit(val);
+    });
+  }, []);
+
+  const handleToggleUnit = (unit: 'cups' | 'grams') => {
+    setPortionUnit(unit);
+    AsyncStorage.setItem(PORTION_UNIT_KEY, unit);
+  };
+
+  const handleLevelChange = useCallback(async (level: number) => {
+    try {
+      const oldLevel = pet.weight_goal_level ?? 0;
+      await updatePet(pet.id, {
+        weight_goal_level: level,
+        health_reviewed_at: new Date().toISOString(),
+      });
+
+      // Scale serving sizes proportionally to DER change
+      const oldMult = WEIGHT_GOAL_MULTIPLIERS[oldLevel] ?? 1.0;
+      const newMult = WEIGHT_GOAL_MULTIPLIERS[level] ?? 1.0;
+      if (oldMult !== newMult) {
+        const ratio = newMult / oldMult;
+        const items = usePantryStore.getState().items;
+        const updates: Promise<unknown>[] = [];
+        for (const item of items) {
+          if (item.product.category === 'treat') continue;
+          const asgn = item.assignments.find(
+            (a) => a.pet_id === pet.id && a.feeding_frequency === 'daily',
+          );
+          if (!asgn) continue;
+          const newServing = Math.round(asgn.serving_size * ratio * 100) / 100;
+          updates.push(updatePetAssignment(asgn.id, { serving_size: newServing }));
+        }
+        await Promise.allSettled(updates);
+      }
+
+      // Reload pantry with updated servings + adjusted target_kcal
+      await usePantryStore.getState().loadPantry(pet.id);
+    } catch {
+      // Silently fail — UI already reflects the change via store update
+    }
+  }, [pet]);
 
   const portionData = useMemo(() => {
     if (pet.weight_current_lbs == null) return null;
@@ -108,50 +207,24 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
       conditions,
     });
 
-    const der = Math.round(rer * multiplierResult.multiplier);
+    const baseDer = Math.round(rer * multiplierResult.multiplier);
+    const level = pet.weight_goal_level ?? 0;
+    const der = level !== 0 ? getAdjustedDER(baseDer, level) : baseDer;
 
     const dailyPortion = product
       ? calculateDailyPortion(der, product.ga_kcal_per_cup, product.ga_kcal_per_kg)
       : null;
 
-    const showGoal = shouldShowGoalWeight(
-      pet.weight_goal_lbs,
-      pet.weight_current_lbs,
-      conditions,
-      isPremium(),
-    );
-
-    let goalResult = null;
-    let goalPortion = null;
-    if (showGoal && pet.weight_goal_lbs != null) {
-      goalResult = calculateGoalWeightPortion({
-        currentWeightLbs: pet.weight_current_lbs,
-        goalWeightLbs: pet.weight_goal_lbs,
-        species: pet.species,
-        lifeStage: pet.life_stage,
-        isNeutered: pet.is_neutered,
-        activityLevel: pet.activity_level,
-        ageMonths,
-        conditions,
-      });
-      if (product) {
-        goalPortion = calculateDailyPortion(
-          goalResult.derKcal,
-          product.ga_kcal_per_cup,
-          product.ga_kcal_per_kg,
-        );
-      }
-    }
-
-    return { der, multiplierResult, dailyPortion, showGoal, goalResult, goalPortion };
+    return { baseDer, der, multiplierResult, dailyPortion };
   }, [pet, product, conditions]);
 
-  // Fire hepatic warning haptic when warning becomes visible
-  useEffect(() => {
-    if (portionData?.goalResult?.hepaticWarning) {
-      haptics.hepaticWarning();
-    }
-  }, [portionData?.goalResult?.hepaticWarning]);
+  const toggleData = useMemo(() => canShowPortionToggle(product), [product]);
+
+  // Resolve kcal/cup — DB value first, estimated fallback for dry food
+  const resolvedCup = useMemo(() => product ? resolveKcalPerCup(product) : null, [product]);
+
+  // Condition-based feeding frequency advisory
+  const feedingAdvisory = useMemo(() => getConditionFeedingAdvisory(conditions), [conditions]);
 
   // Supplemental products — portion calculation is nonsensical for toppers/mixers
   if (isSupplemental) {
@@ -175,7 +248,7 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
     );
   }
 
-  const { der, multiplierResult, dailyPortion, showGoal, goalResult, goalPortion } = portionData;
+  const { baseDer, der, multiplierResult, dailyPortion } = portionData;
 
   return (
     <View style={styles.card}>
@@ -194,17 +267,41 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
       {/* DER display */}
       <Text style={styles.derLine}>
         <Text style={styles.derValue}>{formatCalories(der)}</Text>
-        <Text style={styles.derUnit}> kcal/day for {pet.name}</Text>
+        <Text style={styles.derUnit}> kcal/day{showPetName ? ` for ${pet.name}` : ''}</Text>
       </Text>
 
-      {/* Quick cups conversion when kcal_per_cup available */}
-      {product?.ga_kcal_per_cup != null && product.ga_kcal_per_cup > 0 && (() => {
-        const cups = der / product.ga_kcal_per_cup;
+      {/* Cups ↔ Grams toggle */}
+      {toggleData.canToggle && (
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleSegment, portionUnit === 'cups' && styles.toggleSegmentActive]}
+            onPress={() => handleToggleUnit('cups')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleLabel, portionUnit === 'cups' && styles.toggleLabelActive]}>Cups</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleSegment, portionUnit === 'grams' && styles.toggleSegmentActive]}
+            onPress={() => handleToggleUnit('grams')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.toggleLabel, portionUnit === 'grams' && styles.toggleLabelActive]}>Grams</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Cups/day from resolved kcal/cup (DB or estimated) */}
+      {resolvedCup && (() => {
+        const cups = der / resolvedCup.kcalPerCup;
         const isVerySmall = pet.species === 'cat' ? cups < 0.25 : cups < 0.33;
+        const useGrams = portionUnit === 'grams' && toggleData.gramsPerCup != null;
         return (
           <>
             <Text style={styles.cupsLine}>
-              {'\u2248'} {formatCups(cups)} cups/day
+              {'\u2248'} {useGrams
+                ? `${formatGrams(cups * toggleData.gramsPerCup!)} g/day`
+                : `${formatCups(cups)} cups/day`}
+              {resolvedCup.isEstimated && <Text style={styles.estimatedTag}> (est.)</Text>}
             </Text>
             {isVerySmall && (
               <Text style={styles.cupsNote}>
@@ -214,6 +311,16 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
           </>
         );
       })()}
+
+      {/* Condition-based feeding frequency advisory */}
+      {feedingAdvisory && (
+        <View style={styles.feedingAdvisory}>
+          <DailyFoodIcon size={20} color={Colors.accent} />
+          <Text style={styles.feedingAdvisoryText}>
+            {feedingAdvisory.mealsPerDay} smaller meals per day may support {feedingAdvisory.reason}
+          </Text>
+        </View>
+      )}
 
       {/* Multiplier label */}
       <Text style={styles.multiplierLabel}>
@@ -230,50 +337,28 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
         </View>
       )}
 
-      {/* Product portions: cups preferred, grams fallback */}
-      {dailyPortion?.cups != null && product && (
-        <Text style={styles.portionLine} numberOfLines={1}>
-          ~{formatCups(dailyPortion.cups)} cups/day of {shortenProductName(product.name)}
-        </Text>
-      )}
-      {dailyPortion?.cups == null && dailyPortion?.grams != null && product && (
-        <Text style={styles.portionLine} numberOfLines={1}>
-          ~{formatGrams(dailyPortion.grams)}g/day of {shortenProductName(product.name)}
+      {/* kcal per cup — actionable density metric */}
+      {resolvedCup && (
+        <Text style={styles.portionLine}>
+          {resolvedCup.kcalPerCup.toLocaleString()} kcal/cup{resolvedCup.isEstimated ? ' (est.)' : ''}
         </Text>
       )}
 
-      {/* Goal weight section (premium-gated) */}
-      {showGoal && goalResult && (
+      {/* D-160: Weight goal slider */}
+      {!isSupplemental && (
         <View style={styles.goalSection}>
-          <Text style={styles.goalTitle}>Goal Weight Portions</Text>
-          <Text style={styles.goalDer}>
-            <Text style={styles.derValue}>{formatCalories(goalResult.derKcal)}</Text>
-            <Text style={styles.derUnit}> kcal/day</Text>
-          </Text>
-          {goalPortion?.cups != null && (
-            <Text style={styles.goalPortion}>
-              ~{formatCups(goalPortion.cups)} cups/day
-            </Text>
+          <WeightGoalSlider
+            pet={pet}
+            baseDER={baseDer}
+            conditions={conditions}
+            onLevelChange={handleLevelChange}
+          />
+          {onBCSPress && (
+            <TouchableOpacity onPress={onBCSPress} style={styles.bcsLink} activeOpacity={0.7}>
+              <Ionicons name="clipboard-outline" size={14} color={Colors.accent} />
+              <Text style={styles.bcsLinkText}>What's my pet's body condition?</Text>
+            </TouchableOpacity>
           )}
-          {goalPortion?.cups == null && goalPortion?.grams != null && (
-            <Text style={styles.goalPortion}>
-              ~{formatGrams(goalPortion.grams)}g/day
-            </Text>
-          )}
-        </View>
-      )}
-
-      {/* Hepatic lipidosis warning — D-062, D-095 compliant */}
-      {goalResult?.hepaticWarning && (
-        <View style={styles.hepaticCard}>
-          <View style={styles.hepaticHeader}>
-            <Ionicons name="alert-circle" size={18} color={Colors.severityAmber} />
-            <Text style={styles.hepaticTitle}>Gradual weight loss is important</Text>
-          </View>
-          <Text style={styles.hepaticBody}>
-            Losing weight too quickly can strain the liver in cats. Consider discussing
-            a weight loss plan with your veterinarian.
-          </Text>
         </View>
       )}
     </View>
@@ -284,10 +369,12 @@ export default function PortionCard({ pet, product, conditions, isSupplemental }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: Spacing.md,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    padding: Spacing.lg,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   headerRow: {
     flexDirection: 'row',
@@ -330,6 +417,20 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     fontStyle: 'italic',
   },
+  feedingAdvisory: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  feedingAdvisoryText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+    flex: 1,
+  },
   multiplierLabel: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
@@ -351,44 +452,50 @@ const styles = StyleSheet.create({
   },
   goalSection: {
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: Colors.hairlineBorder,
     paddingTop: Spacing.sm,
     marginTop: Spacing.xs,
     gap: Spacing.xs,
   },
-  goalTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  goalDer: {
-    marginTop: Spacing.xs,
-  },
-  goalPortion: {
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
-  },
-  hepaticCard: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.severityAmber,
-    padding: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  hepaticHeader: {
+  bcsLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    alignSelf: 'center',
+    gap: 4,
+    marginTop: Spacing.xs,
   },
-  hepaticTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.severityAmber,
+  bcsLinkText: {
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    fontWeight: '500',
   },
-  hepaticBody: {
-    fontSize: FontSizes.sm,
+  toggleRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    padding: 2,
+    alignSelf: 'flex-start',
+  },
+  toggleSegment: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  toggleSegmentActive: {
+    backgroundColor: Colors.accent,
+  },
+  toggleLabel: {
+    fontSize: FontSizes.xs,
     color: Colors.textSecondary,
-    lineHeight: 18,
+    fontWeight: '500',
+  },
+  toggleLabelActive: {
+    color: Colors.textPrimary,
+    fontWeight: '600',
+  },
+  estimatedTag: {
+    fontSize: FontSizes.xs,
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
   },
 });

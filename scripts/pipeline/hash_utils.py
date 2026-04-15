@@ -10,6 +10,7 @@ Order reflects proportion per AAFCO labeling rules.
 
 import hashlib
 import re
+from typing import Optional
 
 
 def normalize_ingredients(ingredients_raw: str) -> str:
@@ -29,7 +30,7 @@ def normalize_ingredients(ingredients_raw: str) -> str:
     return ', '.join(p for p in parts if p)
 
 
-def compute_ingredients_hash(ingredients_raw: str | None) -> str | None:
+def compute_ingredients_hash(ingredients_raw: Optional[str]) -> Optional[str]:
     """Normalize and SHA-256 hash ingredient string per D-044."""
     if not ingredients_raw:
         return None

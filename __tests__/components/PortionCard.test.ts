@@ -39,6 +39,8 @@ import {
   formatGrams,
   getAgeMonths,
   shouldShowGoalWeight,
+  computeGramsPerCup,
+  canShowPortionToggle,
 } from '../../src/components/PortionCard';
 
 // ─── formatCalories ─────────────────────────────────────
@@ -165,5 +167,74 @@ describe('shouldShowGoalWeight', () => {
 
   test('multiple conditions including obesity → true', () => {
     expect(shouldShowGoalWeight(42, 50, ['diabetes', 'obesity', 'allergy'], true)).toBe(true);
+  });
+});
+
+// ─── computeGramsPerCup ────────────────────────────────
+
+describe('computeGramsPerCup', () => {
+  test('standard kibble: 350 kcal/cup, 3500 kcal/kg → 100g/cup', () => {
+    expect(computeGramsPerCup(350, 3500)).toBe(100);
+  });
+
+  test('wet food: 250 kcal/cup, 1000 kcal/kg → 250g/cup', () => {
+    expect(computeGramsPerCup(250, 1000)).toBe(250);
+  });
+
+  test('high-calorie kibble: 450 kcal/cup, 4000 kcal/kg → 112.5g/cup', () => {
+    expect(computeGramsPerCup(450, 4000)).toBe(112.5);
+  });
+});
+
+// ─── canShowPortionToggle ──────────────────────────────
+
+describe('canShowPortionToggle', () => {
+  test('toggle visible when both kcal_per_cup and kcal_per_kg available', () => {
+    const product = { ga_kcal_per_cup: 350, ga_kcal_per_kg: 3500 } as any;
+    const result = canShowPortionToggle(product);
+    expect(result.canToggle).toBe(true);
+    expect(result.gramsPerCup).toBe(100);
+    expect(result.isEstimated).toBe(false);
+  });
+
+  test('toggle hidden when kcal_per_kg missing (no Atwater data)', () => {
+    const product = { ga_kcal_per_cup: 350, ga_kcal_per_kg: null } as any;
+    const result = canShowPortionToggle(product);
+    expect(result.canToggle).toBe(false);
+    expect(result.gramsPerCup).toBeNull();
+  });
+
+  test('toggle hidden when kcal_per_cup missing', () => {
+    const product = { ga_kcal_per_cup: null, ga_kcal_per_kg: 3500 } as any;
+    const result = canShowPortionToggle(product);
+    expect(result.canToggle).toBe(false);
+  });
+
+  test('toggle hidden for null product', () => {
+    const result = canShowPortionToggle(null);
+    expect(result.canToggle).toBe(false);
+    expect(result.gramsPerCup).toBeNull();
+  });
+
+  test('Atwater fallback when kcal_per_kg missing but GA data available', () => {
+    const product = {
+      ga_kcal_per_cup: 350,
+      ga_kcal_per_kg: null,
+      ga_protein_pct: 25,
+      ga_fat_pct: 15,
+      ga_fiber_pct: 4,
+      ga_moisture_pct: 10,
+    } as any;
+    const result = canShowPortionToggle(product);
+    expect(result.canToggle).toBe(true);
+    expect(result.isEstimated).toBe(true);
+    expect(result.gramsPerCup).toBeGreaterThan(0);
+  });
+
+  test('grams calculation correct with known values', () => {
+    const product = { ga_kcal_per_cup: 380, ga_kcal_per_kg: 3800 } as any;
+    const result = canShowPortionToggle(product);
+    expect(result.gramsPerCup).toBe(100);
+    // 2 cups/day × 100 g/cup = 200 g/day
   });
 });

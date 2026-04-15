@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: March 17, 2026 (151 decisions: D-001 through D-151. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-141 section headers superseded by D-143. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory.)
+> Updated: April 7, 2026 (129 decisions, D-001 through D-167, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: condition-aware feeding frequency.)
 
 ---
 
@@ -180,13 +180,14 @@ All three layers must be independently testable. Species rules never share betwe
 2. "Evaluating GA panel ([protein]% protein, [fat]% fat)..."
 3. "Checking FDA recall database..."
 4. "Applying [Species] Species Rules..."
-5. "Calculating [weight formula] weighted score..."
+5. "Personalizing for [Pet Name]..."
+6. "Calculating [weight formula] weighted score..."
 **Purpose:** Tells user engine is doing real work across all three scoring layers. Builds confidence.
 
 ### D-038: AAFCO Nutrition Panel
 **Status:** LOCKED
 **Date:** Feb 19, 2026
-**Decision:** Expandable section (labeled "30% of score") with colored progress bars for Protein, Fat, Fiber, Moisture vs AAFCO minimum thresholds. Bonus nutrient grid for DHA, Omega-3, Taurine, L-Carnitine, Zinc, Probiotics where present. Life stage matching (AAFCO All Life Stages vs Adult Maintenance vs Growth).
+**Decision:** Expandable section (labeled "[Pet Name]'s Nutritional Fit" per D-094; "Macro Profile" for supplementals per D-147) with colored progress bars for Protein, Fat, Fiber, Moisture vs AAFCO minimum thresholds. Bonus nutrient grid for DHA, Omega-3, Taurine, L-Carnitine, Zinc, Probiotics where present. Life stage matching (AAFCO All Life Stages vs Adult Maintenance vs Growth).
 
 ### D-039: Ingredient Splitting Detection Card
 **Status:** LOCKED
@@ -279,7 +280,7 @@ All three layers must be independently testable. Species rules never share betwe
 | Compare (side-by-side) | "Compare products side-by-side to find the best match for [Pet Name]." |
 
 **2 pre-wired (hidden until feature ships):**
-- Vet report generation (M4)
+- Vet report generation (M6)
 - Elimination diet trial start (M16+)
 
 **Removed:** Recall alert signup — moved to free tier per D-125.
@@ -287,12 +288,12 @@ All three layers must be independently testable. Species rules never share betwe
 **Note:** Search by product name (text lookup, not barcode) is a premium feature. Free users must scan barcodes. This gates a power-user behavior that signals high intent — these users convert well. Scan limit uses rolling 7-day window based on DB timestamps (not calendar week reset).
 
 ### D-053: Affiliate Architecture — Amazon Compliance
-**Status:** LOCKED
+**Status:** LOCKED (revised March 31, 2026 — FTC disclosure moved to About page)
 **Date:** Feb 19, 2026
 **Decision:**
 - Chewy: Show estimated price with label "View on Chewy (Est. ~$45.99)" — labeled as estimate, compliant
 - Amazon: "Check Current Price on Amazon" — intentionally hides price per Amazon Associates TOS
-- FTC disclosure auto-renders below both buttons
+- FTC disclosure in About/Legal section (not inline on every screen — screen bloat)
 - Buy buttons hidden entirely for products scoring <50 — replaced with Safe Swap CTAs
 - Register iOS and Android app URLs in Amazon Associates dashboard
 
@@ -318,7 +319,8 @@ All three layers must be independently testable. Species rules never share betwe
 **Source:** Merck Veterinary Manual / AAHA Nutritional Assessment Guidelines.
 
 ### D-061: Goal Weight Logic
-**Status:** LOCKED
+**Status:** SUPERSEDED by D-160
+**Superseded:** D-160 replaces raw goal weight input with weight goal level slider (-3 to +3).
 **Decision:** For weight loss, RER calculated using goal weight — not current weight. This creates the caloric deficit. Goal weight field activates automatically when `goal_weight < current_weight`. Premium-gated feature.
 
 ### D-062: Cat Weight Loss — Hepatic Lipidosis Guard
@@ -334,8 +336,8 @@ All three layers must be independently testable. Species rules never share betwe
 **Decision:** Derived automatically from age + species + breed size. Stored explicitly on pet profile. Never ask users to select manually. Recalculated on birthday or weight update.
 
 ### D-065: Pantry Feeding Calculations & Bag/Pack Countdown
-**Status:** LOCKED
-**Date:** Feb 19, 2026 (Updated Feb 25, 2026 — shared pantry support)
+**Status:** LOCKED (Partially superseded by D-152 — depletion model updated to user-set serving amounts. DER is now a recommendation, not the computation source. Mixed-feeding proportion slider rejected by D-152 in favor of user-entered per-food amounts.)
+**Date:** Feb 19, 2026 (Updated Feb 25, 2026 — shared pantry support. Superseded March 19, 2026 by D-152.)
 **Decision:** Pantry items display daily feeding amount and countdown to empty. Calculation adapts to three serving formats:
 
 **Format 1 — Bulk (kibble, bulk treats):**
@@ -372,8 +374,8 @@ A single pantry item (one physical bag/case) can be assigned to multiple pets. W
 
 **Auto-detection:** Product category (dry/wet/treat/supplement) determines default serving_format. User can override.
 
-**Mixed-feeding proportion (added Feb 27, 2026):**
-When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%, default 100%) allows the user to indicate what share of the pet's daily calories this item provides. Math becomes: `Cups/day = (DER × diet_proportion) ÷ kcal_per_cup`. This prevents a caloric doubling bug where a pet assigned two daily foods (e.g., kibble + wet) would display 100% DER portions for each, totaling 200% of actual caloric need. Over 40% of pet owners feed mixed diets.
+~~**Mixed-feeding proportion (added Feb 27, 2026):**~~
+~~Superseded by D-152. The proportion slider was rejected in favor of user-entered per-food serving amounts. See D-152 for the current depletion model.~~
 
 **Low stock nudge:** When countdown hits ≤5 days or ≤5 units, show subtle "Running low" indicator. If affiliate link exists for this product, buy button appears at this moment (not before).
 **Milestone:** M5 (Pantry)
@@ -557,23 +559,24 @@ When adding a daily food to the pantry, a `diet_proportion` slider (10% to 100%,
 ## 11. Reference Scores
 
 ### Pure Balance Wild & Free Salmon & Pea (Dog Food)
-**Score:** 65/100 — "Fair match · Legumes, Unnamed Sources"
-**Note:** Updated March 14, 2026 — rescored against v6 pipeline with full Walmart bag ingredient list (42 ingredients). Previous scores (69, 66) were against 15 manually entered ingredients. DCM advisory no longer fires (only 2 legumes in top 7: peas pos 3, pea_starch pos 7 — potatoes are tubers, not legumes per is_legume flag). Unnamed species penalties fire on natural_flavor and fish_meal (−2 each). Product not on Chewy; manually inserted from Walmart UPC.
+**Score:** 62/100 — "Low match · Pulse Load, Unnamed Sources"
+**Note:** Updated March 19, 2026 — rescored after D-137 DCM Pulse Framework replaced grain-free gate with positional pulse load detection. Previous Section 11 score was 65 (pre-D-137). DCM advisory now fires: 3 pulse rules triggered (pulse protein isolate in top 5, pulse load ≥3 in top 10, pulse-to-animal-protein ratio). Taurine + L-Carnitine mitigation applies (+3%). Net DCM impact: −5%.
 
 | Layer | Raw | Weight | Contribution |
 |-------|-----|--------|-------------|
-| Ingredient Quality (incl. −4 unnamed) | 58 | ×0.55 | 31.7 |
+| Ingredient Quality (incl. −4 unnamed) | 58 | ×0.55 | 31.9 |
 | Nutritional Profile | 79 | ×0.30 | 23.7 |
 | Formulation Completeness | 63 | ×0.15 | 9.5 |
 | **Base** | | | **65** |
-| DCM Advisory | | | 0 (not fired) |
-| Taurine + L-Carnitine Mitigation | | | 0 (not fired) |
-| Personalization (Buster) | | | Neutral |
-| **FINAL** | | | **65** |
+| DCM Advisory (D-137) | | | −8 |
+| Taurine + L-Carnitine Mitigation | | | +3 |
+| Breed Modifier (Buster) | | | +2 |
+| **FINAL** | | | **62** |
 
 ### Temptations Classic Tuna (Cat Treat)
-**Score:** 44/100 — "Occasional treat only · not for daily use"
-Base ingredient quality: 52. Cat carb penalty: −8. Personalization (Luna): neutral. Scoring mode: 100% ingredient quality (treat).
+**Score:** 9/100 — "Poor match for Luna"
+**Note:** Updated March 19, 2026 — rescored after D-142 artificial colorant severity escalation (caution → danger). Three colorants (Red 40, Yellow 5, Blue 2) at 15 pts each = 45 pts penalty. Presence-based (no position reduction). Previous Section 11 score was 44 (pre-D-142).
+IQ raw = 19 (base 52, minus 45 colorant penalties, plus other adjustments). Taurine missing penalty: −10. Scoring mode: 100% IQ (treat). Final = 9.
 
 ---
 
@@ -807,11 +810,11 @@ CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
 
 **Compliance:** D-094 framing ("chicken is listed as a known allergen for Mochi"), D-095 (no prescriptive language — "Contains [ingredient]" not "Avoid this product"), D-019 (brand-blind).
 
-### D-099: Vet Report — Pet Dietary Profile (M4)
+### D-099: Vet Report — Pet Dietary Profile (M6)
 **Status:** LOCKED
 **Date:** Feb 25, 2026
 **Depends on:** D-097 (conditions/allergens), D-098 (cross-reactivity), D-094/D-095 (copy rules)
-**Milestone:** M4 (Product Detail + Education)
+**Milestone:** M6 (moved from M4 based on soft launch feedback)
 
 **Purpose:** A shareable PDF giving a veterinarian a structured overview of what the pet is eating, what Kiba flagged, and what conditions/allergens are on file. Replaces the unreliable verbal summary pet owners give at vet visits. No competitor offers this.
 
@@ -866,7 +869,7 @@ CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
 
 **Reintroduction phase (optional, post-trial):** One protein at a time, 14-day observation each. User records outcome: REACTION / TOLERATED / INCONCLUSIVE. Self-serve with prominent disclaimer: "Reintroduction testing should be guided by your veterinarian."
 
-**Vet report upgrade (Type B: Trial Completion):** D-099 infrastructure gains trial-specific sections: outcome summary stat callouts, executive summary (templated prose, NOT AI per D-034), symptom timeline chart + weekly scoring table, contamination event log, pattern detection insights, reintroduction log. All M4 sections carry forward. Trial report is superset.
+**Vet report upgrade (Type B: Trial Completion):** D-099 infrastructure gains trial-specific sections: outcome summary stat callouts, executive summary (templated prose, NOT AI per D-034), symptom timeline chart + weekly scoring table, contamination event log, pattern detection insights, reintroduction log. All base report sections carry forward. Trial report is superset.
 
 **D-095 compliance — prototype copy revisions:**
 
@@ -961,7 +964,7 @@ CREATE INDEX idx_ingredients_allergen_group ON ingredients_dict(allergen_group);
 
 **Compliance:** D-084 (zero emoji in notifications). Notification copy is factual: "Mochi's vet visit tomorrow at 2:00 PM — Paws & Claws Animal Hospital."
 
-**Future:** Appointment history feeds into vet report (D-099) as a "Recent Vet Visits" section. Not at M4 launch — add when data accumulates.
+**Future:** Appointment history feeds into vet report (D-099) as a "Recent Vet Visits" section. Not at M5 launch — add when data accumulates.
 
 ---
 
@@ -1069,7 +1072,9 @@ The modal displays this as a contextual line below the TL;DR, with an info icon 
 | Beneficial | ✅ Beneficial | Green |
 | Neutral | ● Neutral | Gray |
 | Caution | ⚠️ Caution | Amber |
-| Danger | 🔴 Danger | Red |
+| Danger | 🔴 Severe | Red |
+
+*(Note: Internal enum remains `danger`; UI displays "Severe" per D-143.)*
 
 Badge is species-specific — if the user's pet is a cat, show cat severity. If dog, show dog severity. If no pet profile, show both: "⚠️ Caution for dogs · 🔴 Danger for cats"
 
@@ -1097,7 +1102,7 @@ Badge is species-specific — if the user's pet is a cat, show cat severity. If 
 **Compliance:** D-095 (Clinical Copy Rule), D-019 (brand-blind), D-020 (affiliate-isolated — no product recommendations in ingredient modals).
 
 ---
-D-106: Weight Management — Advisories, Not Score Modifiers
+### D-106: Weight Management — Advisories, Not Score Modifiers
 Status: LOCKED
 Date: Feb 26, 2026
 Depends on: D-097 (Pet Health Conditions), D-060–D-063 (DER Multipliers), D-094 (Suitability Framing), D-095 (UPVM Compliance)
@@ -1162,19 +1167,19 @@ Center SA. Feline hepatic lipidosis. Veterinary Clinics of North America: Small 
 | Added Sugar | 🍬 | 2 | Sugar, Cane Molasses |
 | Unnamed Source | ❓ | 7 | Meat Meal, Animal Fat, Animal Digest, Poultry By-Product Meal, Meat By-Products, Poultry Fat, Natural Flavor |
 | Synthetic Additive | 🧪 | 9 | BHA, BHT, TBHQ, Propylene Glycol, Ethoxyquin, Sodium Nitrite, Potassium Sorbate, Calcium Propionate, Phosphoric Acid |
-| Heart Risk | 🫘 | 8 | Peas, Lentils, Chickpeas, Pea Protein, Pea Starch, Potatoes, Sweet Potatoes, Potato Starch |
+| Heart Risk | 🫘 | 6 | Peas, Lentils, Chickpeas, Fava Beans, Pea Protein, Pea Starch (D-137: pulses only, potatoes removed) |
 
-**Heart Risk tag — conditional rendering (updated Feb 27, 2026):**
-The Heart Risk tag does NOT render on simple ingredient presence. It is conditionally bound to the D-013 DCM rule: the tag only renders when `cluster_count >= 3` legume/potato sources appear in the top 7 ingredients (the same threshold that triggers the score penalty). Without this gating, a 95/100 meat-first kibble containing trace "Pea Fiber" at position #15 would display a cardiac warning badge while receiving no score penalty — an instant credibility-destroying contradiction.
+**Heart Risk tag — conditional rendering (updated Mar 19, 2026 per D-137):**
+The Heart Risk tag does NOT render on simple ingredient presence. It is conditionally bound to the D-137 DCM Pulse Framework: the tag only renders when any D-137 rule fires (heavyweight: pulse in top 3, density: 2+ pulses in top 10, or substitution: pulse protein isolate in top 10). Without this gating, a 95/100 meat-first kibble containing trace "Pea Fiber" at position #15 would display a cardiac warning badge while receiving no score penalty — an instant credibility-destroying contradiction.
 
-Additionally, potatoes, sweet potatoes, and potato starch were added to the Heart Risk member list per the FDA CVM investigation, which explicitly includes potatoes alongside legumes in the DCM-associated dietary pattern.
+**Note:** Potatoes, sweet potatoes, and potato starch were originally included per the FDA CVM investigation but were **removed by D-137**, which narrowed DCM scope to pulses only based on amino acid depletion mechanism evidence. See D-137 for rationale.
 
 **Explicitly rejected tags:**
 - ❌ **Filler** — Cannot be applied defensibly to all proposed members. Tapioca starch and powdered cellulose are genuinely nutritionally empty (citations available), but corn and wheat are peer-reviewed nutrient contributors (Tufts Petfoodology, Peixoto et al. 2021, Walker et al. 1994). No umbrella term fits the group: "Low-Starch Carb" fails because cellulose is zero-starch; "Carb" fails because cellulose is zero-carb. Severity ratings + ingredient detail modals handle these individually.
 - ❌ **Allergen Risk** — After moving Natural Flavor to Unnamed Source, only soy remained. Group too small for dedicated tag. Soy allergy handled by Layer 3 personalization (D-097).
 
 **Display rules:**
-- Tags render only when at least one member ingredient is present in the product — **except** Heart Risk, which requires D-013 conditions (3+ legume/potato in top 7)
+- Tags render only when at least one member ingredient is present in the product — **except** Heart Risk, which requires D-137 conditions (any of: pulse in top 3, 2+ pulses in top 10, or pulse protein isolate in top 10)
 - Maximum display: 3 tags above the fold (most severe first). If 4+ fire, "+N more" chip expands on tap.
 - Heart Risk tag renders for dogs only (DCM advisory is dog-specific per Layer 2 species rules)
 - Tags are informational badges — they do NOT modify scores. Score impact comes from the individual ingredient severity ratings already in Layer 1.
@@ -1222,11 +1227,11 @@ Additionally, potatoes, sweet potatoes, and potato starch were added to the Hear
 ```
 src/content/breedModifiers/
   index.ts          ← exports + lookup function
-  dogs.ts           ← 20 breed entries, typed per BreedModifier interface
-  cats.ts           ← 18 breed entries, typed per BreedModifier interface
+  dogs.ts           ← 23 breed entries, typed per BreedModifier interface
+  cats.ts           ← 21 breed entries, typed per BreedModifier interface
 ```
 
-**Rationale:** 38 total breed entries (~15-20KB). Data changes only after vet audit cycles (weeks). App releases are hours. Supabase round-trip adds network dependency on the scoring critical path for data that changes maybe once a quarter. Static JSON means: no async fetch, no cache invalidation, no offline-sync edge cases, deterministic scoring, directly importable by the scoring engine.
+**Rationale:** 44 total breed entries (~15-20KB). Data changes only after vet audit cycles (weeks). App releases are hours. Supabase round-trip adds network dependency on the scoring critical path for data that changes maybe once a quarter. Static JSON means: no async fetch, no cache invalidation, no offline-sync edge cases, deterministic scoring, directly importable by the scoring engine.
 
 **Update path:** When breed data changes (new vet audit clears a modifier), update the static files and ship an app update. This is the same path explainer content follows.
 
@@ -1474,19 +1479,27 @@ Fix activity level in CreatePetScreen.tsx and EditPetScreen.tsx per D-123:
 @PET_PROFILE_SPEC.md §11 for the spec. Run full test suite after.
 
 ---
-### D-124: Treat Logging Entry Points
+### D-124 (Revised): Treat Logging — Quick Picker Default, Scanner Fallback
 **Status:** LOCKED
-**Date:** 2026-02-22
-**Decision:** Three entry points for treat consumption logging:
-1. **Me tab "Log a Treat" scan button** under Treat Battery — auto-deducts kcal from daily treat budget immediately
-2. **Scan Result "Track this food" CTA** — adds product to pantry, no kcal deduction (tracking, not consumption)
-3. **Pantry quick-add (M5)** — one-tap deduction from treat battery for pantry items already saved
-**Central scan button behavior:** Deferred to M5+. The raised center scan tab always opens the camera for barcode scanning — it does not context-switch to treat logging.
-**Milestone:** M5 (Pantry) for implementation. M2 for design spec.
-**Rationale:** Multiple entry points match different user contexts: standing in kitchen (Me tab), just scanned something (Result screen), reviewing what's in stock (Pantry). Each has a different intent — logging vs. tracking vs. quick-add — so the action differs per entry point. Central scan button stays pure to avoid confusing the core interaction.
+**Date:** 2026-03-21
+**Supersedes:** D-124 original (scanner-first treat logging)
+**Depends on:** D-163 (health records pattern), Treat Battery (Phase 2)
+**Milestone:** M5 polish
+**Decision:** "Log a Treat" on PetHubScreen opens a **quick picker sheet** listing the pet's existing pantry treats. One tap to log. Scanner is a fallback at the bottom.
+**Quick picker flow:**
+1. User taps "Log a Treat" on PetHubScreen (below TreatBatteryGauge)
+2. Bottom sheet slides up: "Log a Treat for [Pet Name]"
+3. List of active pantry treats for this pet — tap → immediately calls `logTreat(pantryItemId)`: deducts 1 from `quantity_remaining`, deducts `kcal_per_unit` from Treat Battery daily budget, toast, sheet closes. One tap, no confirmation.
+4. At bottom: "Scan a new treat" link → ScanScreen with `{ treatMode: true }`
+5. Empty state: "No treats in [Pet Name]'s pantry yet." + "Scan a Treat" button
+**ScanScreen treat mode:** After scan, if treat → AddToPantrySheet with treat defaults → return to PetHubScreen. If not treat → normal ResultScreen flow.
+**PantryCard "Gave a treat" button:** Unchanged — same `logTreat()`, alternate entry from pantry screen.
+**Multi-pet:** Quick picker shows treats for **active pet** only.
+**Component:** `src/components/treats/TreatQuickPickerSheet.tsx`
+**Rationale:** 90% of treat logs are for products already in pantry. Camera is friction for repeat actions. Scanner stays available as fallback for new treats.
 ---
 
-## D-125: Recall Siren → Free Tier
+### D-125: Recall Siren → Free Tier
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** Recall Siren (recall alerts, FDA monitoring notifications) moves from premium
@@ -1495,7 +1508,7 @@ to basic/free tier.
 Removes "Recall alert signup" from D-052 paywall triggers.
 
 ---
-## D-126: Paywall Screen Psychology Patterns
+### D-126: Paywall Screen Psychology Patterns
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** Paywall screen implements four behavioral patterns:
@@ -1507,7 +1520,7 @@ Removes "Recall alert signup" from D-052 paywall triggers.
 **Rationale:** Behavioral psychology maximizes $24.99/yr conversion without dark patterns.
 
 ---
-## D-127: API Keys Server-Side Only
+### D-127: API Keys Server-Side Only
 **Status:** LOCKED
 **Date:** 2026-03-03
 **Decision:** No external API keys (Anthropic, etc.) in the React Native app
@@ -1519,7 +1532,7 @@ API later without pushing an app update.
 Supabase Edge Functions provide secure key storage with row-level access control.
 
 ---
-## D-128: Haiku Product Classification on Database Miss
+### D-128: Haiku Product Classification on Database Miss
 **Status:** LOCKED
 **Date:** 2026-03-04
 **Decision:** When the parse-ingredients Edge Function processes OCR text from a database
@@ -1540,7 +1553,7 @@ and corrected values enables classification accuracy auditing.
 - grooming → store only, do NOT score (D-083), show "Grooming scoring coming soon"
 
 ---
-## D-129: Allergen Severity Override in Layer 3
+### D-129: Allergen Severity Override in Layer 3
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1562,7 +1575,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 
 **Depends on:** D-097 (allergen picker), D-098 (cross-reactivity), allergen_group mappings complete in ingredients_dict
 ---
-## D-130: Weekly Digest Push Notification
+### D-130: Weekly Digest Push Notification
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M5
@@ -1573,7 +1586,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 **Free tier:** Yes — digest is free for all users. Encourages re-engagement that drives scan limit hits (conversion funnel).
 
 ---
-## D-131: Widget + Watch App Platform Expansion
+### D-131: Widget + Watch App Platform Expansion
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** Widget = M13+ (post-launch). Watch = M16+.
@@ -1598,7 +1611,7 @@ A flat -15 on a 95-score product still shows green/excellent. The severity overr
 **Rationale:** Daily logging features (symptoms, feeding, elimination diet) have dramatically higher compliance when accessible from Watch/Widget vs requiring full app open. The 2-tap Watch logging path vs 6-tap phone path is the difference between 80% and 30% daily adherence.
 
 ---
-## D-132: Benchmark Bar Granularity
+### D-132: Benchmark Bar Granularity
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1611,20 +1624,20 @@ have very different score distributions. Brand-tier grouping deferred to M6+ (re
 more sophisticated taxonomy).
 
 ---
-## D-133: Flavor Deception Detection Logic
+### D-133: Flavor Deception Detection Logic
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
 **Decision:** Three-layer flavor deception treatment fires when: (1) product name contains
 a protein keyword, (2) that protein is at position 5+ in the ingredient list OR absent
-entirely, AND (3) a different protein is at position 1-2. Triggers "Label Mismatch"
-concern tag (D-107), below-fold explanation card, and ingredient list annotation.
+entirely, AND (3) a different protein is at position 1-2. Triggers below-fold
+"Label Mismatch" explanation card and ingredient list annotation.
 All copy is D-095 compliant — no "misleading," "deceptive," or "dishonest" language.
 AAFCO naming rule cited for context.
 **Canonical test case:** Temptations Classic Tuna — chicken at position 1, tuna buried deep.
 
 ---
-## D-134: Ingredient Content Generation via Haiku
+### D-134: Ingredient Content Generation via Haiku
 **Status:** LOCKED
 **Date:** 2026-03-07
 **Milestone:** M4
@@ -1640,7 +1653,7 @@ with "AI-generated content" subtle indicator. Estimated cost: ~$0.50.
 **Date:** Mar 8, 2026
 **Depends on:** D-094 (Suitability Framing), D-095 (UPVM Compliance), NUTRITIONAL_PROFILE_BUCKET_SPEC.md §11 Q5
 
-**Decision:** Products flagged `_is_vet_diet: true` are NOT scored. No composite score, no color zone, no benchmark comparison. The ingredient waterfall renders normally (severity dots, position, educational detail cards) so users can see what's in the product, but the scoring engine does not run.
+**Decision:** Products flagged `is_vet_diet = true` are NOT scored. No composite score, no color zone, no benchmark comparison. The ingredient waterfall renders normally (severity dots, position, educational detail cards) so users can see what's in the product, but the scoring engine does not run.
 
 **Rationale:** Veterinary diets (renal, hepatic, hydrolyzed protein, GI, urinary, etc.) intentionally deviate from standard AAFCO nutritional baselines to manage disease. Scoring them through the normal engine would penalize the very nutritional profile a veterinarian prescribed — producing a low score that implicitly tells the user "your vet is wrong." That crosses the UPVM line (D-095) by positioning Kiba as a second opinion on veterinary medical decisions.
 
@@ -1653,10 +1666,10 @@ Ingredient waterfall, educational cards, and ingredient content (tldr, detail_bo
 
 | Tier | Confidence | Trigger | Behavior |
 |------|-----------|---------|----------|
-| `veterinary` | High | Product name matches: "Royal Canin Veterinary Diet", "Hill's Prescription Diet", "Purina Pro Plan Veterinary", "Hydrolyzed Protein", "Hepatic", "Renal...Diet" | Sets `_is_vet_diet: true` automatically |
+| `veterinary` | High | Product name matches: "Royal Canin Veterinary Diet", "Hill's Prescription Diet", "Purina Pro Plan Veterinary", "Hydrolyzed Protein", "Hepatic", "Renal...Diet" | Sets `is_vet_diet = true` automatically |
 | `veterinary-mention` | Low | "veterinary" appears anywhere in page text but no high-confidence pattern matched | Flagged for human review, NOT auto-bypassed |
 
-**Schema:** `_is_vet_diet BOOLEAN DEFAULT FALSE` on products table. High-confidence matches set TRUE at import. Low-confidence matches set FALSE with a `_vet_mention_flagged: true` for review queue.
+**Schema:** `is_vet_diet BOOLEAN DEFAULT FALSE` on products table. High-confidence matches set TRUE at import. Low-confidence matches set FALSE with `needs_review = true` for review queue.
 
 **What is suppressed:**
 - Composite score (all three buckets)
@@ -1677,7 +1690,7 @@ Ingredient waterfall, educational cards, and ingredient content (tldr, detail_bo
 
 ---
 
-# D-136: Supplemental Product Classification, Score Color System & Pantry Diet Completeness
+### D-136: Supplemental Product Classification, Score Color System & Pantry Diet Completeness
 
 **Status:** LOCKED
 **Date:** 2026-03-13
@@ -1829,7 +1842,7 @@ This is also a differentiator — no competitor does this.
 
 **Contextual line below score:** "Best paired with a complete meal" — single line, D-095 compliant (purely factual, restating what the manufacturer declared on the label).
 
-### D-095 Compliance Check
+**D-095 Compliance Check**
 
 - "Best paired with a complete meal" — ✅ No prescriptive language. No "should," "must," "we recommend." Objective restatement of the product's AAFCO-declared feeding purpose.
 - Prohibited terms check: no prescribe, treat, cure, prevent, diagnose.
@@ -1911,7 +1924,7 @@ This opens the door for cross-product nutritional analysis: "Does [Pet Name]'s t
 *This decision establishes the architectural foundation for supplemental product handling across classification, scoring, display, and pantry safety. The scoring engine remains deterministic, brand-blind, and citation-backed. Diet-level assessment lives in the pantry layer, not the product scoring layer.*
 ---
 
-## D-137: DCM Pulse Framework — Positional Pulse Load Detection
+### D-137: DCM Pulse Framework — Positional Pulse Load Detection
 
 **Status:** LOCKED
 **Date:** 2026-03-14
@@ -2098,10 +2111,11 @@ All copy D-095 compliant.
 
 ---
 
-### D-141: Supporting Screen Polish — LOCKED
+### D-141: Supporting Screen Polish — PARTIALLY SUPERSEDED by D-143
 
 **Date:** 2026-03-15
-**Status:** LOCKED
+**Status:** PARTIALLY SUPERSEDED by D-143
+**Superseded:** D-143 changed "Danger" display label to "Severe". Internal enum and all other D-141 scope unchanged.
 **Scope:** `IngredientList.tsx`, `IngredientDetailModal.tsx`, `AafcoProgressBars.tsx`, `BonusNutrientGrid.tsx`, `PositionMap.tsx`, `ResultScreen.tsx`
 
 - **Ingredient list:** grouped by severity tier with "DANGER · {count}" headers (11px uppercase), position order preserved within tiers. Two-line rows: primary name (14px semibold) + parenthetical (12px `#9CA3AF`). Position numbers demoted to 11px `#737373` on far left. Severity icons removed from rows (section headers establish context).
@@ -2273,7 +2287,7 @@ Eight display bug fixes — no scoring engine changes, all presentation-layer:
 
 **Citations:** AAFCO Official Publication, Nutritional Adequacy — Growth & Reproduction vs Adult Maintenance profiles.
 
-**Regression:** Pure Balance = 62 (unaffected — adult pet, no life_stage_claim).
+**Regression:** Pure Balance = 61 (unaffected — adult pet, no life_stage_claim).
 
 ---
 
@@ -2299,4 +2313,669 @@ Eight display bug fixes — no scoring engine changes, all presentation-layer:
 
 ---
 
+### D-152: Pantry Depletion Model — System-Recommended, User-Adjustable
+**Status:** LOCKED
+**Partially superseded:** D-165 revises recommendation logic and serving input UX. Depletion model defined here is unchanged.
+**Date:** March 19, 2026
+**Depends on:** D-065 (Bag Countdown), D-101 (Feeding Schedule), D-149 (Atwater Estimation)
+**Milestone:** M5 (Pantry)
+
+**Decision:** Pantry depletion runs on user-set serving amounts, not raw caloric calculation. The system recommends a serving size at add-to-pantry time based on the pet's DER and the product's calorie data, but the user can adjust to any amount. Depletion countdown tracks whatever the user actually set.
+
+**System recommendation source:**
+- Free users: current weight DER via `calculateDER(pet)`
+- Premium users with goal weight: goal weight DER via `calculateDER(pet, goalWeight)`
+- No calorie data (after D-149 Atwater attempt): no recommendation shown — user enters amounts manually
+
+**Two serving formats:**
+- **Weight-based** (dry food, freeze-dried, dehydrated, raw): user enters bag size (lbs/oz/kg/g), cups per feeding, feedings per day. Days remaining computed via calorie-derived conversion when data exists (`total_cups = bag_weight_kg × kcal_per_kg / kcal_per_cup`), omitted when calorie data missing.
+- **Unit-based** (wet food cans/pouches, treats): user enters total count, fractional amount per feeding (¼, ⅓, ½, ⅔, ¾, 1, 1½, 2, or custom), feedings per day. Days remaining always computable (units in, units out). Unit label is dynamic — "cans" or "pouches" based on user selection, never hardcoded.
+
+**Depletion math breakdown line:** Displayed on add-to-pantry sheet, updates live as user adjusts inputs:
+- Unit mode: "½ can × 2 feedings = 1 can/day · ~24 days of food"
+- Weight mode with calorie data: "1.5 cups × 2 feedings = 3 cups/day · ~42 days of food"
+- Weight mode without calorie data: "1.5 cups × 2 feedings = 3 cups/day" (no days estimate)
+- Treats: not shown (Treat Battery owns treat budgeting — Phase 2, Session 10)
+
+**Rationale:** Pet owners know their routine better than a formula. DER is an estimate; serving amounts are ground truth. The recommendation pre-fills as a helpful starting point, but the user's actual feeding behavior drives the countdown. This eliminates the mixed-feeding caloric doubling bug where two daily foods each compute 100% of DER.
+
+**Rejected:**
+- ❌ Pure DER-computed depletion — ignores real-world feeding behavior, produces misleading countdowns when owners feed more or less than calculated
+- ❌ No system recommendation — cold-starting with blank serving fields creates friction and removes the "smart" feel
+- ❌ Caloric proportion slider (D-065 mixed feeding) — redundant when user enters actual amounts per food
+
+### D-153: Pantry Paywall Scope — Goal Weight DER Only
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-052 (Multi-Pet Premium Gate), D-125 (Recalls Free)
+**Milestone:** M5 (Pantry)
+
+**Decision:** The **only** premium gate in the entire pantry feature is goal weight DER. Everything else is free.
+
+| Feature | Free | Premium |
+|---|---|---|
+| Add to pantry | ✅ | ✅ |
+| View pantry | ✅ | ✅ |
+| Bag/pack countdown | ✅ | ✅ |
+| Feeding schedule + notifications | ✅ | ✅ |
+| Diet completeness warnings | ✅ | ✅ |
+| Recall alerts in pantry | ✅ (D-125) | ✅ |
+| System recommendation (current weight DER) | ✅ | ✅ |
+| System recommendation (goal weight DER) | ❌ | ✅ |
+| Share pantry item across pets | N/A (1 pet) | ✅ |
+
+Multi-pet sharing is technically premium because free users can only have 1 pet (D-052). It's not a separate pantry gate — it falls out of the existing pet limit.
+
+**Implementation:** `canUseGoalWeight()` in `permissions.ts`. No other `if (isPremium)` checks in pantry code.
+
+**Rationale:** Pantry is the #1 retention feature. Gatekeeping basic pantry functionality would destroy the retention loop that drives premium conversion. Let users build the habit of tracking food, then upsell goal weight management for pets with obesity/underweight conditions.
+
+### D-154: Pantry Sharing Rules — Active Pet Default, Same-Species, Premium
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-052 (Multi-Pet Premium Gate), D-144 (Species Mismatch Bypass)
+**Milestone:** M5 (Pantry)
+
+**Decision:** Pantry items default to the **active pet** when added. Multi-pet sharing is an optional premium action with same-species enforcement.
+
+**Rules:**
+1. Add-to-pantry defaults to active pet — follows the "match for [Pet Name]" mental model
+2. "Share" action on pantry card opens picker showing only **same-species pets** owned by the user
+3. Cross-species sharing blocked — dog food cannot be shared with a cat (species mismatch D-144). A chicken-allergic senior dog and a puppy sharing the same kibble entry would produce contradictory dietary signals.
+4. Each assigned pet gets their own `pantry_pet_assignments` row with independent serving size, feedings per day, and schedule
+5. Depletion sums all assigned pets' consumption rates from `quantity_remaining`
+6. Sharing gated by `canSharePantryItem()` in `permissions.ts` (premium check)
+7. Free users with 1 pet have no sharing option (no other pets to share with)
+
+**Display:** "Shared by Buster & Milo · ~13 days remaining"
+
+**Rationale:** The core principle is "what is the match for THIS pet." Defaulting to all pets would break that mental model and create confusion when pets have different dietary needs. Sharing is an intentional second step for households where multiple pets genuinely eat from the same bag.
+
+### D-155: Empty Item Behavior — Gray Out, Sink, Restock/Remove Actions
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-065 (Bag Countdown), D-101 (Auto-Depletion)
+**Milestone:** M5 (Pantry)
+
+**Decision:** When a pantry item's `quantity_remaining` hits 0:
+
+1. **Visual:** Card renders at 40% opacity, "Empty" label replaces the remaining count
+2. **Sort:** Sinks to bottom of pantry list (below active, low stock)
+3. **Notification:** Push notification sent: "[Pet Name]'s [Product Name] is empty"
+4. **Actions surface on the card:**
+   - **Restock** — resets `quantity_remaining` to `quantity_original`, reactivates the item
+   - **Edit** — allows manual quantity adjustment (maybe user has a partial bag left)
+   - **Remove** — soft-deletes the pantry item. For shared items: "Remove for all pets" or "Remove for [Pet Name] only"
+5. **Data:** `is_active` stays `true` until explicitly removed. Empty items are visible so users can restock.
+6. **Auto-depletion stops** — no further deductions once quantity hits 0. `quantity_remaining` floors at 0 (never goes negative).
+
+**Rationale:** Empty ≠ removed. Most users restock the same food. Making restock a single tap from the empty state reduces friction. Graying out + sinking ensures empty items don't crowd active items but remain accessible.
+
+### D-156: Pantry Score Source — Live Read, Not Snapshot
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-129 (Allergen Override)
+**Milestone:** M5 (Pantry)
+
+**Decision:** Pantry reads the latest available score on every render. No score snapshot stored on the pantry item itself.
+
+**Score resolution order:**
+1. `pet_product_scores` cache (from Top Matches batch scoring) — preferred, per-pet score including allergen overrides
+2. `scans.final_score` from most recent scan of this product for this pet — fallback
+3. `products.base_score` — last resort, not personalized
+4. No score available — show bypass badge or "Score unavailable"
+
+**Why no snapshot:** Product scores can change when the scoring engine updates (`scoring_version` bump), when ingredient data is corrected, or when pet profile changes (new allergen → D-129 override changes the score). A snapshot would show stale data. Reading live ensures the pantry always reflects current state.
+
+**Per-pet scoring in shared items:** If a product is shared between an allergic pet and a non-allergic pet, each pet sees their own score (from their own `pet_product_scores` row or scan). The pantry view switches when the active pet switches.
+
+### D-157: Mixed Feeding Removal — No Auto-Rebalance, Contextual Nudge
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-152 (Pantry Depletion Model)
+**Milestone:** M5 (Pantry)
+
+**Decision:** When a daily food is removed from a pet's pantry and at least one other daily food remains, the remaining food's serving amounts are **not automatically adjusted**. Instead, show a contextual nudge.
+
+**Behavior:**
+1. User removes Food B from pet's pantry
+2. Food A's serving amount stays exactly as the user set it (e.g., 1.5 cups × 2 feedings)
+3. If ≥1 other daily food remains → show a one-time banner/toast: "[Pet Name]'s daily intake from pantry items has changed"
+4. The calorie context line on remaining cards shows "~X kcal/day of [Pet Name]'s Y kcal target" — the gap is self-evident
+5. If the **last** daily food is removed entirely → diet completeness red warning fires (already handled by D-136 Part 5)
+
+**Rationale:** Users enter real-world serving amounts (D-152). Auto-increasing Food A from 1.5 cups to 2.5 cups means the app is telling the user to change how much they physically scoop — without being asked. That's a feeding directive, borderline D-095 territory. The user set the amounts; the user adjusts the amounts. The calorie context line gives them the information to act without the system overriding their choices.
+
+**Rejected:**
+- ❌ Auto-rebalance to fill caloric gap — overrides user-set amounts, feels like a feeding directive
+- ❌ Proportion slider that auto-adjusts — redundant when user enters actual amounts (D-152)
+- ❌ No indication at all — user might not notice the caloric impact of removing a food
+
+### D-158: Recalled Product Bypass — No Score, Warning + Ingredients
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-135 (Vet Diet Bypass), D-144 (Species Mismatch Bypass), D-125 (Recalls Free)
+**Milestone:** M5 (Recall Siren)
+
+**Decision:** Recalled products are a pipeline bypass — same pattern as vet diets (D-135) and species mismatches (D-144). No score is computed. The scoring engine never runs for recalled products.
+
+**Bypass chain order (updated):**
+```
+vet diet (D-135) → species mismatch (D-144) → recalled (D-158) → variety pack (D-145) → supplemental (D-146, scored) → normal scoring
+```
+
+**Implementation:**
+- `'recalled'` added to `BypassReason` type union
+- In `pipeline.ts`: `if (product.is_recalled) return makeBypassResult('recalled')`
+- Check placed after species mismatch, before variety pack
+- Batch-score Edge Function: `WHERE is_recalled = false` (excluded from Top Matches)
+
+**ResultScreen recalled bypass view:**
+- Red recall badge (more prominent than vet diet's medkit)
+- "This product has been recalled by the FDA"
+- "Tap for recall details" → RecallDetailScreen
+- NO score ring, NO waterfall, NO benchmark bar
+- Ingredient list with severity dots (same as vet diet view)
+- Allergen warnings still shown (safety-critical)
+- "Remove from Pantry" action if product is in active pantry
+
+**Pantry card for recalled items:**
+- Red badge, no score number
+- Pushed to top of list regardless of other sorting
+- Tap → RecallDetailScreen (not EditPantryItemScreen)
+
+**Why bypass instead of score → 0:** A recalled product's ingredient quality is irrelevant — the product shouldn't be fed regardless of how good the ingredients are. Showing a score (even 0) implies the product is being evaluated on merit. The bypass communicates: "this product is outside the scoring framework entirely." Same logic as vet diets — we don't score them because scoring would be misleading, not because they're bad.
+
+**Why bypass instead of banner over scored result:** A score ring showing "82% match" with a recall banner creates cognitive dissonance. The user sees a good score and a danger warning simultaneously. The bypass eliminates this — there's no score to conflict with the safety signal.
+
+**Overrides ROADMAP:** The ROADMAP (M5 section) says "Product score → 0 with recall banner on scan result." D-158 replaces this with the bypass pattern. The bypass is architecturally cleaner (follows D-135/D-144 precedent) and avoids the score=0 confusion (a 0 looks like terrible ingredients, not "recalled by the FDA").
+
+**Compliance:** D-125 — recall features are never paywalled. D-084 — no emoji in recall UI. D-095 — factual tone: "has been recalled by the FDA" not "DANGER: recalled product."
+
+### D-159: Low-Score Feeding Context Line
+**Status:** LOCKED
+**Date:** March 19, 2026
+**Depends on:** D-094 (Suitability Framing), D-095 (UPVM Compliance)
+**Milestone:** M5+
+
+**Decision:** Products scoring below a threshold display a contextual feeding guidance line on ResultScreen, below the verdict label. Not a score modifier — display copy only.
+
+| Score | Line |
+|---|---|
+| 65+ | *(none)* |
+| 51–64 | "Consider for occasional use — explore higher-scoring options for [Pet Name]" |
+| ≤50 | "Explore higher-scoring alternatives for [Pet Name]" |
+
+**Implementation:**
+- Single conditional text block on ResultScreen, below verdict, above MetadataBadgeStrip
+- Triggered by `finalScore`, not by product category or type
+- Applies to all scored products (daily food, treats, supplemental)
+- No new component needed — inline `<Text>` with `Colors.textSecondary` styling
+- Threshold may be tuned post-launch based on real score distribution data
+
+**What this is NOT:**
+- NOT a score modifier — the number doesn't change
+- NOT a frequency advisory (D-009) — those are ingredient-specific (mercury, vitamin A)
+- NOT brand-aware — triggered purely by score
+- NOT a bypass — product is still fully scored with waterfall and breakdown
+
+**Rationale:** A score of 48 without context requires the user to interpret what that means. The line does the interpretive work: "this isn't daily food quality." It drives users toward the Top Matches / Safe Swaps premium features without being pushy. D-095 compliant: factual guidance, no prohibited clinical terms. Extremely high ROI — one conditional line, zero engine changes, natural premium conversion bridge.
+
+**Threshold note:** The 51/65 split is preliminary. If real-world score distribution shows 80% of products land between 55-75, the thresholds may shift. Will monitor post-launch and adjust via a D-159 revision if needed.
+
+---
+### D-160: Weight Goal Slider — Replaces Raw Goal Weight (D-061)
+
+Status: LOCKED
+Date: March 20, 2026
+Supersedes: D-061 (raw goal weight input)
+Depends on: D-062 (feline hepatic lipidosis guard), D-095 (UPVM compliance), D-153 (goal weight is premium-only)
+Milestone: M5 polish or M6
+Problem: D-061 lets users type any goal weight. A 90 lb dog could be targeted to 50 lbs — the app computes a starvation-level DER without guardrails. The hepatic lipidosis guard (D-062) catches the worst cat cases after the fact, but the fundamental design is wrong: unbounded user input for a clinically sensitive calculation.
+Decision: Replace the raw weight_goal_lbs field with a bounded weight goal level slider. Seven positions representing percentage adjustments to maintenance DER:
+LevelLabelDER AdjustmentDogsCats-3Aggressive loss-20% (× 0.80)AllowedBlocked-2Moderate loss-10% (× 0.90)AllowedMax allowed-1Conservative loss-5% (× 0.95)AllowedAllowed0MaintenanceStandard DER (× 1.00)DefaultDefault+1Conservative gain+5% (× 1.05)AllowedAllowed+2Moderate gain+10% (× 1.10)AllowedAllowed+3Aggressive gain+20% (× 1.20)AllowedAllowed
+Cat cap at -2 (D-062 replacement): Cats cannot select -3. The feline liver is uniquely susceptible to hepatic lipidosis during rapid caloric restriction — a 20% deficit risks overwhelming hepatic lipid transport [AAHA 2021 Nutrition & Weight Management Guidelines; Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27 — Hepatic Lipidosis]. By making -3 structurally unavailable for cats, D-062's safety guard becomes architectural rather than a runtime check. The UI simply doesn't render the -3 option for cat profiles.
+DER math: adjustedDER = baseDER × multiplier where multiplier is looked up from the level. baseDER uses calculateDER(pet) with current weight (free) or current weight at the adjusted level (premium). No change to the allometric RER formula (70 × kg^0.75) [AAHA 2021; WSAVA Global Nutrition Committee — Nutritional Assessment Guidelines].
+Schema change:
+
+Remove: pets.weight_goal_lbs (deprecated)
+Add: pets.weight_goal_level SMALLINT DEFAULT 0 CHECK (weight_goal_level BETWEEN -3 AND 3)
+Migration: any existing weight_goal_lbs rows → map to nearest level based on the implied deficit percentage, then drop column. If mapping is ambiguous, default to 0.
+
+UI — PortionCard:
+
+Slider with 7 detents, labeled at each position
+Cat profiles: -3 detent not rendered, slider range is -2 to +3
+Below slider: "Moderate weight loss: ~[X] kcal/day ([Y]% below maintenance)"
+D-095 compliant: "estimated daily intake" not "prescribed diet." Volume reduction of maintenance food without reformulation risks clinical malnutrition [Small Animal Clinical Nutrition 5th Ed., Ch. 27 — purpose-formulated therapeutic diets required for significant restriction].
+Calorie context updates live as slider moves
+
+Pantry integration:
+
+getSystemRecommendation() uses adjusted DER based on weight_goal_level
+Pantry depletion countdown reflects adjusted intake
+Calorie context line on pantry cards: "~X kcal/day of [Pet Name]'s Y kcal target (moderate loss)"
+
+Paywall: Premium only (D-153 unchanged). Free users see the slider locked at 0 with a "Premium" badge. Tapping any non-zero position triggers paywall.
+Clinical backing:
+
+Weight loss protocol DER: dogs = 1.0 × RER at ideal BW, cats = 0.8 × RER at ideal BW [AAHA 2021 Nutrition & Weight Management Guidelines, Table 3 — MER Multipliers]
+Empirical DER range during weight loss: dogs 0.73–1.47 × RER, cats 0.67–1.55 × RER [JAVMA peer-reviewed trials, cited in AAHA 2021]
+Safe weight loss rates: dogs 1–2% BW/week, cats 0.5–1% BW/week; exceeding 2%/week risks sarcopenia (dogs) or hepatic lipidosis (cats) [AAHA 2021; WSAVA Global Nutrition Committee]
+The -20% cap for dogs stays within the 1.0 × RER floor for typical neutered adults (MER 1.4–1.6 × RER → 20% reduction ≈ 1.12–1.28 × RER, well above minimum) [AAHA 2021, Table 3]
+The -10% cat cap stays above the 0.8 × RER floor for typical neutered adult cats (MER 1.2–1.4 × RER → 10% reduction ≈ 1.08–1.26 × RER) [AAHA 2021, Table 3]
+Flat kcal deficits are lethal for small animals — a 10 lb cat's entire daily requirement may be ~200 kcal; a 500 kcal/day cut exceeds total intake [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 5 — Energy]
+
+Rejected:
+
+❌ Raw goal weight input (D-061) — unbounded, dangerous, requires after-the-fact guards
+❌ Flat kcal deficit (e.g., -500 kcal/day) — lethal for small animals. A 10 lb cat's entire daily requirement might be 200 kcal [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 5 — Energy]
+❌ Continuous percentage slider (0–30%) — too much precision implies clinical accuracy we can't deliver. Seven fixed levels are honest about the granularity.
+❌ BCS-derived goal weight as primary input — requires clinical assessment skills most owners don't have. Owners consistently underestimate BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges]. BCS is a reference tool (D-162), not the input mechanism.
+
+---
+### D-161: Estimated Weight Tracking — Caloric Accumulator
+Status: LOCKED
+Date: March 20, 2026
+Depends on: D-160 (weight goal slider), D-101 (auto-depletion cron), D-117 (stale weight guard)
+Milestone: M5 polish or M6
+Problem: Pet weight goes stale. D-117 nags users after 6 months, but the app has feeding data flowing through the auto-depletion cron — it knows what the pet is eating every day. That data can estimate weight drift, replacing the nag with an intelligent prompt.
+Decision: Track cumulative caloric delta between actual daily intake and maintenance DER. When the accumulator crosses a species-specific threshold (≈1 lb of mixed-tissue weight change), notify the user with an estimated weight update.
+Species-specific thresholds (from clinical mixed-tissue data):
+SpeciesPure AdiposeMixed-Tissue RangeKiba ThresholdCitationDog~3,500 kcal/lb2,900 – 3,400 kcal/lb3,150 kcal/lbSmall Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; JVIM German et al. 2011Cat~3,500 kcal/lb2,800 – 3,300 kcal/lb3,000 kcal/lbSmall Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; ACVN clinical reference
+Kiba thresholds are the midpoints of the mixed-tissue ranges. These are estimates — real weight change involves adaptive thermogenesis [JVIM, German et al. 2011 — canine REE drops 10–20% below predicted values during caloric restriction], variable lean/fat ratios [Small Animal Clinical Nutrition 5th Ed., Ch. 27 — one pound lean muscle = 600–800 kcal vs one pound adipose = ~3,500 kcal], water retention, and unmeasured food sources (treats, table scraps). The threshold is a reasonable heuristic, not a clinical measurement.
+Why mixed-tissue, not pure adipose: Weight lost during caloric restriction is heterogeneous — a mix of fat and lean body mass. Cats trend lower because their obligate carnivore metabolism has a fixed, high rate of hepatic gluconeogenesis — they cannot down-regulate protein catabolism during restriction [Small Animal Clinical Nutrition 5th Ed., Ch. 20 — Feline Protein Requirements]. Without heavily fortified protein intake, cats aggressively catabolize skeletal muscle, dropping the energy density of weight lost toward the bottom of the range [ACVN; JAVMA peer-reviewed trials]. Using 3,500 (pure fat) would systematically underestimate weight change in both species.
+Accumulator logic (runs inside auto-deplete cron):
+daily_intake_kcal = SUM(serving_size × feedings_per_day × kcal_per_serving)
+                    across all active daily pantry assignments for this pet
+maintenance_kcal  = calculateDER(pet) at weight_goal_level = 0
+daily_delta       = daily_intake_kcal - maintenance_kcal
+accumulator      += daily_delta
+
+IF accumulator >= +threshold (species-specific):
+  estimated_weight = current_weight + 1 lb
+  send notification, reset accumulator
+
+IF accumulator <= -threshold (species-specific):
+  estimated_weight = current_weight - 1 lb
+  send notification, reset accumulator
+Schema:
+
+Add to pets table: caloric_accumulator DECIMAL(10,2) DEFAULT 0
+Add to pets table: accumulator_last_reset_at TIMESTAMPTZ
+
+Notification (user confirms, never auto-updates):
+"Based on [Pet Name]'s feeding data, estimated weight is now ~[X] lbs (was [Y] lbs). Update?"
+Three actions:
+
+"Looks right" → updates weight_current_lbs, resets accumulator, refreshes weight_updated_at, clears D-117 stale warning. DER recalculates, pantry cascades.
+"I weighed them" → opens weight input field. User enters actual weight. Resets accumulator. More accurate than estimate.
+"Dismiss" → accumulator continues running. Notification won't re-fire until the next threshold crossing (+1 more lb). Prevents nagging.
+
+Why notify-and-confirm, never auto-update:
+
+Treat calories may not be fully tracked (Treat Battery integration is Phase 2). Average owners provide up to 20% of daily calories through unmeasured treats [AAHA 2021; ACVN — 10% treat guideline, empirical data showing 2× overshoot].
+Pets may not finish meals — auto-depletion assumes they did
+Table scraps, dental chews, stolen food exist outside the system
+Adaptive thermogenesis means static deficit models drift — canine REE drops 10–20% below mathematically predicted values during prolonged caloric restriction [JVIM, German et al. 2011]. An animal rarely loses a full pound of fat for every 3,500 kcal withheld over a prolonged period [Small Animal Clinical Nutrition 5th Ed., Ch. 27].
+Framing as "estimated" with user confirmation is D-095 compliant. Auto-updating would be a health claim.
+
+Edge cases:
+
+No pantry items → accumulator stays at 0 (no feeding data to track)
+Only treats in pantry → skip (treat calories alone don't represent total intake)
+Missing calorie data on products → skip those products in the sum, note inaccuracy
+Pet deleted → accumulator deleted (CASCADE)
+Weight manually updated by user → reset accumulator to 0
+Goal level changed → no accumulator reset (the delta math uses maintenance DER regardless of goal level)
+
+D-095 compliance: "Estimated weight" not "actual weight." "Based on feeding data" not "clinically measured." Always offer the "I weighed them" option to ground-truth.
+Clinical backing:
+
+Mixed-tissue caloric equivalents: dogs 2,900–3,400 kcal/lb, cats 2,800–3,300 kcal/lb [Small Animal Clinical Nutrition 5th Ed., Hand et al., Ch. 27; JVIM German et al. 2011]
+Pure adipose = ~3,500 kcal/lb, pure lean muscle = 600–800 kcal/lb (dogs), 450–600 kcal/lb (cats) [Small Animal Clinical Nutrition 5th Ed., Ch. 27]
+Cats cannot down-regulate protein catabolism during restriction (obligate carnivore hepatic gluconeogenesis) — explains lower mixed-tissue threshold [Small Animal Clinical Nutrition 5th Ed., Ch. 20; ACVN clinical reference]
+Adaptive thermogenesis: canine REE drops 10–20% below predicted during restriction, causing weight-loss plateaus [JVIM, German et al. 2011]
+Neutering reduces feline resting metabolic rate by 20–25% — accumulator must use correct DER multiplier for intact vs neutered [AAHA 2021, Table 3; JAVMA peer-reviewed trials on gonadectomy metabolic impact]
+----
+### D-162: BCS Reference Tool — Educational, Not Diagnostic
+Status: LOCKED
+Date: March 20, 2026
+Depends on: D-095 (UPVM compliance), D-160 (weight goal slider)
+Milestone: M6+
+Problem: Pet owners don't know if their pet is overweight. Vets use the 9-point Body Condition Score (BCS) validated by DEXA scan correlation. Kiba can surface this as a reference tool to help owners understand body condition — but must not cross into diagnostic territory.
+Decision: Add a BCS reference panel accessible from the weight management section of pet profiles. Educational only — Kiba does not assess, diagnose, or score body condition.
+Content (species-specific, separate panels for dogs and cats):
+BCS ScoreCategoryDescriptionEstimated Excess WeightCitation1–3UnderweightRibs, vertebrae, pelvic bones easily visible. Severe abdominal tuck, muscle wasting.N/A (deficit)WSAVA BCS Chart; AAHA 20214–5IdealRibs palpable with slight fat covering. Visible waist from above. Clear abdominal tuck. ~15–20% body fat.0%WSAVA BCS Chart; validated against DEXA [Laflamme 1997, JAVMA]6OverweightRibs palpable with slight excess fat. Waist barely visible.~10–15%AAHA 2021 — each point above 5 ≈ 10–15% excess BW7ObeseRibs difficult to feel. No visible waist. Abdomen rounded.~20–30%AAHA 20218–9Severely obeseRibs buried under heavy fat. Back broadened. Abdomen distended.~30–45%+AAHA 2021
+Ideal weight formula (displayed as reference, user does not input BCS):
+Ideal Weight = Current Weight ÷ (1 + excess fraction)
+Example shown: "A 40 lb dog at BCS 7 is ~20% over ideal → 40 ÷ 1.20 = ~33 lbs"
+[AAHA Weight Management Guidelines — ideal weight derivation from BCS]
+Cat-specific note: Primordial pouch (hanging belly skin flap) is normal feline anatomy and should not be confused with obesity. Include visual callout. [WSAVA Global Nutrition Committee — feline BCS assessment notes]
+What this is:
+
+A reference chart with illustrations per BCS score
+An educational tool that helps owners understand body condition categories
+A link to the goal slider (D-160): "If your pet's body condition suggests they need to lose or gain weight, use the weight goal slider to adjust their feeding plan."
+
+What this is NOT:
+
+NOT an assessment — Kiba does not ask "what's your pet's BCS?" and derive a recommendation
+NOT diagnostic — no "your pet is obese" language
+NOT an input to scoring or DER calculation — BCS is informational only
+NOT a substitute for veterinary evaluation — panel includes: "Body condition is best assessed by your veterinarian during a physical exam."
+
+D-095 compliance: No prohibited terms. No "diagnose," "prescribe," "treat." Factual descriptions of what each score looks like. Citations to AAHA/WSAVA. User makes their own assessment — Kiba provides the framework.
+Visual assets needed: Illustrations or silhouettes for each BCS category (dog and cat separately). Either commissioned illustrations or WSAVA's published BCS chart images (check licensing — WSAVA publishes these freely for educational use).
+Clinical backing:
+
+BCS 9-point scale validated against DEXA scans for both dogs and cats [Laflamme 1997, JAVMA — original validation study; WSAVA Global Nutrition Committee — adopted as global standard]
+10–15% excess body weight per BCS point above ideal [AAHA 2021 Weight Management Guidelines, §2 — Body Condition Assessment]
+Optimal BCS 4–5 corresponds to ~15–20% body fat [WSAVA Global Nutrition Committee — Nutritional Assessment Guidelines]
+Primordial pouch is normal feline anatomy, frequently mistaken for obesity by owners [WSAVA feline BCS assessment notes; Small Animal Clinical Nutrition 5th Ed., Ch. 5]
+Owner BCS accuracy: owners consistently underestimate their pet's BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges; multiple JAVMA survey studies]
+
+Rejected:
+
+❌ Interactive BCS questionnaire ("Can you feel your pet's ribs?") — crosses into assessment/diagnostic territory. D-095 risk.
+❌ BCS as input to DER calculation — would require clinical validation of owner-reported BCS accuracy, which doesn't exist. Owners consistently underestimate their pet's BCS by 1–2 points [AAHA 2021, §4 — Client Communication Challenges].
+❌ Photo-based BCS estimation via AI — liability nightmare. Computer vision for body condition scoring is active research, not production-ready.
+
+
+
+Citation Key
+Short ReferenceFull SourceAAHA 2021American Animal Hospital Association — 2021 Nutrition and Weight Management Guidelines for Dogs and CatsWSAVAWorld Small Animal Veterinary Association — Global Nutrition Committee, Nutritional Assessment GuidelinesACVNAmerican College of Veterinary Nutrition — clinical reference standardsHand et al.Small Animal Clinical Nutrition, 5th Edition (Hand, Thatcher, Remillard, Roudebush, Novotny)German et al. 2011German AJ et al. — "Quality of life is reduced in obese dogs but improves after successful weight management." JVIM, 2011. (Also: German AJ — "The growing problem of obesity in dogs and cats." J Nutr, 2006.)Laflamme 1997Laflamme DP — "Development and validation of a body condition score system for dogs/cats." Canine Practice / JAVMA, 1997.JAVMAJournal of the American Veterinary Medical Association — peer-reviewed trials on gonadectomy, obesity, weight management
+Three decisions drafted. D-160 supersedes D-061. D-161 is new (caloric accumulator). D-162 is new (BCS reference). All clinical claims cite primary veterinary sources above.
+---
+
+### D-163: Pet Health Records via Appointment Completion
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Depends on:** D-103 (Pet Appointments), D-095 (UPVM compliance), D-052 (multi-pet premium gate)
+**Milestone:** M5 (Session 9 — bundled with appointments)
+
+**Problem:** Vaccination and deworming history are core pet health records that owners lose track of. Standalone logging is friction — users won't navigate to a separate screen to enter data after a vet visit. But they *will* tap "Complete" on an appointment they already scheduled.
+
+**Decision:** When a user completes a `vaccination` or `deworming` appointment, present a health record logging sheet before finalizing. One tap to log, one tap to skip. If logged, auto-create a follow-up appointment based on the user's selected interval.
+
+**Why one table, not two:** Vaccinations and dewormings are structurally identical — name, date administered, next due date, vet, notes. A `record_type` column distinguishes them cleanly. This also extends naturally to future record types (flea treatments, heartworm, dental cleanings) without new tables or migrations.
+
+**Completion flow (vaccination and deworming appointments only):**
+
+1. User taps "Mark Complete" on a vaccination or deworming appointment
+2. Bottom sheet slides up with type-adaptive copy:
+   - Vaccination: "Log this vaccine?"
+   - Deworming: "Log this deworming?"
+3. Pre-populated fields:
+   - **Treatment name** — text input, pre-filled from appointment `notes` if available
+   - **Date administered** — date picker, default today
+   - **Next due** — optional picker with type-specific defaults:
+
+     | Type | Options | Default |
+     |---|---|---|
+     | Vaccination | 1 year / 3 years / Custom / No follow-up needed | 1 year |
+     | Deworming | 3 months / 6 months / 1 year / Custom / No follow-up needed | 3 months |
+
+   - **Vet / clinic** — text input, pre-filled from appointment `location`
+   - **Pet(s)** — read-only, from appointment `pet_ids`
+4. Two actions:
+   - **"Log [Vaccine/Deworming]"** → creates `pet_health_records` row(s) (one per pet in `pet_ids`) + if follow-up selected, auto-creates a new appointment at the due date
+   - **"Skip"** → appointment completes normally, no record created
+5. Appointment marked complete regardless of choice
+
+**Non-qualifying appointments:** `vet_visit`, `grooming`, `medication`, `other` — no health record sheet. `completeAppointment()` behaves exactly as before.
+
+**Schema (included in migration 017 alongside pet_appointments):**
+
+```sql
+CREATE TABLE pet_health_records (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pet_id            UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  appointment_id    UUID REFERENCES pet_appointments(id) ON DELETE SET NULL,
+  record_type       TEXT NOT NULL CHECK (record_type IN ('vaccination', 'deworming')),
+  treatment_name    TEXT NOT NULL,
+  administered_at   DATE NOT NULL,
+  next_due_at       DATE,
+  vet_name          TEXT,
+  notes             TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- RLS: user_id = auth.uid()
+-- Index: idx_health_records_pet ON (pet_id)
+-- Index: idx_health_records_user_type ON (user_id, record_type)
+```
+
+**Appointment type CHECK update:** Add `'deworming'` to `pet_appointments.type` CHECK constraint. Full list becomes: `'vet_visit'`, `'grooming'`, `'medication'`, `'vaccination'`, `'deworming'`, `'other'`.
+
+**`appointment_id` is nullable:** Users may log records manually (past vaccines from a previous vet, deworming history) without an associated appointment. The completion flow is the primary capture point, but a standalone "Add Record" action on the pet profile covers historical data entry.
+
+**Follow-up auto-scheduling:**
+- Inherits from original appointment: `type`, `pet_ids`, `location`, `reminder = '1_week'`
+- `notes` = treatment name (for pre-population on next completion)
+- `recurring = 'none'` — follow-up is a one-shot, not recurring. The chain is self-perpetuating through completion (complete → create next → complete → create next) without accumulating orphaned future appointments.
+
+**Multi-pet:** If the original appointment has 3 pets, creates 3 `pet_health_records` rows (one per pet) + 1 follow-up appointment with all 3 `pet_ids`.
+
+**Pet profile display:** Health records visible on PetHubScreen under two sections:
+
+- **"Vaccines"** — filtered by `record_type = 'vaccination'`. Each row: vaccine name, date, next booster due (if set), vet name.
+- **"Dewormings"** — filtered by `record_type = 'deworming'`. Each row: treatment name, date, next due (if set), vet name.
+- Both sorted by `administered_at` DESC
+- Empty state per section: "No [vaccines/dewormings] logged yet."
+- "Add Record" button for manual entry (same fields, `appointment_id = null`, no pre-population)
+- Disclaimer: "Health records are for your reference. Consult your veterinarian for your pet's care schedule."
+
+**Vet Report integration (M6):** Vet Report PDF includes latest records from both types — most recent vaccination date + name, most recent deworming date + name. Query: `SELECT * FROM pet_health_records WHERE pet_id = $1 ORDER BY administered_at DESC LIMIT 1` per `record_type`.
+
+**Paywall:** Same as appointments (D-103) — free users get 2 active appointments. Health records themselves are not paywalled. The gate is on creating appointments, not on the records they produce.
+
+**D-095 compliance:**
+- "Log this vaccine?" / "Log this deworming?" — not "Record immunization" or "Log antiparasitic treatment"
+- Never use "immunize," "protect against," "prevent," "prescribe," or "treat" in UI copy
+- Follow-up intervals are user-selected, not app-prescribed
+- Disclaimer on health record lists
+
+**Future `record_type` expansion (not M5):**
+- `'flea_treatment'` — same shape, default interval 1 month or 3 months
+- `'heartworm'` — same shape, default interval 1 month or 6 months
+- `'dental_cleaning'` — same shape, default interval 1 year
+- Each new type: add to CHECK constraint, add to appointment type CHECK, add default intervals, add pet profile section. No schema migration needed beyond the CHECK update.
+
+**Rejected:**
+- Separate tables per record type (`pet_vaccinations`, `pet_dewormings`) — identical schemas, unnecessary table proliferation. One table with `record_type` is cleaner and extensible.
+- Standalone health record logging screen — too much friction. The completion flow captures data at the natural moment.
+- Recurring appointments for follow-ups — creates infinite chain. Completion-triggered one-shots are self-perpetuating without orphans.
+- Pre-populated vaccine/deworming database — adds complexity. Free text covers the need. Searchable dropdown can be added later if usage data justifies it.
+- Health records paywalled — punishing users for completing appointments feels hostile. Gate is on appointment creation.
+---
+
+### D-164: Unit Label Simplification — "Servings" Replaces Cans/Pouches/Units
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Depends on:** D-152 (pantry depletion model)
+**Milestone:** M5 bugfix
+
+**Problem:** The add-to-pantry sheet asks users to choose between "cans" and "pouches" for unit-mode items. This picker adds friction without adding value — the depletion math counts units in and units out regardless of container type. Users don't care whether the system calls it a "can" or a "pouch." They care how many are left.
+
+**Decision:** Replace all unit labels with a single universal term: "servings."
+
+**Schema change:**
+```sql
+-- Migration 019: update CHECK constraint + backfill
+ALTER TABLE pantry_items DROP CONSTRAINT pantry_items_unit_label_check;
+ALTER TABLE pantry_items ADD CONSTRAINT pantry_items_unit_label_check
+  CHECK (unit_label IN ('servings'));
+UPDATE pantry_items SET unit_label = 'servings'
+  WHERE unit_label IN ('cans', 'pouches', 'units');
+ALTER TABLE pantry_items ALTER COLUMN unit_label SET DEFAULT 'servings';
+```
+
+**UI changes:**
+- Remove unit picker (cans/pouches toggle) from AddToPantrySheet — no longer needed
+- Unit-mode label is always "servings" everywhere:
+  - Add sheet: "Total servings" input
+  - Depletion breakdown: "1/2 serving x 2 feedings = 1 serving/day . ~24 days"
+  - Pantry card: "18 servings left"
+  - Notifications: "Running low — 3 servings of [Product] remaining"
+  - Empty notification: "[Pet Name]'s [Product] is empty"
+
+**Code changes:**
+- `pantry_items.unit_label` always set to `'servings'` on insert — hardcode, no user selection
+- Collapse `UnitLabel` type union to single value `'servings'`
+- `calculateDepletionBreakdown()`: replace dynamic unitLabel parameter with static `'serving'`/`'servings'` (singular/plural based on count)
+- Notification copy: pluralization only — "1 serving" vs "3 servings"
+
+**What this does NOT change:**
+- `quantity_unit` (lbs/oz/kg/g/units) — unchanged, this is for bag/pack weight
+- `serving_size_unit` (cups/scoops/units) — unchanged, this is for per-feeding measurement
+- Depletion math — unchanged, still counts units in and units out
+- Weight-mode items — unaffected, they use cups/lbs
+
+**Rejected:**
+- Keep cans/pouches picker — added friction, zero value. Users never referenced container type in the app after setting it.
+- Auto-detect container type from product data — unreliable, and the distinction doesn't matter for depletion math.
+- Free-text unit label — introduces display inconsistency and pluralization nightmares.
+
+---
+
+### D-165: Calorie-Budget-Aware Serving Recommendations
+**Status:** LOCKED
+**Date:** March 20, 2026
+**Supersedes:** D-152 system recommendation behavior (D-152 depletion model unchanged — this revises only the recommendation logic and serving input UX)
+**Depends on:** D-152 (depletion model), D-153 (goal weight DER premium gate), D-160 (weight goal slider, when implemented), D-149 (Atwater calorie estimation)
+**Milestone:** M5 bugfix
+
+**Problem:** The current `getSystemRecommendation()` computes a serving size from the pet's full DER, ignoring what's already in the pantry. A pet eating 500 kcal/day from Food A gets a recommendation for Food B that also covers the full 1000 kcal DER — doubling the pet's intake. Additionally, changing feedings per day multiplies the serving instead of dividing the budget, and the cup input doesn't accept decimals.
+
+**Three problems, one system:**
+1. Recommendation ignores pantry — suggests full DER regardless of existing foods
+2. Feedings multiply instead of divide — 2 feedings x 4.3 cups = 8.6 cups instead of 4.3 / 2 = 2.15 cups per feeding
+3. No decimal input — can't enter 2.15 cups
+
+**Decision:**
+
+**1. Budget-Aware Recommendation (Auto mode — default)**
+
+The system recommendation works backwards from the remaining calorie budget, not the full DER.
+
+```
+total_der = calculateDER(pet)
+pantry_kcal = SUM(serving_size x feedings_per_day x kcal_per_serving)
+             across all ACTIVE daily pantry items for this pet
+remaining_budget = MAX(0, total_der - pantry_kcal)
+recommended_per_feeding = remaining_budget / feedings_per_day / kcal_per_serving_unit
+```
+
+When feedings change in Auto mode, per-feeding amount recalculates from the same remaining budget. Changing from 1 to 2 feedings halves the per-feeding amount.
+
+When pantry is empty (first food): `remaining_budget = total_der`. Recommends full DER worth of this food.
+
+**2. Auto/Manual Toggle**
+
+- Auto (default): Feedings per day stepper is the only user input. Serving size is calculated read-only.
+- Manual: Serving size input appears (decimal-pad keyboard). Auto-calculated value shown as reference.
+
+**3. Calorie Budget Warnings (manual mode)**
+
+Warning ceiling anchored to maintenance DER (slider level 0), not adjusted DER.
+
+- `>120% maintenance` — amber banner: exceeds safe limits
+- `>100% maintenance` — inline amber text: above maintenance target
+- `<80% adjusted` — muted info: covers ~X% of calorie needs
+- Not blocking. D-095 compliant — informational, not prescriptive.
+- No warnings for treats.
+
+**4. Smart Default Feedings Per Day**
+
+Check if active pet has any active daily food in pantry: if yes, default 1 feeding (second food scenario). If no, default 2 feedings. Per-pet check, not household-level. Treats always 1.
+
+**5. Decimal Input Fix**
+
+All serving/quantity TextInput keyboardType changed from `'numeric'` to `'decimal-pad'`.
+
+**6. Product Size Pre-fill**
+
+Regex extraction from product name: "15 lb" -> pre-fill 15 lbs, "24 Pack" -> pre-fill 24 units. Best-effort, user can override.
+
+**Implementation:** `computePetDer()`, `computeExistingPantryKcal()`, `computeAutoServingSize()`, `computeBudgetWarning()`, `getSmartDefaultFeedingsPerDay()`, `parseProductSize()` in `pantryHelpers.ts`. AddToPantrySheet reads pantry store for existing items.
+
+**What this does NOT change:** D-152 depletion model, scoring, Treat Battery, diet completeness.
+
+**Rejected:**
+- Hard-block over-budget entries — some pets legitimately need more. D-095 non-compliant.
+- Auto-rebalance existing items — overrides user-set amounts (D-157).
+- Per-product unit labels (cans/pouches) — already simplified by D-164.
+
+### D-166: AddToPantrySheet — Weight Unit Auto-Conversion + Cups/Servings Context
+**Status:** LOCKED
+**Date:** March 21, 2026
+**Milestone:** M5 (polish)
+**Depends on:** D-152 (depletion model), D-164 (servings label), D-165 (budget-aware recommendations)
+
+**Problem:** The add-to-pantry sheet's bag size input was unintuitive:
+1. Switching between lbs/oz/kg/g did not convert the number — user had to re-type.
+2. No way to understand bag size in cups or servings, even though feedings are measured in cups.
+3. The depletion estimate was confusing because the weight-to-cups conversion via calorie density was invisible.
+
+**Decision — 3 changes to AddToPantrySheet:**
+
+**1. Auto-convert weight units on tap**
+
+Tapping a weight unit chip (lbs/oz/kg/g) converts the current value in the input box. Example: 15 lbs → tap "oz" → 240 oz → tap "kg" → 6.8 kg → tap "g" → 6804 g.
+
+Rounding rules: grams round to whole numbers, kg to 2 decimals, lbs and oz to 1 decimal. Conversions go through kg as the intermediate unit.
+
+**2. Cups + servings helper text (NOT a chip)**
+
+Below the bag size input, muted helper text shows the cup equivalent and DER-aware total servings:
+`≈ 61 cups · ~42 servings at 1.46 cups each`
+
+Only visible when the product has both `ga_kcal_per_kg` and `ga_kcal_per_cup` data. Servings count visible when serving size is known (auto or manual mode). The serving size in auto mode comes from `computeAutoServingSize()` which is DER-based — so servings count updates dynamically when feedings_per_day changes or DER changes.
+
+Formula: `cups = (weightKg × kcalPerKg) / kcalPerCup`, `servings = cups / cupsPerFeeding`.
+
+**3. "Enter as servings instead" action link**
+
+Below the helper text, a small accent-colored tappable link. On tap:
+- Switches to Unit serving mode
+- Sets `quantity_original` = calculated total servings (rounded)
+- Sets `quantity_unit` = 'units', `unit_label` = 'servings'
+- Depletion math now uses servings in / servings out — simpler mental model
+
+This is optional — user can stay in weight mode if they prefer.
+
+**Rejected:**
+- Cups as inline chip next to lbs/oz/kg/g — cups is a derived value, not a unit of bag measurement. Looked like a unit selector, not a conversion action.
+- Auto-switch to servings mode — too aggressive. User entered weight because that's on the bag label.
+
+**Implementation:** `convertToKg()` (exported), `convertFromKg()`, `convertWeightToCups()`, `convertWeightToServings()` in `pantryHelpers.ts`. AddToPantrySheet uses these for auto-convert, helper text, and servings link.
+
+**What this does NOT change:** Serving mode toggle behavior, auto/manual calculation, D-165 budget logic, D-164 unit labels, depletion math, database schema.
+
+### D-167: Allergen Score Cap — Hard Ceiling at 50
+**Status:** LOCKED
+**Date:** March 28, 2026
+**Milestone:** M6
+**Depends on:** D-129 (allergen override), D-097 (allergen cross-reference), D-098 (cross-reactivity)
+
+**Problem:** The D-129 allergen override applies per-ingredient IQ penalties when a product contains a pet's declared allergens, but high-quality products can still score 65+ ("Fair match" or above). ResultScreen only shows "Explore higher-scoring alternatives" at score <= 50 — anything above 50 shows "Consider for occasional use." A food containing a known allergen should never be framed as acceptable.
+
+**Decision:** When a product contains any ingredient matching a pet's declared allergens (direct match via `allergen_group` OR possible match via `allergen_group_possible`), the personalized score is hard-capped at 50. This guarantees the "Explore alternatives" UI prompt and places the product in the amber/red zone.
+
+**Mechanism:**
+- Applied in `applyPersonalization()` after all Layer 3 adjustments (life stage, conditions), before final clamp
+- Fires when `personalizations.some(p => p.type === 'allergen')` — only when the product actually contains allergen-matching ingredients, not just because the pet has allergens defined
+- Cap entry added to personalizations array with the adjustment delta for waterfall transparency
+- Follows the cardiac/DCM zero-out pattern (hard override in Layer 3)
+- If other adjustments already pushed score below 50, the cap is a no-op
+
+**Applies to:** All product categories (daily food, supplemental, treats). An allergen in a treat is still an allergen.
+
+**Does NOT replace D-129:** The IQ override continues to apply position-weighted severity deductions. The cap is a ceiling on top — they're complementary.
+
+**Regression impact:** Pure Balance (62) and Temptations (9) are scored without pet allergens — cap code path never entered. Zero regression risk.
+
+---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

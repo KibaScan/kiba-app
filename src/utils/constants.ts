@@ -4,17 +4,24 @@
 
 export const Colors = {
   background: '#1A1A1A',
-  card: '#242424',
-  cardBorder: '#333333',
   textPrimary: '#FFFFFF',
   textSecondary: '#A0A0A0',
   textTertiary: '#666666',
   accent: '#00B4D8',
   accentDark: '#0090AD',
 
+  // Matte Premium surfaces
+  cardSurface: '#242424',                      // elevated card background
+  chipSurface: 'rgba(255,255,255,0.12)',       // chip fills, tracks, drag handles
+  hairlineBorder: 'rgba(255,255,255,0.12)',    // crisp inner border
+  pressOverlay: 'rgba(255,255,255,0.05)',      // touch feedback underlay
+  accentTint: 'rgba(0,180,216,0.10)',          // 10% accent — soft info banners
+  productStage: '#FFFFFF',                      // white product-photo thumbnail stage
+
   // Severity (D-136 unified palette)
   severityRed: '#EF4444',
   severityAmber: '#F59E0B',
+  severityAmberTint: 'rgba(245,158,11,0.15)',  // 15% amber — condition chips, "tracked" tags
   severityGreen: '#4ADE80',   // green-400: inline indicators (rows, dots, badges)
   severityNone: '#6B7280',
 
@@ -119,6 +126,7 @@ export const Limits = {
   freeScansPerWeek: 5,
   freePetsMax: 1,
   premiumPetsMax: 10,
+  freeAppointmentsMax: 2,
 } as const;
 
 // ─── AAFCO Statement Status (standardized copy) ────────
@@ -140,3 +148,4 @@ export const AAFCO_STATEMENT_STATUS = {
 
 export const MOISTURE_THRESHOLD = 12;
 export const BREED_MODIFIER_CAP = 10;
+export const CURRENT_SCORING_VERSION = '5';

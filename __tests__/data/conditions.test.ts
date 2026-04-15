@@ -12,19 +12,20 @@ import {
 } from '../../src/data/conditions';
 
 describe('DOG_CONDITIONS', () => {
-  test('has 14 entries (13 conditions + Perfectly Healthy)', () => {
-    expect(DOG_CONDITIONS).toHaveLength(14);
+  test('has 15 entries (14 conditions + No known conditions)', () => {
+    expect(DOG_CONDITIONS).toHaveLength(15);
   });
 
-  test('first entry is Perfectly Healthy with sentinel tag', () => {
+  test('first entry is No known conditions with sentinel tag', () => {
     expect(DOG_CONDITIONS[0].tag).toBe(HEALTHY_TAG);
-    expect(DOG_CONDITIONS[0].label).toBe('Perfectly Healthy');
+    expect(DOG_CONDITIONS[0].label).toBe('No known conditions');
   });
 
-  test('includes dog-only conditions: seizures, liver', () => {
+  test('includes dog-only conditions: seizures, liver, hypothyroid', () => {
     const tags = DOG_CONDITIONS.map((c) => c.tag);
     expect(tags).toContain('seizures');
     expect(tags).toContain('liver');
+    expect(tags).toContain('hypothyroid');
   });
 
   test('does NOT include cat-only condition: hyperthyroid', () => {
@@ -46,7 +47,7 @@ describe('DOG_CONDITIONS', () => {
 });
 
 describe('CAT_CONDITIONS', () => {
-  test('has 13 entries (12 conditions + Perfectly Healthy)', () => {
+  test('has 13 entries (12 conditions + No known conditions)', () => {
     expect(CAT_CONDITIONS).toHaveLength(13);
   });
 

@@ -8,6 +8,14 @@ import { ensureAuth } from './src/services/auth';
 import { useActivePetStore } from './src/stores/useActivePetStore';
 import { configureRevenueCat } from './src/utils/permissions';
 import { Colors } from './src/utils/constants';
+import { registerForPushNotificationsAsync, setupNotificationHandlers, cleanupNotificationHandlers } from './src/utils/notifications';
+import { registerPushToken, ensureUserSettings } from './src/services/pushService';
+import { rescheduleAllFeeding } from './src/services/feedingNotificationScheduler';
+import { rescheduleAllAppointments } from './src/services/appointmentNotificationScheduler';
+import { rescheduleAllSafeSwitchNotifications } from './src/services/safeSwitchNotificationScheduler';
+import { rescheduleAllMedications } from './src/services/medicationNotificationScheduler';
+import { supabase } from './src/services/supabase';
+import { navigationRef } from './src/navigation';
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
@@ -17,8 +25,38 @@ export default function App() {
       await ensureAuth();
       await configureRevenueCat();
       await useActivePetStore.getState().loadPets();
+
+      // Ensure user_settings row exists (local notification schedulers depend on it)
+      await ensureUserSettings();
+
+      // Push notification registration (may return null on simulator — that's fine)
+      const token = await registerForPushNotificationsAsync();
+      if (token) await registerPushToken(token);
+
+      // Re-sync local notifications on launch
+      rescheduleAllFeeding().catch(() => {});
+      rescheduleAllMedications().catch(() => {});
+      rescheduleAllSafeSwitchNotifications().catch(() => {});
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        rescheduleAllAppointments(session.user.id).catch(() => {});
+      }
     }
     init().finally(() => setAuthReady(true));
+  }, []);
+
+  useEffect(() => {
+    const navigate = (tab: string) => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('Main' as never);
+        // Small delay to ensure Main is mounted before tab switch
+        setTimeout(() => {
+          navigationRef.navigate(tab as never);
+        }, 100);
+      }
+    };
+    setupNotificationHandlers(navigate);
+    return () => cleanupNotificationHandlers();
   }, []);
 
   if (!authReady) {

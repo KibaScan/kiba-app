@@ -15,6 +15,7 @@ import {
   Platform,
   Modal,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useAudioPlayer } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,7 +33,7 @@ import { lookupByUpc, lookupExternalUpc } from '../services/scanner';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import { createPet } from '../services/petService';
-import ScannerOverlay from '../components/ScannerOverlay';
+import ScannerOverlay from '../components/ui/ScannerOverlay';
 
 type ScreenNav = NativeStackNavigationProp<ScanStackParamList, 'ScanMain'>;
 
@@ -207,6 +208,16 @@ export default function ScanScreen() {
         life_stage: null,
         breed_size: null,
         health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
+        wet_intent_resolved_at: null,
       });
 
       setShowPetModal(false);
@@ -316,12 +327,12 @@ export default function ScanScreen() {
 
       {/* Loading overlay */}
       {isLoading && (
-        <View style={styles.loadingOverlay}>
+        <BlurView intensity={40} tint="dark" style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
             <ActivityIndicator size="large" color={Colors.accent} />
             <Text style={styles.loadingText}>Looking up product...</Text>
           </View>
-        </View>
+        </BlurView>
       )}
 
       {/* Inline pet profile modal (D-092: light capture) */}
@@ -338,6 +349,7 @@ export default function ScanScreen() {
           style={styles.modalBackdrop}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>First, tell us about your pet</Text>
             <Text style={styles.modalSubtitle}>
@@ -526,12 +538,11 @@ const styles = StyleSheet.create({
   // ─── Loading ─────────────────────────────────────────
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 16,
     padding: Spacing.xl,
     alignItems: 'center',
@@ -546,7 +557,6 @@ const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: Colors.background,
@@ -578,9 +588,9 @@ const styles = StyleSheet.create({
     width: 110,
     height: 90,
     borderRadius: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.xs,
@@ -600,13 +610,13 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 52,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     fontSize: FontSizes.lg,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.lg,
   },
   modalButton: {
@@ -618,7 +628,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   modalButtonText: {
     fontSize: FontSizes.lg,

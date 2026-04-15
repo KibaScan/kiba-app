@@ -718,9 +718,9 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: Spacing.xl,
     borderRadius: 12,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     flex: 1,
   },
   secondaryButtonText: {
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   continueButton: {
     flex: 0,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 88,
   },
 
   // Text input section
@@ -766,13 +766,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     borderRadius: 12,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
   },
   ingredientTextInput: {
     width: '100%',
     minHeight: 120,
     maxHeight: 200,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
@@ -780,18 +780,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     lineHeight: 22,
   },
 
   // Parse result card
   parseResultCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   parseResultHeader: {
     flexDirection: 'row',
@@ -835,9 +835,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: 20,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 1.5,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   chipActive: {
     borderColor: Colors.accent,

@@ -47,7 +47,7 @@ import { supabase } from '../../src/services/supabase';
 /** Creates a chainable Supabase query mock that resolves to `result`. */
 function mockChain(result: { data: any; error: any }) {
   const chain: any = {};
-  for (const m of ['select', 'insert', 'update', 'delete', 'eq', 'order']) {
+  for (const m of ['select', 'insert', 'update', 'delete', 'eq', 'order', 'in']) {
     chain[m] = jest.fn(() => chain);
   }
   chain.single = jest.fn().mockResolvedValue(result);
@@ -76,6 +76,17 @@ function fakePet(overrides: Partial<Pet> = {}): Pet {
     photo_url: null,
     life_stage: null,
     breed_size: null,
+    health_reviewed_at: null,
+    weight_goal_level: null,
+    caloric_accumulator: null,
+    accumulator_last_reset_at: null,
+    accumulator_notification_sent: null,
+    bcs_score: null,
+    bcs_assessed_at: null,
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -114,6 +125,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     expect(result).toEqual(returned);
@@ -161,6 +183,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -193,6 +226,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -220,6 +264,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -247,6 +302,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -271,6 +337,17 @@ describe('createPet', () => {
         photo_url: null,
         life_stage: null,
         breed_size: null,
+        health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
+        wet_intent_resolved_at: null,
       }),
     ).rejects.toThrow('Pet name is required');
   });
@@ -293,6 +370,17 @@ describe('createPet', () => {
         photo_url: null,
         life_stage: null,
         breed_size: null,
+        health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
+        wet_intent_resolved_at: null,
       }),
     ).rejects.toThrow('Pet name must be 20 characters or fewer');
   });
@@ -318,6 +406,17 @@ describe('createPet', () => {
       photo_url: null,
       life_stage: null,
       breed_size: null,
+      health_reviewed_at: null,
+      weight_goal_level: null,
+      caloric_accumulator: null,
+      accumulator_last_reset_at: null,
+      accumulator_notification_sent: null,
+      bcs_score: null,
+      bcs_assessed_at: null,
+      feeding_style: 'dry_only',
+      wet_reserve_kcal: 0,
+      wet_reserve_source: null,
+      wet_intent_resolved_at: null,
     });
 
     const insertPayload = chain.insert.mock.calls[0][0];
@@ -412,11 +511,13 @@ describe('updatePet', () => {
 
 describe('deletePet', () => {
   test('cascades to allergens and conditions, then deletes pet', async () => {
+    const pantryCapture = mockChain({ data: [], error: null });
     const allergenChain = mockChain({ data: null, error: null });
     const conditionChain = mockChain({ data: null, error: null });
     const petChain = mockChain({ data: null, error: null });
 
     (supabase.from as jest.Mock)
+      .mockReturnValueOnce(pantryCapture)   // pantry_pet_assignments (capture)
       .mockReturnValueOnce(allergenChain)   // pet_allergens
       .mockReturnValueOnce(conditionChain)  // pet_conditions
       .mockReturnValueOnce(petChain);       // pets
@@ -425,11 +526,81 @@ describe('deletePet', () => {
 
     // Verify tables accessed in correct order
     const fromCalls = (supabase.from as jest.Mock).mock.calls;
-    expect(fromCalls[0][0]).toBe('pet_allergens');
-    expect(fromCalls[1][0]).toBe('pet_conditions');
-    expect(fromCalls[2][0]).toBe('pets');
+    expect(fromCalls[0][0]).toBe('pantry_pet_assignments');
+    expect(fromCalls[1][0]).toBe('pet_allergens');
+    expect(fromCalls[2][0]).toBe('pet_conditions');
+    expect(fromCalls[3][0]).toBe('pets');
+
+    // No pantry cleanup queries (pet had no pantry items)
+    expect(fromCalls).toHaveLength(4);
 
     // Store synced
+    expect(mockStoreState.removePet).toHaveBeenCalledWith('pet-1');
+  });
+
+  test('shared pantry items survive, orphaned items soft-deleted', async () => {
+    // Pet has 2 pantry items: item-1 (shared with another pet) and item-2 (solo)
+    const pantryCapture = mockChain({
+      data: [{ pantry_item_id: 'item-1' }, { pantry_item_id: 'item-2' }],
+      error: null,
+    });
+    const allergenChain = mockChain({ data: null, error: null });
+    const conditionChain = mockChain({ data: null, error: null });
+    const petChain = mockChain({ data: null, error: null });
+    // After CASCADE: item-1 still assigned to another pet, item-2 has no assignments
+    const remainingCheck = mockChain({
+      data: [{ pantry_item_id: 'item-1' }],
+      error: null,
+    });
+    const softDeleteChain = mockChain({ data: null, error: null });
+
+    (supabase.from as jest.Mock)
+      .mockReturnValueOnce(pantryCapture)    // capture pantry items
+      .mockReturnValueOnce(allergenChain)    // pet_allergens
+      .mockReturnValueOnce(conditionChain)   // pet_conditions
+      .mockReturnValueOnce(petChain)         // pets
+      .mockReturnValueOnce(remainingCheck)   // check remaining assignments
+      .mockReturnValueOnce(softDeleteChain); // soft-delete orphans
+
+    await deletePet('pet-1');
+
+    const fromCalls = (supabase.from as jest.Mock).mock.calls;
+    expect(fromCalls).toHaveLength(6);
+
+    // Orphan check queried pantry_pet_assignments
+    expect(fromCalls[4][0]).toBe('pantry_pet_assignments');
+    expect(remainingCheck.in).toHaveBeenCalledWith(
+      'pantry_item_id',
+      ['item-1', 'item-2'],
+    );
+
+    // Only item-2 (orphaned) was soft-deleted
+    expect(fromCalls[5][0]).toBe('pantry_items');
+    expect(softDeleteChain.update).toHaveBeenCalledWith({ is_active: false });
+    expect(softDeleteChain.in).toHaveBeenCalledWith('id', ['item-2']);
+  });
+
+  test('pantry cleanup failure does not break deletion', async () => {
+    const pantryCapture = mockChain({
+      data: [{ pantry_item_id: 'item-1' }],
+      error: null,
+    });
+    const allergenChain = mockChain({ data: null, error: null });
+    const conditionChain = mockChain({ data: null, error: null });
+    const petChain = mockChain({ data: null, error: null });
+    // Cleanup query throws
+    const failChain = mockChain({ data: null, error: null });
+    failChain.in = jest.fn(() => { throw new Error('Network error'); });
+
+    (supabase.from as jest.Mock)
+      .mockReturnValueOnce(pantryCapture)
+      .mockReturnValueOnce(allergenChain)
+      .mockReturnValueOnce(conditionChain)
+      .mockReturnValueOnce(petChain)
+      .mockReturnValueOnce(failChain);
+
+    // Should resolve without error despite cleanup failure
+    await expect(deletePet('pet-1')).resolves.toBeUndefined();
     expect(mockStoreState.removePet).toHaveBeenCalledWith('pet-1');
   });
 });

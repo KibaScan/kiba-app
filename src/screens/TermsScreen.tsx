@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
 
   // ─── Disclaimer
   disclaimerCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     marginBottom: Spacing.xl,
   },
   disclaimerText: {

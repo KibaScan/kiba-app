@@ -5,7 +5,8 @@
 
 export type ScanStackParamList = {
   ScanMain: undefined;
-  Result: { productId: string; petId: string | null };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
+  RecallDetail: { productId: string };
   CommunityContribution: { scannedUpc: string };
   ProductConfirm: {
     scannedUpc: string;
@@ -18,21 +19,35 @@ export type ScanStackParamList = {
     productName: string | null;
     brand: string | null;
   };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type HomeStackParamList = {
   HomeMain: undefined;
-  Result: { productId: string; petId: string | null };
+  CategoryBrowse: { category: import('./categoryBrowse').BrowseCategory; petId: string; subFilter?: string };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
+  RecallDetail: { productId: string };
+  AppointmentDetail: { appointmentId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
+  SafeSwitchDetail: { switchId: string };
 };
 
-export type SearchStackParamList = {
-  SearchMain: undefined;
-  Result: { productId: string; petId: string | null };
+export type CommunityStackParamList = {
+  CommunityMain: undefined;
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
+  RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
 };
 
 export type PantryStackParamList = {
   PantryMain: undefined;
-  Result: { productId: string; petId: string | null };
+  EditPantryItem: { itemId: string };
+  SafeSwitchSetup: { pantryItemId: string; newProductId: string; petId: string; newServingSize: number | null; newServingSizeUnit: string | null; newFeedingsPerDay: number | null };
+  SafeSwitchDetail: { switchId: string };
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
+  RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
+  CustomFeedingStyle: { petId: string };
 };
 
 export type MeStackParamList = {
@@ -42,6 +57,25 @@ export type MeStackParamList = {
   CreatePet: { species: 'dog' | 'cat' };
   EditPet: { petId: string };
   HealthConditions: { petId: string; fromCreate?: boolean };
+  MedicationForm: {
+    petId: string;
+    petName: string;
+    medication?: import('./pet').PetMedication;
+    conditions: string[];
+  };
+  BCSReference: { petId: string };
+  Medications: undefined;
+  MedicalRecords: undefined;
+  HealthRecordForm: { defaultRecordType?: import('./appointment').HealthRecordType } | undefined;
+  Appointments: undefined;
+  CreateAppointment: undefined;
+  AppointmentDetail: { appointmentId: string };
+  NotificationPreferences: undefined;
+  Settings: undefined;
+  Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
+  RecallDetail: { productId: string };
+  Compare: { productAId: string; productBId: string; petId: string };
+  CustomFeedingStyle: { petId: string };
 };
 
 // ─── Paywall Trigger ─────────────────────────────────
@@ -53,7 +87,8 @@ export type PaywallTrigger =
   | 'search'
   | 'compare'
   | 'vet_report'
-  | 'elimination_diet';
+  | 'elimination_diet'
+  | 'appointment_limit';
 
 // ─── Root & Tab Navigators ─────────────────────────────
 
@@ -66,7 +101,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
-  Search: undefined;
+  Community: undefined;
   Scan: undefined;
   Pantry: undefined;
   Me: undefined;

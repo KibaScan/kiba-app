@@ -47,7 +47,7 @@ describe('scoreIngredients — Layer 1a', () => {
     expect(result.penalties).toHaveLength(0);
   });
 
-  test('single danger at position 1 (proportion-based) → score: 85', () => {
+  test('single danger at position 1 (proportion-based) → score: 80', () => {
     const ingredients: ProductIngredient[] = [
       makeIngredient({
         position: 1,
@@ -57,10 +57,10 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    expect(result.ingredientScore).toBe(85);
+    expect(result.ingredientScore).toBe(80);
     expect(result.penalties).toHaveLength(1);
-    expect(result.penalties[0].rawPenalty).toBe(15);
-    expect(result.penalties[0].positionAdjustedPenalty).toBe(15);
+    expect(result.penalties[0].rawPenalty).toBe(20);
+    expect(result.penalties[0].positionAdjustedPenalty).toBe(20);
   });
 
   test('single danger at position 8 (proportion-based) → 30% reduction', () => {
@@ -73,9 +73,9 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    expect(result.penalties[0].rawPenalty).toBe(15);
-    expect(result.penalties[0].positionAdjustedPenalty).toBe(15 * 0.7);
-    expect(result.ingredientScore).toBe(100 - 15 * 0.7);
+    expect(result.penalties[0].rawPenalty).toBe(20);
+    expect(result.penalties[0].positionAdjustedPenalty).toBe(20 * 0.7);
+    expect(result.ingredientScore).toBe(100 - 20 * 0.7);
   });
 
   test('single danger at position 12 (proportion-based) → 60% reduction', () => {
@@ -88,9 +88,9 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    expect(result.penalties[0].rawPenalty).toBe(15);
-    expect(result.penalties[0].positionAdjustedPenalty).toBe(15 * 0.4);
-    expect(result.ingredientScore).toBe(100 - 15 * 0.4);
+    expect(result.penalties[0].rawPenalty).toBe(20);
+    expect(result.penalties[0].positionAdjustedPenalty).toBe(20 * 0.4);
+    expect(result.ingredientScore).toBe(100 - 20 * 0.4);
   });
 
   test('presence-based danger at position 15 → full penalty, no reduction (D-018)', () => {
@@ -103,12 +103,12 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    expect(result.penalties[0].rawPenalty).toBe(15);
-    expect(result.penalties[0].positionAdjustedPenalty).toBe(15); // no discount
-    expect(result.ingredientScore).toBe(85);
+    expect(result.penalties[0].rawPenalty).toBe(20);
+    expect(result.penalties[0].positionAdjustedPenalty).toBe(20); // no discount
+    expect(result.ingredientScore).toBe(80);
   });
 
-  test('caution at position 1 → score: 92', () => {
+  test('caution at position 1 → score: 90', () => {
     const ingredients: ProductIngredient[] = [
       makeIngredient({
         position: 1,
@@ -118,9 +118,9 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    expect(result.ingredientScore).toBe(92);
-    expect(result.penalties[0].rawPenalty).toBe(8);
-    expect(result.penalties[0].positionAdjustedPenalty).toBe(8);
+    expect(result.ingredientScore).toBe(90);
+    expect(result.penalties[0].rawPenalty).toBe(10);
+    expect(result.penalties[0].positionAdjustedPenalty).toBe(10);
   });
 
   test('unnamed species penalty — 2 occurrences (D-012)', () => {
@@ -140,7 +140,7 @@ describe('scoreIngredients — Layer 1a', () => {
 
   test('three unnamed species — penalties stack with severity (D-012)', () => {
     const ingredients: ProductIngredient[] = [
-      // caution + unnamed at pos 2 (eligible): −8 + −2
+      // caution + unnamed at pos 2 (eligible): −10 + −2
       makeIngredient({
         position: 2,
         canonical_name: 'Meat Meal',
@@ -158,7 +158,7 @@ describe('scoreIngredients — Layer 1a', () => {
         is_protein_fat_source: true,
         position_reduction_eligible: true,
       }),
-      // danger + unnamed at pos 12 (NOT eligible): −15 + −2
+      // danger + unnamed at pos 12 (NOT eligible): −20 + −2
       makeIngredient({
         position: 12,
         canonical_name: 'Animal Fat',
@@ -170,10 +170,10 @@ describe('scoreIngredients — Layer 1a', () => {
     ];
     const result = scoreIngredients(ingredients, 'dog');
     expect(result.unnamedSpeciesCount).toBe(3);
-    // Severity: −8 (pos 2) + −15 (pos 12, presence) = −23
+    // Severity: −10 (pos 2) + −20 (pos 12, presence) = −30
     // Unnamed: 3 × −2 = −6
-    // Total: −29, score = 71
-    expect(result.ingredientScore).toBe(71);
+    // Total: −36, score = 64
+    expect(result.ingredientScore).toBe(64);
     // 2 severity penalties + 3 unnamed penalties = 5 total
     expect(result.penalties).toHaveLength(5);
     const unnamedPenalties = result.penalties.filter(p => p.reason.includes('Unnamed species'));
@@ -197,8 +197,8 @@ describe('scoreIngredients — Layer 1a', () => {
       }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    // caution: −8 (presence-based) + unnamed: −2 = −10 total
-    expect(result.ingredientScore).toBe(90);
+    // caution: −10 (presence-based) + unnamed: −2 = −12 total
+    expect(result.ingredientScore).toBe(88);
     expect(result.penalties).toHaveLength(2);
     expect(result.unnamedSpeciesCount).toBe(1);
   });
@@ -211,13 +211,13 @@ describe('scoreIngredients — Layer 1a', () => {
     ];
     const result = scoreIngredients(colorants, 'dog');
     // All 3 colorants at positions 18, 22, 25 — well past position 10.
-    // Danger severity (−15) with position_reduction_eligible: false → full penalty each.
+    // Danger severity (−20) with position_reduction_eligible: false → full penalty each.
     expect(result.penalties).toHaveLength(3);
     result.penalties.forEach(p => {
-      expect(p.rawPenalty).toBe(15);
-      expect(p.positionAdjustedPenalty).toBe(15); // no discount
+      expect(p.rawPenalty).toBe(20);
+      expect(p.positionAdjustedPenalty).toBe(20); // no discount
     });
-    expect(result.ingredientScore).toBe(100 - 45); // 3 × 15 = 45
+    expect(result.ingredientScore).toBe(100 - 60); // 3 × 20 = 60
   });
 
   test('ingredient splitting detected — flag only, no score penalty (D-015)', () => {
@@ -249,7 +249,7 @@ describe('scoreIngredients — Layer 1a', () => {
   });
 
   test('floor at 0 — never negative', () => {
-    // 8 danger ingredients at positions 1-5 (all full penalty): 8 × 15 = 120
+    // 8 danger ingredients at positions 1-5 (all full penalty): 8 × 20 = 160
     const ingredients: ProductIngredient[] = Array.from({ length: 8 }, (_, i) =>
       makeIngredient({
         position: i + 1,
@@ -275,7 +275,7 @@ describe('scoreIngredients — Layer 1a', () => {
     const dogResult = scoreIngredients(ingredients, 'dog');
     const catResult = scoreIngredients(ingredients, 'cat');
     expect(dogResult.ingredientScore).toBe(100);
-    expect(catResult.ingredientScore).toBe(85);
+    expect(catResult.ingredientScore).toBe(80);
   });
 
   test('mixed penalties stack correctly', () => {
@@ -300,8 +300,8 @@ describe('scoreIngredients — Layer 1a', () => {
       makeIngredient({ position: 3, canonical_name: 'Chicken' }),
     ];
     const result = scoreIngredients(ingredients, 'dog');
-    // −15 (danger) −2 (unnamed) −5.6 (caution) = −22.6
-    expect(result.ingredientScore).toBe(100 - 15 - 2 - 5.6);
+    // −20 (danger) −2 (unnamed) −7 (caution at pos 6: 10×0.7) = −29
+    expect(result.ingredientScore).toBe(100 - 20 - 2 - 7);
     expect(result.unnamedSpeciesCount).toBe(1);
     expect(result.penalties).toHaveLength(3); // danger + unnamed + caution
   });
@@ -333,7 +333,7 @@ describe('scoreIngredients — Layer 1a', () => {
   // ─── Reference Product Regression ──────────────────────────
   // Real data pulled from Supabase (product_id: afd04040-425b-5742-9100-9e370c1c3cc9)
 
-  test('Pure Balance Grain-Free Salmon & Pea (Dog) — real DB data → IQ = 62.8', () => {
+  test('Pure Balance Grain-Free Salmon & Pea (Dog) — real DB data → IQ = 54', () => {
     const ingredients: ProductIngredient[] = [
       makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cat_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish',    position_reduction_eligible: true }),
       makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cat_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish',    position_reduction_eligible: true }),
@@ -355,15 +355,15 @@ describe('scoreIngredients — Layer 1a', () => {
     const result = scoreIngredients(ingredients, 'dog');
 
     // Severity deductions (dog):
-    //   peas (pos 3, eligible):           −8 × 1.0 = −8
-    //   dried_peas (pos 4, eligible):     −8 × 1.0 = −8
-    //   pea_protein (pos 5, eligible):    −8 × 1.0 = −8
-    //   natural_flavor (pos 9, NOT eligible): −8 × 1.0 = −8
-    //   salt (pos 11, eligible):          −8 × 0.4 = −3.2
+    //   peas (pos 3, eligible):           −10 × 1.0 = −10
+    //   dried_peas (pos 4, eligible):     −10 × 1.0 = −10
+    //   pea_protein (pos 5, eligible):    −10 × 1.0 = −10
+    //   natural_flavor (pos 9, NOT eligible): −10 × 1.0 = −10
+    //   salt (pos 11, eligible):          −10 × 0.4 = −4
     // Unnamed: 1 × −2 = −2  (only natural_flavor)
-    // Total: −8 − 8 − 8 − 8 − 3.2 − 2 = −37.2
-    // Score: 100 − 37.2 = 62.8
-    expect(result.ingredientScore).toBeCloseTo(62.8, 1);
+    // Total: −10 − 10 − 10 − 10 − 4 − 2 = −46
+    // Score: 100 − 46 = 54
+    expect(result.ingredientScore).toBeCloseTo(54, 1);
     expect(result.unnamedSpeciesCount).toBe(1);
     expect(result.penalties).toHaveLength(6); // 5 severity + 1 unnamed
 

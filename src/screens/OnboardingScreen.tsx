@@ -52,6 +52,16 @@ export default function OnboardingScreen() {
         life_stage: null,
         breed_size: null,
         health_reviewed_at: null,
+        weight_goal_level: null,
+        caloric_accumulator: null,
+        accumulator_last_reset_at: null,
+        accumulator_notification_sent: null,
+        bcs_score: null,
+        bcs_assessed_at: null,
+        feeding_style: 'dry_only',
+        wet_reserve_kcal: 0,
+        wet_reserve_source: null,
+        wet_intent_resolved_at: null,
       });
       completeOnboarding();
     } catch (err) {
@@ -212,9 +222,9 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -233,13 +243,13 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 52,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.cardSurface,
     borderRadius: 12,
     paddingHorizontal: Spacing.md,
     fontSize: FontSizes.lg,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.hairlineBorder,
   },
   footer: {
     paddingHorizontal: Spacing.xl,
@@ -253,7 +263,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   primaryButtonText: {
     fontSize: FontSizes.lg,

@@ -229,5 +229,23 @@
   "pig ears": "pig_ear",
   "catnip oil": "catnip",
   "premium catnip": "catnip",
-  "ginger powder": "ginger"
+  "ginger powder": "ginger",
+
+  "beta-carotene": "beta_carotene",
+  "betacarotene": "beta_carotene",
+  "taurina": "taurine",
+  "vitamine e": "vitamin_e",
+  "vitamine e supplement": "vitamin_e",
+  "dicalciumphosphate": "dicalcium_phosphate",
+  "dicalcium phosphat": "dicalcium_phosphate",
+  "d-calciumpantothenate": "pantothenic_acid",
+  "calciumpantothenate": "pantothenic_acid",
+  "calciumcarbonate": "calcium_carbonate",
+  "l-ascorbyl-2-polyphosphat": "vitamin_c",
+  "l-ascorbyl-2-polyphoshate": "vitamin_c",
+  "l-ascorbyl-2-polyphophate": "vitamin_c",
+  "l-ascor. byl-2-polyphosphat": "vitamin_c",
+  "pyrdoxine hydrochloride": "vitamin_b6",
+  "thiamine mononitrat": "vitamin_b1",
+  "titanium dioxide color": "titanium_dioxide"
 }

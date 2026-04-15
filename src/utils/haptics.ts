@@ -56,3 +56,8 @@ export function deleteConfirm(): void {
 export function scanWarning(): void {
   if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 }
+
+/** Weight goal slider detent snap (D-160) */
+export function sliderDetent(): void {
+  if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+}

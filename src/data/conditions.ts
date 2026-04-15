@@ -19,34 +19,35 @@ export interface AllergenDef {
 
 // ─── Sentinel ────────────────────────────────────────────
 
-/** Sentinel tag for "Perfectly Healthy" — never stored in DB. */
+/** Sentinel tag for "No known conditions" — never stored in DB. */
 export const HEALTHY_TAG = '__healthy__';
 
 // ─── Conditions ──────────────────────────────────────────
 
 const SHARED_CONDITIONS: ConditionDef[] = [
-  { tag: HEALTHY_TAG, label: 'Perfectly Healthy', icon: 'checkmark-shield-outline' },
+  { tag: HEALTHY_TAG, label: 'No known conditions', icon: 'checkmark-circle-outline' },
   { tag: 'joint', label: 'Joint issues', icon: 'fitness-outline' },
   { tag: 'allergy', label: 'Food allergies', icon: 'alert-circle-outline' },
   { tag: 'gi_sensitive', label: 'Sensitive stomach', icon: 'medical-outline' },
   { tag: 'obesity', label: 'Overweight', icon: 'scale-outline' },
-  { tag: 'underweight', label: 'Underweight', icon: 'trending-down-outline' },
+  { tag: 'underweight', label: 'Underweight', icon: 'scale-outline' },
   { tag: 'diabetes', label: 'Diabetes', icon: 'water-outline' },
   { tag: 'ckd', label: 'Kidney disease', icon: 'medkit-outline' },
   { tag: 'urinary', label: 'Urinary issues', icon: 'flask-outline' },
-  { tag: 'cardiac', label: 'Heart disease', icon: 'heart-outline' },
+  { tag: 'cardiac', label: 'Heart disease', icon: 'fitness-outline' },
   { tag: 'pancreatitis', label: 'Pancreatitis', icon: 'bandage-outline' },
   { tag: 'skin', label: 'Skin & coat issues', icon: 'leaf-outline' },
 ];
 
-/** Dog-specific conditions (13 + Perfectly Healthy = 14 total). */
+/** Dog-specific conditions (14 + No known conditions = 15 total). */
 export const DOG_CONDITIONS: ConditionDef[] = [
   ...SHARED_CONDITIONS,
+  { tag: 'hypothyroid', label: 'Hypothyroidism', icon: 'thermometer-outline' },
   { tag: 'liver', label: 'Liver disease', icon: 'pulse-outline' },
   { tag: 'seizures', label: 'Seizures / Epilepsy', icon: 'flash-outline' },
 ];
 
-/** Cat-specific conditions (12 + Perfectly Healthy = 13 total). */
+/** Cat-specific conditions (12 + No known conditions = 13 total). */
 export const CAT_CONDITIONS: ConditionDef[] = [
   ...SHARED_CONDITIONS,
   { tag: 'hyperthyroid', label: 'Hyperthyroidism', icon: 'thermometer-outline' },

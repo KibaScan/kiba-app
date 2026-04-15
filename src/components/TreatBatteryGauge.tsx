@@ -4,9 +4,10 @@
 // D-060: Treat budget = 10% of DER.
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-import { InfoTooltip } from './InfoTooltip';
+import { InfoTooltip } from './ui/InfoTooltip';
 import type { CalorieSource } from '../utils/calorieEstimation';
 
 // ─── Props ───────────────────────────────────────────────
@@ -15,7 +16,10 @@ interface TreatBatteryGaugeProps {
   treatBudgetKcal: number;
   consumedKcal: number;
   petName: string;
+  title?: string;
   calorieSource?: CalorieSource;
+  treatCount?: number;
+  onLogTreat?: () => void;
 }
 
 // ─── Exported Helpers (testable without render library) ──
@@ -45,7 +49,10 @@ export default function TreatBatteryGauge({
   treatBudgetKcal,
   consumedKcal,
   petName,
+  title,
   calorieSource,
+  treatCount,
+  onLogTreat,
 }: TreatBatteryGaugeProps) {
   // calorieSource === null means product has no calorie data AND Atwater can't estimate.
   // undefined means not passed (e.g. PetHubScreen general view) — show normally.
@@ -60,7 +67,7 @@ export default function TreatBatteryGauge({
     <View style={styles.card}>
       {/* Title */}
       <Text style={styles.title}>
-        {petName}'s Treat Budget
+        {title ?? `${petName}'s Treat Budget`}
       </Text>
 
       {noCalorieData ? (
@@ -76,7 +83,7 @@ export default function TreatBatteryGauge({
       ) : (
         <>
           {/* Budget label */}
-          <Text style={styles.budgetLabel}>
+          <Text style={[styles.budgetLabel, { color: consumedKcal > 0 ? Colors.severityGreen : Colors.textSecondary }]}>
             {Math.round(consumedKcal)}/{Math.round(treatBudgetKcal)} kcal
           </Text>
 
@@ -91,16 +98,14 @@ export default function TreatBatteryGauge({
                 },
               ]}
             />
-            {/* Percentage text overlaid on bar */}
-            <Text style={styles.barText}>
-              {Math.round(percent)}%
-            </Text>
           </View>
 
-          {/* Status label */}
-          <Text style={[styles.statusLabel, { color: barColor }]}>
-            {getStatusLabel(percent)}
-          </Text>
+          {/* Treat count */}
+          {treatCount != null && treatCount > 0 && (
+            <Text style={styles.treatCountText}>
+              {treatCount} treat{treatCount !== 1 ? 's' : ''} today
+            </Text>
+          )}
 
           {/* Atwater estimation note */}
           {calorieSource === 'estimated' && (
@@ -114,6 +119,20 @@ export default function TreatBatteryGauge({
           )}
         </>
       )}
+
+      {onLogTreat && (
+        <>
+          <View style={styles.logTreatSeparator} />
+          <TouchableOpacity
+            style={styles.logTreatRow}
+            activeOpacity={0.7}
+            onPress={onLogTreat}
+          >
+            <Ionicons name="restaurant-outline" size={16} color={Colors.accent} />
+            <Text style={styles.logTreatText}>Log a Treat</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
@@ -122,10 +141,12 @@ export default function TreatBatteryGauge({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
     padding: Spacing.md,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.hairlineBorder,
   },
   title: {
     fontSize: FontSizes.lg,
@@ -138,7 +159,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: 28,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.chipSurface,
     borderRadius: 14,
     overflow: 'hidden',
     justifyContent: 'center',
@@ -160,6 +181,10 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: '500',
   },
+  treatCountText: {
+    fontSize: FontSizes.xs,
+    color: Colors.textSecondary,
+  },
   estimateRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -177,5 +202,21 @@ const styles = StyleSheet.create({
   unavailableHint: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
+  },
+  logTreatSeparator: {
+    height: 1,
+    backgroundColor: Colors.hairlineBorder,
+  },
+  logTreatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: Spacing.xs,
+  },
+  logTreatText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 });

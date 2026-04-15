@@ -1,2488 +1,580 @@
 {
-  "timestamp": "2026-03-14T21:35:55.590176+00:00",
+  "timestamp": "2026-03-31T23:05:04.849947+00:00",
   "parsing_errors": [
     {
       "product_ids": [
-        "19c9d5d1-1118-4086-9dee-bd42a3e9015f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Peas, Chicken Fat (preserved with Mixed Tocopherols), Dried Tomato Pomace, Natural Flavor, Flaxseed (source of Omega 3 & 6 Fatty Acids), Dri"
-    },
-    {
-      "product_ids": [
-        "ec17e941-3dff-445f-8ffd-b6fdcb756827",
-        "d109b0bd-0366-410e-b79f-0b774cee66e8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 3 & 6 Fatty Acids), Natural Flavor, Peas, Dried Tomato Pomace, Dri"
-    },
-    {
-      "product_ids": [
-        "901e504d-d49e-4ebc-9365-f5630b33da7e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Seabass, Dehydrated Seabass, Sweet Potato, Fish Oil (From Herring), Hydrolyzed Fish Protein, Dried Kelp, Linseed, Dried Fennel (2.5%), Pea Fiber, Alfalfa Meal, Inulin, Fructo-Oligosaccharides, Yeast E"
-    },
-    {
-      "product_ids": [
-        "4a45cd12-71a2-4e65-a449-b8ec7c4bce3b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Chicken Meal, Brown Rice, Oatmeal, Barley, Peas, Pea Starch, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 6 Fatty Acids), Dried Tomato Pomace, Natural Flavor"
-    },
-    {
-      "product_ids": [
-        "bf9d20f5-6d47-4ccb-80c9-299b4cccd553"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Peas, Pea Starch, Miscanthus Grass, Natural Flavor, Dried Tomato Pomace, Potato Starch, Flaxseed (source of Omega 3 & 6 Fatty Acids), Chicke"
-    },
-    {
-      "product_ids": [
-        "29a58926-5e98-4d79-ba88-a2295c7ad9e9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Chickpeas, Lentils, Ground Peas, Chicken Fat (Preserved with Mixed Tocopherols), Sweet Potato, Carrots, Dried Plain Beet Pulp, Flaxseed Meal, Natural Flavor, Potato Protein, Dic"
-    },
-    {
-      "product_ids": [
-        "a40a3f38-f617-463c-b703-3e9e39bebb43"
+        "2785c0eb-1481-4862-bc13-985d765e3490"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+      "raw_preview": "Hill's Science Diet Adult Sensitive Stomach & Skin Small & Mini Breed Chicken Recipe Dry Food + Hill's Natural Soft Savories with Peanut Butter & Banana Dog Treats may be crafted for small and toy bre"
     },
     {
       "product_ids": [
-        "baa6a220-42b3-41cd-9571-c7b0fbb20262"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Brown Rice, Oatmeal, Barley, Chicken Meal, Peas, Pea Starch, Potato Starch, Miscanthus Grass, Dried Tomato Pomace, Natural Flavor, Flaxseed (source of Omega 3 & 6 Fatty Acids), Dried "
-    },
-    {
-      "product_ids": [
-        "3e760d7a-ef60-4ce7-aa3b-371f56d14b4d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Brown Rice, Ground White Rice, Oatmeal, Chicken Fat (Preserved with Mixed Tocopherols), Rice Bran, Avocado, Dried Tomato Pomace, Flax Seed (Source of Omega 3), Natural Flavor, Alf"
-    },
-    {
-      "product_ids": [
-        "714aef7e-f165-4258-bcac-b30314e357a3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Beef, Chicken Meal, Brown Rice, Oatmeal, Barley, Peas, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 6 Fatty Acids), Natural Flavor, Dried Tomato Pomace, Fish Meal "
-    },
-    {
-      "product_ids": [
-        "efd104fd-39d0-4577-939b-883ab0738fe8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Split Peas, Lentils, Pork Meal, Chicken Fat (preserved with Mixed Tocopherols), Pea Starch, Dried Plain Beet Pulp, Flaxseed, Natural Flavor, Dehydrated Alfalfa Meal, Choline Chl"
-    },
-    {
-      "product_ids": [
-        "9c60c546-fe03-406a-a894-b2abe2974890"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Chicken Meal, Pearled Barley, Ground Peas, Brown Rice, Turkey Meal, Beef Fat (Preserved with Mixed Tocopherols), Brewers Dried Yeast, Sweet Potato, Flaxseed, Natural Flavor, Dried Plain Beet Pul"
-    },
-    {
-      "product_ids": [
-        "94ec3ce6-ff59-41ff-a97b-b4d2190bd103"
+        "2bd7a935-07d6-4d34-a291-a06a36ed1f4e",
+        "0c47dc3e-245b-4584-8910-8414ae2ff683",
+        "8947a26e-aa2e-4311-b359-4cc21825c588",
+        "ef40979f-f4da-4243-8e53-557b0f1073cf",
+        "6ea074db-a465-4e62-bb50-83de3be0b4fa",
+        "897e4a59-d215-4401-9094-18ca3a2d197d",
+        "d2e54f28-7b3b-42fe-8640-e31fb03acc30",
+        "4bcd367c-601f-4165-9704-cc602291a159"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Pearled Barley, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Ground Rice, Rice Bran, Canola Oil (Pr"
+      "raw_preview": ", it helps maintain overall well-being while being gentle on the stomach. The included grooming brush is designed for effortless coat maintenance, featuring an ergonomic handle for a comfortable grip "
     },
     {
       "product_ids": [
-        "1dca57d8-662d-4fb0-bc8d-01b006cf8bd1"
+        "38720a7d-fd17-40f8-865f-1f8abd099f14"
       ],
       "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Peas, Dried Tomato Pomace, Natural Flavor, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 3 & 6 Fatty Acids), Dri"
+      "raw_preview": "Celebrate your canine companion! Each purchase comes with Rachael Ray Nutrish Natural Beef, Pea, & Brown Rice Recipe Dry Dog Food, 40-lb bag & Rachael Ray Nutrish Soup Bones Chicken & Veggies Flavor D"
     },
     {
       "product_ids": [
-        "302c4367-5808-449b-a775-96c62c35cf84"
+        "45162885-9cb7-4db1-a148-3f6f9fd513ba"
       ],
       "status": "contaminated",
-      "raw_preview": "Deboned Beef, Beef Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Potatoes, Dried Tomato Pomace, Salmon Meal (source of Omega 3 Fatty Acids), Fish Meal, Chicken Fat (preserved with Mixed Tocopherol"
+      "raw_preview": "About this itemProduct detailsDelight your cat with a flavorful rotation of meals from the Special Kitty Surf & Turf Variety Pack Pate. This 40-count collection features four delicious recipes: chicke"
     },
     {
       "product_ids": [
-        "6ffab892-f3bf-4b14-acc9-7d9f48ac2c3d",
-        "43502fd3-a6d3-465d-903c-cd79acf4db2b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Peas, Chicken Fat (preserved with Mixed Tocopherols), Dried Tomato Pomace, Natural Flavor, Flaxseed (source of Omega 3 & 6 Fatty Acids), Dri"
-    },
-    {
-      "product_ids": [
-        "830abe2d-f396-4e8a-a673-2300acc45be9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Filet Mignon Flavor in Gravy: Sufficient Water for Processing, Chicken, Meat By-Products, Pork Liver, Beef, Animal Plasma, Wheat Gluten, Wheat Flour, Dried Beet Pulp, Corn Starch, Added Color, Natural"
-    },
-    {
-      "product_ids": [
-        "e37be3bf-668a-40d4-a1ed-dbdce83bc310"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Lamb Meal, Barley, Brown Rice, Oatmeal, Pea Protein, Whole Grain Sorghum, Dehydrated Alfalfa Meal, Dried Plain Beet Pulp, Powdered Cellulose, Natural Flavors, Chicken Fat (Preserved With"
-    },
-    {
-      "product_ids": [
-        "4386ad83-68e4-4913-a5a5-18f7b92f4062"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Chicken Meal, Brown Rice, Barley, Oatmeal, Peas, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 6 Fatty Acids), Natural Flavor, Pea Starch, Fish Meal (source o"
-    },
-    {
-      "product_ids": [
-        "484246d8-2c86-4f88-8a7e-76473d5f79bd"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Turkey Meal, Chickpeas, Lentils, Ground Peas, Chicken Fat (Preserved with Mixed Tocopherols), Sweet Potato, Carrots, Dried Plain Beet Pulp, Flaxseed Meal, Natural Flavor, Monocalcium Phosphate"
-    },
-    {
-      "product_ids": [
-        "994c305a-7f10-4ec4-a470-4d795a18ac9a"
+        "6b66aa21-f71a-40f8-aace-81cdd0e6c89b"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), wheat flour, whole grain ground corn, rice bran, grain sorghum, dried plain beet pulp, chicken fat (preserved with mixed tocopherols), egg product, d"
+      "raw_preview": "and maintain Almo Nature's commitment to premium quality. The grain-free formulations work together to support cats with sensitive stomachs, while the high moisture content in both products helps prom"
     },
     {
       "product_ids": [
-        "c8c3075d-f5f4-44a7-bd57-f3ae20741dc4"
+        "03f50b02-c74e-44d4-8f4f-c54b654b7fd9"
       ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Oatmeal, Rice, Rice Bran, Whitefish Meal (Natural Source of Glucosamine and Chondroitin), Canola Oil (Preserved with Mixed Toco"
-    },
-    {
-      "product_ids": [
-        "bb0329c4-e83f-43a9-b09b-5428d3988f45"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Peas, Pea Protein, Tapioca Starch, Fish Meal (source of Omega 3 Fatty Acids), Dried Tomato Pomace, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Om"
-    },
-    {
-      "product_ids": [
-        "b8054f13-9640-4e2f-a92f-1e2081fb9c85"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Milled Rice, (Afs Tablet - 7% Of The Food): Potato Protein, Hydrolyzed Fish Protein, Products From The Processing Of Herbs: Bush Clovers (Lespedeza Spp.), Mouse Ear Hawkweed (Hieracium Pilosella), Pro"
-    },
-    {
-      "product_ids": [
-        "7a30a2e2-2260-4354-8cf1-dd6cb3e3fc42"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Beef Meal, Lentils, Peas, Dried Yeast, Sweet Potato, Carrots, Beef Fat, Chickpeas, Dehydrated Alfalfa Meal, Dried Plain Beet Pulp, Natural Flavor, Flaxseed, Sunflower Oil (Preserved with Mixed T"
-    },
-    {
-      "product_ids": [
-        "77411701-effc-4af8-924b-854a0bee977b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Salmon Meal, Oatmeal, Brown Rice, Barley, Dried Plain Beet Pulp, Canola Oil, Flaxseed (source of Omega 6 Fatty Acids), Natural Flavor, Peas, Pea Protein, Dicalcium Phosphate, Calcium C"
-    },
-    {
-      "product_ids": [
-        "8b9b4935-cda3-41ea-94b8-2c1f25fc777d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Chicken Meal, Peas, Pea Protein, Fish Meal (source of Omega 3 Fatty Acids), Tapioca Starch, Dried Tomato Pomace, Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Pea Starch, "
-    },
-    {
-      "product_ids": [
-        "7dd0b289-f6fb-4d3f-8cfd-71b617b2cfd6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Chicken Meal, Split Peas, Lentils, Pork Meal, Chicken Fat (preserved with Mixed Tocopherols), Pea Starch, Fish Meal, Dried Chicken, Dried Plain Beet Pulp, Natural Flavor, Dehydrated Alfalfa Meal"
-    },
-    {
-      "product_ids": [
-        "449fb27e-a057-46bc-884e-6da56c75b519"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Whole Grain Millet, Chicken Fat (preserved with mixed Tocopherols), Blood Meal Conventionally Dried, Chicken Meal, Pork Meal, Dehydrated Alfalfa Meal, Yeast Culture, Natural "
-    },
-    {
-      "product_ids": [
-        "f5aa21f4-41eb-412b-a141-12ea4b75f207"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb Meal, Ground Brown Rice, Ground White Rice, Oatmeal, Chicken Fat (Preserved with Mixed Tocopherols), Rice Bran, Herring Meal (Source of Omega 3), Avocado, Flax Seed, Natural Flavor, Dried Tomato "
-    },
-    {
-      "product_ids": [
-        "21eb03c1-696c-4755-aeea-ada4302f3968"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Turkey, Potatoes, Turkey Meal (source of Glucosamine), Pea Starch, Peas, Tapioca Starch, Pea Fiber, Potato Starch, Canola Oil (source of Omega 6 Fatty Acids), Natural Flavor, Pea Protein, Fish"
-    },
-    {
-      "product_ids": [
-        "80853ee8-6b08-4621-b72f-6374881e6e94"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Whole Grain Millet, Blood Meal Conventionally Dried, Dehydrated Alfalfa Meal, Yeast Culture, Pork Meal, Chicken Meal, Menhaden"
-    },
-    {
-      "product_ids": [
-        "3e300201-2eb9-4066-9883-689315cbcc64"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (Natural Source of Glucosamine and Chondroitin), Chicken Meal (Natural Source of Glucosamine and Chondroitin), Tapioca, Chicken Fat (Preserved with Mixed Tocopherols), Sweet Potato, Pumpki"
-    },
-    {
-      "product_ids": [
-        "6c8a0d5f-55c8-48c2-9f75-12b1a52145c7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Whole Grain Brown Rice, Whole Grain Millet, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Menhaden Fish Meal (source of DHA-Docosahexaenoic Acid), Yeast Culture, Chicken Me"
-    },
-    {
-      "product_ids": [
-        "71271ef4-154c-4afb-bab7-fd2307f6af40"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Pork Bone Broth, Pork Heart, Whole Rabbit (With Bone), Pork Liver, Carrots, Broccoli, Celery, Sweet Potatoes, Kale, Blueberries, Dried Yeast, Spinach, Parsley, Chia Seeds, Coconut Oil, Sea Salt, Apple"
-    },
-    {
-      "product_ids": [
-        "b12e1a49-f52a-4981-b635-234990dfe8bb"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Menhaden Fish Meal (source of DHA-Docosahexaenoic Acid), Grain Sorghum, Peas, Chicken Fat (preserved with mixed Tocopherols), Whole Grain Millet, Dehydrated Salmon, Whole Grain Brown Rice, Yeast Cultu"
-    },
-    {
-      "product_ids": [
-        "f8a97b86-c68a-44b1-8a96-1d79aafa4834"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Whole Grain Millet, Chicken Fat (preserved with mixed Tocopherols), Blood Meal Conventionally Dried, Chicken Meal, Pork Meal, Dehydrated Alfalfa Meal, Yeast Culture, Natural "
-    },
-    {
-      "product_ids": [
-        "6a7d3328-d4ac-402f-87d0-1472b1eb2abf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "White Fish, Chicken Meal, Lentils, Split Peas, Chicken Fat (preserved with Mixed Tocopherols), Pork Meal, Fish Meal, Pea Starch, Salmon Meal, Natural Flavor, Dehydrated Alfalfa Meal, Dried Plain Beet "
-    },
-    {
-      "product_ids": [
-        "cc16a24d-badb-48ec-b451-17833d4cc6d8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Salmon Meal (source of Omega 3 Fatty Acids), Dried Tomato Pomace, Flaxseed (source of Omega 6 Fatty Acids), Chicken Fat (pres"
-    },
-    {
-      "product_ids": [
-        "8a7d8ae4-8f9c-4285-a538-e63c482f1499"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Salmon Meal, Peas, Pea Flour, Chickpeas, Sunflower Oil, Flaxseed, Dehydrated Alfalfa Meal, Natural Flavor, Dicalcium Phosphate, Salt, Choline Chloride, Vitamins (Vitamin E Supplement, Vitamin "
-    },
-    {
-      "product_ids": [
-        "241eba2a-e15e-4bd1-b2ee-e787f46f238f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Brown Rice, Ground White Rice, Rice Bran, Oatmeal, Chicken Fat (Preserved with Mixed Tocopherols), Avocado, Natural Flavor, Alfalfa Meal, Dried Tomato Pomace, Flax Seed (Source of"
-    },
-    {
-      "product_ids": [
-        "792f2bcc-903e-46c3-a116-33256d1a7d47"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Salmon, Whole Herring, Chicken Liver, Dehydrated Chicken, Dehydrated Turkey, Dehydrated Chicken Liver, Dehydrated Egg, Dehydrated Sardine, Chicken Fat, Whole Red Lentils, Whole Pinto "
-    },
-    {
-      "product_ids": [
-        "d44f14bf-f855-46c8-b7ae-be7c0e8afcf6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Menhaden Fish meal (source of Omega-3 fatty acids), Chickpeas, Lentils, Deboned Whitefish, Salmon Oil (preserved with mixed tocopherols), Tapioca Starch, Whitefish Meal, Whole Sweet Po"
-    },
-    {
-      "product_ids": [
-        "918b67b9-b8cf-4828-94df-df61dc4af2bf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Chicken Meal, Split Peas, Lentils, Chicken Fat (preserved with Mixed Tocopherols), Pork Meal, Fish Meal, Dried Chicken, Pea Starch, Natural Flavor, Dried Plain Beet Pulp, Dehydrated Alfalfa Meal"
-    },
-    {
-      "product_ids": [
-        "a5bdfdbe-d837-4965-a64b-fca9fa93b548"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Duck, Duck Meal, Garbanzo Beans, Peas, Pea Flour, Chicken Fat (Preserved with Mixed Tocopherols), Dried Tomato Pomace, Avocado, Alfalfa Meal, Natural Flavor, Dried Plain Beet Pulp, Flax Seed (Source o"
-    },
-    {
-      "product_ids": [
-        "98c0de06-6aa1-421e-93f3-8a96d552f8d9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Brown Rice, Grain Sorghum, Whole Grain Millet, Pork Fat (preserved with mixed Tocopherols), Pork Meal, Dried Beef, Salmon Meal, Dehydrated Alfalfa Meal, Yeast Culture, Natural Flavor, Potas"
-    },
-    {
-      "product_ids": [
-        "ec7de64c-327e-4de9-ba35-9cfd2ccf641c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Lamb Meal, Peas, Garbanzo Beans, Pea Flour, Pea Protein, Canola Oil (Preserved with Mixed Tocopherols), Avocado, Dried Tomato Pomace, Sweet Potato, Natural Flavor, Pea Fiber, Dried Chicory Root,"
-    },
-    {
-      "product_ids": [
-        "a5fbbc11-a76e-48fb-83d1-45d92ed21e04"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Oatmeal Brown Rice Chicken Fat (Preserved With Mixed Tocopherols) Tomato Pomace Brewer's Yeast Threonine Potassium Chloride DL Methionine Taurine Calcium Propionate Blueberries Raspberries C"
-    },
-    {
-      "product_ids": [
-        "50944a95-e5a4-4a18-87df-edc06a7fc3ab"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Lamb Meal, Chickpeas, Peas, Flaxseed, Sunflower Oil, Natural Flavor, Dehydrated Alfalfa Meal, Salt, Choline Chloride, Vitamins (Vitamin E Supplement, Vitamin A Supplement, Niacinamide, D-Calcium"
-    },
-    {
-      "product_ids": [
-        "dfb8aad9-4eb3-4fa4-84c7-da78581dd050"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Whole Grain Brown Rice, Chicken Fat (preserved with mixed Tocopherols), Yeast Culture, Dehydrated Alfalfa Meal, Natural Flavor, Potassium Chloride, Carrot Powder, Tomato Poma"
-    },
-    {
-      "product_ids": [
-        "c7e6369a-916c-4648-b62d-e08b008a9f23"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, rice bran, chicken fat (preserved with mixed tocopherols), meat meal (a source of glucosamine), dried yeast, dr"
-    },
-    {
-      "product_ids": [
-        "150e13fe-bb03-45cc-aa90-7686b1c1c06a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Cod, Dehydrated Cod, Pea Starch, Herring Oil, Chicken Fat, Dehydrated Fish, Sweet Potatoes, Natural Flavors, Pork Fat, Dried Pumpkin, Hydrolyzed Fish, Calcium Carbonate, Pea Fiber, Dried Carrot, Dried"
-    },
-    {
-      "product_ids": [
-        "41bc78eb-f20a-44dc-a820-b749367ddfda"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon Meal, Brown Rice, Grain Sorghum, Whole Grain Millet, Fish Meal, Pork Fat (preserved with mixed Tocopherols), Dehydrated Alfalfa Meal, Yeast Culture, Natural Flavor, Potassium Chloride, Carrot P"
-    },
-    {
-      "product_ids": [
-        "422db1bf-ecfa-4a27-b787-fd82806599d2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Beef, Brown Rice, Beef Meal, Grain Sorghum, Peas, Chicken Fat (Preserved with Mixed Tocopherols), Dried Beet Pulp, Pork Meal, Hydrolyzed Whole Chicken, Dried Yeast, Flaxseed, Natural Flavors, "
-    },
-    {
-      "product_ids": [
-        "ee63b251-1f8a-4f1a-843a-4e4df75ce5a8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal (source of Glucosamine), Brown Rice, Oatmeal, Dried Chicken, Barley, Dried Tomato Pomace, Salmon Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed T"
-    },
-    {
-      "product_ids": [
-        "54d3f1eb-f9b0-4dfa-baa4-e41053084884"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Pea Starch, Chicken Fat, Sweet Potatoes, Pork Fat, Natural Flavors, Dehydrated Pork, Dried Pumpkin, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, Dried Beet "
-    },
-    {
-      "product_ids": [
-        "b7a4aad0-5f71-4106-9460-0b62043c8b39"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Turkey, Chicken, Turkey Giblets (Liver, Heart, Gizzard), Whole Herring, Cod, Dehydrated Chicken, Dehydrated Sardine, Oat Groats, Millet, Dehydrated Chicken Liver, Dehydrated Herring, Chicken Fat, Chic"
-    },
-    {
-      "product_ids": [
-        "1d83b095-49aa-4115-bdda-d24bb684013c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Chickpeas Lentils Peas Tomato Pomace Salt Potassium Chloride DL\u2013Methionine Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate Chicken Fat (preserved with mixed tocopherols) (Mangan"
-    },
-    {
-      "product_ids": [
-        "7b4f6531-611e-429d-9d50-304df290aa5a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Venison, Venison meal, Whole Sweet Potatoes, Pork meal, Chickpeas, Lentils, Sunflower Oil (preserved with mixed tocopherols), Brewers Dried Yeast, Salmon Oil (Source of DHA), Dried Beet Pulp, "
-    },
-    {
-      "product_ids": [
-        "9921de53-7f81-4d77-b967-ad9bf79bf88d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Grain Sorghum, Beef Meal, Chicken Fat (preserved with mixed Tocopherols), Chicken Meal, Pork Meal, Dehydrated Alfalfa Meal, Yeast Culture, Natural Flavor, Potassium Chloride, Carrot Powder, Tomato Pom"
-    },
-    {
-      "product_ids": [
-        "d89cc27f-ae7a-41f4-9faf-cf2e6c389229"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Menhaden Fish Meal (source of Omega-3 fatty acids), Chickpeas, Lentils, Deboned Whitefish, Salmon Oil (preserved with mixed tocopherols), Tapioca Starch, Whitefish Meal, Whole Sweet Po"
-    },
-    {
-      "product_ids": [
-        "b2981411-4984-4f60-9626-4f51b387125e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Oatmeal, Brown Rice, Barley, Natural Flavor, Dried Tomato Pomace, Flaxseed (source of Omega 3 Fatty Acids), Dried Plain Beet Pulp, Potatoes, Canola Oil (source of Omega "
-    },
-    {
-      "product_ids": [
-        "51a74743-7c31-49ee-9638-12beb1f8976d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Milled rice, dehydrated fish, rice middlings, potato starch, ((AFS tablet \u2013 7% of the food): potato protein, hydrolyzed fish protein, anchovy oil, products from the processing of vegetables (powdered "
-    },
-    {
-      "product_ids": [
-        "c0778d35-e630-42ba-a99a-205989c0e11b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Chicken, Pearl Millet, Chicken Fat, Fermented Yeast, Whole Ground Sunflower Seeds, Whole Ground Flax Seed, Alfalfa Concentrate, Sun-Cured Kelp, Algae Oil, Taurine, Sodium Chloride, Choline "
-    },
-    {
-      "product_ids": [
-        "5a4f5ce1-472d-488b-a737-bf9c1bdd7fae"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Dried Tomato Pomace, Salmon Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Natural Fla"
-    },
-    {
-      "product_ids": [
-        "e2aaa56f-13cc-4844-87db-23cf10ea80a5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated anchovy, potato, potato starch, potato protein, fish oil (preserved with mixed tocopherols), purified chicken fat, whole peas, hydrolyzed animal protein, dried kelp, fructooligosaccharides,"
-    },
-    {
-      "product_ids": [
-        "3584f942-15e3-428b-a43c-ee6c884b14f7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Brown Rice, Ground White Rice, Oatmeal, Chicken Fat (Preserved with Mixed Tocopherols), Dried Plain Beet Pulp, Rice Bran, Avocado, Dried Tomato Pomace, Natural Flavor, Alfalfa Mea"
-    },
-    {
-      "product_ids": [
-        "9ddada89-f97c-4f91-ad63-f1c2f9bbc3f8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Whole Spelt, Whole Oats, Chicken Fat, Whole Barley, Dried Whole Eggs, Dehydrated Pork, Pork Fat, Herring, Dehydrated Herring, Dried Beet Pulp, Herring Oil, Dried Carrot, N"
-    },
-    {
-      "product_ids": [
-        "fb60de6e-b179-4a0e-a3ee-93749143ad9e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Salmon Meal (source of Omega 3 Fatty Acids), Chicken Meal (source of Glucosamine), Oatmeal, Barley, Brown Rice, Dried Tomato Pomace, Chicken Fat (preserved with Mixed Tocopherols), Fis"
-    },
-    {
-      "product_ids": [
-        "1a5bdc3c-425e-49f8-b5cd-97359f353a1d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Grain Sorghum, Beef Meal, Brown Rice, Peas, Chicken Fat (Preserved with Mixed Tocopherols), Dried Beet Pulp, Pork Meal, Hydrolyzed Whole Chicken, Dried Yeast, Natural Flavors, Flaxseed, Menhaden Fish "
-    },
-    {
-      "product_ids": [
-        "f809fc41-1943-43a7-9ab5-46bdd81ab43c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Goat Milk, Inulin, Organic Turmeric, Organic Ginger, Dried Enterococcus Faecium Fermentation Product, Organic Cinnamon, Dried Lactococcus Lactis Fermentation Product, Dried Lactobacillus Ac"
-    },
-    {
-      "product_ids": [
-        "eed4c673-6eeb-4537-b98d-51502259c6d9",
-        "8a393342-75bb-4ee2-8226-27f120cc156c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Turkey, Turkey Meal, Salmon, Lamb Meal, Chickpeas, Peas, Chickpea Flour, Pea Flour, Duck Meal, Sunflower Oil, Flaxseed, Dehydrated Alfalfa Meal, Natural Flavor, Salt, Dicalcium Phosphate, Potassium Ch"
-    },
-    {
-      "product_ids": [
-        "ee3391eb-d363-4aa5-a6da-6c6e8f7d7ef5",
-        "adc6dc68-c92f-4b1b-8e63-8c97d7883eea"
-      ],
       "status": "contaminated",
-      "raw_preview": "Trout, Salmon Meal, Chickpeas, Peas, Dehydrated Alfalfa Meal, Sunflower Oil, Natural Flavor, Salmon Oil, Flaxseed, Potassium Chloride, Calcium Carbonate, Tricalcium Phosphate, Choline Chloride, Salt, "
-    },
-    {
-      "product_ids": [
-        "db0b0a8a-b532-4e64-ac24-ecf79f3d2f66"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Menhaden Fish Meal, Brown Rice, Grain Sorghum, Peas, Millet, Canola Oil (Preserved with Mixed Tocopherols), Dried Yeast, Dried Beet Pulp, Pea Protein, Natural Flavors, Yeast Culture, D"
-    },
-    {
-      "product_ids": [
-        "3f8a533e-d0db-44f9-ab91-7fbdfa16e752"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Oatmeal, Brown Rice, Salmon Meal (source of Glucosamine), Peas, Potatoes, Pea Fiber, Canola Oil (source of Omega 6 Fatty Acids), Natural Flavor, Pea Protein, Dicalcium Phosphate, Calci"
-    },
-    {
-      "product_ids": [
-        "da5b9f6a-dc59-433f-8597-b220a809a174",
-        "2262e441-b797-450e-a9ee-2e399de9cf60"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Beef Meal, Brown Rice, Pearled Barley, Oatmeal, Peas, Bacon Fat (preserved with mixed tocopherols), Potatoes, Peas, Dehydrated Alfalfa Meal, Kelp, Carrots, Sweet Potatoes, Spinach, Whole Flaxsee"
-    },
-    {
-      "product_ids": [
-        "724bfaf5-d876-4fa6-a31a-0b04a118d94b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal (Natural Source of Glucosamine and Chondroitin), Brown Rice, Peas, Chicken Fat (Preserved with Mixed Tocopherols), Rice Bran, Whitefish Meal, Dried Beet Pulp, Dried Egg, Flaxseed, Rice, P"
-    },
-    {
-      "product_ids": [
-        "f1c7513d-5b40-4902-af26-42f1c46eee9a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Whole Grain Millet, Chicken Fat (preserved with mixed Tocopherols), Chicken Meal, Dehydrated Alfalfa Meal, Yeast Culture, Blood Meal Conventionally Dried, Natural Flavor, Pot"
-    },
-    {
-      "product_ids": [
-        "87c19104-689c-49e7-8228-38bc26c8c916",
-        "9e94557f-cc67-4717-af63-b246e73dbb97"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Cod, Dehydrated Cod, Herring Oil, Whole Spelt, Dehydrated Fish, Hydrolyzed Fish, Whole Barley, Chicken Fat, Pork Fat, Whole Oats, Natural Flavors, Dried Beet Pulp, Dried Carrot, Suncured Alfalfa Meal,"
-    },
-    {
-      "product_ids": [
-        "25430a0c-e78d-4914-bff9-928e38af6d0d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whitefish, Whitefish Meal, Peas, Pea Flour, Chickpeas, Sunflower Oil, Flaxseed, Dehydrated Alfalfa Meal, Natural Flavor, Salt, Minerals (Zinc Proteinate, Iron Proteinate, Potassium Chloride, Copper Pr"
-    },
-    {
-      "product_ids": [
-        "30badbbb-28cc-48a5-9521-9f96bb11b945"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Giblets (Liver, Heart, Gizzard), Turkey, Whole Herring, Salmon, Dehydrated Sardine, Dehydrated Chicken, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, Whole Pinto Beans,"
-    },
-    {
-      "product_ids": [
-        "cb18cf3c-266a-49b8-b736-799deb3e2785"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Whole Spelt, Whole Oats, Chicken Fat, Rice, Pork Fat, Dried Whole Eggs, Herring, Dehydrated Herring, Dried Beet Pulp, Hydrolyzed Fish, Herring Oil, Natural Flavors, Flaxse"
-    },
-    {
-      "product_ids": [
-        "93f5dc7d-d132-4393-8255-5af4d3712468"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Beef Meal, Chicken Fat (Preserved With Mixed Tocopherols), Whole Grain Millet, Chicken Meal, Chicken, Whole Grain Sorghum, Blood Meal, Brown Rice, Yeast Culture, Menhaden Fish Meal, Dehydrated A"
-    },
-    {
-      "product_ids": [
-        "1a2e49b5-7638-47c9-9468-4740af8638f1",
-        "e19cba92-48df-4135-92d4-16e076915d8e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Dried Tomato Pomace, Peas, Natural Flavor, Flaxse"
-    },
-    {
-      "product_ids": [
-        "7c81b393-2d41-456f-b409-1da478e731ee"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Pea Starch, Peas, Oatmeal, Fish Meal (source of Omega 3 Fatty Acids), Pea Fiber, Natural Flavor, Pea Protein, Flaxseed (source of Omega 6 Fatty Acids"
-    },
-    {
-      "product_ids": [
-        "61fb3f2e-4ffb-4b1a-8e30-517b0f0c3f63"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Salmon, Whole Herring, Chicken Liver, Dehydrated Chicken, Dehydrated Sardine, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, Whole Pinto Beans, Whole Navy Beans, Whole G"
-    },
-    {
-      "product_ids": [
-        "3c4dcce2-60a4-47f6-8f90-11c08789d673"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Kangaroo, kangaroo meal, peas, pea flour, chickpeas, sunflower oil, flaxseed, dehydrated alfalfa meal, lentils, natural flavor, pea protein, calcium carbonate, salt, choline chloride, vitamins (vitami"
-    },
-    {
-      "product_ids": [
-        "7e3b5e70-0739-4f70-8837-0fc1e37638b8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Duck, Duck Meal, Chickpeas, Peas, Chickpea Flour, Sunflower Oil, Natural Flavor, Flaxseed, Dehydrated Alfalfa Meal, Dicalcium Phosphate, Salt, Choline Chloride, Vitamins (Vitamin E Supplement, Vitamin"
-    },
-    {
-      "product_ids": [
-        "097138e8-9b3a-4183-a277-9f82510837f2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Menhaden Fish Meal (source of DHA-Docosahexaenoic Acid), Peas, Chicken Fat (preserved with mixed Tocopherols), Garbanzo Beans, Dehydrated Salmon, Sweet Potato, Yeast Culture, Dehydrated Alfalfa Meal, "
-    },
-    {
-      "product_ids": [
-        "8a7e2406-4a45-4873-a6be-911a2146ff13"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Natural Flavor, Whole Grain Brown Rice, Menhaden Fish Meal, Dehydrated Alfalfa Meal, Duck Meal, Potassium Chloride, Carrot Pow"
-    },
-    {
-      "product_ids": [
-        "d371e641-c571-4957-9473-796ea83fee1e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Duck Meal, Millet, Turkey Meal, Chicken Fat (preserved with Mixed Tocopherols), Dehydrated Salmon, Yeast Culture, Pumpkin Seed Flour, Spray Dried Chicken Liver, Alfalfa Nutrient Concentrate, Montmoril"
-    },
-    {
-      "product_ids": [
-        "82ff0712-22eb-4a6c-bc62-4ab5e37f17a8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Venison, Venison Meal, Chickpeas, Peas, Chickpea Flour, Natural Flavor, Sunflower Oil, Flaxseed, Dehydrated Alfalfa Meal, Salt, Choline Chloride, Dicalcium Phosphate, Vitamins (Vitamin E Supplement, V"
-    },
-    {
-      "product_ids": [
-        "f92588ba-0820-4403-9084-edb0b838578d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Turkey Broth, Dehydrated Turkey, Dehydrated Pumpkin, Dried Parsley, Turmeric."
-    },
-    {
-      "product_ids": [
-        "0b9b045b-b502-4e02-b503-f9f60f1e8f3a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oat Meal, Turkey Meal, Chicken Fat, Salmon Meal, Quinoa, Natural Flavor, Flaxseed, Dried Yeast, Miscanthus Grass, Sunflower Oil, Potassium Chloride, "
-    },
-    {
-      "product_ids": [
-        "f2d50edb-852c-4b88-a776-78632ccc084b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Turkey, Chicken, Turkey Giblets (Liver, Heart, Gizzard), Whole Herring, Salmon, Dehydrated Turkey, Dehydrated Chicken, Dehydrated Sardine, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, "
-    },
-    {
-      "product_ids": [
-        "cd5788d1-fe1a-440e-a3c8-12ab6208f208"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Pacific Ocean Fish Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Potassium Chloride Dicalcium Phosphate Salt Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (M"
-    },
-    {
-      "product_ids": [
-        "cc35a568-a912-4409-a571-7f12651917de"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Peas, Pea Starch, Miscanthus Grass, Natural Flavor, Dried Tomato Pomace, Flaxseed (source of Omega 3 & 6 Fatty Acids), Dried Yeast, Chicken "
-    },
-    {
-      "product_ids": [
-        "7f8068f6-01ab-49e8-a1a7-5e042f25b28a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Salmon Meal, Chickpeas, Dried Peas, Oat Groats, Barley, Dried Plain Beet Pulp, Pea Fiber, Dehydrated Alfalfa Meal, Oat Fiber, Pea Protein, Dried Tomato Pomace, Chicken Fat (Preserved wit"
-    },
-    {
-      "product_ids": [
-        "3a1f7a5f-2d1a-4731-b859-c4ae8bbc4e3f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Potatoes, Dried Egg Product, Natural Flavor, Flaxseed (source of Omega 3 Fatty Acids), Dried Tomato Pomace, Dried Plain Beet Pulp, Canola Oi"
-    },
-    {
-      "product_ids": [
-        "71dedf91-b1f9-44b9-9ba0-49616fda090d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Tomato Pomace Potassium Chloride DL\u2013Methionine Threonine Choline Chloride Calcium Propionate (a preservative) Ta"
-    },
-    {
-      "product_ids": [
-        "f7d66d8a-4f05-400d-8e4d-383845958876"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Chicken Meal, Brown Rice, Barley, Oat Meal, Lamb Meal, Chicken Fat, Salmon Meal, Quinoa, Natural Flavor, Flaxseed, Dried Yeast, Miscanthus Grass, Potassium Chloride, Salt, Dehydrated Alf"
-    },
-    {
-      "product_ids": [
-        "fc822912-4047-439e-a385-6f21690ec701"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Enriched Wheat Flour, Sugar, Shortening, Corn Starch, High Fructose Corn Syrup, Sodium Bicarbonate, Natural Vanilla Flavor, Dehydrated Beet, Dehydrated Carrot, Dehydrated Peas, Lecithin, Birthday Cake"
-    },
-    {
-      "product_ids": [
-        "58ef2d92-c310-4fc9-8762-50a580f7df94"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (Preserved with Mixed Tocopherols), Brown Rice, Peas, Hyorolyzed Whole Chicken, Dried Yeast, Dried Beet Pulp, Pork Meal, Blood Meal, Flaxseed, Menhaden Fish Meal,"
-    },
-    {
-      "product_ids": [
-        "8e334a90-fad3-4bfa-9131-97cc6143e026"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Dehydrated Lamb, Whole Spelt, Whole Oats, Chicken Fat, Herring, Dehydrated Herring, Dried Whole Eggs, Dried Beet Pulp, Herring Oil, Dried Carrot, Suncured Alfalfa Meal, Chicken Cartilage (Source"
-    },
-    {
-      "product_ids": [
-        "641a6a9c-240b-4d91-907e-1b47f4e5b279"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Liver, Turkey Giblets (Liver, Heart, Gizzard), Turkey, Cod, Flounder, Whole Herring, Eggs, Dehydrated Chicken Liver, Dehydrated Egg, Dehydrated Sardine, Dehydrated Chicken, Dehydrated"
-    },
-    {
-      "product_ids": [
-        "a84b3ce4-babe-4636-8306-e9e9f3ac302e"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Beef Farm-Raised Pork Pork Meal Barley Oatmeal Ground Flaxseed Natural Pork Flavor Beef Liver Pork Fat (preserved with mixed tocopherols) Tomato Pomace Beef Kidney Grass-Fed Lamb Bison Free-Range Veni"
-    },
-    {
-      "product_ids": [
-        "63e00327-98d0-41a1-94a7-7eb0a22f149e"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "picky dog didn't like it... more"
-    },
-    {
-      "product_ids": [
-        "f508cfc0-3a90-47cd-82c5-f6028818094a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
-    },
-    {
-      "product_ids": [
-        "00f447c7-f91d-46d4-88e9-07d4d552b7e2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Turkey, Oatmeal, Turkey Meal (source of Glucosamine), Brown Rice, Peas, Potatoes, Canola Oil (source of Omega 6 Fatty Acids), Pea Fiber, Natural Flavor, Pea Protein, Fish Oil (source of Omega "
-    },
-    {
-      "product_ids": [
-        "a748eba9-c0de-4102-b9dc-c087da0b042f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Chicken Giblets (Liver, Heart, Gizzard), Whole Herring, Salmon, Dehydrated Chicken, Dehydrated Chicken Liver, Oat Groats, Millet, Chicken Fat, Eggs, Flounder, Turkey Giblets (Liver, H"
-    },
-    {
-      "product_ids": [
-        "a3e7a2e6-4137-421d-974f-7e6dc2d6d394"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "My dogs enjoyed the food... more"
-    },
-    {
-      "product_ids": [
-        "ff6d0a0f-2ba0-491a-a0d8-0463cdab2a40"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Mealtime is always a highlight of a hound's day, especially when you serve Pedigree Choice Cuts in Gravy Variety Pack + Chopped Ground Dinner Variety Pack Adult Wet Dog Food Pouches! Together, these v"
-    },
-    {
-      "product_ids": [
-        "c1fcaaeb-5bb1-4c9f-9225-ece3ba1f7d62"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Chicken, Beef Meal, Chicken Meal, Whole Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Brown Rice, Whole Grain Millet, Dehydrated Alfalfa Meal, Yeast Culture, Menhaden Fish Meal,"
-    },
-    {
-      "product_ids": [
-        "3f0e3adc-57df-4cf9-9c5b-b1d5a567fce6",
-        "79fe3bef-f919-4f75-a2b3-7b74cc125697"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Dehydrated Salmon, Whole Spelt, Dehydrated Chicken, Whole Barley, Whole Oats, Herring Oil, Dehydrated Herring, Chicken Fat, Pork Fat, Rice, Dried Beet Pulp, Natural Flavors, Potassium Chloride"
-    },
-    {
-      "product_ids": [
-        "bffd748e-1553-4a7b-bb7c-025517a8e035"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Ground Peas, Pearled Barley, Brown Rice, Turkey Meal, Brewers Dried Yeast, Chicken Fat (Preserved with Mixed Tocopherols), Sweet Potato, Natural Flavor, Flaxseed, Dried Plain Be"
-    },
-    {
-      "product_ids": [
-        "c3f167fb-d2e7-456f-8440-aa3b9a07b026"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Menhaden Fish Meal, Brown Rice, Grain Sorghum, Peas, Canola Oil (Preserved with Mixed Tocopherols), Pea Protein, Dried Beet Pulp, Dehydrated Alfalfa Meal, Yeast Culture, Natural Flavors, Potassium Chl"
-    },
-    {
-      "product_ids": [
-        "1cb967fb-a60a-4f93-939a-fd2febe9fa91"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Peas, Sweet Potato, Chicken Fat (preserved with mixed Tocopherols), Menhaden Fish Meal (source of DHA-Docosahexaenoic Acid), Blood Meal Conventionally Dried, Garbanzo Beans, Pork Meal, Yeas"
-    },
-    {
-      "product_ids": [
-        "faaa1a3c-8c02-4dbe-9628-4e1a91ae93ff"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Turkey, Oatmeal, Brown Rice, Peas, Turkey Meal (source of Glucosamine), Potatoes, Pea Fiber, Canola Oil (source of Omega 6 Fatty Acids), Natural Flavor, Pea Protein, Fish Oil (source of Omega "
-    },
-    {
-      "product_ids": [
-        "7d1de06d-b8b1-4a25-b6e2-e03f74a56dfc"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Chickpeas Lentils Peas Chicken Fat (Mixed Tocopherols) Tomato Pomace Yeast Extract Salt Potassium Chloride DL\u2013Methionine Minerals (Zinc Proteinate Iron Proteinate) Calcium Carbonate (Mang"
-    },
-    {
-      "product_ids": [
-        "0f038fd6-a3a6-46b9-a6dc-0c93a59d894e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Beef, Brown Rice, Oatmeal, Barley, Chicken Meal, Peas, Pea Starch, Potatoes, Potato Starch, Fish Meal (Source Of Omega 3 Fatty Acids), Powdered Cellulose, Natural Flavor, Miscanthus Grass, Dri"
-    },
-    {
-      "product_ids": [
-        "d30e5f1c-0e54-435f-a92d-44568ec81c8a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Bone Broth, Beef Heart, Salmon, Beef Liver, Carrots, Oats, Celery, Green Beans, Parsley, Sweet Potato, Coconut Oil, Kale, Dried Yeast, Spinach, Beets, Apple, Egg Shell, Pumpkin Seed, Salt, Dehydr"
-    },
-    {
-      "product_ids": [
-        "6589e74c-c57a-4714-af53-82a83fdeefaa"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Boar, Dehydrated Boar, Pea Starch, Chicken Fat, Dehydrated Chicken, Dehydrated Pork, Sweet Potatoes, Pork Fat, Dried Pumpkin, Natural Flavors, Dried Whole Eggs, Herring Oil, Dehydrated Fish, Pea Fiber"
-    },
-    {
-      "product_ids": [
-        "df515092-a739-444d-84a3-766fe809ecbe"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Brown Rice, Oatmeal, Barley, Chicken Meal, Peas, Pea Starch, Miscanthus Grass, Dried Tomato Pomace, Natural Flavor, Flaxseed (source of Omega 3 & 6 Fatty Acids), Chicken Fat (preserve"
-    },
-    {
-      "product_ids": [
-        "158512d3-8982-43eb-8040-172c8961c573"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Lamb Meal, Chickpeas, Peas, Flaxseed, Sunflower Oil, Natural Flavor, Dehydrated Alfalfa Meal, Salt, Choline Chloride, Vitamins (Vitamin E Supplement, Vitamin A Supplement, Niacinamide, D-Calcium"
-    },
-    {
-      "product_ids": [
-        "dfc1362f-8a97-4b07-b574-17ce0709fa4f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (Natural Source of Glucosamine and Chondroitin), Pumpkin, Butternut Squash, Tapioca, Sunflower Oil (Preserved with Mixed Tocopherols), Flaxseed, Natural Flavors, DL-Methionine, Choline (Ch"
+      "raw_preview": ". The higher fat content supports sustained energy, while the balanced formula works for puppies as young as 4 weeks, pregnant and nursing mothers, and adult dogs of all breeds and activity levels. 2-"
     },
     {
       "product_ids": [
-        "7d3ea0d5-2e69-4105-b297-dbae1a081359"
+        "3703f47d-8c65-4ca2-9fc2-e3985a9a6ad0"
       ],
       "status": "no_valid_tokens",
       "raw_preview": "Jinx Kibble Sauce Beef Bone Broth Wet Dog Food Topper, 12-fl oz bottle\u2014Made with high-quality beef and savory bone broth for a mouthwatering boost of flavor.Jinx Kibble Sauce Beef Bone Broth Wet Dog F"
     },
     {
       "product_ids": [
-        "0942e6ef-465e-4c97-84ee-183f1ef87947"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Barley, Ground Oats, Ground Brown Rice, Chicken Fat (Preserved with Mixed Tocopherols), Chicken, Flaxseed Meal, Tomato Pomace, Natural Flavor, Lamb Meal, Dehydrated Alfalfa Meal, "
-    },
-    {
-      "product_ids": [
-        "0fd828a9-3ad8-4edf-8222-2741a3908bf7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Lamb, Pearl Millet, Lamb Fat, Coconut, Sun-Cured Alfalfa, Coconut Oil, Sun-Cured Kelp, Dried Lactobacillus Acidophilus Fermentation Product, Sodium Chloride, Lecithin, Choline Chloride, FOS"
-    },
-    {
-      "product_ids": [
-        "79905a75-b524-4fe8-9421-5c61a08ac2e3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Chicken, Organic Dehydrated Chicken, Organic Peas, Lentils, Chicken Fat (Preserved With Mixed Tocopherols), Krill Meal, Organic Flaxseed, Blueberries, Cranberries, Egg Shell Meal, Vitamins (Vi"
-    },
-    {
-      "product_ids": [
-        "1345f06e-b193-4746-baeb-e073ca87da17",
-        "f02716a7-7a5e-4394-968c-ed546a6acc78"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Dehydrated Lamb, Sweet Potatoes, Pea Starch, Dehydrated Chicken, Dehydrated Pork, Dried Whole Eggs, Natural Flavors, Pork Fat, Hydrolyzed Fish, Herring, Dehydrated Herring, Chicken Fat, Herring "
-    },
-    {
-      "product_ids": [
-        "17954dd4-e2eb-4ce1-b7a1-c12b0c78268f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Potatoes, Peas, Pea Starch, Chicken Meal, Potato Starch, Tapioca Starch, Dried Tomato Pomace, Pea Fiber, Natural Flavor, Flaxseed (source of Omega 3 and 6 Fatty Acids), Fish Oil (sour"
-    },
-    {
-      "product_ids": [
-        "f8778e85-35f5-4b17-b2b5-ff05a41c2f98"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Chicken Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Dried Tomato Pomace, Potatoes, Peas, Pea Protein, Natural Flavor, Flaxseed (source of Omega 6 Fatty Acids), Dried Yeast, Fish Meal (so"
-    },
-    {
-      "product_ids": [
-        "5ca9fb6e-b008-447c-bdd5-1c3f5f8710fe"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb Meal, Garbanzo Beans, Yeast Culture, Sweet Potato, Dehydrated Alfalfa Meal, Pork Fat (preserved with mixed Tocopherols), Pork Meal, Salmon Meal, Natural Flavor, Potassium Chloride, Carrot Powder,"
-    },
-    {
-      "product_ids": [
-        "c6df866f-6df7-437b-9267-d319c73ea54c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Sweet Potato, Dehydrated Pumpkin."
-    },
-    {
-      "product_ids": [
-        "3e2e017a-dd66-4802-b591-67bb14b1dcea"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whole Herring, Salmon, Monkfish, Acadian Redfish, Flounder, Whole Hake, Sardine Meal, Herring Meal, Blue Whiting Meal, Pollock Meal, Whole Red Lentils, Whole Pinto Beans, Whole Green Lentils, Dehydrat"
-    },
-    {
-      "product_ids": [
-        "7c18fc7c-988f-4276-b7ee-d6663c8bc4c4"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Blood Meal Conventionally Dried, Whole Grain Millet, Chicken Fat (preserved with mixed Tocopherols), Yeast Culture, Grain Sorghum, Menhaden Fish Meal (source of DHA-Docosahexaenoic Acid)"
-    },
-    {
-      "product_ids": [
-        "07707edb-591e-41dc-b5ae-b8c7685fb8d2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whole herring, salmon, monkfish, Acadian redfish, flounder, whole whiting, sardine meal, herringmeal, blue whiting meal, pollock meal, whole red lentils, whole pinto beans, whole green lentils,dehydra"
-    },
-    {
-      "product_ids": [
-        "59baa59a-1c86-48a7-b91a-d5def6a354ad"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Whole Beef Cooked In Its Own Juices."
-    },
-    {
-      "product_ids": [
-        "3d7b42d1-20f8-4678-ab29-047720f46725"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Bone Broth, Chicken Hearts, Chicken Necks, Lamb Hearts, Chicken Livers, Carrots, Rice, Celery, Kale, Dried Yeast, Chia Seeds, Pumpkin, Quinoa, Sea Salt, Parsley, Pumpkin Seeds, Dehydrated Alfa"
-    },
-    {
-      "product_ids": [
-        "5a2d0984-0656-4c72-bd56-4f21c34c0dea"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (Preserved with Mixed Tocopherols), Brown Rice, Peas, Blood Meal, Dried Beet Pulp, Pork Meal, Menhaden Fish Meal, Millet, Hydrolyzed Whole Chicken, Dried Yeast, D"
-    },
-    {
-      "product_ids": [
-        "061617bd-3e95-4707-b465-e85e640bd49a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Pea Protein, Peas, Tapioca Starch, Pea Starch, Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Natural Flav"
-    },
-    {
-      "product_ids": [
-        "c5e94010-6a82-4c65-a464-d0fa9299733b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "New: Chicken Meal (Natural Source of Glucosamine and Chondroitin), Chicken Fat (Preserved with Mixed Tocopherols), Peas, Pea Starch, Dried Yeast, Whitefish Meal (Source of DHA-Docosahexaenoic Acid), B"
-    },
-    {
-      "product_ids": [
-        "9bdc8f73-0154-4e44-9876-1fc735211b83"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Salmon Meal, Chicken Fat (preserved with Mixed Tocopherols), Flaxseed (source of Omega 6 Fatty Acids), Dried Plain Beet Pulp, Natural Flavor"
-    },
-    {
-      "product_ids": [
-        "9455e478-a3d6-4415-a488-1823af3872e7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, turkey, salmon, whole herring, chicken giblets (liver, heart, gizzard), dehydrated chicken, dehydrated turkey, dehydrated chicken liver, dehydrated egg, dehydrated sardine, chicken fat, whole"
-    },
-    {
-      "product_ids": [
-        "f5a58241-947f-4531-a678-e680eec4e462"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Brown Rice, Peas, Chicken Fat (preserved with mixed Tocopherols), Whole Grain Sorghum, Blood Meal, Pork Meal, Menhaden Fish Meal, Pea Protein, Dehydrated Alfalfa Meal, Hydrolyzed Whole Chic"
-    },
-    {
-      "product_ids": [
-        "3830fc2e-c0a4-4824-a586-87ae22fbaa7c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb Meal, Whole Grain Brown Rice, Whole Grain Millet, Chicken Fat (preserved with mixed Tocopherols), Peas, Grain Sorghum, Blood Meal Conventionally Dried, Yeast Culture, Dehydrated Alfalfa Meal, Nat"
-    },
-    {
-      "product_ids": [
-        "b0f3e529-5cec-4190-9d73-c7dfd3c3ddb2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (preserved with mixed tocopherols) Whole Blueberries Potassium Chloride DL\u2013Methionine Choline Chloride Calcium Propionate (a preservative) Miner"
-    },
-    {
-      "product_ids": [
-        "447b5490-e727-47b1-9797-f913564831e5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Oatmeal, Barley, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Peas, Dried Egg Product, Brown Rice, Chicken Fat (preserved with Mixed Tocopherols), Dried Tomato Po"
-    },
-    {
-      "product_ids": [
-        "bd7e0947-fbe1-4b4b-952d-d064d2abb678"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Pork Meal, Brown Rice, Blood Meal, Whole Grain Millet, Menhaden Fish Meal, Peas, Hydrolyzed Whole Chicken, Chicken Meal, Dehyd"
-    },
-    {
-      "product_ids": [
-        "9cc5c5bb-4638-4b63-8870-535d471419b0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Peas, Barley, Dried Tomato Pomace, Chicken Fat (preserved with Mixed Tocopherols), Natural Flavor, Fish Meal (source of Omega 3 Fatty Acids), Flaxse"
-    },
-    {
-      "product_ids": [
-        "bb8e1d21-9635-4043-8600-0392f9faa1eb"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Boar, Dehydrated Boar, Sweet Potatoes, Pea Starch, Chicken, Dehydrated Chicken, Dehydrated Pork, Chicken Fat, Pork Fat, Natural Flavors, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, Pea"
-    },
-    {
-      "product_ids": [
-        "08e4d025-f4c4-4794-8fbc-53a5a5f11bbf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Garbanzo Beans, Natural Flavors, Dehydrated Alfalfa Meal, Menhaden Fish Meal, Duck Meal, Chia Seeds, Potassium Chloride, Carro"
-    },
-    {
-      "product_ids": [
-        "a9957595-6aee-4c43-91f3-fcc91004200d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Turkey Water Sufficient For Processing Rice Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate Mang"
-    },
-    {
-      "product_ids": [
-        "c01eec62-32eb-4c3e-95e3-3584d9e1a2b5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Brown Rice, Oatmeal, Fish Meal (Source Of Omega 3 Fatty Acids), Barley, Peas, Pea Starch, Potatoes, Potato Starch, Miscanthus Grass, Natural Flavor, Flaxseed (Source Of Omega 6 Fatty Aci"
-    },
-    {
-      "product_ids": [
-        "7c162569-d750-43e0-8afd-f9b2e5640756"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Brown Rice, Ground White Rice, Oatmeal, Rice Bran, Chicken Fat (Preserved with Mixed Tocopherols), Avocado, Dried Tomato Pomace, Flax Seed (Source of Omega 3), Chicken Cartilage ("
-    },
-    {
-      "product_ids": [
-        "cf37df0f-5fdd-4ebb-b3fb-95ef1be4aa38"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Brown Rice, Pearled Barley, Oatmeal, Chicken Fat (preserved with mixed tocopherols), Potatoes, Peas, Dehydrated Alfalfa Meal, Kelp, Carrots, Sweet Potatoes, Spinach, Whole Flaxs"
-    },
-    {
-      "product_ids": [
-        "babfcc27-720c-486a-bf97-451662b3b2f0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Chicken Meal, Brown Rice, Barley, Oatmeal, Peas, Pea Starch, Miscanthus Grass, Natural Flavor, Flaxseed (source of Omega 3 & 6 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols"
-    },
-    {
-      "product_ids": [
-        "6dd99a62-7acd-4633-bea7-78573b90bed6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Potatoes, Salmon Meal (source of Omega 3 Fatty Acids), Powdered Cellulose, Natural Flavor, Chicken Fat (preserved with Mixed "
-    },
-    {
-      "product_ids": [
-        "84841722-99de-4258-be73-794b540be7e9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Peas, Potatoes, Pea Starch, Salmon Meal (Source of Glucosamine), Tapioca Starch, Canola Oil (source of Omega 6 Fatty Acids), Pea Fiber, Natural Flavor, Potato Starch, Pea Protein, Dica"
-    },
-    {
-      "product_ids": [
-        "a830bdef-1f7d-4f59-82d2-5c25f24c5133",
-        "3a1f75e4-d050-4016-a634-ebcea44f33e2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon (Source of Omega 3), Herring Meal, Peas, Pea Flour, Garbanzo Beans, Potatoes, Canola Oil (Preserved with Mixed Tocopherols), Alfalfa Meal, Avocado, Flax Seed, Natural Flavor, Dried Tomato Pomac"
-    },
-    {
-      "product_ids": [
-        "004bd585-ab51-4c81-99bd-72350b84ebbe"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Meal, Grain Sorghum, Chicken Fat (Preserved with Mixed Tocopherols), Peas, Chicken Meal, Blood Meal, Pea Protein, Dried Beet Pulp, Flaxseed, Pork Meal, Hydrolyzed Whole Chicken, Dried Yeast, Menh"
-    },
-    {
-      "product_ids": [
-        "37a62de3-ee60-48a9-aaa2-51d674b5b6d1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oat Meal, Salmon Meal, Dried Egg Product, Chicken Fat, Canola Meal, Natural Flavor, Quinoa, Turkey Meal, Flaxseed, Salmon Oil, Dried Yeast, Miscanthu"
-    },
-    {
-      "product_ids": [
-        "087f9d4a-d1b8-4a78-93c2-967847ada79b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Goat, Goat Meal, Peas, Pea Flour, Chickpeas, Sunflower Oil, Natural Flavor, Flaxseed, Dehydrated Alfalfa Meal, Dicalcium Phosphate, Calcium Carbonate, Salt, Potassium Chloride, Choline Chloride, Vitam"
-    },
-    {
-      "product_ids": [
-        "464ea01b-bff8-445c-b0c1-ca81d7a42003"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Venison, Dehydrated Venison, Pea Starch, Herring Oil, Quinoa Seed, Hydrolyzed Fish, Sweet Potatoes, Flaxseed, Chicken Fat, Hydrolyzed Pork Liver, Natural Flavors, Pork Fat, Suncured Alfalfa Meal, Drie"
-    },
-    {
-      "product_ids": [
-        "e9cb0d0e-b52d-4322-88ad-7dc78ad07876"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Turkey, Oatmeal, Brown Rice, Potatoes, Peas, Turkey Meal, Pea Fiber, Natural Flavor, Pea Protein, Canola Oil (source of Omega 6 Fatty Acids), Fish Oil (source of DHA-Docosahexaenoic Acid), Cal"
-    },
-    {
-      "product_ids": [
-        "b8117dec-d6cf-4099-ab3a-ca6c5f1d17fa"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Chicken Meal, Turkey Meal, Whole Red Lentils, Whole Green Peas, Lentil Fiber, Whole Yellow Peas, Flounder, Chicken Broth, Dehydrated Pumpkin, Whole Green Lentils, Whole Pinto Beans, W"
-    },
-    {
-      "product_ids": [
-        "d7265f4e-63c7-4819-886e-3fbc2c89fc17"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Whole Wheat, Glycerin, Sugar, Palm Oil, Rice Flour, Artificial Birthday Cake Flavor, Dicalcium Phosphate, Vegetable Oil, Salt, Calcium Carbonate, Corn Starch, Dehydrated Yogurt, Soy Lecithin, C"
-    },
-    {
-      "product_ids": [
-        "29ac5728-0c8e-457a-ad97-26ec2ede5645"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Duck, Potatoes, Pea Starch, Peas, Pea Protein, Duck Meal (source of Glucosamine), Tapioca Starch, Canola Oil (source of Omega 6 Fatty Acids), Pea Fiber, Natural Flavor, Fish Oil (source of Ome"
-    },
-    {
-      "product_ids": [
-        "5c144c5f-88f6-47e3-b17b-fb6d69237bf0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Brown Rice, Barley, Oatmeal, Fish Meal (Source Of Omega 3 Fatty Acids), Dried Tomato Pomace, Peas, Potatoes, Pea Starch, Flaxseed (Source Of Omega 6 Fatty Acids), Natural Flavor, Dried Yeast, "
-    },
-    {
-      "product_ids": [
-        "48148990-6daa-49db-8c61-33ec6239f6d1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb Meal, Peas, Tapioca Flour, Pea Flour, Chicken Meal, Dried Tomato Pomace, Chicken Fat (Preserved with Mixed Tocopherols), Salmon Meal (Source of DHA), Avocado, Flax Seed (Source of Omega 3), Natur"
-    },
-    {
-      "product_ids": [
-        "3242761e-cd84-4558-8f82-cffe8c768207"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal (Natural Source of Glucosamine and Chondroitin), Peas, Sweet Potato, Tapioca, Pea Starch, Pea Fiber, Dried Yeast, Pumpkin, Dried Egg, Flaxseed, Canola Oil, Natural Flavor, Salmon Meal, Al"
-    },
-    {
-      "product_ids": [
-        "ac4e1805-12fb-456d-ba2c-89e6af6d6581"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Whole Spelt, Whole Oats, Chicken Fat, Whole Barley, Pea Fiber, Herring, Dehydrated Herring, Dried Whole Eggs, Dried Beet Pulp, Pork Fat, Natural Flavors, Herring Oil, Sunc"
-    },
-    {
-      "product_ids": [
-        "385821d2-b8f7-4306-94a1-3b4d3ef87ce8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Potatoes, Peas, Pea Starch, Tapioca Starch, Potato Starch, Dried Tomato Pomace, Flaxseed (source of Omega 3 and 6 Fatty Acids), Chicken Fat (preserved with Mixed Tocophe"
-    },
-    {
-      "product_ids": [
-        "8b3e6154-1adc-4cc1-ba23-f184017b6dd3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef, Chicken Meal, Beef Meal, Brown Rice, Whole Grain Millet, Yeast Culture, Whole Grain Sorghum, Chicken Fat (preserved with Mixed Tocopherols), Dehydrated Alfalfa Meal, Blood Meal, Natural Flavor, "
-    },
-    {
-      "product_ids": [
-        "c365ba39-cfff-4ee0-a7b7-f13af3f94ed9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Beef, Beef Meal, Fish Meal (Source Of Omega 3 Fatty Acids), Oatmeal, Barley, Potatoes, Potato Starch, Powdered Cellulose, Potato Protein, Dried Chicken, Natural Flavor, Salmon Meal, Chicken Fa"
-    },
-    {
-      "product_ids": [
-        "519b7796-ffba-4b05-b779-baeda45b5caf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Carrots, Dehydrated Purple Sweet Potato, Dehydrated Beet Root, Dehydrated Pumpkin, Dehydrated Green Pepper, Dehydrated Spinach, Dehydrated Broccoli, Dehydrated Celery, Dehydrated Apple, Dri"
-    },
-    {
-      "product_ids": [
-        "2384d0db-a261-4e1e-8648-46b189f4de61"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Lamb, Beef Meal, Salmon Meal (Source Of Omega 3 Fatty Acids), Barley, Oatmeal, Brown Rice, Peas, Pea Protein, Miscanthus Grass, Natural Flavor, Dried Yeast, Canola Oil (Source Of Omega 6 Fatty"
-    },
-    {
-      "product_ids": [
-        "c11ddb05-3f77-4422-a7b7-751d6e2175fd"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Duck, Chicken Meal, Dried Chicken, Oatmeal, Barley, Brown Rice, Dried Tomato Pomace, Salmon Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Natural Flavor"
-    },
-    {
-      "product_ids": [
-        "c4625189-099c-4b4d-a14b-ea32dfdc3646"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Chicken Bone Broth."
-    },
-    {
-      "product_ids": [
-        "f24abfa8-c62f-4e37-9382-f0abe4681d67"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Whole Wheat, Sugar, Palm Oil, Chicken Fat (Mixed Tocopherols Used As A Preservative), Rice Flour, Vegetable Oil, Salt, Cornstarch, Calcium Carbonate, Dehydrated Yogurt, Vanilla Glaze Flavor Wit"
-    },
-    {
-      "product_ids": [
-        "2eeb56bc-3bfe-4157-a555-c407848bf086"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Wheat Flour, Vegetable Oil, Vegetable Glycerin, Honey, Rolled Oats, Peanut Butter, Dried Cane Molasses, Dried Whole Egg, Peanut Flour, Ground Cinnamon, Dehydrated Apples, Sodium Bicarbonate, Citric Ac"
-    },
-    {
-      "product_ids": [
-        "f657d1de-91d8-4967-8d87-08d7e3461765"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Wheat Flour, Vegetable Oil, Honey, Vegetable Glycerin, Dehydrated Blueberries, Dried Cane Molasses, Dried Whole Egg, Natural Vanilla Flavor, Sodium Bicarbonate, Citric Acid (Preservative), Baking Powd"
-    },
-    {
-      "product_ids": [
-        "944d85af-c866-4941-b16f-205ef0ba9e2d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Whole Wheat, Sugar, Palm Oil Chicken Fat (Mixed Tocopherols Used As A Preservative), Salt, Calcium Carbonate, Corn Starch, Artificial Gingerbread Flavor, Dehydrated Yogurt, Soy Lecithin, Citric"
-    },
-    {
-      "product_ids": [
-        "37d1621b-1e58-4c34-916f-bdce9c538434"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Whole Wheat, Sugar, Palm Oil, Chicken Fat (Mixed Tocopherols Used As A Preservative), Salt, Calcium Carbonate, Corn Starch, Dehydrated Yogurt, Natural Toasted Marshmallow Flavor With Other Natu"
-    },
-    {
-      "product_ids": [
-        "e542adf1-8e8e-4846-ad66-dbff4544b1d5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Chickpeas, Potato Protein, Cane Molasses, Vegetable Glycerin, Apples, Potato Starch, Pork Gelatin, Blueberry Powder, Dried Bananas, Dehydrated Sweet Potato, Salt, Flaxseed, Guar Gum, Distilled V"
-    },
-    {
-      "product_ids": [
-        "ba064ddc-2cca-44dd-a4df-24ac4709a6fa"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Wheat Flour, Water (Sufficient For Processing), Natural Flavor, Wheat Gluten, Sweet Potato, Vegetable Glycerin, Pumpkin, Gelatin, Salt, Dehydrated Yogurt, Citric Acid (A Preservative), Potassium Sorba"
-    },
-    {
-      "product_ids": [
-        "b1a09e57-cbc2-4062-b978-a9ef09237a64"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Tapioca Starch, Glycerin, Modified Starch, Dehydrated Chicken, Glutinous Rice Flour, Vegetable Oil, Sodium Propionate (preservative), Dehydrated Alfalfa Meal (source of Chlorophyll, Sodium Bicarbonate"
-    },
-    {
-      "product_ids": [
-        "058ac700-d89f-4d86-bd88-174542f9f660"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Wheat Starch; Glycerin; Potato Starch; Pea Protein; Natural Flavor; Bison; Powdered Cellulose; Lecithin; Oat Hulls; Calcium Carbonate; Molasses; Salt; Citric Acid (preservative); Mixed Tocopherols (pr"
-    },
-    {
-      "product_ids": [
-        "51bf2296-fb16-474a-b317-8722097c2e1d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Corn, Pigskin, Rice, Glycerin, Sorbitol, Evaporated Milk, Peanut Butter, Fructose, Barley Malt Syrup, Pork Gelatin, Salt, Titanium Dioxide, Artificial Flavoring, Sodium Tripolyphosphate, Pota"
-    },
-    {
-      "product_ids": [
-        "d38ff452-b8b1-43ae-aa28-9f7937fe4b0a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Grass Fed Wagyu Beef Liver."
-    },
-    {
-      "product_ids": [
-        "a711fe7d-0434-4e67-a016-ddeaea354358"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated White Fish"
-    },
-    {
-      "product_ids": [
-        "29dcbeb8-6c5f-47ae-8e4a-b1ff2fe12ff3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Decorated Cookie: Whole Wheat Flour, Applesauce (Preserved with Ascorbic Acid), Sugar, Spelt Flour, Vegetable Oil, Hydrogenated Palm Kernel Oil, Vital Wheat Gluten, Oat Hulls, Flaxseed Meal, Honey, Ci"
-    },
-    {
-      "product_ids": [
-        "1147e314-42ca-4392-939c-9b7d2915cc52"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Peas, Chickpeas, Tapioca Flour, Cane Molasses, Carrots, Flaxseed, Chicken Meal, Chicken Fat (preserved with Mixed Tocopherols), Salmon Oil, Natural Flavor, Spinach, Vitamin A Suppleme"
-    },
-    {
-      "product_ids": [
-        "522198c1-c9c8-464e-84a4-1c80a1e5b73a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Wheat Flour, Organic Dehydrated Cane Juice, Organic Sunflower and/or Organic Canola Oil and/or Organic Palm Oil, Organic Cane Juice Syrup, Organic Pumpkin Powder, Organic Mace, Organic Cinnamo"
-    },
-    {
-      "product_ids": [
-        "509b32a5-3e9e-438b-b7c2-6432964a97f8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Wheat Flour, Organic Dehydrated Cane Juice, Organic Sunflower and/or Organic Canola Oil and/or Organic Palm Oil, Organic Cane Syrup, Organic Cane Juice Syrup, Organic Banana Powder, Organic Sw"
-    },
-    {
-      "product_ids": [
-        "056bab38-ba9e-4eac-80ee-b1c2f9907f93"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Good 'n' Fun Triple Flavor Kabobs Chicken, Duck & Chicken Liver Dog Chews, 18 count\u2014Good 'n' Fun has created the ultimate rawhide treat with their Triple Flavor Kabobs Chicken, Duck & Chicken Liver Do"
-    },
-    {
-      "product_ids": [
-        "21a96e8b-5851-4691-97d7-eea0fcb6dd52"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Buffalo Meat."
-    },
-    {
-      "product_ids": [
-        "db960ea3-d3c9-4840-97ee-c0ab47d8eef6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Decorated Cookie: Whole Wheat Flour, Applesauce (Preserved with Ascorbic Acid), Sugar, Spelt Flour, Vegetable Oil, Hydrogenated Palm Kernel Oil, Vital Wheat Gluten, Oat Hulls, Flaxseed Meal, Honey, Ci"
-    },
-    {
-      "product_ids": [
-        "a03a3af1-c1aa-4ad0-beb6-a76d4f0f876b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Salmon Meal (A Natural Source of Omega-3 Fatty Acids), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples, Blueber"
-    },
-    {
-      "product_ids": [
-        "8bfc3c14-e3f6-4347-8ba0-cbbce3c845b5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Corn, Pigskin, Rice, Glycerin, Sorbitol, Evaporated Milk, Peanut Butter, Fructose, Barley Malt Syrup, Pork Gelatin, Salt, Artificial Flavoring, Sodium Tripolyphosphate, Potassium Sorbate (Pre"
-    },
-    {
-      "product_ids": [
-        "bf87e653-26ab-4691-9363-db902db731b1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Lamb Lung."
-    },
-    {
-      "product_ids": [
-        "34d83d80-afe1-406d-80f1-d427ba02f055"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Turkey Meal (A Natural Source of Glucosamine and Chondroitin), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples,"
-    },
-    {
-      "product_ids": [
-        "140e27df-1d92-4a8a-a729-712b37ce024d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Wheat Flour, Organic Dehydrated Cane Juice, Organic Sunflower and/or Organic Canola Oil and/or Organic Palm Oil, Organic Cane Syrup, Organic Rice Starch, Organic Blueberry Flavor, Organic Vani"
-    },
-    {
-      "product_ids": [
-        "bd06165f-5f71-4e7e-87bc-d5a446373246"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Codfish Skins."
-    },
-    {
-      "product_ids": [
-        "ae228845-eb0c-4821-84a2-c5fa7b68a3ec"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Pork, Dehydrated Sweet Potatoes, Chicken, Soy Protein Isolate, Brewers Dried Yeast, Vegetable Glycerin, Salt, Natural Smoke, Garlic Conc. Preservatives: Mixed Tocopherols, Zinc Propionate."
-    },
-    {
-      "product_ids": [
-        "3268e0e5-0112-499c-8908-f626524e00d6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Sweet Potato"
-    },
-    {
-      "product_ids": [
-        "844a418c-e827-46d4-9b8b-58d116756d78"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Tapioca Starch, Glycerin, Modified Starch, Dehydrated Chicken, Glutinous Rice Flour, Vegetable Oil, Sodium Propionate (Preservative), Peanut Butter Flavor, Dehydrated Alfalfa, Sodium Bicarbonate, Drie"
-    },
-    {
-      "product_ids": [
-        "bea47782-6815-4341-9281-184e64fa3bb7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Cake Mix: white rice flour, sugar, baking powder, salt and natural flavors. Frosting Mix: tapioca starch, dehydrated yogurt (nonfat milk solids, lactic acid and cultures) and olive oil. Sprinkles: sem"
-    },
-    {
-      "product_ids": [
-        "75409b90-004c-4ec8-a5be-d35ecd8dab57"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Chicken, Organic Evaporated Cane Syrup, Organic Flax Seed, Organic Ground Celery, Organic Cultured Dextrose, Organic Paprika, Salt, Natural Smoke Flavoring, Organic Rosemary Extract, Lamb Casi"
-    },
-    {
-      "product_ids": [
-        "0a57beed-2bc0-44c4-96b0-c9f398ae38ea"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls Dog Chews, 2 count\u2014Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls treat pups to a delicious combination of three favo"
-    },
-    {
-      "product_ids": [
-        "d0e09928-a25a-4891-ad11-d64eefd06a14"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Beef Lung."
-    },
-    {
-      "product_ids": [
-        "40292428-73c9-4064-9002-01d59e17aa05"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Made in the USA.Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Dog treats for training and everyday treating.Pup-Peroni Original Bacon "
-    },
-    {
-      "product_ids": [
-        "522a4f35-3a82-40cf-99d7-79979002fbc2",
-        "c08fa024-f488-471a-ba72-b1d295a38dd3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Tapioca Starch, Vegetable Glycerin, Pea Protein, Dried Yeast Extract, Fructo-Oligosaccharides, Sweet Potato Flour, Calcium Carbonate, Honey, Citric Acid, Ginger Powder, Caramel (Color), Coconut Oil, R"
-    },
-    {
-      "product_ids": [
-        "0497dc80-7fd4-43ea-88e9-c5e0184a78e7"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Organic 100% Grass Fed & Finished Beef Liver"
-    },
-    {
-      "product_ids": [
-        "0d469cfb-4a8c-4106-8892-ccb3f84bb340"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Dehydrated Sweet Potato, Sugar, Dried Brewer'S Yeast, Vegetable Glycerin, Salt, Liquid Smoke, Propionibacterium Freundenreichii Fermentation Product, Mixed Tocopherols"
-    },
-    {
-      "product_ids": [
-        "f226c3e9-e003-42f5-b5d0-326487464793"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Wheat Flour, Organic Dehydrated Cane Juice, Organic Sunflower and/or Organic Canola Oil and/or Organic Palm Oil, Organic Cane Juice Syrup, Organic Apple Powder, Organic Vanilla Extract, Organi"
-    },
-    {
-      "product_ids": [
-        "e1b7ce4e-568e-4263-9019-10f73029ab02"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chickpeas, Tapioca Starch, Pork Broth, Coconut Glycerin, Molasses, Flaxseed, Bacon, Fish Oil, Yeast Culture Dehydrated (Saccharomyces Cerevisiae), Pumpkin, Bacon Type Flavor, Citric Acid (As Preservat"
-    },
-    {
-      "product_ids": [
-        "a8c01834-3b58-4cb6-9a42-00ef8be3860f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dy Roasted Unsalted Peanuts, Air Dried Pumpkin, Dehydrated Pumpkin Powder, Wildflower Honey, Organic Maple."
-    },
-    {
-      "product_ids": [
-        "4dc8faf3-58d8-48f6-912d-8bb2d79ba58c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Beef Liver."
-    },
-    {
-      "product_ids": [
-        "9d37d671-68cf-4f0e-b64e-16bad3cd9e61"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chickpeas, Potato Protein, Cane Molasses, Vegetable Glycerin, Potato Starch, Blueberries, Pork Gelatin, Apple Powder, Dried Bananas, Dehydrated Sweet Potato, Salt, Flaxseed, Guar Gum, Distill"
-    },
-    {
-      "product_ids": [
-        "6dec5093-c238-43be-8120-f262ce2af67e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Beef Bone, Pork Meat Meal, Beef and Bone Meal, Vegetable Glycerin, Grated Cheese, Natural Smoked Flavor"
-    },
-    {
-      "product_ids": [
-        "e2384047-53a2-461b-a35e-da5367f0196e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Sweet Potato."
-    },
-    {
-      "product_ids": [
-        "bdd10fa3-dea6-47f0-8d0c-e61b5034bfa0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Dehydrated Pumpkin, Chicken Bone Broth, Honey, Salt, Citric Acid (Preservative), Vinegar, Mixed Tocopherols (Preservative), Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "0e8c8205-fe6a-411c-b5b0-b3d33af85f5f"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "USA Sourced Wild-Caught Human Grade Sockeye Salmon."
-    },
-    {
-      "product_ids": [
-        "5e72e32a-14b1-400e-a97d-4d5c8bfda383"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Sweet Potato Flour, Rice Flour, Pea Protein, Vegetable Glycerin, Pea Starch, Natural Flavor, Ground Miscanthus Grass, Inulin, Yeast Culture Dehydrated (Saccharomyces Cerevisiae), Cinnamon, Soy Lecithi"
-    },
-    {
-      "product_ids": [
-        "2d5c262e-7172-4c94-a526-538642dfa2ff"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure Ocean-Caught Human Grade Yellowfin Tuna"
-    },
-    {
-      "product_ids": [
-        "7b9b4053-8898-4e78-8fe0-15848d355856"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Yellow Corn, Corn Protein Meal, Poultry By-Product Meal, Soybean Meal, Animal Fat Preserved With Mixed-Tocopherols, Meat And Bone Meal, Liver Flavor, Ocean Fish Meal, Phosphoric Acid, Salt, Cal"
-    },
-    {
-      "product_ids": [
-        "928795f3-d87a-4a2c-9a38-410f172449d1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Pea Protein, Peas, Tapioca Starch, Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Flaxseed (sourc"
-    },
-    {
-      "product_ids": [
-        "35f9e5de-b275-4ca2-a374-465ddb537944",
-        "bc54cf8d-e2d4-411a-8eee-b1eabf88e436"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Whole Herring, Turkey Giblets (Liver, Heart, Gizzard), Salmon, Dehydrated Chicken, Dehydrated Turkey, Dehydrated Salmon, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, W"
-    },
-    {
-      "product_ids": [
-        "597f9a25-7212-463e-a72e-6567d8ef447e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Chicken Meal, Pea Protein, Peas, Tapioca Starch, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Flaxseed (source"
-    },
-    {
-      "product_ids": [
-        "3cf64cda-3767-4991-96bf-86645d445e95"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Chicken Breast."
-    },
-    {
-      "product_ids": [
-        "c7c40187-6978-447e-b02c-eaaabe9c448f"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Pea Protein, Peas, Chicken Fat (Preserved With Mixed Tocopherols), Dried Egg Product, Natural Flavor, Flaxseed (Source Of Omega 6 Fatty Acid"
-    },
-    {
-      "product_ids": [
-        "b62eb51d-c3a6-4117-814b-aac6495787f0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Fish Meal (source of Omega 3 Fatty Acids), Brown Rice, Barley, Oatmeal, Peas, Pea Protein, Dried Egg Product, Chicken Fat (preserved with Mixed Tocopherols), Potato Star"
-    },
-    {
-      "product_ids": [
-        "949e6845-911b-4630-893f-751ad8acf672"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whole Ground Corn, Chicken By-product Meal, Corn Gluten Meal, Soybean Meal, Whole Wheat, Meat & Bone Meal, Animal Fat (preserved With Mixed Tocopherols), Animal Digest, Soybean Hulls, Salmon Meal, Deh"
-    },
-    {
-      "product_ids": [
-        "eb97cf91-aee4-48f1-847f-f9ebe94031b2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Ground Corn, Chicken By-Product Meal, Soybean Meal, Corn Protein Meal, Beef Tallow (Mixed Tocopherols Used As A Preservative), Ground Soybean Hulls, Brewers Rice, Natural Flavor, Turkey By-Product Mea"
-    },
-    {
-      "product_ids": [
-        "78b634eb-5c6b-4634-a122-2aa4388e03bb"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Pea Protein, Split Peas, Chicken Fat (preserved with Mixed Tocopherols), Tapioca, Dried Plain Beet Pulp, Potato Protein, Salmon Meal, Dehydrated Alfalfa Meal, Natural Flavor, Fl"
-    },
-    {
-      "product_ids": [
-        "4e21efad-979e-4777-886d-e07b605f62f2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Pea Protein, Split Peas, Chicken Fat (preserved with Mixed Tocopherols), Tapioca, Fish Meal, Dried Plain Beet Pulp, Potato Protein, Dehydrated Alfalfa Meal, Natural Flavor, Pota"
-    },
-    {
-      "product_ids": [
-        "a3f3ad06-e6fa-452b-80db-88bb2f0c1913"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Pea Protein, Barley, Dried Egg Product, Oatmeal, Chicken Fat (preserved with Mixed Tocopherols), Potato Starch, Dried Plain Beet Pulp, Flaxseed (source of Om"
-    },
-    {
-      "product_ids": [
-        "56ff62d5-00ec-4b79-99e6-cd0032fcaab8"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Chicken Meal, Pea Protein, Chicken Fat (preserved with Mixed Tocopherols), Split Peas, Tapioca, Potato Protein, Dried Plain Beet Pulp, Menhaden Fish Meal, Dehydrated Alfalfa Meal, Lentils, Nat"
-    },
-    {
-      "product_ids": [
-        "0237532c-da0e-4a50-9415-7f19f21f8510"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Pea Protein, Tapioca Starch, Peas, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Pea Fiber, Natu"
-    },
-    {
-      "product_ids": [
-        "e373a7c0-175a-44b0-892c-17366d5bf9be"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Pea Protein, Tapioca Starch, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Peas, Dried Egg Product, Flaxseed (sourc"
-    },
-    {
-      "product_ids": [
-        "b8e580b6-69b8-41be-ab4a-7a872650da90",
-        "d9a01ab5-059a-4c01-b9cb-fc2d44592a18"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Brown Rice, Barley, Oatmeal, Chicken Fat (preserved with Mixed Tocopherols), Pea Protein, Peas, Dried Egg Product, Na"
-    },
-    {
-      "product_ids": [
-        "79132537-2661-436a-8cc7-10051962c4c5"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Brewers Rice, Pea Protein, Whole Grain Brown Rice, Chicken Fat (Preserved With Mixed Tocopherols), Dehydrated Alfalfa Meal, Potato Protein, Dried Plain Beet Pulp, Flaxseed, Natu"
-    },
-    {
-      "product_ids": [
-        "05185949-b09b-4acc-98c4-7b726feddee1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Broth, Chicken, Chicken Liver, Carrots, Dried Egg Whites, Potatoes, Ground Dried Peas, Natural Flavor, Potato Starch, Spinach, Salmon Oil (Preserved With Mixed Tocopherols), Guar Gum, Sodium P"
-    },
-    {
-      "product_ids": [
-        "429f65f6-b130-4208-94c1-70ebb1985fa2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Chicken Meal, Brewers Rice, Pea Protein, Whole Grain Brown Rice, Chicken Fat (Preserved With Mixed Tocopherols), Potato Protein, Whole Grain Oatmeal, Dried Plain Beet Pulp, Dehydrated Alfalfa "
-    },
-    {
-      "product_ids": [
-        "b3c51a44-4487-4569-8587-a532f06683cc"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Whitefish, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Protein, Fish Meal (source of Omega 3 Fatty Acids), Peas, Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Natural F"
-    },
-    {
-      "product_ids": [
-        "11efc172-346a-4018-a21b-2813cc8632b7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Sweet Potatoes, Pea Starch, Pork Fat, Dehydrated Pork, Dried Whole Eggs, Natural Flavors, Hydrolyzed Fish, Herring, Dehydrated Herring, Herring Oil, Pea Fiber, Dried Carro"
-    },
-    {
-      "product_ids": [
-        "2be99fb2-112e-4cd1-a702-bb8a14650d04"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Chicken Meal, Brown Rice, Oatmeal, Barley, Pea Protein, Peas, Chicken Fat (preserved with Mixed Tocopherols), Menhaden Fish Meal (source of Omega 3 Fatty Acids), Powdered Cellulose, Na"
-    },
-    {
-      "product_ids": [
-        "20fab4ad-4567-42d2-b7a9-672ce676faa6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Barley, Brown Rice, Pea Starch, Pea Protein, Powdered Cellulose, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Peas, Oatmeal, Pea Fiber, Chicken Fat (preserved wit"
-    },
-    {
-      "product_ids": [
-        "ff016e21-5a38-4e84-82b6-8b1d0c30b29c"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Water| Corn Starch| Artificial And Natural Flavors| Artificial Chicken Flavor| Taurine| Thiamine Mononitrate (Vitamin B-1)."
-    },
-    {
-      "product_ids": [
-        "a54501cb-d1ae-47b3-ab2a-0bf50e824b53"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Cage-Free Chicken Chicken Meal Lentils Peas Chicken Fat (preserved with Mixed Tocopherols) Chicken Liver Natural Chicken Flavor Chicken Gizzard Fenugreek Seed Salmon Oil (Preserved with Mixed Tocopher"
-    },
-    {
-      "product_ids": [
-        "6222f164-e62f-4904-9de9-3c1788feaf67"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Pea Protein, Tapioca Starch, Peas, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Pea Fiber, Natural Flavor, Dried E"
-    },
-    {
-      "product_ids": [
-        "31add3e3-9305-41d3-b26e-c50138bd5ecd"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Chicken Water Sufficient For Processing Potato Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate Copper Proteinate M"
-    },
-    {
-      "product_ids": [
-        "2eeab56a-607a-4882-93c8-602209f54425"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Chicken, Organic Dehydrated Chicken, Organic Peas, Lentils, Chicken Fat (Preserved With Mixed Tocopherols), Organic Flaxseed, Natural Flavour, Blueberries, Cranberries, Egg Shell Meal, Vitamin"
-    },
-    {
-      "product_ids": [
-        "86b0f7b1-60e0-46c8-bc40-1e7b6367e05b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Dehydrated Lamb, Whole Spelt, Whole Oats, Whole Barley, Pork Fat, Dehydrated Pork, Dehydrated Chicken, Chicken Fat, Natural Flavors, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, D"
-    },
-    {
-      "product_ids": [
-        "c0d16597-9b6a-40d8-8738-138e33fd82af"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure Ocean-Caught Human Grade Minnow"
-    },
-    {
-      "product_ids": [
-        "5c7f5cb4-72f9-45b6-aec9-886dd34cf311"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Turkey Meal, Brown Rice, Barley, Oatmeal, Chicken Fat, Dried Egg Product, Potato Protein, Pea Protein, Natural Flavor, Flaxseed, Chicory Root (source of Inulin), Choline"
-    },
-    {
-      "product_ids": [
-        "65a27aee-f87f-4231-859c-640f9c137c05"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Salmon Meal, Pea Protein, Chickpeas, Oat Groats, Peas, Pea Fiber, Dried Plain Beet Pulp, Dehydrated Alfalfa Meal, Oat Hulls, Dried Tomato Pomace, Chicken Fat (Preserved With Mixed Tocoph"
-    },
-    {
-      "product_ids": [
-        "43d7b9ba-2343-49b9-9305-2e12506ed890"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Protein, Pea Starch, Powdered Cellulose, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Peas, Chicken Fat (preserved with Mixed Toc"
-    },
-    {
-      "product_ids": [
-        "4eed64a1-d0a2-473d-9ee0-70694d95235c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Pea Protein, Whole Grain Brown Rice, Chicken Fat (Preserved With Mixed Tocopherols), Brewers Rice, Dehydrated Alfalfa Meal, Potato Protein, Whole Grain Oatmeal, Flaxseed, Dried "
-    },
-    {
-      "product_ids": [
-        "f9e7b09d-080e-4962-b402-24f5c6f08acd"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Milled rice, oils and fats (of which fish oil 2%), potato protein, ((AFS tablet \u2013 7% of the food): potato protein, hydrolyzed fish protein, mouse-ear hawkweed, products from the processing of herbs (L"
-    },
-    {
-      "product_ids": [
-        "7d47016f-81cb-40db-bd15-166d815ee8f9"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Whole Spelt, Whole Oats, Whole Barley, Rice, Dehydrated Herring, Dried Whole Eggs, Pork Fat, Natural Flavors, Dried Beet Pulp, Herring Oil, Suncured Alfalfa Meal, Dried Ca"
-    },
-    {
-      "product_ids": [
-        "805022ba-0833-4903-be8b-44b6d62cf11d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Salmon, Turkey, Whole Herring, Chicken Liver, Dehydrated Chicken, Dehydrated Turkey, Dehydrated Sardine, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, Whole Pinto Beans, Turkey"
-    },
-    {
-      "product_ids": [
-        "649a7aaf-1933-49d7-a9d7-fe20e315558a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Beef, Fish Meal, Pea Protein, Tapioca Starch, Peas, Dried Egg Product, Canola Oil (Source Of Omega 3 Fatty Acids), Beef Meal, Flaxseed (Source Of Omega 6 Fatty Acids), Pea Fiber, Natural Flavo"
-    },
-    {
-      "product_ids": [
-        "473c7f20-d976-436d-b098-d3d1f3f8f23a"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Oatmeal, Barley, Pea Protein, Chicken Fat (preserved with Mixed Tocopherols), Natural Flavor, Powdered Cellulose, Fish Oil (source of DHA-Docosahexaenoic Aci"
-    },
-    {
-      "product_ids": [
-        "e29f1e59-9c5e-40ab-96a9-04da4418ce4d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Herring, Dehydrated Herring, Hydrolyzed Fish, Pea Starch, Pork Fat, Sweet Potatoes, Herring Oil, Dried Whole Eggs, Natural Flavors, Pea Fiber, Dried Carrot, Calcium Carbonate, Calcium Sulfate Dihydrat"
-    },
-    {
-      "product_ids": [
-        "78b5f7ad-246e-44c9-b8af-3bb75248825e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Duck, Chicken Meal, Pea Protein, Peas, Tapioca Starch, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Flaxseed (source o"
-    },
-    {
-      "product_ids": [
-        "31b8ae18-cc0d-4926-8be6-c51ca2247faf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Protein, Peas, Chicken Fat (preserved with Mixed Tocopherols), Menhaden Fish Meal (source of Omega 3 Fatty Acids), Natural Flavor, Powde"
-    },
-    {
-      "product_ids": [
-        "84e53b9e-2ea2-48c3-9e17-5ece7dbb3b1d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Salmon, Whole Herring, Chicken Liver, Dehydrated Chicken, Dehydrated Turkey, Dehydrated Herring, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, Whole Pinto Beans, Turkey"
-    },
-    {
-      "product_ids": [
-        "5fb48d52-f58c-45c6-bf62-7660fa555312"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Lamb, Dehydrated Lamb, Pea Starch, Dehydrated Pork, Pork Fat, Dehydrated Chicken, Sweet Potatoes, Chicken Fat, Dried Whole Eggs, Natural Flavors, Herring, Dehydrated Herring, Herring Oil, Pea Fiber, D"
-    },
-    {
-      "product_ids": [
-        "9739e2d2-2ae0-4a69-bfd8-94cd018c6823"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Deboned Turkey, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Protein, Peas, Fish Meal, Dried Egg Product, Chicken Fat (preserved with Mixed Tocopherols), Natural Flavor, Dried Tomat"
-    },
-    {
-      "product_ids": [
-        "556319d8-91ce-4458-ac0b-bc7721d832f9"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Certified Organic Cereal Grass (May Contain Oat, Rye, Barley) and Growing Medium."
-    },
-    {
-      "product_ids": [
-        "084a842b-c21f-48b6-b7ff-b720fc1089a6"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Ground Brown Rice, Chicken Fat (preserved with Mixed Tocopherols), Oatmeal, Anchovy & Sardine Meal, Flaxseed, Dried Egg Product, Natural Chicken Flavor, Carrots, Sweet Potatoes, Pumpkin,"
-    },
-    {
-      "product_ids": [
-        "bfb080cf-25fc-475e-91a8-e94f8cc1c1df"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Turkey, Whole Herring, Turkey Giblets (Liver, Heart, Gizzard), Salmon, Dehydrated Chicken, Dehydrated Turkey, Dehydrated Salmon, Dehydrated Chicken Liver, Dehydrated Egg, Whole Red Lentils, W"
-    },
-    {
-      "product_ids": [
-        "751ec93e-c79d-4e6d-8677-2ff268bcfa01"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Feed your cat's biggest dreams with a bowlful of delicious nutrition! Each purchase comes with Tiny Tiger Chunks in EXTRA Gravy Chicken Recipe Grain-Free Canned Cat Food, 3-oz, case of 24 & Fancy Feas"
-    },
-    {
-      "product_ids": [
-        "51d0c3bc-2cb9-47b5-8790-31020fb3d076"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Brown Rice, Menhaden Fish Meal, Pearled Barley, Peas, Chicken Fat (preserved with mixed tocopherols), Oatmeal, Pea Fiber, Whole Flaxseeds, Sweet Potatoes, Dehydrated Alfalfa Mea"
-    },
-    {
-      "product_ids": [
-        "0e6be94a-a82a-4a1b-8c74-69c32a43a876"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Duck Liver"
-    },
-    {
-      "product_ids": [
-        "9c23d7d8-0c51-4e1f-8d1f-35c0c8579456"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Chicken Breast & Organic Catnip"
-    },
-    {
-      "product_ids": [
-        "7cf14894-2737-4c1e-b309-da64f74ce005"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Whole Spelt, Whole Oats, Whole Barley, Pork Fat, Dehydrated Pork, Natural Flavors, Chicken Fat, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, Dried Beet Pulp"
-    },
-    {
-      "product_ids": [
-        "0640226f-3c83-4e41-beb5-c1b536729c6b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Turkey Broth, Turkey, Salmon, Chicken, Chicken Liver, Carrots, Dried Egg Whites, Potatoes, Ground Dried Peas, Natural Flavor, Potato Starch, Salmon Oil (Preserved With Mixed Tocopherols), Guar Gum, So"
-    },
-    {
-      "product_ids": [
-        "f7867644-2d37-4762-a6e5-7cf22b04659d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Rabbit, Turkey Meal, Salmon Meal, Menhaden Fish Meal, Chickpeas, Tapioca, White Fish Meal, Peas, Chicken Fat (preserved with Mixed Tocopherols and Citric Acid), Dried Tomato Pomace, Natural Flavor, Fr"
-    },
-    {
-      "product_ids": [
-        "518edfe1-3585-4226-becf-48e8a2a50efc"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Kangaroo, Water Sufficient for Processing, Pumpkin, Sunflower Oil, Porcine Plasma, Cranberries, Brewers Dried Yeast, Ground Flaxseed, Dehydrated Alfalfa Meal, Potassium Chloride, Agar Agar, Choline Ch"
-    },
-    {
-      "product_ids": [
-        "f5735ad5-2c41-469f-ac92-4b576ae79ea7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Boneless Chicken, Dehydrated Chicken, Sweet Potatoes, Chicken Fat, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, Pea Fiber, Dried Carrot, Suncured Alfalfa Meal, Inulin, Fructooligosaccha"
-    },
-    {
-      "product_ids": [
-        "d35b0ad5-9e26-4210-a0cb-ba70de46676d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Tiki Cat Aloha Friends Variety Pack Grain-Free Wet Cat Food, 3-oz can, case of 12\u2014Say aloha to kitty-approved variety in every bowl with the Tiki Cat Aloha Friends Variety Pack Grain-Free Wet Cat Food"
-    },
-    {
-      "product_ids": [
-        "7bc13f5d-c272-47c6-a12d-a9ad156cd750"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Whole Whiting, Haddock, Whole Herring, Acadian Redfish, Mackerel Meal, Herring Meal, Whole Red Lentils, Whole Pinto Beans, Sardine Meal, Pollock Meal, Fish Oil, Whole Green Lentils, Whole Chickpeas, P"
-    },
-    {
-      "product_ids": [
-        "31daa817-ca63-45ac-9897-2358fc6ed727"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Dehydrated Chicken, Dried Egg Product, Tapioca, Natural Chicken Flavor, Ground Whole Flaxseed, Chickpeas, Peas, Chicken Fat (Preserved With Mixed Tocopherols And Citric "
-    },
-    {
-      "product_ids": [
-        "7f85250e-d4d7-449b-aeca-07572ceae20b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Liver, Whole Herring, Turkey, Turkey Giblets (Liver, Heart, Gizzard), Flounder, Eggs, Cod, Dehydrated Chicken Liver, Dehydrated Egg, Dehydrated Sardine, Dehydrated Chicken, Dehydrated"
-    },
-    {
-      "product_ids": [
-        "5617eaad-5352-4ce1-baf3-34a4ad96b63c"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Friskies Shreds in Gravy Variety Pack Canned Cat Food, 5.5-oz can, case of 40\u2014Your kitty loves savory, so satisfy his cravings with the Friskies Savory Shreds Variety Pack Canned Cat Food. This variet"
-    },
-    {
-      "product_ids": [
-        "32c07730-d898-4b78-8158-1d70af9c3385"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Salmon, Duck, Chicken, Turkey, Flounder, Whole Herring, Chicken Liver, Eggs, Dehydrated Egg, Dehydrated Chicken, Dehydrated Sardine, Dehydrated Chicken Liver, Dehydrated Mackerel, Turkey Giblets (Live"
-    },
-    {
-      "product_ids": [
-        "89cdffc0-82b7-4e2a-b087-4a28a2e9e636"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Menhaden Fish Meal, Peas, Chicken Fat (preserved with mixed Tocopherols), Natural Flavor, Sweet Potato, Dehydrated Salmon, Dehydrated Alfalfa Meal, Yeast Culture, Sodium Bisulfate, Potassium Chloride,"
-    },
-    {
-      "product_ids": [
-        "66f48b74-c070-497d-86c7-ef45b5bd937e"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Turkey Breast"
-    },
-    {
-      "product_ids": [
-        "d64b670d-cf19-4379-b905-bebf0fad1a35"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Tapioca Starch, Pea Protein, Peas, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Powdered Cellulose, Pea Fiber, Chicken Fat (preserved with Mixed Tocopherols), Fla"
-    },
-    {
-      "product_ids": [
-        "9fd0b5b9-5155-42eb-bd20-11a3e6366385"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Ocean Whitefish."
-    },
-    {
-      "product_ids": [
-        "c5d919eb-414c-404e-9715-cd58401151f2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Salmon, Chicken Meal, Turkey Meal, Brown Rice, Barley, Oatmeal, Chicken Fat, Dried Egg Product, Potato Protein, Pea Protein, Natural Flavor, Flaxseed, Chicory Root (source of Inulin), Choline "
-    },
-    {
-      "product_ids": [
-        "e86d8bcc-6af2-4389-9f8a-8da0f71cb628"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Protein, Peas, Chicken Fat (preserved with Mixed Tocopherols), Dried Egg Product, Menhaden Fish Meal, Pea Fiber, Natural Flavor, Flaxsee"
-    },
-    {
-      "product_ids": [
-        "2dfd5f79-a824-453e-916b-4e20fbda90bb"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Potato Chicken Fat (preserved with mixed tocopherols) Blueberries Brewer's Dried Yeast Choline Chloride DL\u2013Methionine Salt Minerals (Zinc Proteinate Iron Proteinate Calcium Carbonate Mangane"
-    },
-    {
-      "product_ids": [
-        "aee8576c-1f39-4a33-8f99-4d2b6f789919"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Fish Broth, Salmon, Tuna, Chicken Liver, Chicken, Carrots, Shrimp, Dried Egg Whites, Potatoes, Natural Flavor, Ground Dried Peas, Potato Starch, Spinach, Canola Oil, Guar Gum, Sodium Phosphate, Dehydr"
-    },
-    {
-      "product_ids": [
-        "a2fb46e2-9c90-497d-9493-aa2a91704488"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Dried Egg Product, Natural Chicken Flavor, Salmon Oil, Dehydrated Chicken Liver, Peas, Chickpeas, Tapioca, Ground Whole Flaxseed, Brewers Dried Yeast, Chicken Fat (Prese"
-    },
-    {
-      "product_ids": [
-        "14b2f089-037a-4a32-a77b-ec3ac0e8e114"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Turkey, Turkey Broth, Turkey Liver, Carrots, Spinach, Tricalcium Phosphate, Natural Flavor, Sweet Potatoes, Guar Gum, Dehydrated Alfalfa Meal, Carrageenan, Potassium Chloride, Cranberries, Salt, Calci"
-    },
-    {
-      "product_ids": [
-        "ae47145b-b939-4d37-8ba5-93ff80ff718b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Organic Oat Flour, Brown Rice Flour, Turkey Powder, Flax Seed Powder, Baking Soda, Baking Powder, Dehydrated Yogurt"
-    },
-    {
-      "product_ids": [
-        "b929aba8-f07d-4cc0-a2c8-8b5c41ecce55"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Beef Meal, Whole Grain Brown Rice, Grain Sorghum, Chicken Fat (preserved with mixed Tocopherols), Whole Grain Millet, Blood Meal Conventionally Dried, Pork Meal, Menhaden Fish Meal, Yeas"
-    },
-    {
-      "product_ids": [
-        "bac4178e-bf42-406a-8208-233f9e883f94"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken & Pumpkin: Chicken Broth, Chicken, Chicken Liver, Peas, Pumpkin, Dried Egg Whites, Ground Dried Peas, Sweet Potatoes, Potato Starch, Natural Flavor, Spinach, Salmon Oil (Preserved With Mixed T"
-    },
-    {
-      "product_ids": [
-        "b24bb3d7-c10e-4fd6-95e6-1fa84a86b2b4"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Milled rice, dehydrated fish, hydrolyzed fish protein, ((AFS tablet \u2013 7% of the food): potato protein, hydrolyzed fish protein, Rose hip, plantago seeds (Plantago psyllium mucilage 1%), mannan oligosa"
-    },
-    {
-      "product_ids": [
-        "aa8a84af-f444-430f-8dfc-35623cb08c99"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Pea Protein, Chicken Fat (Preserved With Mixed Tocopherols), Brewers Rice, Whole Grain Brown Rice, Potato Protein, Dried Plain Beet Pulp, Whole Grain Oatmeal, Fish Meal, Natural"
-    },
-    {
-      "product_ids": [
-        "3fc3f377-2616-431f-83f4-b4d79deb7924"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Solid Gold Flavorful Feast Real Tuna & Sardine Grain-Free Gravy Pate Wet Cat Food, 3-oz can, case of 3\u2014Refine your furry friend's palate with a bowl of Solid Gold Flavorful Feast in Gravy with Real Tu"
-    },
-    {
-      "product_ids": [
-        "bd3eedc0-cd01-4ef7-be38-fa468c54174b"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Shrimp."
-    },
-    {
-      "product_ids": [
-        "131176c2-c896-4909-848f-8f81c2df97cd"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Boneless Turkey Water Sufficient For Processing Potato Brewer'S Dried Yeast Minerals (Salt Calcium Carbonate Monodicalcium Phosphate Choline Chloride Potassium Chloride Zinc Proteinate Iron Proteinate"
-    },
-    {
-      "product_ids": [
-        "e3ce2108-4879-47ff-abd2-1117477132b7"
-      ],
-      "status": "contaminated",
-      "raw_preview": "\"Temptations Seafood Medley Flavor Adult Dry Cat Food, 13.5-lb bag\u2014Your kitty will be meowing with delight when you serve her Temptations Seafood Medley Flavor Adult Dry Cat Food. This purr-fect meal "
-    },
-    {
-      "product_ids": [
-        "c06a2689-a07e-49cc-81c3-c4a5063b4c30"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Salmon."
-    },
-    {
-      "product_ids": [
-        "0d20a610-f1f1-44d3-8339-48d00b3d7dd3"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Questions & AnswersAsk a Question 1 Customer QuestionsWhat country does the chicken come from?Answer by Chewy \u2022 Mar 21, 2025Orijen collaborates with a specially curated group of leading farmers, ranch"
-    },
-    {
-      "product_ids": [
-        "2670adf3-4659-4bbd-80fa-4c7669c3784d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Dehydrated Chicken, Sweet Potatoes, Pea Starch, Dehydrated Pork, Pork Fat, Dried Beet Pulp, Hydrolyzed Fish, Natural Flavors, Dried Whole Eggs, Herring, Dehydrated Herring, Herring Oil, Pea F"
-    },
-    {
-      "product_ids": [
-        "272f51a2-0a20-4afd-8db4-598c08ae61ef"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Tapioca Starch, Pea Protein, Peas, Pea Fiber, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Chicken Fat (preserved with Mixed Tocopherols), Powdered Cellulose, Fla"
-    },
-    {
-      "product_ids": [
-        "84f59adb-8b42-4e4b-ab54-5f39032bd67d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Brown Rice, Pearled Barley, Peas, Oatmeal, Menhaden Fish Meal, Pea Fiber, Chicken Fat (preserved with mixed tocopherols), Sweet Potatoes, Dehydrated Alfalfa Meal, Whole Flaxseed"
-    },
-    {
-      "product_ids": [
-        "be13fe7f-bb88-4363-9962-5fa668969b18"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Grain Free Turkey Recipe Pate: Deboned Turkey, Turkey Broth, Deboned Chicken, Chicken Liver, Natural Flavor, Dried Egg Product, Dried Cranberries, Calcium Carbonate, Organic Dehydrated Alfalfa Meal, S"
-    },
-    {
-      "product_ids": [
-        "e4286e6b-e11c-4c55-999f-4c41e040ac8b"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Pea Protein, Whole Grain Brown Rice, Dried Potatoes, Chicken Fat (Preserved With Mixed Tocopherols), Oat Fiber, Rice Bran, Potato Protein, Dehydrated Alfalfa Meal, Whole Grain O"
-    },
-    {
-      "product_ids": [
-        "d9eb437b-452e-4a7f-89d2-1e9bb58bbfbf"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Tapioca Starch, Peas, Pea Protein, Potatoes, Chicken Fat (preserved with Mixed Tocopherols), Menhaden Fish Meal (source of Omega 3 Fatty Acids), Pea Fiber, Powdered Cell"
-    },
-    {
-      "product_ids": [
-        "958f90c3-5308-40b8-9812-5a1a69a5458a"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Chicken Breast & Duck Liver."
-    },
-    {
-      "product_ids": [
-        "8e0e01e4-fdb3-4486-8d15-109b568a3ece"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "The Tiki Cat Queen Emma Luau Variety Pack Grain-Free Canned Cat Food calories per recipe is as follows: Tilapia 83 calories per can, Napili Luau Wild Salmon & Chicken 71calories per can, Hanalei Luau "
-    },
-    {
-      "product_ids": [
-        "1ec5ce62-e29e-4235-8126-899dfdbbb15e"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Chickpeas, Peas, Dehydrated Chicken, Dried Egg Product, Natural Chicken Flavor, Chicken Fat (Preserved With Mixed Tocopherols And Citric Acid), Ground Whole Flaxseed, Br"
-    },
-    {
-      "product_ids": [
-        "507a92d2-e854-42ff-8038-2588eb61a28d"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated Beef Bone Broth."
-    },
-    {
-      "product_ids": [
-        "1edf815a-4083-4ecc-bd6a-0de1ce9102cd"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Turkey, Chicken Meal, Peas, Dehydrated Chicken, Powdered Cellulose, Natural Chicken Flavor, Pea Fiber, Brewers Dried Yeast, Ground Whole Flaxseed, Calcium Sulfate, Choline Chloride, Potassium "
-    },
-    {
-      "product_ids": [
-        "145b696f-1ffe-4b10-bc23-1d61f3af7596"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Deboned Chicken, Chicken Meal, Brown Rice, Barley, Oatmeal, Pea Starch, Menhaden Fish Meal (source of Omega 3 Fatty Acids), Peas, Powdered Cellulose, Chicken Fat (preserved with Mixed Tocopherols), Na"
-    },
-    {
-      "product_ids": [
-        "655baef3-59ee-43ce-980e-c41ca6310d52"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Tuna, Chicken Meal, Brewers Rice, Chicken By-Product Meal, Wheat Flour, Animal Fat Preserved With Mixed-Tocopherols, Corn Gluten Meal, Pea Starch, Barley, Natural Flavor, Dried Yeast, Phosphoric Acid,"
-    },
-    {
-      "product_ids": [
-        "6f69fa61-df45-47f6-ba77-643d5d324ad7"
+        "9f4b8aa2-c06f-4162-8546-0124fba21247"
       ],
       "status": "contaminated",
       "raw_preview": "Temptations Classic Tasty Chicken Flavor Soft & Crunchy Cat Treats, 16-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These uni"
     },
     {
       "product_ids": [
-        "5320db92-7e49-4865-a879-047637673f70",
-        "a16e87c3-600a-4159-ba4e-b5820af20ea0"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "100% Freeze Dried Wild Alaskan Salmon."
-    },
-    {
-      "product_ids": [
-        "343506b3-a521-49e6-9a58-4e6a5d45dfe2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken, Chicken Meal, Brewers Rice, Poultry By-Product Meal, Wheat Flour, Corn Protein Meal, Animal Fat Preserved With Mixed-Tocopherols, Pea Starch, Natural Flavors, Barley, Dried Yeast, Phosphoric "
-    },
-    {
-      "product_ids": [
-        "aaa058d9-c106-4370-a22f-219bfcc347a2"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Human Grade Chicken Heart."
-    },
-    {
-      "product_ids": [
-        "efa3858b-ef05-4866-976b-887cbd695020"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Shrimp, Chicken Meal, Brewers Rice, Wheat Flour, Chicken By-Product Meal, Animal Fat Preserved With Mixed-Tocopherols, Corn Protein Meal, Pea Starch, Barley, Natural Flavors, Dried Yeast, Phosphoric A"
-    },
-    {
-      "product_ids": [
-        "ff03b5ad-e31d-4c79-aca1-24a3d67bb6b2"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Brewers Rice, Corn Protein Meal, Animal Fat Preserved With Mixed-tocopherols, Chicken, Natural Flavors, Malted Barley Extract, Phosphoric Acid, Potassium Chloride, Dried Yeast, Sunflower"
-    },
-    {
-      "product_ids": [
-        "12da4d86-ecfa-4e05-970a-e0501e1f1ad0"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Chicken Meal, Brewers Rice, Corn Gluten Meal, Animal Fat Preserved With Mixed-Tocopherols, Chicken, Natural Flavors, Malted Barley Extract, Phosphoric Acid, Potassium Chloride, Dried Yeast, Sunflower "
-    },
-    {
-      "product_ids": [
-        "58c2a5df-f8ca-4f96-b551-c7419b83b5d4"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Dehydrated white fish, sea salt"
-    },
-    {
-      "product_ids": [
-        "97d296a2-72f5-4d15-bac4-7b2071324820",
-        "e6ade679-927d-4ac8-a162-7a0cd95b99ca"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Cake Mix: Organic Oat Flour, Brown Rice Flour, Turkey Powder, Flax Seed Powder, Baking Soda (Sodium Bicarbonate), Baking Powder (Sodium Bicarbonate, Corn Starch, Sodium Aluminum Sulfate, Calcium Sulfa"
-    },
-    {
-      "product_ids": [
-        "ff093b1d-78e1-4b58-a219-8b9d1d485138"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Duck Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "3fc79362-25da-427f-b716-b5bbf83754c1"
-      ],
-      "status": "contaminated",
-      "raw_preview": "Anchovy Meal, Sardine Meal, Ground Brown Rice, Chicken Meal, Chicken Fat (Preserved With Mixed Tocopherols), Oatmeal, Salmon Meal, Flaxseed, Dried Egg Product, Dried Beet Pulp, Menhaden Fish Oil, Natu"
-    },
-    {
-      "product_ids": [
-        "4c6a4cfb-6894-4bdf-ae53-350dc09f17af"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "American Sourced Wild-Caught Human Grade Tuna."
-    },
-    {
-      "product_ids": [
-        "8f3b1aca-f278-413f-90af-ecec80032de0"
+        "f516b501-54c0-459c-914f-7d1a64b932f0"
       ],
       "status": "contaminated",
       "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
     },
     {
       "product_ids": [
-        "b09a4a98-a833-4247-aaea-7f20069ee551"
+        "0b5b7052-48ac-484e-9751-761cf8e229c0"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "100% Pure USA Sourced & Made Human Grade Beef Liver"
+      "raw_preview": "Questions & AnswersAsk a Question 5 Customer QuestionsAre there 24 cans of each flavor in this bundle?Answer by Chewy \u2022 May 30, 2021This bundle contains 24 cans of the Monterey Medley Grain-Free Natur"
     },
     {
       "product_ids": [
-        "e8a7b885-6819-49e4-a046-67385943feb8"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Ocean Fish Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "002d460e-325a-4a29-8c1b-5f108827a68d"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "Chicken Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Calcium Propionate (A Preservative) Rosemary Extract."
-    },
-    {
-      "product_ids": [
-        "93ec7852-a565-4687-bf72-ddb1e7a29048"
+        "cc1f248a-4b23-4e30-bb54-4aeb40002727"
       ],
       "status": "contaminated",
-      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
+      "raw_preview": "Nothing but good, wholesome nutrition here! Each purchase comes with Rachael Ray Nutrish Just 6 Natural Lamb Meal & Brown Rice Limited Ingredient Recipe Dry Dog Food, 28-lb bag & Rachael Ray Nutrish S"
     },
     {
       "product_ids": [
-        "0aace303-53e1-4e1e-90cc-82e1035fb879"
+        "e471e538-e84a-447f-917f-1a6a07dd69a3"
+      ],
+      "status": "contaminated",
+      "raw_preview": "This food surprised me with the great reaction Bandit had! He doesn't typically care much for freeze-dried food. However, after the first cautious sniff, he ate up both a bowl of Kismet and a Nug for "
+    },
+    {
+      "product_ids": [
+        "7499d127-9029-47ca-bd76-386fe5f7d71d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": ", these treats stand out as a healthy choice for your dog, making them a great dry dog treat that supports overall health and wellness. Each small batch of treats undergoes rigorous quality control an"
+    },
+    {
+      "product_ids": [
+        "7f3a4a7f-3d4d-446a-81bc-328f6e62d3a0"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
+    },
+    {
+      "product_ids": [
+        "50c168bd-7f2d-4648-a2df-2b6c998e6189"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Active Ingredients Ashwagandha (Withania Somnifera) Root Extract Brewers Yeast Chamomile GABA (Gama-Aminobutyric Acid) Ginger Root (Zingiber Officinale) L-Theanine L-Tryptophane Magnolia Bark (Magnoli"
+    },
+    {
+      "product_ids": [
+        "8c0cdaee-a4cb-4455-a373-cafab66e560a"
+      ],
+      "status": "contaminated",
+      "raw_preview": "to help provide your puppy with the best start in life Wagg Complete Puppy with Chicken & Veg provides a nutritious, balanced meal for a healthy, happy puppy. We have included vitamins A, C & E and ci"
+    },
+    {
+      "product_ids": [
+        "09b50080-78f3-442a-977f-3cda259ca452"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similar500+ bought since yesterday Pure Balance Salmon Puree Gourmet Cat Treats, 0.5 oz, 4 Count $1.82Options from$182\u2013 $692Pure Balance Salmon"
+    },
+    {
+      "product_ids": [
+        "184c1536-c5d5-4ff3-8672-c2339af9248d"
+      ],
+      "status": "contaminated",
+      "raw_preview": ". They are a digestible and rawhide-free alternative. The roasted twists also provide a tasty, low-fat treat made from pork skin. Like the rolls, these twists are more digestible than rawhide and cont"
+    },
+    {
+      "product_ids": [
+        "4bf3e2c0-4fd7-435b-9184-15aa24b0d480"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similarSpecial Kitty Ocean Whitefish and Tuna Wet Cat Food, 13 oz Can $1.22Options from$122\u2013 $1391Special Kitty Ocean Whitefish and Tuna Wet Ca"
+    },
+    {
+      "product_ids": [
+        "ebb7d9a9-82c6-4da3-a8ca-195afbc1795b"
+      ],
+      "status": "contaminated",
+      "raw_preview": "For the best in freeze-dried dog treats look no further than Chewy. Search top freeze-dried dog treat brands and flavors online with ease on Chewy. Freeze-dried dog treats are the latest dog food craz"
+    },
+    {
+      "product_ids": [
+        "a008d70e-5229-414c-9fbd-04ca8d99f5fe"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
+    },
+    {
+      "product_ids": [
+        "abfabaaf-767d-44b3-8d1f-a33b3503b9e4"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "ORIJEN Original Chunks & Shreds Variety Pack Duck & Liver Wet Cat Food, 3-oz can, case of 12\u2014Promotes a healthy coat and skin with naturally occurring omega-3 and -6 fatty acids.ORIJEN Original Chunks"
+    },
+    {
+      "product_ids": [
+        "0ab764c8-a847-4ac4-994e-33a14c3d2467"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Beef Farm-Raised Pork Pork Meal Barley Oatmeal Ground Flaxseed Natural Pork Flavor Beef Liver Pork Fat (preserved with mixed tocopherols) Tomato Pomace Beef Kidney Grass-Fed Lamb Bison Free-Range Veni"
+    },
+    {
+      "product_ids": [
+        "5f531fd6-7094-4503-b850-0833ff2a131b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Natural Balance Limited Ingredient Diets Mini Rewards Chicken Formula Dog Treats, 5.3-oz jar \u2014 Turn anytime into treat time with the Natural Balance Limited Ingredient Diets Mini Rewards Soft & Chewy "
+    },
+    {
+      "product_ids": [
+        "ade7a4df-1c8a-4ad2-b312-d7dabc571d22"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Nulo Freestyle Lamb & Lentils Recipe Grain-Free Canned Dog Food, 13-oz, case of 12\u2014Dogs love this grain-free lamb & lentils recipe with a rich protein comibination of lamb, turkey and salmon complemen"
+    },
+    {
+      "product_ids": [
+        "a7d73548-cbf4-45c5-9d9b-b9e9111d413d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Made With Real Ingredients: This wet dog food topper is made with 4 key ingredients, providing your dog with a premium meal topper that is easy to digest, but hard for your dog to resist"
+    },
+    {
+      "product_ids": [
+        "5d7980ea-377f-4126-b106-d003c6178dc1"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken (Source Of Methionine-Cycstine, Chicken Meal, Tapioca Starch, Chicken Fat (Preserved With Mixed Tocopherols), Yeast Culture, Pumpkin Seed Flour, Turkey Meal, Duck Meal, Spray Dried Chicken Liv"
+    },
+    {
+      "product_ids": [
+        "ff852475-f6e9-4296-a7e5-cb5910ff7ccf"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Tuna Fillet (A Source Of Glucosamine), Fish Broth, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
+    },
+    {
+      "product_ids": [
+        "b3135c6d-8bc2-49d1-925f-695af781561b"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Whether you're looking to enhance your dog's current diet, add variety to mealtime, or simply stock up on high-value training rewards, this bundle gives you everything you need in one complete package"
+    },
+    {
+      "product_ids": [
+        "23fde7f1-5a16-48c3-a3a9-59e22facb5eb"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Turkey Meal (A Natural Source of Glucosamine and Chondroitin), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples,"
+    },
+    {
+      "product_ids": [
+        "1a7d3976-8205-4cf9-bb1d-96b46552371d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Flavor: Unavailable with 12.5-oz can, case of 24 BeefSee available optionsUnavailable with 12.5-oz can, case of 24 Beef & ChickenSee available optionsUnavailable with 12.5-oz can, case of 24 ChickenSe"
+    },
+    {
+      "product_ids": [
+        "5759a623-1a8e-4fad-a61f-50a2b6725b95"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PetAg KMR Kitten Milk Replacer Powder - 6 oz - Powdered Kitten Formula with Prebiotics, Probiotics & Vitamins for Kittens Newborn to Six Weeks Old - Easy to Digest"
+    },
+    {
+      "product_ids": [
+        "8d2aa24b-9b8f-4899-866e-3611ba6647c8"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Give your best buddy a hearty choice of meals with Pedigree Chopped Ground Dinner Variety Pack with Chicken, Filet Mignon & Beef + Variety Pack with Chicken, Beef & Bacon Wet Dog Food. Made with a gro"
+    },
+    {
+      "product_ids": [
+        "0feeeca8-59fb-4362-be98-637a329d936b",
+        "8c631b51-f90d-4761-861c-73cad1b18d09"
+      ],
+      "status": "contaminated",
+      "raw_preview": "as sources of color. In short, Milk-Bone MaroSnacks dog snacks are delicious treats you can feel good about giving.Original Biscuits: Make your dog\u2032s life more fun with delicious dog snacks from a bra"
+    },
+    {
+      "product_ids": [
+        "e2ac33cd-41af-4ee7-ac90-bdd6507e8135"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Breast Recipe (Chicken Breast, Chicken Broth, Rice); Tuna Fillet Recipe (Tuna Fillet, Fish Broth, Rice); Ocean Fish Recipe (Mackerel, Tuna Fillet, Fish Broth, Rice)"
+    },
+    {
+      "product_ids": [
+        "e6c5060e-daf6-42bf-abde-48485d409dbe"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": ", these treats stand out as a healthy choice for your cat, making them a great dry cat treats that support overall health and wellness. Each small batch of treats undergoes rigorous quality control an"
+    },
+    {
+      "product_ids": [
+        "1f559060-2f65-4850-88f3-5be1366fb8c4"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "with Chicken & Salmon (Natural Chicken Broth, Chicken, Salmon, Modified Tapioca Starch, Natural Flavor, Guar Gum, Tuna Oil, Salmon Oil, Vitamin E(A-Tocopherol Acetate), Taurine, Green Tea Extract), wi"
+    },
+    {
+      "product_ids": [
+        "c1333326-caf4-41b9-91e2-de1cd46a4db8"
       ],
       "status": "no_valid_tokens",
       "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
     },
     {
       "product_ids": [
-        "be9fb94a-e2c5-45d2-ba1e-2e2a7b13191b"
+        "30c3488b-2586-4712-b955-1fe9626bb690"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Pet-Ag Goat's Milk KMR Kitten Milk Replacer Liquid - 11 oz - Liquid Kitten Formula with Vitamins, Minerals & Trace Nutrients for Kittens Newborn to Six Weeks Old - Easy to Digest"
+    },
+    {
+      "product_ids": [
+        "dafb8730-ce51-4efa-bcf4-a61fc4bd228f"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Cloud Star Chewy Tricky Trainers Liver Flavor Dog Treats, 14-oz bag\u2014Who says you can't teach an old dog new tricks? Young or old, dogs will flip for the amazing taste of Cloud Star's Tricky Trainers. "
+    },
+    {
+      "product_ids": [
+        "79077497-12d6-426e-8022-f70931970126"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Good 'n' Fun Triple Flavor Kabobs Chicken, Duck & Chicken Liver Dog Chews, 18 count\u2014Good 'n' Fun has created the ultimate rawhide treat with their Triple Flavor Kabobs Chicken, Duck & Chicken Liver Do"
+    },
+    {
+      "product_ids": [
+        "e1f1cf68-2172-41fb-80e6-512534ad9cef"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Help your furry friend enjoy his day! Each purchase comes with Rachael Ray Nutrish Natural Chicken & Veggies Recipe Dry Dog Food, 40-lb bag & Rachael Ray Nutrish Soup Bones Chicken & Veggies Flavor Do"
+    },
+    {
+      "product_ids": [
+        "0fac1451-48a0-4a73-88bb-30b437884a34"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", including honey and spirulina. These dog dental CHEWS contain no artificial flavors, colors or preservatives. Dogs love the chewy texture, and our mini dog CHEWS have the delicious chicken flavor he"
+    },
+    {
+      "product_ids": [
+        "87e56826-b1a7-4fdb-92fa-2b7b4ccc0f91"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+    },
+    {
+      "product_ids": [
+        "5ed24069-cb89-4ab2-aa94-0198c8695862"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "The Tiki Cat Queen Emma Luau Variety Pack Grain-Free Canned Cat Food calories per recipe is as follows: Tilapia 83 calories per can, Napili Luau Wild Salmon & Chicken 71calories per can, Hanalei Luau "
+    },
+    {
+      "product_ids": [
+        "c3dfb3b6-5737-471c-a081-6bc66bf35682"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), wheat flour, whole grain ground corn, rice bran, grain sorghum, dried plain beet pulp, chicken fat (preserved with mixed tocopherols), egg product, d"
+    },
+    {
+      "product_ids": [
+        "a08cde6a-c07e-419b-b869-610a2880c107"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "For more information about how we source all of our ingredients, check out Every Ingredient has a Purpose."
+    },
+    {
+      "product_ids": [
+        "5cb05e56-e509-4c56-922e-d1edd69eb404"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Buddy Biscuits Softies with Grilled Beef Grain-Free Soft & Chewy Dog Treats, 5-oz bag\u2014Each snack is oven-baked for a bold and drool-worthy flavor.Buddy Biscuits Softies with Grilled Beef Grain-Free So"
+    },
+    {
+      "product_ids": [
+        "f04bd6ad-606b-4a0e-acee-360fe1ee074f"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similar1000+ bought since yesterday Ol' Roy Munchy Bone Dog Treats, Bacon and Cheese Flavor, 20 oz, 7 Count $7.32Options from$732\u2013 $31330Ol' Ro"
+    },
+    {
+      "product_ids": [
+        "13230176-c584-4c64-b112-20896461da9b"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+    },
+    {
+      "product_ids": [
+        "59a30ad1-87c5-4901-b9a6-7e3a86208904"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similarPurina Friskies lil' Lickables With Chicken Lickable Cat Treats, 2 oz. $2.37 29.6 \u00a2/oz$237current price $2.3729.6 \u00a2/ozPurina Friskies li"
+    },
+    {
+      "product_ids": [
+        "770ade5b-a1d4-4500-aa8d-3f0821ae12c8"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Made in the USA.Pup-Peroni Original Beef Flavor Dog Treats, 22.5-oz bag\u2014Dog treats for training and everyday treating.Pup-Peroni Original Bacon "
+    },
+    {
+      "product_ids": [
+        "e2088903-a955-4274-a79d-469705ca993f"
+      ],
+      "status": "contaminated",
+      "raw_preview": "into the paw print mold and place it in the oven or freezer. Even kitchen novices can easily use silicone treat molds for dogs. After use, you can hand wash the dog treat silicone baking molds directl"
+    },
+    {
+      "product_ids": [
+        "ad15015e-5151-4d98-a38b-da7999d33342"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Breast Dinner (Chicken, Chicken Broth, Natural Flavor, Sunflower Oil, Xanthan Gum, Locust Bean Gum, Tricalcium Phosphate, Potato Starch, Choline Chloride, Taurine, Zinc Sulfate, Ferrous Sulfat"
+    },
+    {
+      "product_ids": [
+        "fa07d996-8cbc-4f50-9fdd-422a2aba2add"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Temptations Tasty Chicken Flavor Cat Treats, 30-oz tub\u2014Tempt your kitty with the scrumptious taste and enticing texture of Temptations Tasty Chicken Flavor Cat Treats. These unique little pocket-shape"
+    },
+    {
+      "product_ids": [
+        "d345e6e6-7fa2-4892-8dbb-a0dd30897c14"
+      ],
+      "status": "contaminated",
+      "raw_preview": "as sources of color. In short, Milk-Bone MaroSnacks dog snacks are delicious treats you can feel good about giving. Order now to give your dog the simple, genuine joy that your dog gives you every day"
+    },
+    {
+      "product_ids": [
+        "0151eca3-84a3-4a38-a0f8-b31e1e8420f7"
+      ],
+      "status": "contaminated",
+      "raw_preview": "The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food, 10.5-oz, case of 6 \u2014 The Honest Kitchen Butcher Block Pate Chicken & Super Greens Pate Wet Dog Food is a doggone easy wa"
+    },
+    {
+      "product_ids": [
+        "dbc61c26-5286-4721-b4e5-85b21535e484",
+        "9d12c3f2-2fd8-47fb-a297-6602588ee44b"
       ],
       "status": "no_valid_tokens",
       "raw_preview": "Every Inaba product is made with yummy, high-quality ingredients including farm-raised chicken and/or wild-caught tuna.Each delicious, creamy Churu tube contains 91% moisture and only six calories, wh"
     },
     {
       "product_ids": [
-        "aefd3ffc-21b3-4f37-81d7-86220902859c"
+        "b9cd5a94-8326-4378-82e8-05f580beb76a"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "Lamb Meal Burbank Potato Norkotah Potato Chicken Fat (Preserved With Mixed Tocopherols) Whole Blueberries Brewer's Dried Yeast Calcium Propionate (A Preservative) Rosemary Extract."
+      "raw_preview": "Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls Dog Chews, 2 count\u2014Good 'n' Fun Triple Flavor Chews with Beef, Pork & Chicken Rolls treat pups to a delicious combination of three favo"
     },
     {
       "product_ids": [
-        "c72ea863-b6f1-47c6-b83e-0925f8c9c3dc"
-      ],
-      "status": "no_valid_tokens",
-      "raw_preview": "New Zealand Grass-fed Lamb Green Tripe."
-    },
-    {
-      "product_ids": [
-        "b63bc464-77f2-4872-bcf5-e0d980b99a27"
+        "6b1b13e6-4c3d-4fa5-9ef5-b2f277b1bd9a"
       ],
       "status": "no_valid_tokens",
       "raw_preview": "PureBites Shrimp Freeze-Dried Raw Cat Treats, 0.38-oz bag\u2014It's true\u2014PureBites Shrimp Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feeding your furbaby"
     },
     {
       "product_ids": [
-        "e4150aa7-ca3b-4783-82ef-cb8d6cd0e7de"
+        "15ed778d-9e83-46ec-93ae-c93efab81b44"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, chicken fat (preserved with mixed tocopherols), dried plain beet pulp, egg product, natural flavor, flaxseed, f"
     },
     {
       "product_ids": [
-        "56d5c77b-870d-4ee6-a146-de6232463908"
+        "80602ba8-90ad-4660-a5d3-bf5a9deecc95"
       ],
-      "status": "no_valid_tokens",
-      "raw_preview": "PureBites Chicken Breast Freeze-Dried Raw Cat Treats, 2.3-oz bag\u2014It's true\u2014PureBites Chicken Breast Freeze-Dried Raw Cat Treats are made with just one ingredient, so you know exactly what you're feedi"
+      "status": "contaminated",
+      "raw_preview": "without plastics or polymers. They are edible and digestible with an irresistible taste dogs love. Raised dental ridges safely scrub the teeth clean. Can be used as a snack anytime or inside the Everl"
     },
     {
       "product_ids": [
-        "714a3a2c-b199-4646-bff9-003f5533891b"
+        "8794fd27-ee76-443c-b640-9d8c28584364"
+      ],
+      "status": "contaminated",
+      "raw_preview": "Sorry, this item is out of stockBrowse similar itemsShop similarHartz Delectables Lickable Spoon, Interactive Wet Cat Treats, Salmon 8ct $5.96$596current price $5.96Hartz Delectables Lickable Spoon, I"
+    },
+    {
+      "product_ids": [
+        "d1ead04e-13b6-4fc9-b99c-2e8995dd7eae"
       ],
       "status": "no_valid_tokens",
-      "raw_preview": "100% Freeze Dried Raw Chicken Liver."
+      "raw_preview": "N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats, 6 count\u2014Satisfy your furry young friend's natural need to gnaw and soothe his sore gums with N-Bone Puppy Teething Ring Pumpkin Flavor Dog Treats."
+    },
+    {
+      "product_ids": [
+        "6449b340-3317-4814-986f-c06202c24f20"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Questions & AnswersAsk a Question 4 Customer Questionswhat is the phosphorus levelAnswer by Chewy \u2022 Aug 12, 2022The Dry Matter Phosphorus levels in these options are: Beef: 4.20% Chicken: 0.47% Duck a"
+    },
+    {
+      "product_ids": [
+        "99b31254-c86d-4986-9888-03cbe69ae3e2"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken Breast Bone Broth (Chicken Breast, Chicken Broth); Fish Broth with Tuna Fillet Bone Broth (Tuna Fillet, Fish Broth); Fish Bone Broth With Salmon Topper"
+    },
+    {
+      "product_ids": [
+        "395c54ab-4ccf-4806-adc8-af3ca24a982a"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Solid Gold Flavorful Feast Real Tuna & Sardine Grain-Free Gravy Pate Wet Cat Food, 3-oz can, case of 3\u2014Refine your furry friend's palate with a bowl of Solid Gold Flavorful Feast in Gravy with Real Tu"
+    },
+    {
+      "product_ids": [
+        "a7565700-ab86-4ffc-be96-0db7871724c0"
+      ],
+      "status": "contaminated",
+      "raw_preview": "to support healthy digestion, strong teeth and gums, vibrant skin and coat, and stamina. The wet food pouches are cooked in small batches with only the finest ingredients for unmatched nutrition and t"
+    },
+    {
+      "product_ids": [
+        "def9b093-a517-4439-8ada-cace620ee349"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Salmon Meal (A Natural Source of Omega-3 Fatty Acids), Peas, Tapioca, Pea Starch, Honey, Glycerin, Butternut Squash, Flaxseed, Bone Broth, Canola Oil, Natural Flavors, Phosphoric Acid, Apples, Blueber"
+    },
+    {
+      "product_ids": [
+        "59b83604-a21f-4774-b9c6-8dda0cb9b164"
+      ],
+      "status": "contaminated",
+      "raw_preview": "PRIOR to usage. This is a non-perishable food product. See outside of package for the exact \"best by date\", as date will vary based on date of purchase. Note that a \"best by date\" is NOT an \"expiratio"
+    },
+    {
+      "product_ids": [
+        "687aaf18-d5d4-492e-b4c1-61d89a92bdef"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", ensuring that every bite is clean and healthy for your furry friend. By using this silicone dog treat mold, you can create pollution-free treats tailored to your pet's taste. Keep changing the food "
+    },
+    {
+      "product_ids": [
+        "ec60094f-3117-4db2-aff4-7f158e0621c0"
+      ],
+      "status": "contaminated",
+      "raw_preview": "\"Temptations Seafood Medley Flavor Adult Dry Cat Food, 13.5-lb bag\u2014Your kitty will be meowing with delight when you serve her Temptations Seafood Medley Flavor Adult Dry Cat Food. This purr-fect meal "
+    },
+    {
+      "product_ids": [
+        "b0d6cab3-7e90-483a-b688-698739812802"
+      ],
+      "status": "contaminated",
+      "raw_preview": "you care about and the tastes cats love. Delicate sauces add flavor and moisture to every tender bite of the three adult cat food entrees, giving your cat an exciting sensory experience along with hig"
+    },
+    {
+      "product_ids": [
+        "86a41258-bf1c-4912-b9b3-6b2ded4bbcaa"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken by-product meal (a source of glucosamine), whole grain ground corn, wheat flour, rice bran, chicken fat (preserved with mixed tocopherols), meat meal (a source of glucosamine), dried yeast, dr"
+    },
+    {
+      "product_ids": [
+        "88889e50-25e0-4d70-8755-23c826080c9a"
+      ],
+      "status": "contaminated",
+      "raw_preview": ", protein variety, and uncompromising quality. This thoughtfully paired duo combines two of our most popular single-ingredient treats to deliver natural flavor, high protein, and rotational nutrition "
+    },
+    {
+      "product_ids": [
+        "3e137ba3-cc1b-401c-b858-18e9f1329318"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Chicken (A Source Of Glucosamine & Chondroitin Sulphate), Chicken Broth, Chicken Liver, Pumpkin, Dried Egg, Salmon Oil, Natural Fish Flavor, Potato Starch, Guar Gum, Cranberry Extract."
+    },
+    {
+      "product_ids": [
+        "891688d1-aa97-422e-93b2-a3d94fcde89d"
+      ],
+      "status": "no_valid_tokens",
+      "raw_preview": "Mealtime is always a highlight of a hound's day, especially when you serve Pedigree Choice Cuts in Gravy Variety Pack + Chopped Ground Dinner Variety Pack Adult Wet Dog Food Pouches! Together, these v"
     }
   ],
   "dict_insert_errors": [],
   "junction_insert_errors": [],
   "summary": {
-    "products_processed": 6434,
-    "unique_formulas": 5829,
-    "total_positions": 169258,
-    "matched_positions": 167044,
-    "match_rate_pct": 98.7,
-    "new_ingredients_found": 883,
-    "new_ingredients_inserted": 883,
-    "pi_rows_inserted": 169258,
+    "products_processed": 86,
+    "unique_formulas": 77,
+    "total_positions": 0,
+    "matched_positions": 0,
+    "match_rate_pct": 0,
+    "new_ingredients_found": 0,
+    "new_ingredients_inserted": 0,
+    "pi_rows_inserted": 0,
     "pi_dupes_skipped": 0,
     "pi_errors": 0,
     "status_breakdown": {
-      "clean": 5409,
-      "contaminated": 281,
-      "truncated": 139
+      "clean": 36,
+      "contaminated": 31,
+      "truncated": 10
     },
-    "match_tiers": {
-      "exact": 152386,
-      "fuzzy": 7186,
-      "new": 2072,
-      "empty": 10
-    },
+    "match_tiers": {},
     "v2_stats": {
-      "variety_packs_split": 413,
-      "total_recipes": 1244,
-      "tokens_rejected": 2988,
-      "conjunctions_stripped": 204,
-      "preservatives_extracted": 1475,
+      "variety_packs_split": 0,
+      "total_recipes": 0,
+      "tokens_rejected": 428,
+      "conjunctions_stripped": 15,
+      "preservatives_extracted": 6,
       "space_delimited_fixed": 0
     }
   }

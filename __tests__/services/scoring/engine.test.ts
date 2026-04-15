@@ -1,7 +1,7 @@
 import { computeScore } from '../../../src/services/scoring/engine';
 import type { Product, PetProfile } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
-import { Category, Species, LifeStage } from '../../../src/types';
+import { Category, Species, LifeStage, PreservativeType } from '../../../src/types';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -14,8 +14,9 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     target_species: Species.Dog,
     source: 'curated',
     aafco_statement: 'All Life Stages',
+    aafco_inference: null,
     life_stage_claim: null,
-    preservative_type: 'natural',
+    preservative_type: PreservativeType.Natural,
     ga_protein_pct: 26,
     ga_fat_pct: 16,
     ga_fiber_pct: 4,
@@ -40,13 +41,23 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    product_form: null,
     is_supplemental: false,
     is_vet_diet: false,
+    base_score: null,
+    base_score_computed_at: null,
     score_confidence: 'high',
     needs_review: false,
     last_verified_at: null,
     formula_change_log: null,
     affiliate_links: null,
+    source_url: null,
+    chewy_sku: null,
+    asin: null,
+    walmart_id: null,
+    price: null,
+    price_currency: null,
+    product_size_kg: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -71,6 +82,17 @@ function makePet(overrides: Partial<PetProfile> = {}): PetProfile {
     breed_size: null,
     life_stage: LifeStage.Adult,
     photo_url: null,
+    health_reviewed_at: null,
+    weight_goal_level: null,
+    caloric_accumulator: null,
+    accumulator_last_reset_at: null,
+    accumulator_notification_sent: null,
+    bcs_score: null,
+    bcs_assessed_at: null,
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -283,8 +305,8 @@ describe('computeScore — Orchestrator', () => {
     // columns — fields are undefined, not null. Must fall through to ash defaults.
     const product = makeProduct();
     // Delete the fields to simulate missing DB columns
-    delete (product as Record<string, unknown>).ga_calcium_pct;
-    delete (product as Record<string, unknown>).ga_phosphorus_pct;
+    delete (product as unknown as Record<string, unknown>).ga_calcium_pct;
+    delete (product as unknown as Record<string, unknown>).ga_phosphorus_pct;
     const ingredients = [makeIngredient({ position: 1, canonical_name: 'chicken' })];
     const result = computeScore(product, ingredients);
     expect(result.carbEstimate).not.toBeNull();
@@ -348,7 +370,7 @@ describe('computeScore — Orchestrator', () => {
       target_species: Species.Dog,
       is_grain_free: true,
       aafco_statement: 'yes',
-      preservative_type: 'natural',
+      preservative_type: PreservativeType.Natural,
       ga_protein_pct: 24,
       ga_fat_pct: 15,
       ga_fiber_pct: 5,
@@ -357,17 +379,17 @@ describe('computeScore — Orchestrator', () => {
 
     // Key scoring-relevant ingredients from Walmart bag (42 total, neutrals omitted for brevity)
     const ingredients: ProductIngredient[] = [
-      makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
-      makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish' }),
+      makeIngredient({ position: 1,  canonical_name: 'salmon',           dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
+      makeIngredient({ position: 2,  canonical_name: 'salmon_meal',      dog_base_severity: 'good',    cluster_id: 'protein_salmon', allergen_group: 'fish', is_protein_fat_source: true }),
       makeIngredient({ position: 3,  canonical_name: 'peas',             dog_base_severity: 'caution', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
       makeIngredient({ position: 4,  canonical_name: 'potato',           dog_base_severity: 'neutral' }),
       makeIngredient({ position: 5,  canonical_name: 'sweet_potato',     dog_base_severity: 'neutral' }),
-      makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution' }),
+      makeIngredient({ position: 6,  canonical_name: 'poultry_fat',      dog_base_severity: 'caution', is_protein_fat_source: true }),
       makeIngredient({ position: 7,  canonical_name: 'pea_starch',       dog_base_severity: 'neutral', cluster_id: 'legume_pea',     allergen_group: 'pea',  is_legume: true, is_pulse: true }),
-      makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true }),
+      makeIngredient({ position: 8,  canonical_name: 'fish_meal',        dog_base_severity: 'caution', allergen_group: 'fish', is_unnamed_species: true, is_protein_fat_source: true }),
       makeIngredient({ position: 9,  canonical_name: 'dried_yeast',      dog_base_severity: 'neutral' }),
       makeIngredient({ position: 10, canonical_name: 'beet_pulp',        dog_base_severity: 'good' }),
-      makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false }),
+      makeIngredient({ position: 11, canonical_name: 'natural_flavor',   dog_base_severity: 'caution', is_unnamed_species: true, position_reduction_eligible: false, is_protein_fat_source: true }),
       makeIngredient({ position: 12, canonical_name: 'flaxseed',         dog_base_severity: 'good',    cluster_id: 'seed_flax' }),
       makeIngredient({ position: 13, canonical_name: 'salt',             dog_base_severity: 'caution' }),
       makeIngredient({ position: 14, canonical_name: 'dicalcium_phosphate', dog_base_severity: 'good' }),
@@ -384,46 +406,46 @@ describe('computeScore — Orchestrator', () => {
     test('full breakdown → 62 (D-137: DCM fires, mitigation applies)', () => {
       const result = computeScore(product, ingredients, pet);
 
-      // Layer 1a: IQ = 57.6
-      //   peas (3, caution, eligible):              −8 × 1.0  = −8
-      //   poultry_fat (6, caution, eligible):       −8 × 0.7  = −5.6
-      //   fish_meal (8, caution, eligible):         −8 × 0.7  = −5.6
-      //   fish_meal (unnamed):                      −2         = −2
-      //   natural_flavor (11, caution, NOT elig):   −8 × 1.0  = −8
-      //   natural_flavor (unnamed):                 −2         = −2
-      //   salt (13, caution, eligible):             −8 × 0.4  = −3.2
-      //   copper_sulfate (33, caution, NOT elig):   −8 × 1.0  = −8
-      //   Total: −42.4 → IQ = 57.6
-      expect(result.layer1.ingredientQuality).toBeCloseTo(57.6, 1);
+      // Layer 1a: IQ = 48
+      //   peas (3, caution, eligible):              −10 × 1.0  = −10
+      //   poultry_fat (6, caution, eligible):       −10 × 0.7  = −7
+      //   fish_meal (8, caution, eligible):         −10 × 0.7  = −7
+      //   fish_meal (unnamed):                      −2          = −2
+      //   natural_flavor (11, caution, NOT elig):   −10 × 1.0  = −10
+      //   natural_flavor (unnamed):                 −2          = −2
+      //   salt (13, caution, eligible):             −10 × 0.4  = −4
+      //   copper_sulfate (33, caution, NOT elig):   −10 × 1.0  = −10
+      //   Total: −52 → IQ = 48
+      expect(result.layer1.ingredientQuality).toBeCloseTo(48, 1);
 
       // Layer 1b: NP = 79
       expect(result.layer1.nutritionalProfile).toBe(79);
 
-      // Layer 1c: FC = 63
-      expect(result.layer1.formulation).toBe(63);
+      // Layer 1c: FC = 65 (AAFCO 50×0.5 + preservative 100×0.25 + proteinNaming 60×0.25)
+      expect(result.layer1.formulation).toBe(65);
 
-      // Weighted: (57.6×0.55) + (79×0.30) + (63×0.15) = 31.68 + 23.7 + 9.45 = 64.83 → 65
-      expect(result.layer1.weightedComposite).toBeCloseTo(64.8, 1);
+      // Weighted: (48×0.55) + (79×0.30) + (65×0.15) = 26.4 + 23.7 + 9.75 = 59.85
+      expect(result.layer1.weightedComposite).toBeCloseTo(59.9, 1);
 
       // Layer 2 — D-137: DCM fires (Rule 1: peas at pos 3; Rule 2: 2 pulses in top 10)
       const dcm = result.layer2.appliedRules.find(r => r.ruleId === 'DCM_ADVISORY');
       expect(dcm).toBeDefined();
       expect(dcm!.fired).toBe(true);
-      // DCM: −round(65 × 0.08) = −round(5.2) = −5
+      // DCM: −round(60 × 0.08) = −round(4.8) = −5
       expect(dcm!.adjustment).toBe(-5);
 
       // Mitigation fires: taurine (pos 17) + l_carnitine (pos 40)
       const mitigation = result.layer2.appliedRules.find(r => r.ruleId === 'TAURINE_MITIGATION');
       expect(mitigation).toBeDefined();
       expect(mitigation!.fired).toBe(true);
-      // Mitigation: +round(65 × 0.03) = +round(1.95) = +2
+      // Mitigation: +round(60 × 0.03) = +round(1.8) = +2
       expect(mitigation!.adjustment).toBe(2);
 
       // L2 net: −5 + 2 = −3
       expect(result.layer2.speciesAdjustment).toBe(-3);
 
-      // Final: 65 − 3 = 62
-      expect(result.finalScore).toBe(62);
+      // Final: 60 − 3 = 57
+      expect(result.finalScore).toBe(57);
     });
   });
 
@@ -435,7 +457,7 @@ describe('computeScore — Orchestrator', () => {
       target_species: Species.Cat,
       is_grain_free: false,
       aafco_statement: null,
-      preservative_type: 'synthetic',
+      preservative_type: PreservativeType.Synthetic,
       // GA doesn't matter for treats (100% IQ weight)
       ga_protein_pct: 30,
       ga_fat_pct: 17,

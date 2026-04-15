@@ -61,6 +61,7 @@ const P1: Product = {
   needs_review: false,
   base_score: null, base_score_computed_at: null,
   last_verified_at: null, formula_change_log: null, affiliate_links: null,
+  price: null, price_currency: null, product_size_kg: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
 } as Product;
 
@@ -118,13 +119,14 @@ const P2: Product = {
   needs_review: false,
   base_score: null, base_score_computed_at: null,
   last_verified_at: null, formula_change_log: null, affiliate_links: null,
+  price: null, price_currency: null, product_size_kg: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
 } as Product;
 
 // First recipe only (Hearty Cuts Chicken & Fish) — positions 1-35
 const P2_INGREDIENTS: ProductIngredient[] = [
   ing(1, 'water', { cat_base_severity: 'neutral' }),
-  ing(2, 'meatbyproducts', { cat_base_severity: 'neutral' }),
+  ing(2, 'meat_by_products', { cat_base_severity: 'neutral' }),
   ing(3, 'chicken', { cat_base_severity: 'good', is_protein_fat_source: true }),
   ing(4, 'fish', { cat_base_severity: 'neutral' }),
   ing(5, 'wheat_flour', { cat_base_severity: 'caution', position_reduction_eligible: true }),
@@ -149,9 +151,15 @@ const DOG_PET = {
   breed: 'Labrador Retriever', date_of_birth: '2021-04-10',
   dob_is_approximate: false, weight_current_lbs: 72, weight_goal_lbs: null,
   weight_updated_at: null, activity_level: 'moderate' as const,
-  is_neutered: true, sex: 'male', breed_size: 'large',
+  is_neutered: true, sex: 'male' as const, breed_size: 'large' as const,
   life_stage: LifeStage.Adult, photo_url: null,
-  health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
+  health_reviewed_at: null,
+  weight_goal_level: null, caloric_accumulator: null,
+  accumulator_last_reset_at: null, accumulator_notification_sent: null,
+  bcs_score: null, bcs_assessed_at: null,
+  feeding_style: 'dry_only' as const, wet_reserve_kcal: 0, wet_reserve_source: null,
+  wet_intent_resolved_at: null,
+  created_at: '2026-01-01', updated_at: '2026-01-01',
 };
 
 const CAT_PET = {
@@ -159,9 +167,15 @@ const CAT_PET = {
   breed: 'Domestic Shorthair', date_of_birth: '2019-08-15',
   dob_is_approximate: true, weight_current_lbs: 11, weight_goal_lbs: null,
   weight_updated_at: null, activity_level: 'low' as const,
-  is_neutered: true, sex: 'female', breed_size: null,
+  is_neutered: true, sex: 'female' as const, breed_size: null,
   life_stage: LifeStage.Mature, photo_url: null,
-  health_reviewed_at: null, created_at: '2026-01-01', updated_at: '2026-01-01',
+  health_reviewed_at: null,
+  weight_goal_level: null, caloric_accumulator: null,
+  accumulator_last_reset_at: null, accumulator_notification_sent: null,
+  bcs_score: null, bcs_assessed_at: null,
+  feeding_style: 'dry_only' as const, wet_reserve_kcal: 0, wet_reserve_source: null,
+  wet_intent_resolved_at: null,
+  created_at: '2026-01-01', updated_at: '2026-01-01',
 };
 
 // ─── Tests ────────────────────────────────────────────────────

@@ -1,0 +1,26 @@
+# Build artifacts and dependencies
+node_modules/
+dist/
+web-build/
+.expo/
+ios/
+android/
+coverage/
+__pycache__/
+
+# Historical docs (stale — never needed for active work)
+docs/archive/
+
+# Large binary/data files
+data/
+*.xlsx
+*.docx
+*.zip
+assets/images/
+assets/fonts/
+
+# Generated/temp
+.DS_Store
+supabase/.temp/
+*.pyc
+package-lock.json

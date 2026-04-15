@@ -1,10 +1,11 @@
 // Kiba — Health Conditions & Allergen Picker (M2 Session 3)
 // Reached from CreatePetScreen "Continue to Health" or EditPetScreen "Health & Diet".
-// D-097: Species-filtered conditions + allergens. D-119: "Perfectly Healthy" chip.
+// D-097: Species-filtered conditions + allergens. D-119: "No known conditions" chip.
 // D-106: Obesity/underweight disabled-state mutual exclusion.
+// M6: hypothyroid/hyperthyroid mutual exclusion + species rarity toasts.
 // D-095: No prescriptive language — data-mapping framing only.
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +21,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { chipToggle, saveSuccess, profileComplete } from '../utils/haptics';
 import {
@@ -28,6 +30,9 @@ import {
   savePetConditions,
   savePetAllergens,
   updatePet,
+  getConditionDetails,
+  upsertConditionDetail,
+  deleteConditionDetail,
 } from '../services/petService';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import {
@@ -35,25 +40,47 @@ import {
   getAllergensForSpecies,
   HEALTHY_TAG,
 } from '../data/conditions';
+import { shouldClampLevel } from '../utils/weightGoal';
 import {
   toggleCondition,
   isConditionDisabled,
-  isAllergenSectionVisible,
+  getConditionToast,
   toggleAllergen,
   removeAllergen,
   conditionsToSavePayload,
   allergensToSavePayload,
   isProfileComplete,
 } from '../utils/conditionLogic';
+import type { PetConditionDetail } from '../types/pet';
 import type { SelectedAllergen } from '../utils/conditionLogic';
-import ConditionChip from '../components/ConditionChip';
-import AllergenSelector from '../components/AllergenSelector';
+import ConditionChip from '../components/pet/ConditionChip';
+import AllergenSelector from '../components/pet/AllergenSelector';
 import type { MeStackParamList } from '../types/navigation';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'HealthConditions'>;
 
 export default function HealthConditionsScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const { petId, fromCreate } = route.params;
+
+  // Hide tab bar on this pushed screen
+  useLayoutEffect(() => {
+    const parent = navigation.getParent();
+    parent?.setOptions({ tabBarStyle: { display: 'none' } });
+    return () => {
+      parent?.setOptions({
+        tabBarStyle: {
+          position: 'absolute' as const,
+          backgroundColor: 'transparent',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          borderTopWidth: 1,
+          height: 88,
+          paddingBottom: 28,
+          paddingTop: 8,
+        },
+      });
+    };
+  }, [navigation]);
 
   // ─── Pet Data ────────────────────────────────────────────
   const pet = useActivePetStore((s) => s.pets.find((p) => p.id === petId));
@@ -67,24 +94,29 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // M6: sub-type tracking for conditions that have sub-types (e.g., hyperthyroid)
+  const [conditionSubTypes, setConditionSubTypes] = useState<Record<string, string>>({});
+  // Track which conditions had details before this session (for delete sync)
+  const [existingDetailConditions, setExistingDetailConditions] = useState<Set<string>>(new Set());
+
   // ─── Data ────────────────────────────────────────────────
   const conditions = getConditionsForSpecies(species);
   const standardAllergens = getAllergensForSpecies(species);
-  const showAllergens = isAllergenSectionVisible(selectedConditions);
 
   // ─── Load Existing ──────────────────────────────────────
   useEffect(() => {
     async function load() {
       try {
-        const [existingConditions, existingAllergens] = await Promise.all([
+        const [existingConditions, existingAllergens, existingDetails] = await Promise.all([
           getPetConditions(petId),
           getPetAllergens(petId),
+          getConditionDetails(petId).catch(() => [] as PetConditionDetail[]),
         ]);
 
         if (existingConditions.length > 0) {
           setSelectedConditions(existingConditions.map((c) => c.condition_tag));
         } else {
-          // D-119: 0 conditions + health_reviewed_at set = "Perfectly Healthy"
+          // D-119: 0 conditions + health_reviewed_at set = "No known conditions"
           // Read fresh from store — closure-captured `pet` may be stale after await
           const freshPet = useActivePetStore.getState().pets
             .find((p) => p.id === petId);
@@ -101,6 +133,18 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
             })),
           );
         }
+
+        // M6: Restore sub-types from condition details
+        if (existingDetails.length > 0) {
+          const subTypes: Record<string, string> = {};
+          const detailSet = new Set<string>();
+          for (const d of existingDetails) {
+            detailSet.add(d.condition);
+            if (d.sub_type) subTypes[d.condition] = d.sub_type;
+          }
+          setConditionSubTypes(subTypes);
+          setExistingDetailConditions(detailSet);
+        }
       } catch {
         // Silently fail — empty state is fine for fresh profiles
       } finally {
@@ -113,34 +157,72 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   // ─── Condition Handlers ────────────────────────────────
   const handleConditionToggle = useCallback(
     (tag: string) => {
-      chipToggle();
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
+      // M6: Check for toast (mutual exclusion or species rarity)
       setSelectedConditions((prev) => {
-        const next = toggleCondition(prev, tag);
-
-        // If "Perfectly Healthy" selected, clear allergens (full reset)
-        if (next.includes(HEALTHY_TAG)) {
-          setSelectedAllergens([]);
+        const toast = getConditionToast(tag, species, prev, petName);
+        if (toast) {
+          Alert.alert('Health Conditions', toast);
+          return prev;
         }
 
-        // Allergen state preserved on allergy deselect — only section
-        // visibility toggles. Orphaned allergens cleared at save time.
+        chipToggle();
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+        const next = toggleCondition(prev, tag);
+
+        // M6: Hyperthyroid sub-type question for cats
+        const isAdding = next.includes(tag) && !prev.includes(tag);
+        if (isAdding && tag === 'hyperthyroid' && species === 'cat') {
+          Alert.alert(
+            `How is ${petName}'s hyperthyroidism being managed?`,
+            undefined,
+            [
+              {
+                text: 'Iodine-restricted diet (e.g., Hill\'s y/d)',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'iodine_restricted' })),
+              },
+              {
+                text: 'Medication (e.g., methimazole)',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'medication_managed' })),
+              },
+              {
+                text: 'Surgery / radioactive iodine',
+                onPress: () => setConditionSubTypes((s) => ({ ...s, hyperthyroid: 'medication_managed' })),
+              },
+            ],
+          );
+        }
+
+        // Clean up sub-type if condition was removed
+        if (!next.includes(tag) && prev.includes(tag)) {
+          setConditionSubTypes((s) => {
+            const copy = { ...s };
+            delete copy[tag];
+            return copy;
+          });
+        }
 
         return next;
       });
     },
-    [],
+    [species, petName],
   );
 
   // ─── Allergen Handlers ─────────────────────────────────
   function handleAllergenToggle(name: string, isCustom: boolean) {
     chipToggle();
+    const isAdding = !selectedAllergens.some(a => a.name === name);
     setSelectedAllergens((prev) => toggleAllergen(prev, name, isCustom));
+    // Adding an allergen = a known condition → deselect "No known conditions"
+    if (isAdding) {
+      setSelectedConditions((prev) => prev.filter(t => t !== HEALTHY_TAG));
+    }
   }
 
   function handleOtherSelect(name: string) {
     setSelectedAllergens((prev) => toggleAllergen(prev, name, true));
+    // Adding from "Other" is always an add → deselect "No known conditions"
+    setSelectedConditions((prev) => prev.filter(t => t !== HEALTHY_TAG));
   }
 
   function handleRemoveCustom(name: string) {
@@ -149,21 +231,76 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
   }
 
   // ─── Save ──────────────────────────────────────────────
+  const savingRef = useRef(false);
+
   async function handleSave() {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const conditionTags = conditionsToSavePayload(selectedConditions);
+      // Auto-include 'allergy' when allergens exist
+      if (selectedAllergens.length > 0 && !conditionTags.includes('allergy')) {
+        conditionTags.push('allergy');
+      }
       await savePetConditions(petId, conditionTags);
 
-      if (selectedConditions.includes('allergy') && selectedAllergens.length > 0) {
+      if (selectedAllergens.length > 0) {
         await savePetAllergens(petId, allergensToSavePayload(selectedAllergens));
       } else {
-        // Clear orphaned allergens if allergy not selected
         await savePetAllergens(petId, []);
       }
 
-      // Mark health as reviewed (distinguishes "Perfectly Healthy" from "never visited")
+      // M6: Sync condition details — upsert for active conditions with sub-types,
+      // delete for conditions that were removed
+      const activeConditionSet = new Set(conditionTags);
+      const detailPromises: Promise<void>[] = [];
+
+      // Upsert details for conditions that have sub-types
+      for (const condition of conditionTags) {
+        if (conditionSubTypes[condition]) {
+          detailPromises.push(
+            upsertConditionDetail(petId, {
+              condition,
+              sub_type: conditionSubTypes[condition],
+              severity: 'moderate',
+              diagnosed_at: null,
+              notes: null,
+            }),
+          );
+        }
+      }
+
+      // Delete details for conditions that were removed
+      for (const condition of existingDetailConditions) {
+        if (!activeConditionSet.has(condition)) {
+          detailPromises.push(deleteConditionDetail(petId, condition));
+        }
+      }
+
+      // Fire-and-forget detail sync — don't block save on detail failures
+      if (detailPromises.length > 0) {
+        Promise.all(detailPromises).catch((err) =>
+          console.warn('[HealthConditions] Detail sync failed:', err),
+        );
+      }
+
+      // Mark health as reviewed (distinguishes "No known conditions" from "never visited")
       await updatePet(petId, { health_reviewed_at: new Date().toISOString() });
+
+      // D-160: Auto-reset weight goal level if new conditions conflict
+      if (pet) {
+        const currentLevel = pet.weight_goal_level ?? 0;
+        const clampedLevel = shouldClampLevel(currentLevel, pet.species, conditionTags);
+        if (clampedLevel !== currentLevel) {
+          await updatePet(petId, { weight_goal_level: 0 });
+          const reason = conditionTags.includes('obesity') ? 'overweight' : 'underweight';
+          Alert.alert(
+            'Weight Goal Reset',
+            `${petName}'s weight goal was reset to Maintain because they're marked as ${reason}.`,
+          );
+        }
+      }
 
       saveSuccess();
 
@@ -177,7 +314,18 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
       }
 
       if (fromCreate) {
-        navigation.navigate('MeMain');
+        navigation.getParent()?.setOptions({
+          tabBarStyle: {
+            position: 'absolute' as const,
+            backgroundColor: 'transparent',
+            borderTopColor: 'rgba(255,255,255,0.08)',
+            borderTopWidth: 1,
+            height: 88,
+            paddingBottom: 28,
+            paddingTop: 8,
+          },
+        });
+        navigation.popToTop();
       } else {
         navigation.goBack();
       }
@@ -185,6 +333,7 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
       Alert.alert('Error', (err as Error).message);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -209,11 +358,25 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
     );
   }
 
-  // ─── Custom allergens (from "Other" dropdown) ──────────
+  // ─── Derived state ──────────────────────────────────────
   const standardNames = standardAllergens.map((a) => a.name);
   const customAllergens = selectedAllergens.filter(
     (a) => a.isCustom && !standardNames.includes(a.name),
   );
+  const isHealthy = selectedConditions.includes(HEALTHY_TAG);
+  const gridConditions = conditions.filter(c => c.tag !== HEALTHY_TAG && c.tag !== 'allergy');
+  const healthyChip = conditions.find(c => c.tag === HEALTHY_TAG)!;
+
+  // Save button label — contextual count
+  const conditionCount = selectedConditions.filter(t => t !== HEALTHY_TAG && t !== 'allergy').length;
+  const allergenCount = selectedAllergens.length;
+  let saveLabel = 'Save & Continue';
+  if (conditionCount > 0 || allergenCount > 0) {
+    const parts: string[] = [];
+    if (conditionCount > 0) parts.push(`${conditionCount} condition${conditionCount > 1 ? 's' : ''}`);
+    if (allergenCount > 0) parts.push(`${allergenCount} allergen${allergenCount > 1 ? 's' : ''}`);
+    saveLabel = `Save \u00B7 ${parts.join(', ')}`;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -239,86 +402,109 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           {/* ── Section 1: Health Conditions ───────────────── */}
-          <View style={styles.card}>
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Health Conditions</Text>
-            <Text style={styles.sectionSubtitle}>
+            <Text style={styles.sectionInstruction}>
               Select any that apply to {petName}
             </Text>
-
-            <View style={styles.chipGrid}>
-              {conditions.map((cond) => (
-                <ConditionChip
-                  key={cond.tag}
-                  label={cond.label}
-                  icon={cond.icon}
-                  isSelected={selectedConditions.includes(cond.tag)}
-                  isSpecial={cond.tag === HEALTHY_TAG}
-                  disabled={isConditionDisabled(cond.tag, selectedConditions)}
-                  onToggle={() => handleConditionToggle(cond.tag)}
-                />
-              ))}
-            </View>
-
-            <Text style={styles.d095Subtext}>
+            <Text style={styles.trustCopy}>
               Tell us about {petName}'s health so we can check food ingredients
               against published guidelines.
             </Text>
-          </View>
 
-          {/* ── Section 2: Allergens (conditional) ─────────── */}
-          {showAllergens && (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Known Food Allergens</Text>
-              <Text style={styles.sectionSubtitle}>
-                Select allergens {petName} reacts to
-              </Text>
+            {/* "No known conditions" — standalone above grid */}
+            <ConditionChip
+              label={healthyChip.label}
+              icon={healthyChip.icon}
+              isSelected={isHealthy}
+              isSpecial
+              onToggle={() => handleConditionToggle(HEALTHY_TAG)}
+            />
+            <View style={styles.healthyGap} />
 
+            {/* Condition chips — dimmed when healthy is active */}
+            <View style={{ opacity: isHealthy ? 0.35 : 1 }}>
               <View style={styles.chipGrid}>
-                {standardAllergens.map((allergen) => (
+                {gridConditions.map((cond) => (
                   <ConditionChip
-                    key={allergen.name}
-                    label={allergen.label}
-                    isSelected={selectedAllergens.some(
-                      (a) => a.name === allergen.name,
-                    )}
-                    onToggle={() =>
-                      handleAllergenToggle(allergen.name, false)
-                    }
+                    key={cond.tag}
+                    label={cond.label}
+                    icon={cond.icon}
+                    isSelected={selectedConditions.includes(cond.tag)}
+                    disabled={isConditionDisabled(cond.tag, selectedConditions)}
+                    onToggle={() => handleConditionToggle(cond.tag)}
                   />
                 ))}
-                {/* "Other" chip — opens searchable dropdown */}
-                <ConditionChip
-                  label="Other"
-                  icon="add-outline"
-                  isSelected={customAllergens.length > 0}
-                  onToggle={() => setOtherSelectorVisible(true)}
-                />
               </View>
-
-              {/* Custom allergen chips (removable) */}
-              {customAllergens.length > 0 && (
-                <View style={styles.customChipRow}>
-                  {customAllergens.map((a) => (
-                    <TouchableOpacity
-                      key={a.name}
-                      style={styles.customChip}
-                      onPress={() => handleRemoveCustom(a.name)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.customChipText}>{a.name}</Text>
-                      <Ionicons
-                        name="close-circle"
-                        size={16}
-                        color={Colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
             </View>
-          )}
+          </View>
 
-          {/* ── Save Button ───────────────────────────────── */}
+          {/* ── Section Divider ─────────────────────────────── */}
+          <View style={styles.sectionDivider} />
+
+          {/* ── Section 2: Food Allergies (always visible) ──── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Food Allergies</Text>
+            <Text style={styles.sectionSubtitle}>
+              Does {petName} have any known food allergies?
+            </Text>
+
+            {allergenCount > 0 && (
+              <View style={styles.allergenSummary}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.severityGreen} />
+                <Text style={styles.allergenSummaryText}>
+                  {allergenCount} allergen{allergenCount > 1 ? 's' : ''} tracked
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.chipGrid}>
+              {standardAllergens.map((allergen) => (
+                <ConditionChip
+                  key={allergen.name}
+                  label={allergen.label}
+                  isSelected={selectedAllergens.some(
+                    (a) => a.name === allergen.name,
+                  )}
+                  onToggle={() =>
+                    handleAllergenToggle(allergen.name, false)
+                  }
+                />
+              ))}
+              {/* "Other" chip — opens searchable dropdown */}
+              <ConditionChip
+                label="Other"
+                icon="add-outline"
+                isSelected={customAllergens.length > 0}
+                onToggle={() => setOtherSelectorVisible(true)}
+              />
+            </View>
+
+            {/* Custom allergen chips (removable) */}
+            {customAllergens.length > 0 && (
+              <View style={styles.customChipRow}>
+                {customAllergens.map((a) => (
+                  <TouchableOpacity
+                    key={a.name}
+                    style={styles.customChip}
+                    onPress={() => handleRemoveCustom(a.name)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.customChipText}>{a.name}</Text>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={Colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* ── Fixed Footer ─────────────────────────────── */}
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <TouchableOpacity
             style={[styles.primaryButton, saving && styles.buttonDisabled]}
             onPress={handleSave}
@@ -328,20 +514,33 @@ export default function HealthConditionsScreen({ navigation, route }: Props) {
             {saving ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryButtonText}>Save & Continue</Text>
+              <Text style={styles.primaryButtonText}>{saveLabel}</Text>
             )}
           </TouchableOpacity>
 
           {fromCreate && (
             <TouchableOpacity
               style={styles.skipButton}
-              onPress={() => navigation.navigate('MeMain')}
+              onPress={() => {
+                navigation.getParent()?.setOptions({
+                  tabBarStyle: {
+                    position: 'absolute' as const,
+                    backgroundColor: 'transparent',
+                    borderTopColor: 'rgba(255,255,255,0.08)',
+                    borderTopWidth: 1,
+                    height: 88,
+                    paddingBottom: 28,
+                    paddingTop: 8,
+                  },
+                });
+                navigation.popToTop();
+              }}
               disabled={saving}
             >
               <Text style={styles.skipButtonText}>Skip for now</Text>
             </TouchableOpacity>
           )}
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       {/* ── Other Allergen Modal ────────────────────────── */}
@@ -397,25 +596,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.md,
   },
 
-  // Card
-  card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+  // Section (replaces card — no background/border, just spacing)
+  section: {
+    marginBottom: Spacing.lg,
   },
-
-  // Section
   sectionTitle: {
     fontSize: FontSizes.lg,
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
+  },
+  sectionInstruction: {
+    fontSize: FontSizes.sm,
+    color: Colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
   },
   sectionSubtitle: {
     fontSize: FontSizes.sm,
@@ -423,12 +621,44 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
 
-  // D-095 subtext
-  d095Subtext: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    marginTop: Spacing.md,
-    lineHeight: 16,
+  // Trust copy — above chips, readable color
+  trustCopy: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+
+  // Standalone healthy chip gap
+  healthyGap: {
+    height: 20,
+  },
+
+  // Section divider
+  sectionDivider: {
+    height: 1,
+    backgroundColor: Colors.hairlineBorder,
+    marginVertical: Spacing.lg,
+  },
+
+  // Allergen summary
+  allergenSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: Spacing.md,
+  },
+  allergenSummaryText: {
+    fontSize: FontSizes.sm,
+    color: Colors.severityGreen,
+    fontWeight: '600',
+  },
+
+  // Footer
+  footer: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    backgroundColor: Colors.background,
   },
 
   // Chip grid
@@ -468,7 +698,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.md,
   },
   primaryButtonText: {
     fontSize: FontSizes.lg,
@@ -476,7 +705,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   skipButton: {
     alignItems: 'center',

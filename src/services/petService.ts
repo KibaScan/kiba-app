@@ -3,7 +3,8 @@
 // Photo upload to Supabase Storage 'pet-photos' bucket happens at save time.
 
 import { supabase } from './supabase';
-import type { Pet, PetCondition, PetAllergen, BreedSize } from '../types/pet';
+import type { Pet, PetCondition, PetAllergen, PetConditionDetail, PetMedication, BreedSize } from '../types/pet';
+import { isOnline } from '../utils/network';
 import { deriveLifeStage, deriveBreedSize } from '../utils/lifeStage';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { BREED_SIZE_MAP } from '../data/breeds';
@@ -168,10 +169,28 @@ export async function updatePet(
   const { species: _stripped, ...safeUpdates } = updates;
   const patch: Record<string, unknown> = { ...safeUpdates };
 
-  // D-117: weight changed → update timestamp
+  // D-117: weight changed → update timestamp + D-161: reset accumulator
   if ('weight_current_lbs' in updates) {
     patch.weight_updated_at =
       updates.weight_current_lbs != null ? new Date().toISOString() : null;
+    // D-161: Manual weight update resets the caloric accumulator cycle
+    patch.caloric_accumulator = 0;
+    patch.accumulator_notification_sent = false;
+    patch.accumulator_last_reset_at = new Date().toISOString();
+  }
+
+  // feeding_style change → reset wet_intent_resolved_at so the FeedingIntentSheet
+  // re-fires on next wet add. Covers the dry_only → dry_and_wet → back-to-dry_only
+  // edge case where a pet's intent choice is no longer relevant to their current
+  // feeding pattern. Skipped if the caller explicitly included wet_intent_resolved_at
+  // in the same patch (e.g., AddToPantrySheet persisting the user's intent) or if
+  // the style isn't actually changing.
+  if (
+    'feeding_style' in updates &&
+    !('wet_intent_resolved_at' in updates) &&
+    currentPet?.feeding_style !== updates.feeding_style
+  ) {
+    patch.wet_intent_resolved_at = null;
   }
 
   // Re-derive breed_size when breed or weight changes
@@ -240,7 +259,16 @@ export async function updatePet(
 }
 
 export async function deletePet(petId: string): Promise<void> {
-  // Cascade: remove related rows first (hard delete — D-110 soft delete is M3+)
+  // Step 1: Capture pantry item IDs before CASCADE removes assignments
+  const { data: pantryAssignments } = await supabase
+    .from('pantry_pet_assignments')
+    .select('pantry_item_id')
+    .eq('pet_id', petId);
+  const affectedItemIds = [
+    ...new Set((pantryAssignments ?? []).map((a: { pantry_item_id: string }) => a.pantry_item_id)),
+  ];
+
+  // Step 2: Cascade — remove related rows then delete pet
   const { error: allergenErr } = await supabase
     .from('pet_allergens')
     .delete()
@@ -255,6 +283,28 @@ export async function deletePet(petId: string): Promise<void> {
 
   const { error } = await supabase.from('pets').delete().eq('id', petId);
   if (error) throw new Error(`Failed to delete pet: ${error.message}`);
+
+  // Step 3: Soft-delete orphaned pantry items (no remaining assignments)
+  try {
+    if (affectedItemIds.length > 0) {
+      const { data: stillAssigned } = await supabase
+        .from('pantry_pet_assignments')
+        .select('pantry_item_id')
+        .in('pantry_item_id', affectedItemIds);
+      const stillAssignedIds = new Set(
+        (stillAssigned ?? []).map((a: { pantry_item_id: string }) => a.pantry_item_id),
+      );
+      const orphanIds = affectedItemIds.filter(id => !stillAssignedIds.has(id));
+      if (orphanIds.length > 0) {
+        await supabase
+          .from('pantry_items')
+          .update({ is_active: false })
+          .in('id', orphanIds);
+      }
+    }
+  } catch {
+    // Best-effort cleanup — pet is already deleted
+  }
 
   useActivePetStore.getState().removePet(petId);
 }
@@ -330,4 +380,93 @@ export async function savePetAllergens(
       .insert(rows);
     if (insertErr) throw new Error(`Failed to save allergens: ${insertErr.message}`);
   }
+}
+
+// ─── Condition Details (structured sub-type/severity) ─────────
+
+async function requireOnline(): Promise<void> {
+  if (!(await isOnline())) throw new Error('Connect to the internet to manage pet data.');
+}
+
+export async function getConditionDetails(petId: string): Promise<PetConditionDetail[]> {
+  const { data, error } = await supabase
+    .from('pet_condition_details')
+    .select('*')
+    .eq('pet_id', petId);
+  if (error) throw new Error(`Failed to fetch condition details: ${error.message}`);
+  return (data ?? []) as PetConditionDetail[];
+}
+
+export async function upsertConditionDetail(
+  petId: string,
+  detail: Omit<PetConditionDetail, 'id' | 'pet_id' | 'created_at'>,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_condition_details')
+    .upsert(
+      { pet_id: petId, ...detail },
+      { onConflict: 'pet_id,condition' },
+    );
+  if (error) throw new Error(`Failed to save condition detail: ${error.message}`);
+}
+
+export async function deleteConditionDetail(
+  petId: string,
+  condition: string,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_condition_details')
+    .delete()
+    .eq('pet_id', petId)
+    .eq('condition', condition);
+  if (error) throw new Error(`Failed to delete condition detail: ${error.message}`);
+}
+
+// ─── Medications (display-only, no scoring impact) ────────────
+
+export async function getMedications(petId: string): Promise<PetMedication[]> {
+  const { data, error } = await supabase
+    .from('pet_medications')
+    .select('*')
+    .eq('pet_id', petId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`Failed to fetch medications: ${error.message}`);
+  return (data ?? []) as PetMedication[];
+}
+
+export async function createMedication(
+  petId: string,
+  med: Omit<PetMedication, 'id' | 'pet_id' | 'created_at'>,
+): Promise<PetMedication> {
+  await requireOnline();
+  const { data, error } = await supabase
+    .from('pet_medications')
+    .insert({ pet_id: petId, ...med })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create medication: ${error.message}`);
+  return data as PetMedication;
+}
+
+export async function updateMedication(
+  medId: string,
+  updates: Partial<Omit<PetMedication, 'id' | 'pet_id' | 'created_at'>>,
+): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_medications')
+    .update(updates)
+    .eq('id', medId);
+  if (error) throw new Error(`Failed to update medication: ${error.message}`);
+}
+
+export async function deleteMedication(medId: string): Promise<void> {
+  await requireOnline();
+  const { error } = await supabase
+    .from('pet_medications')
+    .delete()
+    .eq('id', medId);
+  if (error) throw new Error(`Failed to delete medication: ${error.message}`);
 }

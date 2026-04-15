@@ -7,6 +7,7 @@ import type { Product, PetProfile } from '../../types';
 import type { ProductIngredient, PersonalizationDetail, PersonalizationResult, IngredientSeverity } from '../../types/scoring';
 import { toDisplayName } from '../../utils/formatters';
 import { isUnder4Weeks } from '../../utils/lifeStage';
+import { computeConditionAdjustments } from '../../utils/conditionScoring';
 
 // ─── D-129: Allergen Override Map ─────────────────────────
 
@@ -174,17 +175,63 @@ export function applyPersonalization(
     petName,
   });
 
-  // ─── 4. Health Conditions (D-097) ────────────────────
+  // ─── 4. Health Conditions ────────────────────────────
+  // Condition adjustments are flat points on the final score.
+  // Each fired rule becomes a PersonalizationDetail for transparent UI display.
 
-  // M1: framework only — flag conditions present, no score impact.
-  // Full condition scoring multipliers come in M2.
   if (petConditions && petConditions.length > 0) {
-    personalizations.push({
-      type: 'condition',
-      label: `${petName}'s Health Profile`,
-      adjustment: 0,
-      petName,
-    });
+    const condResult = computeConditionAdjustments(
+      product,
+      ingredients,
+      petProfile,
+      petConditions,
+    );
+
+    // Critical safety override — cardiac + DCM = score 0
+    if (condResult.zeroOut) {
+      for (const a of condResult.adjustments) {
+        personalizations.push({
+          type: 'condition',
+          label: a.reason,
+          adjustment: 0,
+          petName,
+        });
+      }
+      return { finalScore: 0, personalizations };
+    }
+
+    if (condResult.adjustments.length > 0) {
+      for (const a of condResult.adjustments) {
+        const sign = a.points > 0 ? '+' : '';
+        personalizations.push({
+          type: 'condition',
+          label: `${a.reason} (${sign}${a.points})`,
+          adjustment: a.points,
+          petName,
+        });
+      }
+      adjustment += condResult.totalAdjustment;
+    }
+  }
+
+  // ─── 5. Allergen Score Cap (D-167) ──────────────────────
+  // Products containing a pet's declared allergens must never appear
+  // "acceptable." Cap at 50 so ResultScreen shows "Explore alternatives."
+  const ALLERGEN_SCORE_CAP = 50;
+  const hasAllergenMatch = personalizations.some(p => p.type === 'allergen');
+
+  if (hasAllergenMatch) {
+    const uncappedScore = Math.max(0, Math.min(100, score + adjustment));
+    if (uncappedScore > ALLERGEN_SCORE_CAP) {
+      personalizations.push({
+        type: 'allergen',
+        label: `Score capped — contains ingredients flagged as allergens for ${petName}`,
+        adjustment: ALLERGEN_SCORE_CAP - uncappedScore,
+        petName,
+        severity: 'direct_match',
+      });
+      return { finalScore: ALLERGEN_SCORE_CAP, personalizations };
+    }
   }
 
   const finalScore = Math.max(0, Math.min(100, score + adjustment));

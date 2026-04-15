@@ -9,7 +9,7 @@ import { Limits } from './constants';
 // Sync reads use cached value. Refresh via refreshSubscriptionStatus().
 
 let _cachedPremium = false;
-let _devOverride: boolean | null = null; // __DEV__ only
+let _devOverride: boolean | null = __DEV__ ? true : null;
 
 // ─── RevenueCat Init ───────────────────────────────────────
 
@@ -52,6 +52,16 @@ export async function refreshSubscriptionStatus(): Promise<void> {
 
 // ─── Core Check (sync — reads cache) ──────────────────────
 
+/**
+ * All permission functions below are sync and read from a cached premium
+ * flag (_cachedPremium) that is populated by the RevenueCat listener on
+ * app launch. They look sync but depend on an async subscription check
+ * that runs once at startup. If the listener hasn't fired yet,
+ * _cachedPremium defaults to false (free tier).
+ *
+ * canScan() is the exception — it's async because it also queries the
+ * rolling 7-day scan count from Supabase (`scans` table, not `scan_history`).
+ */
 export function isPremium(): boolean {
   if (_devOverride !== null) return _devOverride;
   return _cachedPremium;
@@ -142,6 +152,13 @@ export function canExportVetReport(): boolean {
 
 export function canStartEliminationDiet(): boolean {
   return isPremium();
+}
+
+// ─── Appointment Gate (D-103) ────────────────────────────
+
+export function canCreateAppointment(activeCount: number): boolean {
+  if (isPremium()) return true;
+  return activeCount < Limits.freeAppointmentsMax;
 }
 
 // FREE for all users (D-125): scanning (up to limit), basic score, 1 pet, Recall Siren

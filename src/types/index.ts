@@ -71,6 +71,7 @@ export interface Product {
 
   // Formulation
   aafco_statement: string | null;
+  aafco_inference: string | null;
   life_stage_claim: string | null;
   preservative_type: PreservativeType | null;
 
@@ -130,6 +131,17 @@ export interface Product {
   }> | null;
   affiliate_links: Record<string, string> | null;
 
+  // Retailer source fields (migration 020 — v7 enrichment)
+  source_url: string | null;
+  chewy_sku: string | null;
+  asin: string | null;
+  walmart_id: string | null;
+
+  // Price + size (M6 Safe Swap value slot — migration 023)
+  price: number | null;
+  price_currency: string | null;
+  product_size_kg: number | null;
+
   created_at: string;
   updated_at: string;
 }
@@ -159,6 +171,7 @@ export interface IngredientDict {
   is_pulse_protein: boolean;            // D-137 Rule 3 (pulse protein isolates)
   position_reduction_eligible: boolean;
   cat_carb_flag: boolean;
+  is_protein_fat_source: boolean;       // Layer 1c protein naming + condition scoring
 
   // D-105: display content columns
   display_name: string | null;
@@ -227,16 +240,7 @@ export interface ScanRecord {
 }
 
 // ─── Pantry & Logging ───────────────────────────────────
-
-export interface PantryItem {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  product_id: string;
-  serving_format: string | null;
-  pack_size: string | null;
-  added_at: string;
-}
+export type { PantryItem, PantryPetAssignment, PantryCardData, AddToPantryInput } from './pantry';
 
 export interface SymptomLog {
   id: string;
@@ -247,16 +251,6 @@ export interface SymptomLog {
   severity: Severity;
   notes: string | null;
   logged_at: string;
-}
-
-export interface KibaIndexVote {
-  id: string;
-  user_id: string;
-  pet_id: string;
-  product_id: string;
-  taste_score: number; // 1-5
-  tummy_score: number; // 1-5
-  voted_at: string;
 }
 
 // ─── App State Types ────────────────────────────────────

@@ -27,7 +27,7 @@ export interface PipelineResult {
 
 // ─── Hydration ───────────────────────────────────────────
 
-function hydrateIngredient(
+export function hydrateIngredient(
   row: ProductIngredientRow,
 ): ProductIngredient | null {
   const dict = row.ingredients_dict;
@@ -48,10 +48,7 @@ function hydrateIngredient(
     cat_carb_flag: dict.cat_carb_flag,
     allergen_group: dict.allergen_group,
     allergen_group_possible: dict.allergen_group_possible ?? [],
-    // TODO: Add is_protein_fat_source column to ingredients_dict schema.
-    // For M1, defaults to false — formulation protein naming returns 50 (default).
-    // Impact: 25% of 15% bucket = 3.75% of total score. Acceptable M1 limitation.
-    is_protein_fat_source: false,
+    is_protein_fat_source: dict.is_protein_fat_source ?? false,
     // D-105 display content (UI only — scoring engine never reads these)
     definition: dict.definition,
     tldr: dict.tldr,
@@ -87,6 +84,7 @@ function makeEmptyResult(
         allergenWarnings: [],
       },
       ingredientPenalties: [],
+      ingredientResults: [],
       flags,
       allergenDelta: 0,
       isPartialScore: true,
@@ -101,6 +99,17 @@ function makeEmptyResult(
 
 // ─── Main Pipeline ───────────────────────────────────────
 
+/**
+ * Bridge between Supabase and the pure scoring engine.
+ * Fetches product_ingredients with ingredients_dict join, hydrates them
+ * into ProductIngredient[], then delegates to computeScore().
+ *
+ * Bypass order (checked before scoring): vet diet → species mismatch →
+ * recalled → variety pack → supplemental → normal.
+ *
+ * Returns both the ScoredResult and the hydrated ingredients array
+ * (needed by ResultScreen for ingredient list, severity badges, etc.).
+ */
 export async function scoreProduct(
   product: Product,
   petProfile: PetProfile | null,
@@ -178,6 +187,20 @@ export async function scoreProduct(
         bypassReason: `This product is formulated for ${targetLabel}`,
         isPartialScore: false,
         isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // D-158: Recalled products — no score, bypass with warning + ingredients
+  if (product.is_recalled) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['recalled']).scoredResult,
+        bypass: 'recalled' as const,
+        bypassReason: 'This product has been recalled by the FDA',
+        isPartialScore: false,
+        isRecalled: true,
       },
       ingredients: hydrated,
     };

@@ -7,7 +7,7 @@ import { scoreIngredients } from '../../../src/services/scoring/ingredientQualit
 import { buildAllergenOverrideMap } from '../../../src/services/scoring/personalization';
 import type { Product, PetProfile } from '../../../src/types';
 import type { ProductIngredient } from '../../../src/types/scoring';
-import { Category, Species, LifeStage } from '../../../src/types';
+import { Category, Species, LifeStage, PreservativeType } from '../../../src/types';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -20,8 +20,9 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     target_species: Species.Dog,
     source: 'curated',
     aafco_statement: 'All Life Stages',
+    aafco_inference: null,
     life_stage_claim: null,
-    preservative_type: 'natural',
+    preservative_type: PreservativeType.Natural,
     ga_protein_pct: 26,
     ga_fat_pct: 16,
     ga_fiber_pct: 4,
@@ -46,6 +47,9 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     image_url: null,
     is_recalled: false,
     is_grain_free: false,
+    product_form: null,
+    is_supplemental: false,
+    is_vet_diet: false,
     score_confidence: 'high',
     needs_review: false,
     base_score: null,
@@ -53,6 +57,13 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     last_verified_at: null,
     formula_change_log: null,
     affiliate_links: null,
+    source_url: null,
+    chewy_sku: null,
+    asin: null,
+    walmart_id: null,
+    price: null,
+    price_currency: null,
+    product_size_kg: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -77,6 +88,17 @@ function makePet(overrides: Partial<PetProfile> = {}): PetProfile {
     breed_size: null,
     life_stage: LifeStage.Adult,
     photo_url: null,
+    health_reviewed_at: null,
+    weight_goal_level: null,
+    caloric_accumulator: null,
+    accumulator_last_reset_at: null,
+    accumulator_notification_sent: null,
+    bcs_score: null,
+    bcs_assessed_at: null,
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     created_at: '2026-01-01',
     updated_at: '2026-01-01',
     ...overrides,
@@ -178,7 +200,7 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
     expect(withoutOverride.ingredientScore).toBe(100); // neutral = no penalty
-    expect(withOverride.ingredientScore).toBe(85); // danger at pos 1 = -15
+    expect(withOverride.ingredientScore).toBe(80); // danger at pos 1 = -20
   });
 
   test('good ingredient overridden to danger gets penalty', () => {
@@ -193,7 +215,7 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const overrides = new Map([['chicken', 'danger' as const]]);
 
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
-    expect(withOverride.ingredientScore).toBe(85); // danger at pos 1 = -15
+    expect(withOverride.ingredientScore).toBe(80); // danger at pos 1 = -20
   });
 
   test('danger ingredient stays danger (max rule — no change)', () => {
@@ -212,8 +234,8 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
     // Both danger — no change
-    expect(withoutOverride.ingredientScore).toBe(85);
-    expect(withOverride.ingredientScore).toBe(85); // unchanged — same severity
+    expect(withoutOverride.ingredientScore).toBe(80);
+    expect(withOverride.ingredientScore).toBe(80); // unchanged — same severity
   });
 
   test('caution ingredient escalated to danger by direct match', () => {
@@ -230,8 +252,8 @@ describe('scoreIngredients — D-129 allergen overrides', () => {
     const withoutOverride = scoreIngredients(ingredients, 'dog');
     const withOverride = scoreIngredients(ingredients, 'dog', overrides);
 
-    expect(withoutOverride.ingredientScore).toBe(92); // caution = -8
-    expect(withOverride.ingredientScore).toBe(85); // danger = -15
+    expect(withoutOverride.ingredientScore).toBe(90); // caution = -10
+    expect(withOverride.ingredientScore).toBe(80); // danger = -20
   });
 
   test('undefined overrides = identical to no overrides', () => {
@@ -323,9 +345,12 @@ describe('computeScore — D-129 allergen delta', () => {
     const withAllergen = computeScore(product, ingredients, pet, ['chicken']);
 
     // Poultry byproduct meal is already 'caution' base severity.
-    // Override to 'caution' = no change. Delta should be 0.
+    // Override to 'caution' = no change. IQ delta should be 0.
     expect(withAllergen.allergenDelta).toBe(0);
-    expect(withAllergen.finalScore).toBe(noAllergen.finalScore);
+    // D-167: even though IQ didn't change, possible_match allergen flag
+    // triggers score cap at 50 ("Explore alternatives" UI threshold).
+    expect(withAllergen.finalScore).toBe(50);
+    expect(withAllergen.finalScore).toBeLessThan(noAllergen.finalScore);
   });
 
   test('no allergen-matching ingredients — zero delta, identical score', () => {
@@ -422,7 +447,7 @@ describe('Pure Balance regression — D-129 zero delta', () => {
       target_species: Species.Dog,
       is_grain_free: true,
       aafco_statement: 'All Life Stages',
-      preservative_type: 'natural',
+      preservative_type: PreservativeType.Natural,
       ga_protein_pct: 26,
       ga_fat_pct: 16,
       ga_fiber_pct: 4,
@@ -450,7 +475,7 @@ describe('Pure Balance regression — D-129 zero delta', () => {
     const pet = makePet({ life_stage: LifeStage.Adult });
     const result = computeScore(product, ingredients, pet);
 
-    expect(result.finalScore).toBe(69);
+    expect(result.finalScore).toBe(65);
     expect(result.allergenDelta).toBe(0);
   });
 });

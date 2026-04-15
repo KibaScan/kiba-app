@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add to Pantry — Phase C Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #1A1A1A;
+    --card-surface: #242424;
+    --hairline: rgba(255,255,255,0.12);
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0A0A0;
+    --text-tertiary: #666666;
+    --accent: #00B4D8;
+    --accent-dark: #0090AD;
+    --severity-amber: #F59E0B;
+    --severity-green: #4ADE80;
+    --input-bg: #1A1A1A;
+  }
+
+  body {
+    background: #111;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px 20px;
+    flex-wrap: wrap;
+    min-height: 100vh;
+  }
+
+  .mockup-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mockup-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .phone-frame {
+    width: 375px;
+    background: var(--bg);
+    border-radius: 44px;
+    border: 3px solid #333;
+    overflow: hidden;
+    position: relative;
+    padding-top: 60px;
+  }
+
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(20px);
+  }
+
+  .sheet-overlay {
+    min-height: 700px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .sheet {
+    background: var(--card-surface);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 16px 24px 34px;
+  }
+
+  .handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+    margin: 0 auto 16px;
+  }
+
+  /* Header */
+  .sheet-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .product-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .product-img img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+  .product-img .placeholder-icon {
+    font-size: 24px;
+    color: #999;
+  }
+  .header-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .brand-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  .name-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0,180,216,0.15);
+    border: 1px solid rgba(0,180,216,0.3);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 600;
+    border: 1px solid var(--hairline);
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--hairline);
+    margin: 0 -24px;
+  }
+
+  /* Section */
+  .section {
+    padding: 16px 0;
+  }
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  /* Toggle pills */
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .toggle-pill {
+    flex: 1;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--hairline);
+    background: var(--input-bg);
+    color: var(--text-secondary);
+  }
+  .toggle-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* Advisory card */
+  .advisory-card {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-left: 3px solid var(--severity-amber);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .advisory-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .advisory-cta {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .advisory-cta::after {
+    content: '→';
+    font-size: 14px;
+  }
+
+  /* Meal sentence */
+  .meal-sentence {
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .pet-name {
+    font-weight: 700;
+  }
+
+  /* Stepper */
+  .stepper-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .stepper-label {
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-right: 4px;
+  }
+  .stepper-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--hairline);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .stepper-btn.disabled {
+    color: var(--text-tertiary);
+    opacity: 0.5;
+  }
+  .stepper-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 28px;
+    text-align: center;
+  }
+  .stepper-suffix {
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+
+  /* Auto-computed result */
+  .auto-result {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .auto-equals {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+  .auto-amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .auto-unit {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .auto-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(0,180,216,0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+  }
+  .auto-math {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .manual-tap-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .manual-tap-hint:hover {
+    color: var(--accent);
+  }
+
+  /* Conversion link */
+  .conversion-link {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    margin-bottom: 4px;
+  }
+  .conversion-link .chevron {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .conversion-expanded {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    padding-left: 16px;
+    margin-top: 6px;
+    line-height: 1.7;
+  }
+
+  /* Rebalance note */
+  .rebalance-note {
+    font-size: 12px;
+    color: var(--severity-amber);
+    background: rgba(245,158,11,0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rebalance-note .icon {
+    font-size: 13px;
+  }
+
+  /* Bag size collapsed */
+  .bag-size-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    cursor: pointer;
+  }
+  .bag-size-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bag-size-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .bag-size-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .bag-size-chevron {
+    color: var(--text-tertiary);
+    font-size: 14px;
+  }
+
+  /* CTA button */
+  .cta-button {
+    width: 100%;
+    height: 50px;
+    border-radius: 14px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background 0.15s;
+  }
+  .cta-button:hover {
+    background: var(--accent-dark);
+  }
+  .cta-button .cta-text {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* Fallback input */
+  .fallback-note {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  .manual-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .manual-input {
+    flex: 1;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--hairline);
+    padding: 0 16px;
+    font-size: 15px;
+    color: var(--text-primary);
+    font-family: inherit;
+    outline: none;
+  }
+  .manual-input::placeholder {
+    color: var(--text-tertiary);
+  }
+  .manual-suffix {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Reset link */
+  .reset-link {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  h2.state-title {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .state-desc {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-align: center;
+    max-width: 340px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- STATE 1: Default — Existing food, "No" selected   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="mockup-wrapper">
+  <span class="mockup-label">State 1: Default (No, existing food)</span>
+  <h2 class="state-title">Adding a second daily food</h2>
+  <p class="state-desc">Auto-computed serving, 1 meal coverage, bag size collapsed</p>
+  
+  <div class="phone-frame">
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- Header -->
+        <div class="sheet-header">
+          <div class="product-img">
+            <span class="placeholder-icon">🦴</span>
+          </div>
+          <div class="header-text">
+            <div class="brand-text">Blue Buffalo</div>
+            <div class="name-text">Life Protection Formula Chicken & Brown Rice</div>
+            <span class="score-badge">79% match</span>
+          </div>
+          <div class="close-btn">✕</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- New to diet? -->
+        <div class="section">
+          <div class="section-label">Is this new to Stain's diet?</div>
+          <div class="toggle-row">
+            <div class="toggle-pill">Yes</div>
+            <div class="toggle-pill active">No</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Meal allocation -->
+        <div class="section">
+          <div class="meal-sentence"><span class="pet-name">Stain</span> eats 2 meals a day.</div>
+          
+          <div class="stepper-row">
+            <span class="stepper-label">This food covers:</span>
+            <div class="stepper-btn disabled">−</div>
+            <span class="stepper-value">1</span>
+            <div class="stepper-btn">+</div>
+            <span class="stepper-suffix">meal</span>
+          </div>
+
+          <div class="auto-result">
+            <span class="auto-equals">=</span>
+            <span class="auto-amount">1.2</span>
+            <span class="auto-unit">cups per meal</span>
+            <span class="auto-badge">auto</span>
+          </div>
+          <div class="auto-math">431 kcal remaining of 862 kcal budget ÷ 1 meal</div>
+          <div class="manual-tap-hint">Tap to adjust manually</div>
+
+          <div class="conversion-link">
+            See in oz · g <span class="chevron">▸</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Bag size -->
+        <div class="bag-size-row">
+          <div class="bag-size-left">
+            <span class="bag-size-label">Bag size</span>
+            <span class="bag-size-value">24 lbs</span>
+          </div>
+          <span class="bag-size-chevron">▸</span>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-button">
+          <span class="cta-text">Add to Stain's Pantry</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- STATE 2: "Yes" — New food with Safe Switch CTA     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="mockup-wrapper">
+  <span class="mockup-label">State 2: New food (Yes + has anchor)</span>
+  <h2 class="state-title">New food with Safe Switch handoff</h2>
+  <p class="state-desc">Advisory card + rebalance note for existing food</p>
+
+  <div class="phone-frame">
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- Header -->
+        <div class="sheet-header">
+          <div class="product-img">
+            <span class="placeholder-icon">🦴</span>
+          </div>
+          <div class="header-text">
+            <div class="brand-text">Purina Pro Plan</div>
+            <div class="name-text">Complete Essentials Shredded Blend Chicken</div>
+            <span class="score-badge">71% match</span>
+          </div>
+          <div class="close-btn">✕</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- New to diet? — YES selected -->
+        <div class="section">
+          <div class="section-label">Is this new to Stain's diet?</div>
+          <div class="toggle-row">
+            <div class="toggle-pill active">Yes</div>
+            <div class="toggle-pill">No</div>
+          </div>
+
+          <div class="advisory-card">
+            <div class="advisory-text">New foods should be introduced gradually over 7–10 days to avoid digestive upset.</div>
+            <div class="advisory-cta">Start Safe Switch</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Meal allocation -->
+        <div class="section">
+          <div class="meal-sentence"><span class="pet-name">Stain</span> eats 2 meals a day.</div>
+          
+          <div class="stepper-row">
+            <span class="stepper-label">This food covers:</span>
+            <div class="stepper-btn disabled">−</div>
+            <span class="stepper-value">1</span>
+            <div class="stepper-btn">+</div>
+            <span class="stepper-suffix">meal</span>
+          </div>
+
+          <div class="auto-result">
+            <span class="auto-equals">=</span>
+            <span class="auto-amount">1.4</span>
+            <span class="auto-unit">cups per meal</span>
+            <span class="auto-badge">auto</span>
+          </div>
+          <div class="auto-math">431 kcal remaining of 862 kcal budget ÷ 1 meal</div>
+
+          <div class="rebalance-note">
+            <span class="icon">⟲</span>
+            Adjusted Pedigree to 1 meal.
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Bag size -->
+        <div class="bag-size-row">
+          <div class="bag-size-left">
+            <span class="bag-size-label">Bag size</span>
+            <span class="bag-size-value">30 lbs</span>
+          </div>
+          <span class="bag-size-chevron">▸</span>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-button">
+          <span class="cta-text">Add to Stain's Pantry</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- STATE 3: First food in pantry — covers all meals   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="mockup-wrapper">
+  <span class="mockup-label">State 3: First food (cold pantry)</span>
+  <h2 class="state-title">Only food — covers all meals</h2>
+  <p class="state-desc">Full DER allocation, no rebalance, expanded conversions</p>
+
+  <div class="phone-frame">
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- Header -->
+        <div class="sheet-header">
+          <div class="product-img">
+            <span class="placeholder-icon">🦴</span>
+          </div>
+          <div class="header-text">
+            <div class="brand-text">Orijen</div>
+            <div class="name-text">Original Grain-Free Dry Dog Food</div>
+            <span class="score-badge">85% match</span>
+          </div>
+          <div class="close-btn">✕</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- New to diet? -->
+        <div class="section">
+          <div class="section-label">Is this new to Stain's diet?</div>
+          <div class="toggle-row">
+            <div class="toggle-pill">Yes</div>
+            <div class="toggle-pill active">No</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Meal allocation — all meals -->
+        <div class="section">
+          <div class="meal-sentence"><span class="pet-name">Stain</span> eats 2 meals a day.</div>
+          
+          <div class="stepper-row">
+            <span class="stepper-label">This food covers:</span>
+            <div class="stepper-btn disabled">−</div>
+            <span class="stepper-value">2</span>
+            <div class="stepper-btn disabled">+</div>
+            <span class="stepper-suffix">meals</span>
+          </div>
+
+          <div class="auto-result">
+            <span class="auto-equals">=</span>
+            <span class="auto-amount">1.1</span>
+            <span class="auto-unit">cups per meal</span>
+            <span class="auto-badge">auto</span>
+          </div>
+          <div class="auto-math">862 kcal daily budget ÷ 2 meals</div>
+
+          <div class="conversion-link" style="margin-bottom: 2px;">
+            See in oz · g <span class="chevron" style="transform: rotate(90deg);">▸</span>
+          </div>
+          <div class="conversion-expanded">
+            = 4.4 oz per meal<br>
+            = 125 g per meal
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Bag size -->
+        <div class="bag-size-row">
+          <div class="bag-size-left">
+            <span class="bag-size-label">Bag size</span>
+            <span class="bag-size-value">25 lbs</span>
+          </div>
+          <span class="bag-size-chevron">▸</span>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-button">
+          <span class="cta-text">Add to Stain's Pantry</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- STATE 4: Manual override / missing kcal fallback   -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="mockup-wrapper">
+  <span class="mockup-label">State 4: Manual override / no calorie data</span>
+  <h2 class="state-title">Fallback to manual input</h2>
+  <p class="state-desc">Missing kcal data — user enters serving manually</p>
+
+  <div class="phone-frame">
+    <div class="sheet-overlay">
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- Header -->
+        <div class="sheet-header">
+          <div class="product-img">
+            <span class="placeholder-icon">🐱</span>
+          </div>
+          <div class="header-text">
+            <div class="brand-text">Fancy Feast</div>
+            <div class="name-text">Gourmet Naturals Wild-Caught Salmon</div>
+            <span class="score-badge" style="background: rgba(0,180,216,0.15);">68% match</span>
+          </div>
+          <div class="close-btn">✕</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- New to diet? -->
+        <div class="section">
+          <div class="section-label">Is this new to Luna's diet?</div>
+          <div class="toggle-row">
+            <div class="toggle-pill">Yes</div>
+            <div class="toggle-pill active">No</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Meal allocation — fallback -->
+        <div class="section">
+          <div class="meal-sentence"><span class="pet-name">Luna</span> eats 3 meals a day.</div>
+          
+          <div class="stepper-row">
+            <span class="stepper-label">This food covers:</span>
+            <div class="stepper-btn disabled">−</div>
+            <span class="stepper-value">1</span>
+            <div class="stepper-btn">+</div>
+            <span class="stepper-suffix">meal</span>
+          </div>
+
+          <div class="fallback-note">Calorie data unavailable — enter your usual serving size.</div>
+          
+          <div class="manual-input-row">
+            <input type="text" class="manual-input" placeholder="1" value="1">
+            <span class="manual-suffix">can per meal</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Bag size becomes "Pack size" for wet -->
+        <div class="bag-size-row">
+          <div class="bag-size-left">
+            <span class="bag-size-label">Pack size</span>
+            <span class="bag-size-value">12 cans</span>
+          </div>
+          <span class="bag-size-chevron">▸</span>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-button">
+          <span class="cta-text">Add to Luna's Pantry</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

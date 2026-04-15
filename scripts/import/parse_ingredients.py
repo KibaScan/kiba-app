@@ -34,6 +34,7 @@ import unicodedata
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -128,19 +129,35 @@ def clean_ingredients_raw(text: str) -> tuple[str, str]:
     # v2.1: Repair missing open parens
     # "Chicken Fat preserved with mixed tocopherols)" → "Chicken Fat (preserved with mixed tocopherols)"
     # "Salmon Oil a source of DHA)" → "Salmon Oil (a source of DHA)"
+    # v2.5 FIX: Only run when close > open (actual missing opens). If already balanced,
+    # these regexes corrupt text by matching INSIDE existing parens — e.g. the "a" in
+    # "(a source of...)" gets matched as a word, inserting an extra "(" that breaks
+    # the tokenizer's depth tracking and fuses the entire list into one token.
+    if text.count(')') > text.count('('):
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+(preserved with\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+((?:a )?source of\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
+        text = re.sub(
+            r'(\b\w+(?:\s+\w+)?)\s+((?:a )?natural source of\s+[^,)]+)\)',
+            r'\1 (\2)',
+            text, flags=re.IGNORECASE
+        )
+
+    # v2.5: Fix nested parens that break tokenizer depth tracking
+    # Scraper produces: "Chicken (Natural (Source Of Chondroitin Sulfate),"
+    # Should be: "Chicken (Natural Source Of Chondroitin Sulfate),"
+    # The nested "(" after "Natural" prevents depth from returning to 0,
+    # fusing the entire remaining ingredient list into one token.
     text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+(preserved with\s+[^,)]+)\)',
-        r'\1 (\2)',
-        text, flags=re.IGNORECASE
-    )
-    text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+((?:a )?source of\s+[^,)]+)\)',
-        r'\1 (\2)',
-        text, flags=re.IGNORECASE
-    )
-    text = re.sub(
-        r'(\b\w+(?:\s+\w+)?)\s+((?:a )?natural source of\s+[^,)]+)\)',
-        r'\1 (\2)',
+        r'\(Natural\s+\((?=Source\b)',
+        '(Natural ',
         text, flags=re.IGNORECASE
     )
 
@@ -158,7 +175,7 @@ def clean_ingredients_raw(text: str) -> tuple[str, str]:
 
 # ─── Stage 2: Tokenize ────────────────────────────────────────
 
-def split_recipes(text: str) -> list[tuple[str | None, str]]:
+def split_recipes(text: str) -> list:
     """Split variety pack text on recipe boundaries (v2).
 
     Detects patterns like:
@@ -501,7 +518,7 @@ def extract_primary_name(token: str) -> str:
     return result if result else token
 
 
-def extract_preservative(token: str) -> str | None:
+def extract_preservative(token: str) -> Optional[str]:
     """Extract preservative from parenthetical metadata (v2).
 
     "Chicken Fat (Preserved With Mixed Tocopherols)" -> "Mixed Tocopherols"
@@ -537,7 +554,7 @@ def extract_preservative(token: str) -> str | None:
     return None
 
 
-def extract_flavor_species(token: str) -> str | None:
+def extract_flavor_species(token: str) -> Optional[str]:
     """Extract species name from flavor ingredient parens (v2.1).
 
     "Natural Flavor (Source Of Roasted Chicken Flavor)" → "chicken"

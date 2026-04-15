@@ -1,7 +1,8 @@
 # CLAUDE.md — Kiba Project Context
 
-> Read automatically by Claude Code. Single source of context for development.
-> Last updated: March 17, 2026 — M4.5 Round 5 complete, 641 tests/32 suites. D-150 life stage Layer 3 restructure, D-151 nursing advisory. Ready for M5.
+> Single source of context for Claude Code. Keep lean — details live in spec files.
+> Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
+> Last updated: April 2, 2026 — M9 in progress. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -10,145 +11,117 @@
 Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode → ingredient-level safety score 0-100, species-specific for dogs and cats.
 
 **Owner:** Steven (product decisions, non-coder) | **Developer:** Claude Code
-**Current phase:** M5 Pantry + Recall Siren
+**Current phase:** M9 in progress — UI Polish & Search
 
-## Tech Stack
+**Environment:** Expo SDK 55, React Native 0.83, TypeScript 5.9 (strict), Node 25.x, npm
+**Key deps:** `expo-camera` (NOT expo-barcode-scanner), `expo-audio` (NOT expo-av), `react-native-purchases` (RevenueCat), Zustand 5, Supabase JS 2.98, `react-native-svg`, `expo-blur`, `@react-native-community/netinfo`
+**Infra:** Supabase (Postgres + Auth + Storage + RLS + pg_cron) | React Navigation | Jest via jest-expo
 
-Expo (React Native) + TypeScript strict | Zustand | Supabase (Postgres + Auth + Storage + RLS) | React Navigation | `expo-camera` (NOT `expo-barcode-scanner`) | RevenueCat | `expo-av` | Jest (641 tests) | `react-native-svg`
+## Spec Files — Read Before Changing
 
-## Key Directories
+| File | What it covers |
+|------|---------------|
+| `DECISIONS.md` | 129 decisions (D-001–D-167, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
+| `ROADMAP.md` | Milestone plan, current scope |
+| `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
+| `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
+| `docs/specs/BREED_MODIFIERS_DOGS.md` / `_CATS.md` | Breed data (23 dogs, 21 cats) |
+| `docs/specs/PET_PROFILE_SPEC.md` | Profile fields, conditions, allergens |
+| `docs/specs/PORTION_CALCULATOR_SPEC.md` | RER/DER math, goal weight, cat safety guards |
+| `docs/specs/PANTRY_SPEC.md` | M5 Pantry schema, depletion, UI, edge cases |
+| `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
+| `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` | **Canonical reference** for behavioral feeding (migration 034) — feeding_style/feeding_role, Wet Reserve Engine, `computeBehavioralServing`, `log_wet_feeding_atomic`, auto-deplete role-awareness. Read before touching wet feedings, calorie_share_pct, or FedThisTodaySheet. |
+| `docs/plans/VERTEX_AI_BACKFILL_PLAN.md` | **Post-M9** — Vertex AI Gemini Pro backfills for ingredient TLDRs/citations + Amazon A+ image GA extraction |
+| `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
+| `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-- `DECISIONS.md` — 151 decisions (D-001–D-151), check before implementing
-- `ROADMAP.md` — milestone plan, M5 is next
-- `NUTRITIONAL_PROFILE_BUCKET_SPEC.md` — 30% NP bucket: AAFCO thresholds, DMB, trapezoidal curves
-- `BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md` — breed data (23 dogs, 21 cats)
-- `PET_PROFILE_SPEC.md` — profile fields, conditions, allergens
-- `PORTION_CALCULATOR_SPEC.md` — RER/DER math, goal weight, cat safety guards
-- `references/scoring-rules.md` — consolidated scoring rules
-- `src/services/scoring/` — 3-layer engine (engine.ts orchestrator)
-- `src/utils/constants.ts` — Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()
-- `src/utils/permissions.ts` — ONLY location for paywall checks
-- `supabase/migrations/` — 001–009, full schema
-- `__tests__/referenceProducts.test.ts` — regression tests
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–038). See scoped CLAUDE.md files in subdirectories for details.
 
-## Score Framing — Suitability Match (D-094)
+**Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
-All scores are pet-specific: `"[X]% match for [Pet Name]"` — NEVER naked scores. Products start at 100; deductions are compatibility adjustments. Pet name + photo always visible on result screen.
+## Score Framing (D-094)
 
-**Waterfall rows:** (1) "Ingredients" (2) "[Pet Name]'s Nutritional Fit" (3) "Formulation Quality" (4) "[Species] Safety Checks" (5) "[Pet Name]'s Breed & Age Adjustments"
+All scores: `"[X]% match for [Pet Name]"` — NEVER naked scores. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
 
-**Score colors:** Two parallel scales in `getScoreColor()` — daily food uses green family, supplemental uses teal/cyan family, both converge at yellow/amber/red. Green NEVER on supplementals. Teal/cyan NEVER on daily food. 270° arc = supplemental, 360° = daily food + treats. Ring animates 900ms ease-out cubic on mount.
+## Scoring Engine — Quick Reference
 
-## Scoring Engine Architecture
+Full rules in `docs/references/scoring-rules.md`. Read that file before any scoring changes.
 
-**Specs:** Read `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`, `BREED_MODIFIERS_DOGS.md`, `BREED_MODIFIERS_CATS.md` before scoring changes.
-
-### Category-Adaptive Weighting
 | Category | IQ | NP | FC |
 |----------|----|----|-----|
 | Daily Food | 55% | 30% | 15% |
-| Supplemental (`is_supplemental`) | 65% | 35% (macro-only) | 0% |
+| Supplemental | 65% | 35% (macro-only) | 0% |
 | Treats | 100% | 0% | 0% |
 
-### Three Layers
+**Regression anchors:** Pure Balance (Dog) = 61, Temptations (Cat Treat) = 0
 
-**Layer 1 — Base Score:**
-- **IQ (0-100):** Position-weighted severity. Check `position_reduction_eligible` before discounting. Proportion-based: full pos 1-5, −30% pos 6-10, −60% pos 11+. Presence-based (BHA, BHT, colorants): full penalty always. −2 per unnamed fat/protein.
-- **NP (0-100):** GA vs AAFCO by life stage. Trapezoidal curves (see spec). Dog: 35/25/15/25 (P/F/Fi/C). Cat: 45/20/10/25. DMB required for wet food (moisture >12%). Supplementals: macros only.
-- **FC (0-100):** AAFCO statement, preservative type, protein naming.
+## Schema Traps
 
-**Layer 2 — Species Rules:**
-- Dog: DCM −8% via D-137 positional pulse load (3-rule OR: heavyweight pulse top 3, 2+ pulses top 10, pulse protein isolate top 10). No grain-free gate. +3% mitigation (taurine + L-carnitine).
-- Cat: Carb overload −15% (3+ high-glycemic carbs top 5), mandatory taurine, UGT1A6 warnings.
-
-**Layer 3 — Personalization:** Allergy cross-ref, **category-scaled life stage mismatch (D-150):** puppy/kitten+adult food −15/−10/−5 by category; adult+growth food −5 all categories; suppressed for pets under 4 weeks (D-151 nursing advisory). Breed modifiers (±10 cap). Static breed data in `src/content/breedModifiers/`. D-112 contraindications are red warning cards, NOT score modifiers. Neutral if no conflicts.
-
-### Reference Scores (Regression)
-- **Pure Balance Wild & Free Salmon & Pea (Dog):** 62 — IQ:58 NP:79 FC:63 → Base:65 → DCM ×0.92 → mitigation ×1.03 → 62
-- **Temptations Classic Tuna (Cat Treat):** 44 — IQ:52 → cat carb −8 → 44
-
-### Key Mechanics
-- **Splitting detection:** `cluster_id` in `ingredients_dict`, GROUP BY HAVING count≥2. NEVER string matching.
-- **Missing GA:** Reweight ~78% IQ / 22% FC. Show "Partial" badge.
-- **Supplemental classification (D-136):** AAFCO feeding guide keywords + `isSupplementalByName()` product name keywords (D-146). Orthogonal to `haiku_suggested_category = 'supplement'` (D-096).
-
-## Key Schema Gotchas
-
-Full schema in `supabase/migrations/`. Watch for these naming issues:
-
-- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `weight_goal_lbs`, `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `activity_level` ('low'|'moderate'|'high'|'working'), `sex` ('male'|'female'|null), `life_stage` (derived, never user-entered), `health_reviewed_at` (distinguishes "Perfectly Healthy" from "never visited")
+- `pets` table (NOT `pet_profiles`): `weight_current_lbs` (NOT `weight_lbs`), `date_of_birth` (NOT `birth_date`), `is_neutered` (NOT `is_spayed_neutered`), `life_stage` (derived, never user-entered), `health_reviewed_at` (null = never visited). D-160: `weight_goal_level SMALLINT` (-3 to +3, default 0) — slider-based, replaces raw `weight_goal_lbs`. D-161: `caloric_accumulator` + `accumulator_last_reset_at` + `accumulator_notification_sent` (estimated weight tracking). D-162: `bcs_score` + `bcs_assessed_at` (owner-reported BCS, educational only). *(Migration 022 — all columns exist.)*
 - `product_upcs` — junction table (UPC → product_id), NOT TEXT[] array
-- `ingredients_dict` — `is_pulse` + `is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting
-- `products` — `is_supplemental`, `is_vet_diet`, `affiliate_links` JSONB (invisible to scoring)
-
-**Auth:** Anonymous sign-in via `ensureAuth()` on app mount. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`.
+- `ingredients_dict` — `is_pulse`/`is_pulse_protein` for DCM (NOT `is_legume`), `position_reduction_eligible`, `cluster_id` for splitting (NEVER string matching)
+- `products` — `is_supplemental`, `is_vet_diet`, `is_variety_pack` (migration 029, ~1,706 flagged), `affiliate_links` JSONB (invisible to scoring). v7 enrichment (migration 020): `ga_*_dmb_pct` (pre-computed DMB), `aafco_inference` (derivation audit trail), retailer dedup IDs, `image_url`, `source_url`. 19,058 products in catalog.
+- `pantry_items` — user-owned inventory (NO `pet_id`), `serving_mode` ('weight'|'unit'), `unit_label` ('servings') (D-164: collapsed from cans/pouches/units), soft-delete via `is_active`
+- `pantry_pet_assignments` — per-pet serving config, `feeding_times` is JSONB (`string[] | null`), UNIQUE(pantry_item_id, pet_id)
+- `push_tokens` — per-device Expo push tokens, UNIQUE(user_id, device_id), `is_active` flag for dead token cleanup
+- `user_settings` — per-user notification prefs: global kill switch + per-category toggles (feeding/low_stock/empty/recall/appointment/digest)
+- **Pantry offline:** Write functions throw `PantryOfflineError`, reads return `[]` gracefully. Network check via `src/utils/network.ts`.
+- **Auto-deplete cron:** `supabase/functions/auto-deplete/` runs every 30 min via pg_cron+pg_net. Daily-total deduction (timezone-agnostic). Unit conversion: cups → kg (calorie-based or 0.1134 fallback) → quantity_unit. Idempotency: `last_deducted_at < todayStartUTC`. Sends push via Expo Push API for low stock (<=5 days/units) and empty transitions.
+- `pet_appointments` — `UUID[]` for `pet_ids` (not junction table), `type` CHECK ('vet_visit','grooming','medication','vaccination','other'), `reminder` default '1_day', `recurring` default 'none', hard delete (not soft-delete). RLS on user_id. Free tier: 2 active max (`canCreateAppointment` in permissions.ts).
+- `kiba_index_votes` — community taste/tummy voting. UNIQUE(user_id, pet_id, product_id). `taste_vote`/`tummy_vote` nullable (partial submissions). `get_kiba_index_stats` RPC for species-filtered aggregation (SECURITY DEFINER). Migration 026.
+- `scan_history` — per-pet scan records (NOT `scans`), FK to `products(id)`. Only non-bypass scans are inserted (ResultScreen:231). `permissions.ts` uses `from('scans')` for rate limiting — different concern.
+- **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
+- **Tab navigation:** Home | Community | (Scan) | Pantry | Me — Search tab was replaced by Community tab. `SearchScreen` deleted; premium text search lives on HomeScreen v2. `CommunityStackParamList` in navigation types.
 
 ## Non-Negotiable Rules
 
-1. **Scoring engine is brand-blind.** No brand-specific modifiers.
-2. **Affiliate logic isolated from scoring.** `affiliate_links` invisible to scoring.
-3. **Paywall checks ONLY in `permissions.ts`.** No scattered `if (isPremium)`.
-4. **Dogs and cats only.** Refuse unsupported species.
-5. **Clinical Copy Rule.** Objective, citation-backed, never editorial.
-6. **Every penalty has `citation_source`.** No unattributed claims.
-7. **Supabase RLS on every user-data table.**
-8. **No `any` types** in TypeScript core entities.
-9. **Frequency advisories are NOT score modifiers.**
-10. **Suitability framing (D-094).** Always "[X]% match for [Pet Name]."
-11. **UPVM compliance (D-095).** Never: "prescribe," "treat," "cure," "prevent," "diagnose."
-12. **Breed modifier cap ±10** with citations + `vet_audit_status = 'cleared'`.
-13. **Vet diet bypass (D-135).** `is_vet_diet = true` → NEVER scored, show ingredients only.
-14. **Species mismatch bypass (D-144).** product.target_species ≠ pet.species → no scoring.
-15. **Variety pack bypass (D-145).** Name keywords / >80 ingredients / 4+ duplicate canonicals → no scoring, no ingredient list.
-16. **Supplemental expansion (D-146).** Name detection + AAFCO feeding guide. BenchmarkBar hidden.
-17. **API keys server-side only (D-127).** All external calls via Edge Functions.
-18. **Recall alerts free (D-125).** No paywall gate.
+1. Scoring engine is **brand-blind** — no brand-specific modifiers
+2. **Affiliate isolated from scoring** — `affiliate_links` invisible to engine
+3. **Paywall checks ONLY in `permissions.ts`** — no scattered `if (isPremium)`
+4. **Dogs and cats only** — refuse unsupported species
+5. **Clinical copy** — objective, citation-backed, never editorial
+6. Every penalty has **`citation_source`** — no unattributed claims
+7. **Supabase RLS** on every user-data table
+8. **No `any` types** in TypeScript core entities
+9. **Suitability framing (D-094)** — always "[X]% match for [Pet Name]"
+10. **UPVM compliance (D-095)** — never: "prescribe," "treat," "cure," "prevent," "diagnose"
+11. **Bypasses:** vet diet (D-135), species mismatch (D-144), variety pack (D-145), recalled product (D-158) — no scoring
+12. **API keys server-side only (D-127)** — all external calls via Edge Functions
+13. **Recall alerts free (D-125)** — no paywall gate
 
-## What NOT to Build
+## Do NOT Build
 
 - Ask AI / chatbot (liability — permanently removed)
-- Score supplements (M16+, D-096 — store only). `haiku_suggested_category='supplement'` ≠ `is_supplemental` (D-136)
-- Score grooming/cosmetics (M16+), score vet diets (D-135 bypass)
-- `expo-barcode-scanner` (deprecated), star ratings (→ Kiba Index M8+)
-- "Dislikes/Won't Eat" system, breed avatar silhouettes
-- Compare flow (deferred M6), Vet Report PDF (deferred M5-M6)
-- Score variety packs (D-145 — bypass, scan individual items)
+- Score supplements (M16+, D-096), grooming/cosmetics, vet diets (D-135 bypass)
+- `expo-barcode-scanner` (deprecated), star ratings (replaced by Kiba Index)
+- variety pack scoring (D-145)
+- Score recalled products (D-158 — bypass pattern, not score=0)
+- BCS questionnaire/diagnostic tool, photo-based BCS estimation (D-162 — educational reference only)
+- Raw goal weight input (D-160 supersedes D-061 — use weight goal level slider)
+
+## Workflow
+
+When executing plans, always proceed with implementation without presenting option menus. Keep context unless explicitly told to clear it.
 
 ## Commit Convention
 
 ```
-M5: pantry assignment with multi-pet sharing
-M5: recall RSS feed monitoring
+M6: compare flow with side-by-side scoring
 ```
 
-## Known Issues
+## Self-Check
 
-- **Zustand `import.meta` on Expo Web:** `sed -i 's/import\.meta\.env/process.env/g' node_modules/zustand/esm/middleware.mjs` — use `patch-package` for persistence.
-- **Haptics:** `expo-haptics` no-op on web. Test on physical iOS device.
-- **Copper sulfate:** Remains species-split (dog=caution, cat=neutral) — awaiting Steven's decision.
-
-## Self-Check (Before Every Deliverable)
-
-□ Scoring deterministic + testable? All 3 layers independent?
-□ `position_reduction_eligible` checked? DMB for wet food?
-□ `cluster_id` for splitting (not string matching)?
-□ Score = "[X]% match for [Pet Name]" — never naked?
-□ No UPVM terms in UI copy?
-□ Paywall only in permissions.ts? RLS on user tables?
-□ Breed modifiers ±10 cap with citations?
-□ Pure Balance regression = 62 after scoring changes?
-□ DCM uses `is_pulse`/`is_pulse_protein` (not `is_legume`)? No grain-free gate?
-□ Supplementals: 65/35/0 weights, macro-only NP, correct color scale?
+□ Scoring deterministic? Pure Balance = 61 after changes?
+□ `position_reduction_eligible` checked? DMB for wet food? `cluster_id` for splitting?
+□ Score framing + UPVM compliance in UI copy?
+□ Paywall in permissions.ts only? RLS on user tables? API keys server-side?
 □ Vet diet / species mismatch / variety pack bypasses intact?
-□ All severity colors from SEVERITY_COLORS constant?
-□ API keys server-side only? Affiliate isolated from scoring?
 □ Aligns with DECISIONS.md? In scope for current milestone?
 
 ## When Unsure
 
-1. Check DECISIONS.md — follow if answered there
-2. Check ROADMAP.md — flag if out of scope
-3. Scoring math → `NUTRITIONAL_PROFILE_BUCKET_SPEC.md`
-4. Breed logic → `BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md`
+1. Check `DECISIONS.md` — follow if answered there
+2. Check `ROADMAP.md` — flag if out of scope
+3. Scoring math → `docs/references/scoring-rules.md` then `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md`
+4. Breed logic → `docs/specs/BREED_MODIFIERS_DOGS.md` / `BREED_MODIFIERS_CATS.md`
 5. If ambiguous, ask ONE focused question
-6. If contradicts locked decision, flag explicitly

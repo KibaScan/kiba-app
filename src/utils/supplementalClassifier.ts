@@ -23,6 +23,7 @@ const SUPPLEMENTAL_PATTERNS: RegExp[] = [
 /** Product name keywords that indicate toppers/mixers (not formal AAFCO). */
 const SUPPLEMENTAL_NAME_PATTERNS: RegExp[] = [
   /topper/i,
+  /topping/i,
   /meal\s+topper/i,
   /food\s+topper/i,
   /mixer/i,
@@ -31,6 +32,7 @@ const SUPPLEMENTAL_NAME_PATTERNS: RegExp[] = [
   /meal\s+booster/i,
   /sprinkle/i,
   /dinner\s+dust/i,
+  /lickable/i,
 ];
 
 /** Detect via AAFCO feeding guide language. */

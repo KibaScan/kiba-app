@@ -1,18 +1,18 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: March 16, 2026
+> Updated: April 7, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M4.5 + UI Polish Complete (M0 + M1 + M2 + M3 + M4 + M4.5 + Polish Done — Ready for M5)
+## Current Status: M9 In Progress (M0–M8 Done)
 
 **Completed:**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (149 decisions, D-001 through D-149)
+- Decision log established (129 decisions, D-001 through D-167, non-sequential)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -34,10 +34,30 @@
 - M4 Session 6: D-136 supplemental classification complete — SVG score ring (270° open arc), 65/35/0 scoring weights, micronutrient modifier suppression, dual 5-tier color system, supplemental badge + contextual line, AafcoProgressBars macro-only mode, backfill script, 24 new tests. 497 tests passing.
 - M4 Session 6 (final): E2E verification, ResultScreen component reorder, ScoreWaterfall supplemental weights fix, SCORING_WEIGHTS extracted to constants.ts (single source of truth), compliance audit (20/20 PASS), documentation updates. 501 tests passing.
 - M4.5 (complete): D-137 DCM Pulse Framework — replaced grain-free gate with positional pulse load detection, narrowed scope from all legumes to pulses only, updated Pure Balance regression 65 → 62. DcmAdvisoryCard shows rule-specific copy, Heart Risk concern tag fires on D-137 rules. 509 tests passing.
-- M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `references/dataset-field-mapping.md`.
+- M4.5: Migration 008 — backfill dropped dataset fields (feeding_guidelines, is_vet_diet, special_diet, image_url, source_url). 9,078 products updated, 0 errors. See `docs/references/dataset-field-mapping.md`.
 - M4.5: D-135 vet diet bypass — pipeline skips scoring engine for `is_vet_diet = true` products, ResultScreen renders vet diet badge + ingredient list only (no score ring, no waterfall, no benchmark).
 - UI Polish Sessions A–C (D-138–D-141): Score waterfall redesign (grouped ingredients, severity progress bars, tooltips, final score color fix), global severity color constants (SEVERITY_COLORS single source of truth), AAFCO statement copy standardization, ingredient list grouped by severity tier, nutritional fit consolidation (removed duplicate GATable section), bonus nutrient present-first layout, composition bar tap-to-identify, carb estimate "Est." format, modal citation demotion. 509 tests passing.
 - UI Polish Session D (D-142–D-149): Artificial colorant severity escalation (caution → danger), "Danger" → "Severe" display labels, preservative_type_unknown chip suppressed, ScoreRing fill animation (900ms ease-out cubic), species mismatch bypass (D-144), variety pack detection + bypass (D-145), expanded supplemental classifier with product name keywords (D-146), BenchmarkBar ≥30 peer threshold, PortionCard supplemental guidance text, presentation layer polish (D-147: supplemental-aware AAFCO headers, treat GA bar suppression, ultra-high-moisture DMB note, benchmark delta labels, AAFCO chip consistency, product name wrapping, portion name truncation, orphan text suppression, PositionMap ordinal fix), composition bar swipeable scrub (D-148), Atwater caloric estimation fallback for missing kcal data (D-149). 558 tests passing.
+- D-150 through D-162: Life stage mismatch moved to Layer 3 (D-150), under-4-weeks nursing advisory (D-151), M5 pantry decisions locked (D-152–D-158), low-score feeding context line (D-159). D-160: weight goal slider replaces raw goal weight (D-061 superseded) — 7 levels (-3 to +3), cat cap at -2, percentage-based DER adjustment. D-161: caloric accumulator for estimated weight tracking via auto-deplete cron — species-specific thresholds (dogs 3,150 kcal/lb, cats 3,000 kcal/lb), notify-and-confirm. D-162: BCS reference tool — educational body condition chart, not diagnostic. 641 tests passing across 32 suites.
+- M5 Pantry backend: Migration 011 (pantry_items + pantry_pet_assignments tables with RLS), `src/types/pantry.ts` (all union types, DB interfaces, composite types, PantryOfflineError), `src/services/pantryService.ts` (9 CRUD functions with offline guards via `@react-native-community/netinfo`), `src/utils/pantryHelpers.ts` (6 pure functions: depletion math, calorie context, system recommendations, serving mode defaults), `src/utils/network.ts` (isOnline helper). 677 tests passing across 34 suites.
+- M5 Pantry UI: `src/components/pantry/AddToPantrySheet.tsx` (bottom sheet for adding products to pantry), `src/components/pantry/PantryCard.tsx` (pantry list item card — product image with gradient fade, score badge with bypass states, depletion bar, low stock/recalled alerts, shared indicator, calorie context, treat-aware display, empty state with restock/remove actions). `src/screens/PantryScreen.tsx` (full pantry tab screen — pet carousel with multi-pet switching, diet completeness banner, 7 filter chips with color conventions, 4 sort modes, FlatList of PantryCards with pull-to-refresh, two empty states, shared remove modal, D-157 mixed feeding nudge, restock flow). `src/components/pantry/SharePantrySheet.tsx` (share pantry item with same-species pets — D-154 species filter, no premium gate, per-pet score badge, inline serving/feedings editor, toggle on/off). `src/screens/EditPantryItemScreen.tsx` (full-screen pantry item edit — quantity/feeding/schedule cards, auto-save, D-155 empty states with opacity overlays, D-158 recalled states with disabled feeding/schedule, depletion summary, restock/share/remove actions, time picker for feeding notifications, shared remove modal). PantryCard tap now navigates to EditPantryItem. 746 tests passing across 37 suites.
+- M5 Top Matches backend: Migration 012 (`pet_product_scores` cache table with UNIQUE pet+product, category CHECK, invalidation anchors, composite index on pet_id/category/final_score DESC, RLS via pets.user_id join). `src/services/topMatches.ts` (checkCacheFreshness with 5 staleness checks: empty cache, life stage drift, profile edit, health update, engine version; fetchTopMatches with product join + client-side search; triggerBatchScore Edge Function caller). `CURRENT_SCORING_VERSION` constant. `supabase/functions/batch-score/index.ts` (Deno Edge Function: auth + rate limit + bulk product/ingredient queries + scoring loop + chunked upsert into pet_product_scores; verified engine copy in `scoring/` subfolder, Pure Balance = 62). 752 tests passing across 38 suites.
+- M5 Push infra: Migration 013 (`push_tokens` table — per-device Expo push tokens with UNIQUE user_id+device_id, RLS), Migration 014 (`user_settings` table — per-user notification prefs with global kill switch + per-category toggles, RLS). `src/services/pushService.ts` (registerPushToken upserts both tables, getNotificationPreferences reads user_settings). `src/utils/notifications.ts` (registerForPushNotificationsAsync, setupNotificationHandlers with tap routing by NotificationType). 761 tests passing across 38 suites.
+- M5 Feeding notification scheduler: `src/services/feedingNotificationScheduler.ts` (client-side local notifications via expo-notifications — full-resync approach: rescheduleAllFeeding() cancels all + rebuilds; multi-pet grouping same-time feedings into single notification; meal labels from time of day; unicode fraction serving display; D-084/D-095 compliant copy). Integrated into usePantryStore (add/remove/share), EditPantryItemScreen (frequency/toggle/time changes), App.tsx (launch resync). 771 tests passing across 39 suites.
+- M5 Auto-deplete cron: `supabase/functions/auto-deplete/index.ts` (Deno Edge Function — service role auth, daily-total deduction across all users, unit conversion cups->kg->quantity_unit with calorie-based or 0.1134 fallback, idempotency via last_deducted_at guard, state transition detection for low stock/empty, push notifications via Expo Push API with dead token cleanup). Migration 015 (pg_cron + pg_net schedule, vault secrets for auth). 771 tests passing across 39 suites.
+- M5 Pet Appointments backend (D-103): Migration 017 (`pet_appointments` table — UUID[] pet_ids, 5 appointment types, reminder/recurring options, partial index on upcoming, GIN index on pet_ids, RLS). `src/types/appointment.ts` (Appointment, CreateAppointmentInput, UpdateAppointmentInput types). `src/services/appointmentService.ts` (6 CRUD functions with offline guards — create, update, hard delete, complete with auto-recurring spawn, getUpcoming/getPast with optional pet filter via array containment). `canCreateAppointment()` in permissions.ts (free tier: 2 active max, premium: unlimited). `freeAppointmentsMax` in constants.ts. 822 tests passing across 41 suites.
+- M5 Pet Appointments UI + reminders (D-103): `src/screens/AppointmentsListScreen.tsx` (upcoming/past segmented control, type icons, relative date formatting, pet name resolution, paywall gate on "+"). `src/screens/CreateAppointmentScreen.tsx` (form — 5 type chips, DateTimePicker via `@react-native-community/datetimepicker`, pet multi-select with active pet default, location/notes, reminder/recurring chip pickers, "Schedule" button). `src/screens/AppointmentDetailScreen.tsx` (edit all fields, "Save Changes" on dirty, "Mark Complete" with recurring auto-spawn, "Delete" with BlurView confirmation modal, completed badge for past). `src/services/appointmentNotificationScheduler.ts` (local one-shot reminders via expo-notifications DATE trigger — full resync approach matching feedingNotificationScheduler pattern; D-084/D-095 compliant copy; multi-pet name formatting; preference check via user_settings). Integrated into App.tsx (launch resync), create/edit/delete/complete flows. PetHubScreen "Appointments" settings row added. Navigation: 3 screens on MeStack, `appointment_limit` PaywallTrigger. 834 tests passing across 42 suites.
+- M5 Weekly/daily digest (D-130): `supabase/functions/weekly-digest/index.ts` (Deno Edge Function — single function handles both weekly and daily modes via POST body `{mode}`. Service role auth, batch queries all eligible users from user_settings + push_tokens. Gathers scan activity, pantry state, recalled items, upcoming appointments. Adaptive content: active users get scan counts, inactive get pantry summary, cold start gets CTA. Recall alerts always prioritized first. Multi-pet: first pet + "and N other pets". Under 200 chars, D-084/D-095 compliant. Tap routes to HomeScreen. Skips accounts < 3 days old. Dead token cleanup via Expo Push API). Migration 018 (two pg_cron schedules: weekly Sunday 9 AM UTC, daily 9 AM UTC).
+- M5 Treat battery wiring: `src/stores/useTreatBatteryStore.ts` (Zustand + AsyncStorage persist — per-pet daily kcal/count tracking, midnight auto-reset, `resolveTreatKcal()` fallback chain: kcal_per_unit → derive from ga_kcal_per_kg × unit_weight_g → null). `usePantryStore.logTreat()` (optimistic deduct 1 unit + resolve kcal + update battery, server revert on error). PantryCard "Gave a treat" button for treat items. PetHubScreen + ResultScreen wired to real consumed data. 20 new tests. 862 tests passing across 43 suites.
+- M5 Pet health records (D-163): `src/services/appointmentService.ts` extended with `getHealthRecords()` and `logHealthRecord()`. `src/types/appointment.ts` extended with `PetHealthRecord` type. PetHubScreen health records section with recent records list, HealthRecordLogSheet bottom sheet for manual entry.
+- M5 Notification preferences: `src/screens/NotificationPreferencesScreen.tsx` (global kill switch + per-category toggles for feeding/low_stock/empty/recall/appointment + digest frequency selector Weekly/Daily/Off). Reads/writes user_settings table. On feeding toggle: rescheduleAllFeeding(). On appointment toggle: rescheduleAllAppointments(). On global disable: cancel all local notifications. Recall disable requires confirmation dialog with pet name. PetHubScreen settings row "Notifications" navigates to screen. 862 tests passing across 43 suites.
+- M5 HomeScreen updates: Recall siren banner (active recalled pantry items with navigation to RecallDetailScreen), upcoming appointment card (next appointment with relative date + navigate to detail), recent scan history section.
+- M5 bugfix D-164: Unit label simplification — collapsed cans/pouches/units to single 'servings' value. Migration 019, removed unit picker from AddToPantrySheet and EditPantryItemScreen.
+- M5 bugfix D-165: Calorie-budget-aware serving recommendations — AddToPantrySheet rewritten with Auto/Manual toggle (auto default). Auto mode computes remaining calorie budget from existing pantry items and divides by feedings per day. Smart default feedings (1 if pet already has daily food, 2 otherwise). Product size pre-fill from name regex. Decimal-pad keyboard fix. Budget warnings (>120% amber banner, >100% inline, <80% muted). New pure helpers: `computePetDer()`, `computeExistingPantryKcal()`, `computeAutoServingSize()`, `computeBudgetWarning()`, `getSmartDefaultFeedingsPerDay()`, `parseProductSize()`. 895 tests passing across 43 suites.
+- M5 bugfix: Applied migrations 011-019 to production database (tables + cron jobs were never pushed). Combined SQL script for pantry, scores, push tokens, settings, recalls, appointments, health records.
+- M5 bugfix: EditPantryItemScreen crash on delete — early return guard was between hooks (React rules violation). Moved guard after all hooks, added null safety to hook bodies.
+- M5 bugfix: "Log a Treat" navigation from PetHub opened stale Result screen instead of camera. Fixed by navigating to `Scan` → `ScanMain` to reset the stack.
+- M5 bugfix: AddToPantrySheet error messages — surface actual Supabase error instead of generic "Failed to add to pantry" string.
 
 ---
 
@@ -75,7 +95,7 @@ products
 ├── ga_kcal_per_kg INT
 ├── kcal_per_unit INT                ← for single-serve items (pouches, sticks, chews)
 ├── unit_weight_g DECIMAL            ← weight per single unit (e.g., 85g pouch, 14g treat stick)
-├── default_serving_format TEXT       ← 'bulk' | 'unit_count' | 'cans' (auto-set from product_type)
+├── default_serving_format TEXT       ← 'weight' | 'unit' (derived from product_form per D-152)
 ├── ga_taurine_pct DECIMAL(5,3)
 ├── ga_l_carnitine_mg DECIMAL(8,2)
 ├── ga_dha_pct DECIMAL(5,3)
@@ -94,6 +114,7 @@ products
 ├── image_url TEXT                         ← Migration 008: Chewy product image URL
 ├── feeding_guidelines TEXT                ← Migration 008: full feeding guide text (D-136 supplemental detection)
 ├── source_url TEXT                        ← Migration 008: Chewy product page URL (debugging + rescrapes)
+├── product_form TEXT                     ← Migration 010: 'dry' | 'wet' | 'raw' | 'freeze-dried' | 'dehydrated' | etc.
 ├── score_confidence TEXT DEFAULT 'high'
 ├── last_verified_at TIMESTAMPTZ
 ├── formula_change_log JSONB
@@ -147,7 +168,8 @@ pets
 ├── species TEXT NOT NULL ('dog' | 'cat')
 ├── breed TEXT DEFAULT 'mixed'
 ├── weight_current_lbs DECIMAL(5,1)      ← renamed from weight_lbs per PET_PROFILE_SPEC
-├── weight_goal_lbs DECIMAL(5,1)         ← null = no weight management mode
+├── weight_goal_lbs DECIMAL(5,1)         ← DEPRECATED by D-160 → weight_goal_level SMALLINT (-3 to +3, default 0)
+├── weight_goal_level SMALLINT DEFAULT 0 ← D-160: replaces weight_goal_lbs. CHECK (-3 to +3). Cat cap at -2.
 ├── weight_updated_at TIMESTAMPTZ        ← D-117: stale weight guard (amber prompt >6 months)
 ├── date_of_birth DATE                   ← renamed from birth_date per PET_PROFILE_SPEC
 ├── dob_is_approximate BOOLEAN DEFAULT false  ← D-116: rescue pet approximate age mode
@@ -157,6 +179,7 @@ pets
 ├── is_neutered BOOLEAN                  ← renamed from is_spayed_neutered per PET_PROFILE_SPEC
 ├── sex TEXT CHECK ('male' | 'female')   ← D-118: optional, null valid. For vet report + pronouns.
 ├── photo_url TEXT                        ← Supabase storage path
+├── health_reviewed_at TIMESTAMPTZ       ← Migration 003: null = never visited health screen. Used for Top Matches cache invalidation.
 ├── created_at TIMESTAMPTZ DEFAULT NOW()
 ├── updated_at TIMESTAMPTZ DEFAULT NOW()
 ├── RLS: auth.uid() = user_id
@@ -170,18 +193,37 @@ scans                                   ← canonical name per CLAUDE.md (was sc
 ├── score_breakdown JSONB            ← full Layer 1/2/3 snapshot
 ├── scanned_at TIMESTAMPTZ DEFAULT NOW()
 
-pantry_items
+pantry_items                            ← Migration 011: D-152/D-154/D-155 user-set serving model
 ├── id UUID PK
-├── user_id UUID FK → auth.users(id)
-├── pet_id UUID FK → pets(id)
-├── product_id UUID FK → products(id)
-├── role TEXT ('daily_food' | 'treat' | 'supplement' | 'topper')
-├── serving_format TEXT ('bulk' | 'unit_count' | 'cans')  ← auto-detected from product category
-├── pack_size_value DECIMAL          ← bag weight in lbs (bulk) OR unit count (pouches/sticks/cans)
-├── pack_size_unit TEXT ('lb' | 'oz' | 'kg' | 'units')
+├── user_id UUID FK → auth.users(id) ON DELETE CASCADE
+├── product_id UUID FK → products(id) ON DELETE CASCADE
+├── quantity_original DECIMAL(10,2) NOT NULL  ← bag weight or unit count at time of adding
+├── quantity_remaining DECIMAL(10,2) NOT NULL ← decremented by auto-depletion, floors at 0 (D-155)
+├── quantity_unit TEXT NOT NULL ('lbs' | 'oz' | 'kg' | 'g' | 'units')
+├── serving_mode TEXT NOT NULL ('weight' | 'unit')  ← D-152: weight-based (dry/raw) or unit-based (cans/pouches)
+├── unit_label TEXT DEFAULT 'units' ('cans' | 'pouches' | 'units')  ← display label for unit mode
 ├── added_at TIMESTAMPTZ DEFAULT NOW()
-├── is_active BOOLEAN DEFAULT true   ← false = removed from pantry but kept in history
+├── is_active BOOLEAN DEFAULT true     ← false = soft-deleted from pantry (D-155)
+├── last_deducted_at TIMESTAMPTZ       ← tracks last auto-depletion
+├── created_at TIMESTAMPTZ DEFAULT NOW()
+├── updated_at TIMESTAMPTZ DEFAULT NOW()
+├── INDEX (user_id, is_active) WHERE is_active = true
 ├── RLS: auth.uid() = user_id
+
+pantry_pet_assignments                  ← Migration 011: D-154 per-pet serving config
+├── id UUID PK
+├── pantry_item_id UUID FK → pantry_items(id) ON DELETE CASCADE
+├── pet_id UUID FK → pets(id) ON DELETE CASCADE
+├── serving_size DECIMAL(8,4) NOT NULL ← user-set: cups/scoops (weight) or fractional units (D-152)
+├── serving_size_unit TEXT NOT NULL ('cups' | 'scoops' | 'units')
+├── feedings_per_day SMALLINT NOT NULL DEFAULT 2
+├── feeding_frequency TEXT NOT NULL DEFAULT 'daily' ('daily' | 'as_needed')
+├── feeding_times JSONB                ← D-101: clock times for feeding notifications
+├── notifications_on BOOLEAN DEFAULT true
+├── created_at TIMESTAMPTZ DEFAULT NOW()
+├── updated_at TIMESTAMPTZ DEFAULT NOW()
+├── UNIQUE(pantry_item_id, pet_id)
+├── RLS: pantry_item_id IN (SELECT id FROM pantry_items WHERE user_id = auth.uid())
 
 symptom_logs
 ├── id UUID PK
@@ -311,7 +353,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 **NOT on scan result screen:** Poop Check, Symptom Tracker → Me tab (pet-over-time, not product-specific)
 
 ### Loading Experience
-- [x] 6-step terminal message sequence (see D-037)
+- [x] 6-step terminal message sequence (D-037)
 - [x] Minimum 1.2s display time even if data returns faster (perceived thoroughness)
 
 ---
@@ -332,7 +374,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] life_stage auto-derivation from age + species + breed size (D-064)
 - [x] Multi-pet switching carousel on Pet Hub (D-120) — `useActivePetStore` Zustand, teal border active, dimmed inactive
 - [x] Active pet selector persists across sessions
-- [ ] Goal weight field (premium-gated, only editable when obesity/underweight condition set)
+- [ ] Weight goal slider (D-160, premium-gated) — 7-level slider replacing raw goal weight (D-061 superseded). Cat cap at -2. Moved to M6.
 - [x] Stale weight indicator (D-117) — amber prompt on Hub if weight >6 months old
 - [x] Sex field (D-118) — segmented control `[Male] [Female]`, optional, for vet report + pronouns
 - [x] Pet deletion: type name to confirm + 30-day soft-delete grace period
@@ -342,15 +384,15 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] RER calculation: `70 × (kg)^0.75`
 - [x] DER multiplier tables (species-specific, see D-060 through D-063)
 - [x] Daily portion display (cups/day or grams/day based on kcal/cup)
-- [ ] Goal weight mode: RER at goal weight, not current weight (premium)
+- [ ] Weight goal level mode (D-160): adjusted DER = baseDER x multiplier from weight_goal_level. Premium only (D-153). Moved to M6.
 
 ### Treat Battery
 - [x] 10% of DER = daily treat budget in kcal
 - [x] Per-treat calculation: budget ÷ kcal_per_treat = safe count
 - [x] Visual battery gauge (% of daily budget consumed)
-- [ ] Cat hepatic lipidosis guard: warn if implied weekly loss >1% body weight
+- [ ] Cat hepatic lipidosis guard: architecturally replaced by D-160 cat cap at -2 (slider doesn't render -3 for cats). D-062 runtime check no longer needed.
 
-### Veterinary Audit (CRITICAL — Moved to M2)
+### Veterinary Audit (CRITICAL — Pending vet partner, not blocking M2 feature completion)
 - [ ] Scope: danger-rated ingredients, species-specific physiological claims, scoring methodology
 - [ ] Review `BREED_MODIFIERS_DOGS.md` — 23 breed entries, all modifiers pending vet clearance
 - [ ] Review `BREED_MODIFIERS_CATS.md` — 21 breed entries, all modifiers pending vet clearance
@@ -440,7 +482,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Score Context
 - [x] Benchmark bar — gradient track with product pin + category average marker
-- [ ] "What Good Looks Like" reference card
+- [ ] "What Good Looks Like" reference card (deferred — post-M4)
 
 ### Nutrition Panel
 - [x] AAFCO progress bars with threshold markers (D-141: improved marker visibility, min/max labels)
@@ -463,7 +505,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] Loading terminal with step-by-step messages
 
 ### Actions
-- [ ] Pantry button (add to user's pantry)
+- [x] Pantry button (add to user's pantry)
 - ~~Compare button~~ → moved to M6
 - ~~Vet Report~~ → moved to M5-M6 (based on soft launch feedback)
 
@@ -523,7 +565,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 ### Migration 008: Dataset Field Backfill
 - [x] Add `feeding_guidelines`, `is_vet_diet`, `special_diet`, `image_url`, `source_url` to products table
 - [x] Backfill 9,078 products from `dataset_kiba_v6_merged.json` (0 errors)
-- [x] `references/dataset-field-mapping.md` — full audit of mapped vs dropped fields
+- [x] `docs/references/dataset-field-mapping.md` — full audit of mapped vs dropped fields
 
 ---
 
@@ -532,66 +574,83 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 > Goal: The killer retention feature. "Smoke alarm for recalled pet food."
 
 ### Pantry
-- [ ] Add scanned products to pantry
-- [ ] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
-- [ ] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
-- [ ] Pantry dashboard showing all products with scores
-- [ ] Bag/pack countdown with days remaining (D-065) — 3 serving formats: bulk (cups/day from DER ÷ kcal_per_cup), unit count (pouches/cans), treats (units from Treat Battery budget)
-- [ ] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
-- [ ] User inputs bag size or pack quantity at add-to-pantry
-- [ ] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
-- [ ] Staleness badge for products unverified >90 days
-- [ ] Feeding schedule per pantry item: daily (1-3x/day with clock times) or as-needed (D-101)
-- [ ] Push notifications on feeding schedule — grouped for multi-pet households
-- [ ] Auto-depletion tied to feeding schedule — no manual logging for daily items (D-101)
+- [x] Add scanned products to pantry
+- [x] Me tab "Log a Treat" scan button under Treat Battery — auto-deducts kcal (D-124)
+- [x] Per-pet pantry assignment with multi-pet sharing (many-to-many — one bag assigned to multiple pets)
+- [x] Pantry card component (`PantryCard.tsx`) — product info, score/bypass badge, depletion bar, alerts, calorie context, treat mode, empty/low-stock/recalled states
+- [x] Pantry dashboard showing all products with scores
+- [x] Bag/pack countdown with days remaining (D-065, updated by D-152) — 2 serving formats: weight-based (dry/raw, cups per feeding) and unit-based (servings per feeding, D-164)
+- [x] Shared pantry depletion: sum consumption rates across all assigned pets. Display: "Shared by Buster & Milo · 3.7 cups/day combined · ~13 days remaining"
+- [x] User inputs bag size or pack quantity at add-to-pantry (D-165: product size pre-fill from name, budget-aware auto-calc serving)
+- [x] Low stock nudge at ≤5 days or ≤5 units — affiliate buy button surfaces here (D-065)
+- [ ] Staleness badge for products unverified >90 days (deferred — needs formula change detection infra from M3)
+- [x] Feeding schedule per pantry item: daily (1-3x/day with clock times) or as-needed (D-101)
+- [x] Push notifications on feeding schedule — grouped for multi-pet households
+- [x] Auto-depletion tied to feeding schedule — no manual logging for daily items (D-101)
+- [x] Budget-aware serving recommendations (D-165) — auto/manual toggle, remaining calorie budget from pantry, smart default feedings, decimal-pad input, budget warnings
+- Weight goal slider (D-160) and caloric accumulator (D-161) moved to M6 scope
 
 ### Pantry Diet Completeness (D-136 Part 5)
-- [ ] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
-- [ ] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
-- [ ] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "⚠️ [Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
-- [ ] Only supplemental products in pantry, zero complete food → red diet health card: "🔴 No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
-- [ ] Warnings are per-pet (each pet's pantry evaluated independently)
-- [ ] All warning copy D-095 compliant — factual, no clinical language
-- [ ] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
+- [x] Diet-level completeness check per pet when pantry composition changes (add/remove product, change assignment)
+- [x] Supplemental product(s) alongside ≥1 complete food → no warning, optional "Topper" tag on pantry card
+- [x] 2+ supplemental feeds with no complete food in pantry → persistent amber warning banner: "[Pet Name]'s diet may be missing essential nutrients. [Product] is designed as a supplement, not a complete meal. Consider adding a complete food."
+- [x] Only supplemental products in pantry, zero complete food → red diet health card: "No complete meals found in [Pet Name]'s diet. Supplemental foods don't provide all required vitamins and minerals on their own."
+- [x] Warnings are per-pet (each pet's pantry evaluated independently)
+- [x] All warning copy D-095 compliant — factual, no clinical language
+- [x] This is a diet-level assessment, NOT a score modifier — product scores never change based on pantry composition
 
 ### Pet Appointments (D-103)
-- [ ] Schedule vet, grooming, medication, vaccination, and custom appointments
-- [ ] Per-pet or multi-pet assignment
-- [ ] Optional reminders (1hr / 1 day / 3 days / 1 week before)
-- [ ] Recurring appointments (monthly, quarterly, 6-month, yearly) for flea meds, checkups
-- [ ] Upcoming appointments visible on pet profile and home screen
-- [ ] Past appointments archived for future vet report integration
+- [x] Schedule vet, grooming, medication, vaccination, and custom appointments
+- [x] Per-pet or multi-pet assignment
+- [x] Optional reminders (1hr / 1 day / 3 days / 1 week before)
+- [x] Recurring appointments (monthly, quarterly, 6-month, yearly) for flea meds, checkups
+- [x] Upcoming appointments visible on pet profile and home screen
+- [x] Past appointments archived for future vet report integration
 
 ### Recall Siren (Free Tier — D-125)
-- [ ] FDA recall RSS feed monitoring (automated, not manual checking)
-- [ ] Cross-reference recalled products against user pantry
-- [ ] Push notification to affected users — NOT premium-gated
-- [ ] Product score → 0 with recall banner on scan result
-- [ ] Recall detail screen with FDA link and recommended actions
-- [ ] Historical recall log per product
+- [x] FDA recall RSS feed monitoring (automated, not manual checking)
+- [x] Cross-reference recalled products against user pantry
+- [x] Push notification to affected users — NOT premium-gated
+- [x] Recalled product bypass — no score computed, bypass badge displayed (D-158, same pattern as vet diet D-135)
+- [x] RecallDetailScreen with FDA link, allergen warnings, and "Remove from Pantry" action
+- [x] Recalled pantry items pushed to top of list with red badge (D-158)
+- [x] Historical recall log per product
 
 ### Weekly Digest Push Notification (D-130)
-- [ ] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
-- [ ] Expo push notification integration
-- [ ] Adaptive content: activity summary if active, re-engagement nudge if inactive
-- [ ] User preference: weekly (default) or daily frequency
-- [ ] Free for all users (retention → conversion funnel)
+- [x] Supabase scheduled function: weekly scan summary + pantry state + recall alerts
+- [x] Expo push notification integration
+- [x] Adaptive content: activity summary if active, re-engagement nudge if inactive
+- [x] User preference: weekly (default) or daily frequency
+- [x] Free for all users (retention → conversion funnel)
 
 ---
 
 ## M6: Alternatives Engine (Weeks 24–27)
 
-> Goal: "This scored 44. Here are three options scoring 80+."
+> Goal: "This scored low. Here are three options scoring 80+."
 
-### Compare & Vet Report (moved from M4)
-- [ ] Compare button (side-by-side product comparison) — paywall gate already wired
-- [ ] Vet Report (shareable PDF summary for vet visits)
+### Compare & Vet Report (moved from M4) — COMPLETE
+- [x] Compare button (side-by-side product comparison) — 9-rule key differences engine, two-column CompareScreen, CompareProductPickerSheet
+- [x] Vet Report (shareable PDF summary for vet visits) — 4-page diet-centric report via expo-print, premium-gated
 
-### Safe Swap Recommendations
-- [ ] Query products in same category + species with score >threshold
-- [ ] Filter by user's pet allergies
-- [ ] Rank by score, then by price (if affiliate data available)
-- [ ] "See Higher-Scoring Alternatives" CTA on all results
+### Weight Management (moved from M5) — COMPLETE
+- [x] Weight goal slider on PortionCard (D-160) — 7 detents (-3 to +3), cat -3 hidden, swipeable pan gesture with haptic detents, live calorie context, premium-gated. Migration 022: `weight_goal_level SMALLINT` on `pets` table. All DER consumers wired. Proportional pantry serving scaling on slider change.
+- [x] Caloric accumulator in auto-deplete cron (D-161) — estimated weight tracking from feeding data, species-specific thresholds (dogs 3,150 kcal/lb, cats 3,000 kcal/lb), notify-and-confirm via WeightEstimateSheet (confirm/enter actual/dismiss). PetHubScreen banner. D-117 stale weight suppressed when accumulator active. Migration 022: `caloric_accumulator` + `accumulator_last_reset_at` + `accumulator_notification_sent` on `pets`.
+- [x] NotificationPreferencesScreen: weight_estimate_alerts_enabled toggle. Migration 022: `weight_estimate_alerts_enabled` on `user_settings`.
+
+### BCS Reference Tool (D-162) — COMPLETE
+- [x] Educational body condition score panel (9-point scale, species-specific)
+- [x] Accessible from PortionCard, PetHubScreen, WeightEstimateSheet
+- [x] Links to weight goal slider (D-160)
+- [x] NOT diagnostic — no assessment, no input to scoring/DER
+- [x] Primordial pouch callout for cats
+- [ ] Visual assets needed: BCS silhouettes per category (dog + cat) — currently using numbered circles
+
+### Safe Swap Recommendations — COMPLETE
+- [x] Query products in same category + species with score >threshold (Plan 2 curated layout: Top Pick / Fish-Based / Great Value)
+- [x] Filter by user's pet allergies (fish allergy → Fish-Based replaced with "Another Pick")
+- [x] Rank by score, then by price (Great Value uses price/product_size_kg, migration 023)
+- [x] "See Higher-Scoring Alternatives" CTA on all results (Safe Swap section on ResultScreen, life stage hard filter)
 
 ### Affiliate Integration
 - [ ] Chewy affiliate program application (target: ~500+ active users)
@@ -603,44 +662,96 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M7: 7-Day Safe Switch Guide (Weeks 28–30)
+## M7: 7-Day Safe Switch Guide (Weeks 28–30) — COMPLETE
 
 > Goal: Guided food transition to reduce digestive upset.
 
-- [ ] Day-by-day transition plan (old food % → new food %)
-- [ ] Tummy Check prompts during transition
-- [ ] Completion celebration + review prompt
-- [ ] Species-specific transition speeds (cats need slower transitions)
+- [x] Day-by-day transition plan (old food % → new food %) — SafeSwitchDetailScreen with proportion bar, vertical timeline
+- [x] Tummy Check prompts during transition — 3 pills (perfect/soft stool/upset), upset advisory on 2+ consecutive
+- [x] Completion celebration + review prompt — completion card with "Done" CTA
+- [x] Species-specific transition speeds (cats need slower transitions) — dogs 7 days, cats 10 days, getDefaultDuration()
 
 ---
 
-## M8–M10: Community Features (Weeks 31–40)
+## M8: Kiba Index (Complete)
 
-> Goal: User-generated data flywheel.
+> Goal: Community-driven taste and digestion feedback on products.
 
-### Kiba Index (M8)
-- [ ] Taste Test voting (Loved it / Picky / Refused)
-- [ ] Tummy Check voting (Perfect / Soft stool / Upset)
-- [ ] Aggregate display on product results
-- [ ] One vote per pet per product enforcement
+- [x] Taste Test voting (Loved it / Picky / Refused)
+- [x] Tummy Check voting (Perfect / Soft stool / Upset)
+- [x] Aggregate display on product results (bar charts at 5+ votes threshold)
+- [x] One vote per pet per product enforcement (UPSERT on unique constraint)
+- [x] Partial submissions (taste today, tummy later)
+- [x] Picky Eater Approved badge (≥20 votes, ≥85% loved)
+- [x] Bypass rules (hidden for vet diet, recalled, species mismatch, variety pack)
+- [x] RPC aggregation function (SECURITY DEFINER, species-filtered)
 
-### Symptom Detective (M9)
+---
+
+## M9: UI Polish & Search (In Progress)
+
+> Goal: Polish existing features and fix UX friction before adding new capabilities.
+
+- [x] **MeScreen overhaul** — unified Medical Records card (chronological, micro-icons, top 3 + "See All"), MedicalRecordsScreen full-screen timeline, HealthRecordDetailSheet (edit/delete), health record CRUD service functions, Matte Premium visual polish, appointments card improvements (persistent add/see-all links), medication chevrons
+- [x] **SwipeableRow component** — reusable swipe-to-reveal gestures on health records, medications, appointments. Swipe left → delete (with confirmation), swipe right → edit. `src/components/ui/SwipeableRow.tsx`
+- [x] **Matte Premium design system** — `.agent/design.md` established: `cardSurface`, `hairlineBorder`, `pressOverlay` tokens, card anatomy, typography, spacing, anti-patterns. Checklist for polishing any screen.
+- [x] **Vet diet data fix** — migration 027 restores 483 `is_vet_diet` flags lost during v7 reimport. D-135 bypass operational again. `import_products.py` updated to map `_is_vet_diet` for future imports.
+- [x] **Pantry polish** — SwipeableRow on PantryCards, legacy token migration (`Colors.card` → `cardSurface`)
+- [x] **Card contrast alignment** — `cardSurface` `#1C1C1E` → `#242424`, `hairlineBorder` `rgba 0.08` → `0.12`. PetHubScreen cards now match AppointmentsListScreen.
+- [x] **Design system documentation** — icon platters, screen headers, disclaimer placement, Featured Action Card, zero-state text rules added to `.agent/design.md`.
+- [x] **HomeScreen category browse** — 4 toggleable category cards (Daily Food, Toppers & Mixers, Treats, Supplements) with contextual sub-filter chips. Dynamic search re-triggers on filter change. Variety pack exclusion (`is_variety_pack` column, migration 029, ~1,706 flagged). `@shopify/flash-list` installed. `categoryBrowseService.ts` with cursor pagination + `fetchCategoryTopPicks` stub.
+- [x] **Legacy token migration** — `Colors.card` → `Colors.cardSurface` and `Colors.cardBorder` → `Colors.hairlineBorder` across ~40 remaining files
+- [x] **ResultScreen + HomeScreen matte frame pass** — card anatomy on 8 scoring cards (PositionMap, BonusNutrientGrid, CollapsibleSection, SafeSwapSection, AafcoProgressBars), HomeScreen category cards, Compare + Add to Pantry buttons
+- [x] **Behavioral Feeding architecture** — migration 034, `feeding_style` + `feeding_role` model replacing slot/meal-fraction system. Wet Reserve Engine, diet completeness engine, refactored auto-deplete cron
+- [x] **Custom Feeding Style** — `CustomFeedingStyleScreen`, kcal inputs per food, DER banner, visual sum bar, scale-invariant pct storage. Service layer: `updateCalorieShares`, `transitionToCustomMode/FromCustomMode`. 4th option in `FeedingStyleSetupSheet`
+- [x] **`rebalanceBaseShares` auto-split** — even calorie_share_pct across base foods after add/remove/share, proportional serving_size scaling
+- [x] **Feeding style mismatch detection** — `AddToPantrySheet` re-shows `FeedingStyleSetupSheet` when adding non-dry to `dry_only` (or dry to `wet_only`)
+- [ ] Top Picks per category/sub-filter (up to 50, dedicated screen — stub ready)
+- [ ] HomeScreen visual overhaul (custom assets, layout polish)
+- [ ] General UX friction fixes
+
+---
+
+## Post-M9 Data Enrichment (Parallel to M10)
+
+> Goal: Close two data quality gaps using Vertex AI Gemini Pro before launch. See `docs/plans/VERTEX_AI_BACKFILL_PLAN.md`.
+
+- [ ] **Workstream 1 — Ingredient TLDR + citation backfill** (`ingredients_dict.tldr`, `detail_body`, `citations_display`). Whitelisted reference corpus. Human review gate before data trusted by Rule #6 penalty attribution.
+- [ ] **Workstream 2 — Amazon A+ image → GA extraction** (`products.ga_*` for `asin IS NOT NULL AND ga_protein_pct IS NULL`). Requires A+ image URL scrape as prerequisite. DMB recompute downstream.
+- [ ] Budget: ~$300 in Vertex credits (free ceiling). Rough spend estimate ~$60 worst case.
+
+---
+
+## M10: Community Points (Lite)
+
+> Goal: Lightweight engagement loop — points and streaks only. Cosmetics and leaderboard deferred.
+
+- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
+- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
+- [ ] Community safety flags (users flag suspect scores → review queue)
+
+**Deferred to later update:**
+- Moderation queue UI for submitted products
+- Cosmetic rewards (profile borders, badges)
+- Top contributor leaderboard
+
+---
+
+## M11: Symptom Detective (Deferred — Major App Store Update)
+
+> Goal: Daily health tracking with pattern detection. Big feature for post-launch update.
+
 - [ ] Daily symptom logging (5 categories)
 - [ ] Pattern detection algorithm (flag correlations after 2-4 weeks)
 - [ ] "Possible sensitivity to [ingredient]" advisory when pattern detected
 - [ ] Data visualization (calendar heatmap of symptoms)
-
-### Community Contributions (M10)
-- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
-- [ ] Moderation queue UI for submitted products (M3 stores with `needs_review = true`, M10 adds admin/review interface)
-- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
-- [ ] Cosmetic rewards (profile borders, badges) — positioned as contributor thank-you, not primary hook
-- [ ] Top contributor leaderboard (query `contributed_by` from M3 community products)
-- [ ] Community safety flags (users flag suspect scores → review queue)
+- [ ] iOS Home Screen widget (7/30-day mini heatmap, WidgetKit)
+- [ ] Notification quick-response logging ("How's Buster feeling today?" with one-tap actions)
+- [ ] Vet Report integration (symptom timeline, ingredient correlations, diet-symptom overlay)
 
 ---
 
-## M11: Launch Prep (Weeks 41–44)
+## M12: Launch Prep
 
 > Goal: App Store ready.
 
@@ -661,8 +772,8 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ### Quality
 - [ ] Scoring engine test suite: deterministic outputs for reference products
-- [ ] Pure Balance Grain-Free Salmon → 62/100 (regression test — D-137 DCM fires, mitigation applies)
-- [ ] Temptations Classic Tuna → 44/100 (regression test)
+- [ ] Pure Balance Grain-Free Salmon → 60/100 (regression test — D-137 DCM fires, mitigation applies)
+- [ ] Temptations Classic Tuna → 0/100 (regression test — updated per D-142 colorant escalation + danger penalty increase)
 - [ ] DMB conversion test: wet food with 78% moisture
 - [ ] Edge cases: missing GA, null kcal, no ingredients, unsupported species → graceful handling
 - [ ] Performance: scan → score ≤2s perceived latency
@@ -673,7 +784,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M12: Public Launch (Week 45)
+## M13: Public Launch
 
 > Goal: iOS App Store. Android 4-6 weeks later.
 
@@ -685,9 +796,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 ---
 
-## M13–M15: Growth (Weeks 46–56)
+## M14–M16: Growth
 
-### Retention Optimization (M13)
+### Retention Optimization (M14)
 - [ ] Scan streak incentives
 - [ ] Weekly pantry digest push notifications
 - [ ] "New score available" when re-scraped formula changes
@@ -698,19 +809,19 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [ ] Large widget: weekly summary + feeding schedule + recall badge
 - [ ] expo-widgets or native WidgetKit bridge
 
-### Android Launch (M14)
+### Android Launch (M15)
 - [ ] Port to Android via Expo EAS
 - [ ] Play Store ASO (different keyword dynamics)
 - [ ] Test paywall conversion rates vs iOS
 
-### International (M15)
+### International (M16)
 - [ ] UK/Canada/Australia keyword localization ("pet food checker UK")
 - [ ] Currency localization for affiliate links
 - [ ] Regional AAFCO equivalent standards (FEDIAF for EU)
 
 ---
 
-## M16+: Expansion (Post-Launch)
+## M17+: Expansion (Post-Launch)
 
 ### Elimination Diet Trial Tracker (D-100 — First Priority)
 > Goal: Transform Kiba from a scanner into a longitudinal health platform. Daily engagement for 8-12 weeks.

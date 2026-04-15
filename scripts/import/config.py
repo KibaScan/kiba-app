@@ -34,7 +34,7 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
 # ─── Constants ─────────────────────────────────────────────────
 
 BATCH_SIZE = 100
-JSON_PATH = Path(__file__).resolve().parent.parent.parent / "dataset_kiba_v6_merged.json"
+JSON_PATH = Path(__file__).resolve().parent / "dataset_kiba_v7_master.json"
 ERROR_LOG_PATH = Path(__file__).resolve().parent / "import_errors.json"
 
 # ─── Supabase Client ──────────────────────────────────────────

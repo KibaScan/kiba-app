@@ -1,0 +1,238 @@
+// Scoring Pipeline — fetches ingredient data from Supabase, hydrates, runs scoring engine.
+// This is the bridge between the database and the pure scoring engine.
+// No React/UI imports. No brand awareness (D-019). No affiliate logic (D-020).
+
+// TODO: supabase client will be injected by Edge Function index.ts
+import { computeScore } from './engine.ts';
+import type { Product, PetProfile, IngredientDict } from '../types/index.ts';
+import type { ProductIngredient, ScoredResult } from '../types/scoring.ts';
+import { detectVarietyPack } from '../utils/varietyPackDetector.ts';
+import { isSupplementalByName } from '../utils/supplementalClassifier.ts';
+import { normalizeCanonicalName } from '../utils/ingredientNormalizer.ts';
+
+// ─── Supabase Row Shape ──────────────────────────────────
+
+interface ProductIngredientRow {
+  position: number;
+  ingredient_id: string;
+  ingredients_dict: IngredientDict | null;
+}
+
+// ─── Pipeline Result ────────────────────────────────────
+
+export interface PipelineResult {
+  scoredResult: ScoredResult;
+  ingredients: ProductIngredient[];
+}
+
+// ─── Hydration ───────────────────────────────────────────
+
+export function hydrateIngredient(
+  row: ProductIngredientRow,
+): ProductIngredient | null {
+  const dict = row.ingredients_dict;
+  if (!dict) return null;
+
+  return {
+    position: row.position,
+    canonical_name: normalizeCanonicalName(dict.canonical_name),
+    display_name: dict.display_name,
+    dog_base_severity: dict.dog_base_severity,
+    cat_base_severity: dict.cat_base_severity,
+    is_unnamed_species: dict.is_unnamed_species,
+    is_legume: dict.is_legume,
+    is_pulse: dict.is_pulse ?? false,
+    is_pulse_protein: dict.is_pulse_protein ?? false,
+    position_reduction_eligible: dict.position_reduction_eligible,
+    cluster_id: dict.cluster_id,
+    cat_carb_flag: dict.cat_carb_flag,
+    allergen_group: dict.allergen_group,
+    allergen_group_possible: dict.allergen_group_possible ?? [],
+    is_protein_fat_source: dict.is_protein_fat_source ?? false,
+    // D-105 display content (UI only — scoring engine never reads these)
+    definition: dict.definition,
+    tldr: dict.tldr,
+    detail_body: dict.detail_body,
+    citations_display: dict.citations_display,
+  };
+}
+
+// ─── Empty Result Factory ────────────────────────────────
+
+export function makeEmptyResult(
+  product: Product,
+  petProfile: PetProfile | null,
+  flags: string[],
+): PipelineResult {
+  return {
+    scoredResult: {
+      finalScore: 0,
+      displayScore: 0,
+      petName: petProfile?.name ?? null,
+      layer1: {
+        ingredientQuality: 0,
+        nutritionalProfile: 0,
+        formulation: 0,
+        weightedComposite: 0,
+      },
+      layer2: {
+        speciesAdjustment: 0,
+        appliedRules: [],
+      },
+      layer3: {
+        personalizations: [],
+        allergenWarnings: [],
+      },
+      ingredientPenalties: [],
+      ingredientResults: [],
+      flags,
+      allergenDelta: 0,
+      isPartialScore: true,
+      isRecalled: product.is_recalled,
+      llmExtracted: false,
+      carbEstimate: null,
+      category: product.category === 'treat' ? 'treat' : 'daily_food',
+    },
+    ingredients: [],
+  };
+}
+
+// ─── Main Pipeline ───────────────────────────────────────
+// TODO: scoreProduct() requires a supabase client for ingredient fetching.
+// When building the Edge Function, either:
+//   1. Accept supabase as a parameter, or
+//   2. Import from the Edge Function's own client module.
+// The pure helpers above (hydrateIngredient, makeEmptyResult) work standalone.
+
+export async function scoreProduct(
+  supabase: { from: (table: string) => unknown },
+  product: Product,
+  petProfile: PetProfile | null,
+  petAllergens?: string[],
+  petConditions?: string[],
+): Promise<PipelineResult> {
+  // Step 1: Fetch product_ingredients with ingredients_dict join
+  const { data, error } = await (supabase as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => Promise<{ data: unknown; error: { message: string } | null }> } } } })
+    .from('product_ingredients')
+    .select('position, ingredient_id, ingredients_dict(*)')
+    .eq('product_id', product.id)
+    .order('position', { ascending: true });
+
+  if (error) {
+    console.error(
+      `[pipeline] product_ingredients query failed for product ${product.id}:`,
+      error.message,
+    );
+    return makeEmptyResult(product, petProfile, ['no_ingredient_data']);
+  }
+
+  if (!data || (data as unknown[]).length === 0) {
+    console.error(
+      `[pipeline] No ingredients found for product ${product.id}`,
+    );
+    return makeEmptyResult(product, petProfile, ['no_ingredient_data']);
+  }
+
+  // Step 2: Hydrate into ProductIngredient[]
+  const rows = data as unknown as ProductIngredientRow[];
+  const flags: string[] = [];
+  const hydrated: ProductIngredient[] = [];
+
+  for (const row of rows) {
+    const ingredient = hydrateIngredient(row);
+    if (ingredient) {
+      hydrated.push(ingredient);
+    } else {
+      console.error(
+        `[pipeline] Failed to hydrate ingredient_id ${row.ingredient_id} at position ${row.position} for product ${product.id}`,
+      );
+    }
+  }
+
+  // All ingredients failed hydration
+  if (hydrated.length === 0) {
+    return makeEmptyResult(product, petProfile, ['no_ingredient_data']);
+  }
+
+  // Some ingredients failed hydration — score with what we have
+  if (hydrated.length < rows.length) {
+    flags.push('partial_ingredient_data');
+  }
+
+  // D-135: Vet diets are NOT scored — return hydrated ingredients without running engine
+  if (product.is_vet_diet) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['vet_diet_bypass']).scoredResult,
+        bypass: 'vet_diet_bypass' as const,
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // Species mismatch bypass — cat food scored for dogs (and vice versa)
+  if (petProfile && product.target_species !== petProfile.species) {
+    const targetLabel = product.target_species === 'cat' ? 'cats' : 'dogs';
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['species_mismatch']).scoredResult,
+        bypass: 'species_mismatch' as const,
+        bypassReason: `This product is formulated for ${targetLabel}`,
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // D-158: Recalled products — no score, bypass with warning + ingredients
+  if (product.is_recalled) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['recalled']).scoredResult,
+        bypass: 'recalled' as const,
+        bypassReason: 'This product has been recalled by the FDA',
+        isPartialScore: false,
+        isRecalled: true,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // Variety pack bypass — concatenated multi-recipe lists produce unreliable scores
+  if (detectVarietyPack(product.name, hydrated)) {
+    return {
+      scoredResult: {
+        ...makeEmptyResult(product, petProfile, ['variety_pack']).scoredResult,
+        bypass: 'variety_pack' as const,
+        bypassReason: 'This is a variety pack with multiple recipes',
+        isPartialScore: false,
+        isRecalled: product.is_recalled,
+      },
+      ingredients: hydrated,
+    };
+  }
+
+  // Runtime supplemental detection — catch toppers/mixers missed by DB classification
+  const scoringProduct = (!product.is_supplemental && isSupplementalByName(product.name))
+    ? { ...product, is_supplemental: true }
+    : product;
+
+  // Step 3: Run scoring engine
+  const result = computeScore(
+    scoringProduct,
+    hydrated,
+    petProfile ?? undefined,
+    petAllergens,
+    petConditions,
+  );
+
+  // Merge pipeline-level flags into engine result
+  const scoredResult = flags.length > 0
+    ? { ...result, flags: [...new Set([...result.flags, ...flags])] }
+    : result;
+
+  return { scoredResult, ingredients: hydrated };
+}

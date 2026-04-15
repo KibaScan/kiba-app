@@ -55,19 +55,30 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
 }));
 jest.mock('../../src/services/supabase', () => ({
-  supabase: { from: jest.fn() },
+  supabase: { from: jest.fn(), auth: { getSession: jest.fn().mockResolvedValue({ data: { session: null } }) } },
+}));
+jest.mock('../../src/utils/network', () => ({
+  isOnline: jest.fn().mockResolvedValue(true),
 }));
 jest.mock('../../src/services/petService', () => ({
   getPetConditions: jest.fn(),
   getPetAllergens: jest.fn(),
-  deletePet: jest.fn(),
+}));
+jest.mock('../../src/services/appointmentService', () => ({
+  getHealthRecords: jest.fn().mockResolvedValue([]),
+}));
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn(),
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
 }));
 
 import {
   calculateScoreAccuracy,
   getStaleWeightMonths,
   formatStaleWeightMessage,
-} from '../../src/screens/PetHubScreen';
+} from '../../src/screens/pethub/petHubHelpers';
 import type { Pet } from '../../src/types/pet';
 
 // ─── Test Fixtures ──────────────────────────────────────
@@ -91,6 +102,16 @@ function makePet(overrides: Partial<Pet> = {}): Pet {
     life_stage: 'adult',
     breed_size: 'medium',
     health_reviewed_at: '2026-01-01T00:00:00Z',
+    weight_goal_level: null,
+    caloric_accumulator: null,
+    accumulator_last_reset_at: null,
+    accumulator_notification_sent: null,
+    bcs_score: null,
+    bcs_assessed_at: null,
+    feeding_style: 'dry_only',
+    wet_reserve_kcal: 0,
+    wet_reserve_source: null,
+    wet_intent_resolved_at: null,
     created_at: '2025-11-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,

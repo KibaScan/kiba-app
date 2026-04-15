@@ -9,12 +9,14 @@ interface ScanState {
   recentScans: ScanRecord[];
   weeklyCount: number;
   scanCache: Product[];
+  treatLogging: boolean;
 
   setCurrentScan: (scan: ScanRecord | null) => void;
   addScan: (scan: ScanRecord) => void;
   addToScanCache: (product: Product) => void;
   clearCurrentScan: () => void;
   resetWeeklyCount: () => void;
+  setTreatLogging: (val: boolean) => void;
 }
 
 export const useScanStore = create<ScanState>((set) => ({
@@ -22,6 +24,7 @@ export const useScanStore = create<ScanState>((set) => ({
   recentScans: [],
   weeklyCount: 0,
   scanCache: [],
+  treatLogging: false,
 
   setCurrentScan: (scan) => set({ currentScan: scan }),
 
@@ -40,4 +43,5 @@ export const useScanStore = create<ScanState>((set) => ({
 
   clearCurrentScan: () => set({ currentScan: null }),
   resetWeeklyCount: () => set({ weeklyCount: 0 }),
+  setTreatLogging: (val) => set({ treatLogging: val }),
 }));

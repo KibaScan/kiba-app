@@ -18,7 +18,7 @@ import json
 import re
 from collections import Counter
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 
 SYNONYMS_PATH = Path(__file__).resolve().parent / 'synonyms.json'
@@ -119,7 +119,7 @@ _COLOR_PATTERNS = [
 _COMPILED_COLORS = [(re.compile(pat, re.IGNORECASE), canon) for pat, canon in _COLOR_PATTERNS]
 
 
-def _match_color(s: str) -> str | None:
+def _match_color(s: str) -> Optional[str]:
     """Try to match a colorant pattern. Returns canonical name or None."""
     # Strip "lake" suffix for matching (it's just a dye carrier form)
     test = re.sub(r'\s+lake$', '', s, flags=re.IGNORECASE).strip()
@@ -142,7 +142,7 @@ def _strip_amino_prefix(s: str) -> str:
     return re.sub(r'^[dl]{1,2}[\-]\s*', '', s, flags=re.IGNORECASE)
 
 
-def normalize_ingredient(raw: str, synonyms: dict[str, str] | None = None) -> str:
+def normalize_ingredient(raw: str, synonyms: Optional[dict] = None) -> str:
     """Normalize raw ingredient text to canonical form for matching.
 
     Pipeline Stage 3: lowercase, strip parens, apply synonyms,
@@ -288,12 +288,12 @@ def normalize_colorant_canonical(canonical: str) -> str:
 
 
 class MatchResult(NamedTuple):
-    ingredient_id: str | None
-    canonical_name: str | None
+    ingredient_id: Optional[str]
+    canonical_name: Optional[str]
     tier: str  # 'exact', 'fuzzy', 'new', 'empty'
     raw: str
     normalized: str
-    fuzzy_distance: int | None = None
+    fuzzy_distance: Optional[int] = None
 
 
 class IngredientMatcher:
@@ -302,7 +302,7 @@ class IngredientMatcher:
     Used by parse_ingredients.py (batch) and reusable for OCR Edge Function.
     """
 
-    def __init__(self, dict_entries: list[dict], synonyms: dict[str, str] | None = None):
+    def __init__(self, dict_entries: list, synonyms: Optional[dict] = None):
         self.synonyms = synonyms or {}
         self.stats = Counter()
 

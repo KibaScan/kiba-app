@@ -4,6 +4,7 @@
 import {
   toggleCondition,
   isConditionDisabled,
+  getConditionToast,
   isAllergenSectionVisible,
   toggleAllergen,
   removeAllergen,
@@ -87,6 +88,23 @@ describe('isConditionDisabled', () => {
     expect(isConditionDisabled('ckd', ['obesity', 'underweight'])).toBe(false);
   });
 
+  // M6: hypothyroid ↔ hyperthyroid mutual exclusion
+  test('hyperthyroid disabled when hypothyroid selected', () => {
+    expect(isConditionDisabled('hyperthyroid', ['hypothyroid'])).toBe(true);
+  });
+
+  test('hypothyroid disabled when hyperthyroid selected', () => {
+    expect(isConditionDisabled('hypothyroid', ['hyperthyroid'])).toBe(true);
+  });
+
+  test('hypothyroid NOT disabled when hyperthyroid NOT selected', () => {
+    expect(isConditionDisabled('hypothyroid', ['cardiac'])).toBe(false);
+  });
+
+  test('hyperthyroid NOT disabled when hypothyroid NOT selected', () => {
+    expect(isConditionDisabled('hyperthyroid', ['diabetes'])).toBe(false);
+  });
+
   test('neither disabled when both absent', () => {
     expect(isConditionDisabled('obesity', [])).toBe(false);
     expect(isConditionDisabled('underweight', [])).toBe(false);
@@ -112,6 +130,51 @@ describe('isConditionDisabled', () => {
     expect(isConditionDisabled('underweight', state)).toBe(false);
     state = toggleCondition(state, 'underweight');
     expect(state).toEqual(['underweight']);
+  });
+});
+
+// ─── getConditionToast ───────────────────────────────────
+
+describe('getConditionToast', () => {
+  test('returns mutual exclusion toast for obesity ↔ underweight', () => {
+    const toast = getConditionToast('underweight', 'dog', ['obesity'], 'Buddy');
+    expect(toast).toContain('already marked as Overweight');
+  });
+
+  test('returns mutual exclusion toast for hypothyroid ↔ hyperthyroid', () => {
+    const toast = getConditionToast('hypothyroid', 'cat', ['hyperthyroid'], 'Luna');
+    expect(toast).toContain('already marked as Hyperthyroidism');
+  });
+
+  test('returns species rarity toast for cat + hypothyroid', () => {
+    const toast = getConditionToast('hypothyroid', 'cat', [], 'Luna');
+    expect(toast).toContain('extremely rare in cats');
+    expect(toast).toContain('Hyperthyroidism');
+  });
+
+  test('returns species rarity toast for dog + hyperthyroid', () => {
+    const toast = getConditionToast('hyperthyroid', 'dog', [], 'Rex');
+    expect(toast).toContain('extremely rare in dogs');
+    expect(toast).toContain('Hypothyroidism');
+  });
+
+  test('returns null for valid selection (no conflict)', () => {
+    expect(getConditionToast('cardiac', 'dog', ['ckd'], 'Buddy')).toBeNull();
+  });
+
+  test('returns null for hypothyroid on dog (normal)', () => {
+    expect(getConditionToast('hypothyroid', 'dog', [], 'Buddy')).toBeNull();
+  });
+
+  test('returns null for hyperthyroid on cat (normal)', () => {
+    expect(getConditionToast('hyperthyroid', 'cat', [], 'Luna')).toBeNull();
+  });
+
+  test('mutual exclusion takes priority over species rarity', () => {
+    // Cat selecting hypothyroid when hyperthyroid is already selected
+    // Should get mutual exclusion toast, not species rarity
+    const toast = getConditionToast('hypothyroid', 'cat', ['hyperthyroid'], 'Luna');
+    expect(toast).toContain('already marked');
   });
 });
 

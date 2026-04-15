@@ -44,6 +44,20 @@ ARTIFACT_MERGES = {
     "sweet_potatoes*": "sweet_potatoes",
     "tomatoes*": "tomatoes",
     "**minerals**": "minerals",
+    # ── v7 re-import artifacts (session 8) ──
+    "betacarotene": "beta_carotene",
+    "taurina": "taurine",
+    "vitamine_e": "vitamin_e",
+    "dicalciumphosphate": "dicalcium_phosphate",
+    "dicalcium_phosphat": "dicalcium_phosphate",
+    "calciumpantothenate": "pantothenic_acid",
+    "calciumcarbonate": "calcium_carbonate",
+    "ascorbyl2polyphosphat": "vitamin_c",
+    "ascorbyl2polyphoshate": "vitamin_c",
+    "ascorbyl2polyphophate": "vitamin_c",
+    "ascor_byl2polyphosphat": "vitamin_c",
+    "pyrdoxine_hydrochloride": "vitamin_b6",
+    "thiamine_mononitrat": "vitamin_b1",
 }
 
 # ── Severity updates ────────────────────────────────────────────
@@ -76,6 +90,14 @@ SEVERITY_CAUTION = [
     "meat_by_product",
     "animal_plasma",
     "sodium_tripolyphosphate",
+]
+
+# Known danger ingredients (D-142: artificial colorants escalated to danger)
+SEVERITY_DANGER = [
+    "red_40", "red_3",
+    "yellow_5", "yellow_6",
+    "blue_1", "blue_2",
+    "titanium_dioxide",
 ]
 
 # ── Cluster ID assignments ──────────────────────────────────────
@@ -133,6 +155,11 @@ def is_junk(cn: str) -> bool:
         return True
     # Very long entries with multiple commas (ingredient list fragments)
     if len(cn) > 200 and cn.count(',') > 3:
+        return True
+    # GA data leaked into ingredient lists (e.g. "crude_fat60", "crude_fiber_525", "rice_3")
+    if re.match(r'^crude_(fat|fiber|protein|ash|moisture)', cn) and re.search(r'\d', cn):
+        return True
+    if cn == 'rice_3':
         return True
     return False
 
@@ -318,6 +345,20 @@ def main():
         if not dry_run:
             sb.table("ingredients_dict") \
                 .update({"dog_base_severity": "caution", "cat_base_severity": "caution"}) \
+                .eq("id", ing["id"]) \
+                .execute()
+        stats["severities_updated"] += 1
+
+    for cn in SEVERITY_DANGER:
+        ing = name_to_ing.get(cn)
+        if not ing:
+            continue
+        if ing["dog_base_severity"] == "danger" and ing["cat_base_severity"] == "danger":
+            continue
+        print(f"  {cn}: {ing['dog_base_severity']}/{ing['cat_base_severity']} → danger/danger")
+        if not dry_run:
+            sb.table("ingredients_dict") \
+                .update({"dog_base_severity": "danger", "cat_base_severity": "danger"}) \
                 .eq("id", ing["id"]) \
                 .execute()
         stats["severities_updated"] += 1

@@ -1,38 +1,58 @@
 // Kiba — Navigation Shell
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, GestureResponderEvent } from 'react-native';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
+import { NavigationContainer, DefaultTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator, BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/constants';
 
 import HomeScreen from '../screens/HomeScreen';
-import SearchScreen from '../screens/SearchScreen';
+import CommunityScreen from '../screens/CommunityScreen';
 import ScanScreen from '../screens/ScanScreen';
 import PantryScreen from '../screens/PantryScreen';
+import EditPantryItemScreen from '../screens/EditPantryItemScreen';
 import PetHubScreen from '../screens/PetHubScreen';
 import ResultScreen from '../screens/ResultScreen';
+import RecallDetailScreen from '../screens/RecallDetailScreen';
 import SpeciesSelectScreen from '../screens/SpeciesSelectScreen';
 import CreatePetScreen from '../screens/CreatePetScreen';
 import EditPetScreen from '../screens/EditPetScreen';
 import HealthConditionsScreen from '../screens/HealthConditionsScreen';
+import MedicationFormScreen from '../screens/MedicationFormScreen';
+import MedicationsListScreen from '../screens/MedicationsListScreen';
+import AppointmentsListScreen from '../screens/AppointmentsListScreen';
+import MedicalRecordsScreen from '../screens/MedicalRecordsScreen';
+import HealthRecordFormScreen from '../screens/HealthRecordFormScreen';
+import CreateAppointmentScreen from '../screens/CreateAppointmentScreen';
+import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
+import NotificationPreferencesScreen from '../screens/NotificationPreferencesScreen';
+import BCSReferenceScreen from '../screens/BCSReferenceScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import TermsScreen from '../screens/TermsScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import CommunityContributionScreen from '../screens/CommunityContributionScreen';
 import ProductConfirmScreen from '../screens/ProductConfirmScreen';
 import IngredientCaptureScreen from '../screens/IngredientCaptureScreen';
+import CompareScreen from '../screens/CompareScreen';
+import SafeSwitchSetupScreen from '../screens/SafeSwitchSetupScreen';
+import SafeSwitchDetailScreen from '../screens/SafeSwitchDetailScreen';
+import CategoryBrowseScreen from '../screens/CategoryBrowseScreen';
+import CustomFeedingStyleScreen from '../screens/CustomFeedingStyleScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
-  SearchStackParamList,
+  CommunityStackParamList,
   ScanStackParamList,
   PantryStackParamList,
   MeStackParamList,
   RootStackParamList,
   TabParamList,
 } from '../types/navigation';
+
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // ─── Stack Navigators ───────────────────────────────────
 
@@ -41,18 +61,25 @@ function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStack.Screen name="CategoryBrowse" component={CategoryBrowseScreen} />
       <HomeStack.Screen name="Result" component={ResultScreen} />
+      <HomeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+      <HomeStack.Screen name="Compare" component={CompareScreen} />
+      <HomeStack.Screen name="SafeSwitchDetail" component={SafeSwitchDetailScreen} />
     </HomeStack.Navigator>
   );
 }
 
-const SearchStack = createNativeStackNavigator<SearchStackParamList>();
-function SearchStackScreen() {
+const CommunityStack = createNativeStackNavigator<CommunityStackParamList>();
+function CommunityStackScreen() {
   return (
-    <SearchStack.Navigator screenOptions={{ headerShown: false }}>
-      <SearchStack.Screen name="SearchMain" component={SearchScreen} />
-      <SearchStack.Screen name="Result" component={ResultScreen} />
-    </SearchStack.Navigator>
+    <CommunityStack.Navigator screenOptions={{ headerShown: false }}>
+      <CommunityStack.Screen name="CommunityMain" component={CommunityScreen} />
+      <CommunityStack.Screen name="Result" component={ResultScreen} />
+      <CommunityStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <CommunityStack.Screen name="Compare" component={CompareScreen} />
+    </CommunityStack.Navigator>
   );
 }
 
@@ -62,9 +89,11 @@ function ScanStackScreen() {
     <ScanStack.Navigator screenOptions={{ headerShown: false }}>
       <ScanStack.Screen name="ScanMain" component={ScanScreen} />
       <ScanStack.Screen name="Result" component={ResultScreen} />
+      <ScanStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <ScanStack.Screen name="CommunityContribution" component={CommunityContributionScreen} />
       <ScanStack.Screen name="ProductConfirm" component={ProductConfirmScreen} />
       <ScanStack.Screen name="IngredientCapture" component={IngredientCaptureScreen} />
+      <ScanStack.Screen name="Compare" component={CompareScreen} />
     </ScanStack.Navigator>
   );
 }
@@ -74,7 +103,13 @@ function PantryStackScreen() {
   return (
     <PantryStack.Navigator screenOptions={{ headerShown: false }}>
       <PantryStack.Screen name="PantryMain" component={PantryScreen} />
+      <PantryStack.Screen name="EditPantryItem" component={EditPantryItemScreen} />
+      <PantryStack.Screen name="SafeSwitchSetup" component={SafeSwitchSetupScreen} />
+      <PantryStack.Screen name="SafeSwitchDetail" component={SafeSwitchDetailScreen} />
       <PantryStack.Screen name="Result" component={ResultScreen} />
+      <PantryStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <PantryStack.Screen name="Compare" component={CompareScreen} />
+      <PantryStack.Screen name="CustomFeedingStyle" component={CustomFeedingStyleScreen} />
     </PantryStack.Navigator>
   );
 }
@@ -88,6 +123,20 @@ function MeStackScreen() {
       <MeStack.Screen name="CreatePet" component={CreatePetScreen} />
       <MeStack.Screen name="EditPet" component={EditPetScreen} />
       <MeStack.Screen name="HealthConditions" component={HealthConditionsScreen} />
+      <MeStack.Screen name="BCSReference" component={BCSReferenceScreen} />
+      <MeStack.Screen name="MedicationForm" component={MedicationFormScreen} />
+      <MeStack.Screen name="Medications" component={MedicationsListScreen} />
+      <MeStack.Screen name="MedicalRecords" component={MedicalRecordsScreen} />
+      <MeStack.Screen name="HealthRecordForm" component={HealthRecordFormScreen} />
+      <MeStack.Screen name="Appointments" component={AppointmentsListScreen} />
+      <MeStack.Screen name="CreateAppointment" component={CreateAppointmentScreen} />
+      <MeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+      <MeStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <MeStack.Screen name="Settings" component={SettingsScreen} />
+      <MeStack.Screen name="Result" component={ResultScreen} />
+      <MeStack.Screen name="RecallDetail" component={RecallDetailScreen} />
+      <MeStack.Screen name="Compare" component={CompareScreen} />
+      <MeStack.Screen name="CustomFeedingStyle" component={CustomFeedingStyleScreen} />
     </MeStack.Navigator>
   );
 }
@@ -129,9 +178,17 @@ function TabNavigator() {
         headerShown: false,
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.tabBarInactive,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
         tabBarStyle: {
-          backgroundColor: Colors.tabBarBackground,
-          borderTopColor: Colors.tabBarBorder,
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
           height: 88,
           paddingBottom: 28,
@@ -153,11 +210,11 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Search"
-        component={SearchStackScreen}
+        name="Community"
+        component={CommunityStackScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
       />
@@ -201,7 +258,7 @@ export default function Navigation() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
 
   return (
-    <NavigationContainer theme={KibaDarkTheme}>
+    <NavigationContainer ref={navigationRef} theme={KibaDarkTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {!hasAcceptedTos ? (
           <RootStack.Screen name="Terms" component={TermsScreen} />
