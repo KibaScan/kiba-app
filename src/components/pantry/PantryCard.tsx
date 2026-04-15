@@ -182,7 +182,11 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{badgeText}</Text>
               </View>
-              {product.is_supplemental && (
+              {/* Topper badge — shows for both is_supplemental products (true toppers
+                  in the catalog) and intent-sheet-routed rotational as_needed items
+                  (wet food added to dry_only pet via "Just a topper" choice). Both
+                  are "extras" semantically: log-driven, not on a schedule. */}
+              {(product.is_supplemental || (isRotational && isAsNeeded && !isTreat)) && (
                 <View style={styles.supplementalBadge}>
                   <Text style={styles.supplementalBadgeText}>Topper</Text>
                 </View>
@@ -311,30 +315,41 @@ export function PantryCard({ item, activePet, onTap, onRestock, onRemove, onGave
           </View>
         )}
 
-        {/* V2-1: Replace this food — any base daily food. Premium-gated. Hidden when locked. */}
-        {!isLocked && onReplaceFood && !isTreat && !isRecalled && !isVetDiet && !product.is_supplemental &&
-         product.category === 'daily_food' && !isRotational && (
-          <TouchableOpacity
-            style={styles.findReplacementButton}
-            onPress={() => onReplaceFood(item.product_id)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={isPremiumUser ? "swap-horizontal-outline" : "lock-closed-outline"} size={14} color={Colors.accent} />
-            <Text style={styles.findReplacementText}>Replace this food</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Behavioral Rotational / as-needed Food action */}
-        {isAsNeeded && !item.is_empty && onLogFeeding && !isFedToday && (
-          <TouchableOpacity
-            style={styles.gaveTreatButton}
-            onPress={() => onLogFeeding(item)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="restaurant-outline" size={16} color={Colors.accent} />
-            <Text style={styles.gaveTreatText}>Log feeding</Text>
-          </TouchableOpacity>
-        )}
+        {/* Horizontal action row — Replace this food + Log feeding coexist for
+            base + as_needed items (the common case is Image 5's scenario:
+            a wet food manually toggled off the daily schedule). flexWrap lets
+            them stack on narrow widths. */}
+        {(() => {
+          const showReplace =
+            !isLocked && onReplaceFood && !isTreat && !isRecalled && !isVetDiet &&
+            !product.is_supplemental && product.category === 'daily_food' && !isRotational;
+          const showLogFeeding = isAsNeeded && !item.is_empty && onLogFeeding && !isFedToday;
+          if (!showReplace && !showLogFeeding) return null;
+          return (
+            <View style={styles.actionButtonsRow}>
+              {showReplace && (
+                <TouchableOpacity
+                  style={styles.findReplacementButton}
+                  onPress={() => onReplaceFood(item.product_id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name={isPremiumUser ? "swap-horizontal-outline" : "lock-closed-outline"} size={14} color={Colors.accent} />
+                  <Text style={styles.findReplacementText}>Replace this food</Text>
+                </TouchableOpacity>
+              )}
+              {showLogFeeding && (
+                <TouchableOpacity
+                  style={styles.gaveTreatButton}
+                  onPress={() => onLogFeeding(item)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="restaurant-outline" size={16} color={Colors.accent} />
+                  <Text style={styles.gaveTreatText}>Log feeding</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })()}
 
         {/* Behavioral Fed Today Badge */}
         {isAsNeeded && !item.is_empty && isFedToday && (
@@ -597,6 +612,13 @@ const styles = StyleSheet.create({
   calorieText: {
     fontSize: FontSizes.xs,
     color: Colors.textSecondary,
+  },
+
+  // Horizontal row wrapping Replace this food + Log feeding
+  actionButtonsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
   },
 
   // Gave a treat
