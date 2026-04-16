@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-16 (session 53 — PR #10 open + /code-review run + D-094 polish fix)
+# Project Status — Last updated 2026-04-16 (session 54 — CURRENT.md trim + /handoff rolling-window enforcement)
 
 ## Active Milestone
 
@@ -64,6 +64,37 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-16 (session 54 — CURRENT.md trim + `/handoff` rolling-window enforcement)
+- **Branch:** `m9-current-md-trim` off `m9-top-picks-screen`. 2 commits.
+- **PR:** [#11](https://github.com/KibaScan/kiba-app/pull/11) — "M9: trim CURRENT.md + enforce rolling 2-session window". OPEN against `m5-complete`, stacked on PR #10 (5 commits visible until #10 merges, then auto-cleans to 2).
+- **Accomplished — brainstormed + spec'd + shipped a doc-only trim to kill `/boot` context bloat.**
+  - **Design spec:** `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (`ff9280f`) — approved-in-flow during brainstorming.
+  - **Trim (`b40cd03`):**
+    - Deleted session archive (sessions 46-52, ~700 lines)
+    - Replaced `## What Works` (50-line feature list) with ROADMAP pointer + 5 M9 highlights bullet
+    - Updated `.claude/commands/handoff.md` step 1 to enforce rolling 2-session window: rename existing `## Last Session` → `## Previous Session` + defensive `## Session \d+` delete sweep on every run
+  - **Result:** CURRENT.md 850 → 111 lines. Now single-read-able by Read tool (was blowing the 25k-token limit every `/boot`). Historical detail recoverable via `git log` + `gh pr view`.
+- **Files changed:**
+  - `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (new, 124 lines)
+  - `docs/status/CURRENT.md` (-751 / +15 net)
+  - `.claude/commands/handoff.md` (+10 / -5)
+- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots (unchanged — doc-only work). 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
+- **Not done yet:**
+  - **PR #11 review + merge.** Stacked on PR #10 — may want to wait until #10 lands so the diff shows clean.
+  - All "Not done yet" items from Previous Session (session 53) still apply — D-094 carousel outliers, Top Picks polish carry-overs, deferred code-review items, HomeScreen overhaul, etc.
+  - **First real-world test of the rolling-window `/handoff`** — this file is the first output of the new rules. Verify structure reads cleanly on next `/boot`.
+- **Start the next session by:**
+  1. **`/boot`** — the exercise's whole point. Should now single-shot-read CURRENT.md with no 25k error.
+  2. **`gh pr view 10`** and **`gh pr view 11`** — status on both, merge order decision (lean: #10 first, then #11 auto-cleans).
+  3. Pick scope from Previous Session's menu (D-094 carousel symmetry, Top Picks polish, HomeScreen overhaul, etc.).
+- **Gotchas / context for next session:**
+  - **Rolling-window `/handoff` is live.** If a future run leaves stacked `## Previous Session` headings or doesn't overwrite cleanly, check the Edit tool's string-match on `## Last Session` exact casing. The defensive `## Session \d+` delete in step 1b is there to recover from any stragglers, not a substitute for correct rename.
+  - **PR #11 stacking:** base is `m5-complete` per user direction, not `m9-top-picks-screen`. Diff is noisy until #10 merges. GitHub handles commit auto-cleanup on merge — don't manually rebase unless #10 gets closed without merging.
+  - **`## What Works` max 5 bullets** going forward — that's the cap the spec set. If it grows, prune oldest on each `/handoff` to stay in budget, or close M9.
+  - **Historical session detail** lives in git. `git show HEAD~N:docs/status/CURRENT.md` retrieves any prior state. Don't re-add session archive blocks.
+
+## Previous Session
 
 - **Date:** 2026-04-16 (session 53 — PR #10 opened + full `/code-review` pipeline on PR #10 + D-094 score-framing polish fix)
 - **Branch:** `m9-top-picks-screen` off `m5-complete`. 2 new commits on top of session 52 (22 total on branch). Pushed to origin.
