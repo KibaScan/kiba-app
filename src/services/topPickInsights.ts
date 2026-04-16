@@ -139,6 +139,19 @@ function checkMacroProtein(entry: TopPickEntry, ctx: InsightContext): InsightBul
   return { kind: 'macro_protein', text: `High protein (${roundForDisplay(dmb)}% DMB)` };
 }
 
+function checkPreservative(entry: TopPickEntry): InsightBullet | null {
+  if (entry.preservative_type !== 'natural') return null;
+  return { kind: 'preservative', text: 'Natural preservatives only' };
+}
+
+const QUALITY_TIER_THRESHOLD = 85;
+
+function checkQualityTier(entry: TopPickEntry): InsightBullet | null {
+  if (entry.final_score == null) return null;
+  if (entry.final_score < QUALITY_TIER_THRESHOLD) return null;
+  return { kind: 'quality_tier', text: 'Top-tier ingredient quality' };
+}
+
 // ─── Main ──────────────────────────────────────────────────
 
 export function generateTopPickInsights(
@@ -161,6 +174,12 @@ export function generateTopPickInsights(
     const macroProtein = checkMacroProtein(entry, ctx);
     if (macroProtein) bullets.push(macroProtein);
   }
+
+  const preservative = checkPreservative(entry);
+  if (preservative) bullets.push(preservative);
+
+  const qualityTier = checkQualityTier(entry);
+  if (qualityTier) bullets.push(qualityTier);
 
   return bullets.slice(0, MAX_BULLETS);
 }

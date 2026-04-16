@@ -210,3 +210,114 @@ describe('generateTopPickInsights — macro bullets', () => {
     expect(bullets.find((b) => b.kind === 'macro_fat' || b.kind === 'macro_protein')).toBeUndefined();
   });
 });
+
+describe('generateTopPickInsights — preservative', () => {
+  it('emits "Natural preservatives only" when preservative_type is natural', () => {
+    const entry = makeEntry({ preservative_type: 'natural' });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets).toContainEqual({ kind: 'preservative', text: 'Natural preservatives only' });
+  });
+
+  it.each(['synthetic', 'mixed', 'unknown'] as const)(
+    'omits preservative bullet when type is %s',
+    (type) => {
+      const entry = makeEntry({ preservative_type: type });
+      const bullets = generateTopPickInsights(entry, makeCtx());
+      expect(bullets.find((b) => b.kind === 'preservative')).toBeUndefined();
+    },
+  );
+
+  it('omits preservative bullet when type is null', () => {
+    const entry = makeEntry({ preservative_type: null });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets.find((b) => b.kind === 'preservative')).toBeUndefined();
+  });
+});
+
+describe('generateTopPickInsights — quality_tier', () => {
+  it('emits "Top-tier ingredient quality" when final_score >= 85', () => {
+    const entry = makeEntry({ final_score: 86 });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets).toContainEqual({ kind: 'quality_tier', text: 'Top-tier ingredient quality' });
+  });
+
+  it('emits at the 85 threshold exactly', () => {
+    const entry = makeEntry({ final_score: 85 });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets).toContainEqual({ kind: 'quality_tier', text: 'Top-tier ingredient quality' });
+  });
+
+  it('omits when final_score is 84', () => {
+    const entry = makeEntry({ final_score: 84 });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets.find((b) => b.kind === 'quality_tier')).toBeUndefined();
+  });
+});
+
+describe('generateTopPickInsights — priority ordering + cap', () => {
+  it('caps at 3 bullets in fixed priority order when all checks match', () => {
+    const entry = makeEntry({
+      final_score: 90,
+      preservative_type: 'natural',
+      life_stage_claim: 'Adult Maintenance',
+      ga_fat_pct: 2.2,
+      ga_moisture_pct: 78,
+      top_ingredients: [{ position: 1, canonical_name: 'fish', allergen_group: 'fish' }],
+    });
+    const ctx = makeCtx({ allergens: ['chicken'], lifeStage: 'adult', weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toHaveLength(3);
+    expect(bullets.map((b) => b.kind)).toEqual(['allergen_safe', 'life_stage', 'macro_fat']);
+  });
+
+  it('slots in lower-priority bullets when higher ones are absent', () => {
+    const entry = makeEntry({
+      final_score: 90,
+      preservative_type: 'natural',
+    });
+    const bullets = generateTopPickInsights(entry, makeCtx());
+    expect(bullets.map((b) => b.kind)).toEqual(['preservative', 'quality_tier']);
+  });
+});
+
+describe('generateTopPickInsights — UPVM blocklist sweep', () => {
+  const BLOCKLIST = /\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i;
+
+  const fixtures = [
+    { entry: makeEntry({ preservative_type: 'natural', final_score: 90 }), ctx: makeCtx() },
+    { entry: makeEntry({ ga_protein_pct: 9, ga_moisture_pct: 78 }), ctx: makeCtx({ weightGoalLevel: -2 }) },
+    { entry: makeEntry({ life_stage_claim: 'All Life Stages' }), ctx: makeCtx({ lifeStage: 'puppy' }) },
+    {
+      entry: makeEntry({
+        top_ingredients: [{ position: 1, canonical_name: 'fish', allergen_group: 'fish' }],
+      }),
+      ctx: makeCtx({ allergens: ['chicken', 'beef', 'dairy'] }),
+    },
+  ];
+
+  it.each(fixtures)('emitted bullets contain no UPVM blocklist terms', ({ entry, ctx }) => {
+    const bullets = generateTopPickInsights(entry, ctx);
+    for (const b of bullets) {
+      expect(b.text).not.toMatch(BLOCKLIST);
+    }
+  });
+});
+
+describe('generateTopPickInsights — empty data tolerance', () => {
+  it('returns empty array for bare entry + default context', () => {
+    const bullets = generateTopPickInsights(makeEntry(), makeCtx());
+    expect(bullets).toEqual([]);
+  });
+
+  it('does not throw when top_ingredients is undefined (backend regression guard)', () => {
+    const entry = makeEntry({ top_ingredients: undefined as any });
+    expect(() => generateTopPickInsights(entry, makeCtx({ allergens: ['chicken'] }))).not.toThrow();
+  });
+
+  it('does not emit UPVM-risky bullets for a supplement/topper edge case', () => {
+    const entry = makeEntry({ is_supplemental: true, final_score: 90, preservative_type: 'natural' });
+    const bullets = generateTopPickInsights(entry, makeCtx({ weightGoalLevel: -2, activityLevel: 'working' }));
+    // No macro bullet (skipped for toppers), but preservative + quality_tier are valid
+    expect(bullets.map((b) => b.kind)).toEqual(['preservative', 'quality_tier']);
+  });
+});
