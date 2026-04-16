@@ -2,6 +2,10 @@
 // Featured Action Card anatomy — cardSurface bg, accent-tint border, circular score badge,
 // "Best overall match for {Pet}" trophy badge, up to 3 insight bullets.
 // D-094: suitability framing. D-095: UPVM compliance.
+//
+// Score display note: uses a lightweight circular score badge, NOT the full ScoreRing.
+// ScoreRing requires petPhotoUri + species (pet profile context), which the browse layer
+// doesn't pass down. Matches Gemini V2 mockup (compact ring, no pet photo in center).
 
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
