@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-15 (session 49 — PR #9 → m5-complete + PR #2 → main merge cascade)
+# Project Status — Last updated 2026-04-15 (session 50 — Top Picks screen brainstorm + plan + Task 1)
 
 ## Active Milestone
 
@@ -106,7 +106,47 @@
 
 ## Last Session
 
-- **Date:** 2026-04-15 (session 49 — merge cascade)
+- **Date:** 2026-04-15 (session 50 — Top Picks dedicated screen: brainstorm → spec → plan → Gemini mockups → Task 1)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. 4 new commits. **NOT pushed to origin yet.**
+- **Accomplished — full brainstorm + spec + plan cycle for the dedicated Top Picks screen, plus Task 1 of the implementation plan landed.**
+  - **`/boot`:** confirmed numbers all matched reality (1538 tests / 65 suites, 129 decisions, 39 migrations — no drift since session 49).
+  - **`superpowers:brainstorming`** for `CategoryTopPicksScreen` — a finite top-20 showcase that replaces the current `TopPicksCarousel` See All destination (which today routes to the flat-list `CategoryBrowseScreen`). Resolved scope, 4 category exception calls (supplements skip the new screen and route to CategoryBrowseScreen, vet_diet sub-filter unreachable, treats fully supported, toppers fully supported with no macro bullet).
+  - **Hard architectural constraint surfaced:** `pet_product_scores` deliberately does NOT cache `score_breakdown JSONB` (migration 012 comment: "list view only — full breakdown computed on tap"). Rejected Path B (cache the breakdown via migration 040) and Path C (re-run pipeline on screen mount) in favor of **Path A: static-signal insights**. Insights pulled from joined macros / AAFCO / preservative + a second batched query for top-10 `ingredients_dict.allergen_group` per pick. No migration, no engine re-run, UPVM-safe by construction.
+  - **`superpowers:writing-plans`** produced a 12-task TDD plan with bite-sized steps + exact code at every step + `~40-50` new tests when complete.
+  - **2 rounds of Gemini UI mockups** at `/Users/stevendiaz/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`. V1 mockups violated D-095 multiple times (`Immune Support`, `Skin & Coat Health`, `Ideal for digestion`). Flagged + sent back. **V2 mockups (file suffix `_v2_177628988…`) are locked in** — copy now uses spec templates verbatim (`Free of chicken`, `AAFCO Adult Maintenance`, `Lower-fat formula (10% DMB)`, `Top-tier ingredient quality`, `Natural preservatives only`). V2 also proposed a cleaner two-column hero layout (score ring LEFT, 3 bullets RIGHT) — supersedes my spec section 3 sketch.
+  - **`superpowers:subagent-driven-development`** kicked off — Task 1 (types scaffolding: `TopPickEntry` + `InsightBullet` + `InsightKind` in `src/types/categoryBrowse.ts`) shipped as commit `850dd6b`. Implementer + spec reviewer both ✅ green. Code quality reviewer (kiba-code-reviewer) crashed mid-review with `ConnectionRefused` — likely transient infrastructure issue, NOT a code problem. Task 1 is functionally complete (clean diff, typecheck pass, isolated additions).
+- **4 commits this session on `m9-top-picks-screen`:**
+  - `e3e0d7e` M9: top picks dedicated screen — design spec
+  - `c84e6b5` M9: top picks dedicated screen — implementation plan
+  - `7f3fa90` M9: defer Kiba Index as Top Picks signal
+  - `850dd6b` M9: add TopPickEntry + InsightBullet types (Task 1 implementation)
+- **Numbers (unchanged, all verified green):** 1538 tests / 65 suites / 3 snapshots, 129 decisions, 39 migrations, 19,058 products. No new tests added this session yet (Task 1 was types-only). When the plan completes the count will land around 1580+/70 suites.
+- **Not done yet:**
+  - **Tasks 2–12** of the Top Picks implementation plan still pending. Next up: Task 2 (`topPickInsights.ts` allergen_safe bullet, 5 unit tests).
+  - **Branch `m9-top-picks-screen` not pushed to origin** — push before the next subagent dispatch (or the first subagent that succeeds will push).
+  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
+  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
+- **Start the next session by:**
+  1. **`/boot`** to confirm nothing drifted (test count, decisions, migrations all unchanged from this handoff).
+  2. **Resume subagent-driven execution at Task 2.** Open `docs/superpowers/plans/2026-04-15-top-picks-dedicated-screen.md`, extract Task 2 text verbatim, dispatch via `Agent` tool with `general-purpose` subagent type (haiku model fine for this scale, sonnet OK too). Implementer prompt template at `/Users/stevendiaz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/subagent-driven-development/implementer-prompt.md`.
+  3. **After implementer DONE, run spec reviewer** (general-purpose, haiku) — read actual code, don't trust report.
+  4. **For code quality review, try `superpowers:code-reviewer` instead of `kiba-code-reviewer`** if the latter hits the same `ConnectionRefused` it did this session. Both are valid; superpowers:code-reviewer is safer if there's an MCP issue with kiba-code-reviewer.
+  5. **Push the branch first** if not already pushed: `git push -u origin m9-top-picks-screen`.
+- **Gotchas / context for next session:**
+  - **Path A insights are non-negotiable.** Spec is explicit that `score_breakdown` is NOT cached. Any subagent that proposes "look up the breakdown" should be redirected — the field doesn't exist in the cache.
+  - **UPVM regex unit test in Task 5** is the compliance gate. Templates: `/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`. Insight copy MUST pass. Gemini's V1 mockups failed this — V2 was forced to comply.
+  - **Plan task numbering vs TaskList IDs are offset.** Plan has Tasks 1-12; TaskList IDs are 7-18 (Task 1 = #7, Task 2 = #8, ... Task 12 = #18). Task #7 is already marked completed.
+  - **Hero layout deviation from spec:** Gemini V2 mockup has score ring LEFT + bullets RIGHT (not image+ring on top, bullets below as my section 3 sketched). When implementing Task 9 (`TopPickHeroCard`), follow Gemini's V2 mockup, not the spec text. Update the spec file at the same time so they align.
+  - **Brand in CAPS on rank rows + top-2 ingredients subtitle on hero** — small visual additions Gemini V2 made, worth including in V1: `.toUpperCase()` on brand display in `TopPickRankRow`, render `top_ingredients.slice(0,2).map(i => i.canonical_name).join(', ')` below name in `TopPickHeroCard`.
+  - **Kiba Index deferred** as item #1 in `2026-04-15-top-picks-deferred-enhancements.md`. Display + tiebreaker only, never a score modifier (D-019 brand-blind preserved). Vote density needs months to kick in before useful.
+  - **Gemini mockups path:** `/Users/stevendiaz/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`. Use `_v2_…` files only; ignore `_v1` versions (the UPVM-violating ones).
+  - **Session 49 + earlier gotchas still apply** — see Session 49 archive below.
+
+---
+
+## Session 49
+
+- **Date:** 2026-04-15 (session 49 — merge cascade, same day as session 48)
 - **Branch:** local on `m5-complete` (auto-switched by `gh pr merge`). No new local commits this session — merges executed via `gh pr merge` GitHub-side.
 - **PRs merged this session:** [#9](https://github.com/KibaScan/kiba-app/pull/9) + [#2](https://github.com/KibaScan/kiba-app/pull/2). Both now MERGED.
 - **Accomplished — `/boot` + full merge cascade landing M5–M9 on `main`.**
@@ -115,35 +155,12 @@
   - **Step 1 — PR #9 squash-merged** `m9-wet-food-extras → m5-complete` as commit `92450b1` at 2026-04-15T16:57:45Z. Remote branch deleted, stale remote-tracking refs pruned, memory entry `[In-flight PR #9]` removed from `MEMORY.md` index.
   - **Step 2 — PR #2 merged to `main`.** Discovered PR #2 had been open against `main` since 2026-03-20 with title "M5 complete" + empty body, but had silently accumulated 137 commits spanning M5 + M6 + M7 + M8 + M9 (including today's PR #9 squash). Updated title → `M5–M9: behavioral feeding, pantry v5, Matte Premium, wet food extras` + wrote full release-notes body (per-milestone breakdown, migration range, regression anchors, test state). Merged via `--merge` (preserves PR #5–#9 squash commits on `main` history for bisect/blame) as merge commit `e94f3ad` at 2026-04-15T18:22:52Z.
   - **Post-merge topology:** `origin/main` at `e94f3ad` — full M5–M9 shipped. `origin/m5-complete` at `92450b1` (one commit behind `main`; only delta is the merge commit itself, code-content identical). Local `main` fast-forwarded to match origin.
-- **No new commits on `m5-complete` this session.** Both merges happened on GitHub via `gh pr merge`.
 - **Numbers (unchanged, all verified green):** 1538 tests / 65 suites / 3 snapshots, 129 decisions, 39 migrations, 19,058 products. Full `npx jest` run confirmed — regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53).
-- **Not done yet (carry-overs):**
-  - Two deferred follow-ups from sessions 47 + 48 (still open):
-    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete; dry_only + no rotational + has daily → falls to style-mismatch branch).
-    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake` — a dry_only topper-only pet never reaches the accumulator. Not introduced by any recent branch.
-  - Open M9 remaining scope:
-    - Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`).
-    - HomeScreen visual overhaul (custom assets, layout polish).
-    - General UX friction fixes.
-  - Carry-over QA from session 41+ (inherited from session 48 "Up Next"):
-    - On-device QA for session 41 token edits (subtle press-overlay visual confirmation on PantryCard + BrowseProductRow).
-    - Broader Matte Premium alpha audit (~17 sites) — dedicated session to catalog + design 1-3 new tokens (`dividerBorder`, `nestedCardTint`).
-    - Chipsurface visual QA (session 39 carry-over) — ~14 touched surfaces need eyeballs at 0.12.
-    - TopPicksCarousel populated-state border check (only zero state visually verified).
-    - On-device fuzzy search stress test.
-    - PantryScreen.tsx:435 chip-background visual review (only non-border `cardBorder → hairlineBorder` swap).
-    - Form-aware cache maturity for stale browse scores.
-- **Start the next session by:**
-  1. **Branch decision:** continue on `m5-complete` (workflow memory pattern) or switch to `main` as the new base. Recommendation: keep `m5-complete` as the integration branch for M9 remainder + M10 scope; schedule the next `m5-complete → main` release PR when M9 fully closes or a themed batch is ready. `m5-complete` is functionally identical to `main` post-merge — only delta is the merge commit itself.
-  2. **Pick the next scope:** Top Picks dedicated screen (highest-leverage user-facing remaining M9 item, stub already wired) OR HomeScreen visual overhaul OR a dedicated carry-over QA sweep.
-  3. **Don't re-apply migration 039** — already live on production.
-- **Gotchas / context for next session:**
+- **Gotchas surfaced:**
   - **`m5-complete` is NOT stale.** At `92450b1`, functionally identical to `main` at `e94f3ad` (the only delta is the merge commit itself). New `m9-<feature>` branches should still branch off `m5-complete` per workflow memory — that pattern hasn't changed.
-  - **PR #2 is now MERGED + closed.** Future `m5-complete → main` sync will be a new PR number. Don't look for PR #2 as the integration target anymore.
+  - **PR #2 is now MERGED + closed.** Future `m5-complete → main` sync will be a new PR number.
   - **Migration 039 is live on prod.** Don't attempt a re-apply.
-  - **Memory entry `project_inflight_pr9.md` removed from `MEMORY.md` index.** The file itself still exists on disk (couldn't `rm` this session due to permission-mode block) but no longer loads on `/boot`. Harmless orphan.
-  - **Session 48 gotcha still applies:** `__tests__/CLAUDE.md` now documents render tests directly. Don't drop the "Pure-presentation sheet/card → Render test" row if rewriting the testing pyramid table.
-  - **Session 47 gotchas still apply** to anything touching `FeedingIntentSheet`, `AddToPantrySheet` routing, or `wet_intent_resolved_at` — re-read the session 47 archive below before editing those code paths.
+  - **Memory entry `project_inflight_pr9.md` removed from `MEMORY.md` index.** File still on disk but no longer loads on `/boot`.
 
 ---
 
