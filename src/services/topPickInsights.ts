@@ -20,6 +20,34 @@ const MAX_BULLETS = 3;
 
 // ─── Individual checks ────────────────────────────────────
 
+function matchesPetLifeStage(claimRaw: string, petStage: LifeStage): boolean {
+  const c = claimRaw.toLowerCase();
+  if (c.includes('all life stage')) return true;
+  if (petStage === 'puppy' && c.includes('puppy')) return true;
+  if (petStage === 'kitten' && c.includes('kitten')) return true;
+  if (petStage === 'adult' && (c.includes('adult') || /\bmaintenance\b/.test(c))) return true;
+  if (petStage === 'senior' && c.includes('senior')) return true;
+  return false;
+}
+
+/** Renders the claim with "AAFCO" prefix, title-cased. */
+function formatLifeStageText(claim: string): string {
+  const tidy = claim.trim().replace(/\s+/g, ' ');
+  const titled = tidy.replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  return `AAFCO ${titled}`;
+}
+
+function checkLifeStageMatch(
+  entry: TopPickEntry,
+  ctx: InsightContext,
+): InsightBullet | null {
+  if (ctx.lifeStage == null) return null;
+  const claim = entry.life_stage_claim ?? entry.aafco_statement;
+  if (!claim) return null;
+  if (!matchesPetLifeStage(claim, ctx.lifeStage)) return null;
+  return { kind: 'life_stage', text: formatLifeStageText(claim) };
+}
+
 function checkAllergenSafe(
   entry: TopPickEntry,
   ctx: InsightContext,
@@ -62,6 +90,9 @@ export function generateTopPickInsights(
 
   const allergen = checkAllergenSafe(entry, ctx);
   if (allergen) bullets.push(allergen);
+
+  const lifeStage = checkLifeStageMatch(entry, ctx);
+  if (lifeStage) bullets.push(lifeStage);
 
   return bullets.slice(0, MAX_BULLETS);
 }

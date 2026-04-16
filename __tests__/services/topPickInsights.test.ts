@@ -93,3 +93,47 @@ describe('generateTopPickInsights — allergen_safe', () => {
     expect(bullets.find((b) => b.kind === 'allergen_safe')).toBeUndefined();
   });
 });
+
+describe('generateTopPickInsights — life_stage', () => {
+  it('emits "AAFCO Adult Maintenance" for adult pet + adult claim', () => {
+    const entry = makeEntry({ life_stage_claim: 'Adult Maintenance' });
+    const ctx = makeCtx({ lifeStage: 'adult' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'life_stage', text: 'AAFCO Adult Maintenance' });
+  });
+
+  it('emits for all-life-stages claim regardless of pet stage', () => {
+    const entry = makeEntry({ life_stage_claim: 'All Life Stages' });
+    const ctx = makeCtx({ lifeStage: 'senior' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'life_stage', text: 'AAFCO All Life Stages' });
+  });
+
+  it('falls through to aafco_statement when life_stage_claim is null', () => {
+    const entry = makeEntry({ life_stage_claim: null, aafco_statement: 'Adult Maintenance' });
+    const ctx = makeCtx({ lifeStage: 'adult' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'life_stage', text: 'AAFCO Adult Maintenance' });
+  });
+
+  it('omits bullet when senior pet + adult-only claim', () => {
+    const entry = makeEntry({ life_stage_claim: 'Adult Maintenance' });
+    const ctx = makeCtx({ lifeStage: 'senior' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'life_stage')).toBeUndefined();
+  });
+
+  it('omits bullet when claim is missing entirely', () => {
+    const entry = makeEntry({ life_stage_claim: null, aafco_statement: null });
+    const ctx = makeCtx({ lifeStage: 'adult' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'life_stage')).toBeUndefined();
+  });
+
+  it('omits bullet when pet life_stage is null', () => {
+    const entry = makeEntry({ life_stage_claim: 'Adult Maintenance' });
+    const ctx = makeCtx({ lifeStage: null });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'life_stage')).toBeUndefined();
+  });
+});
