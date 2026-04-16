@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-15 (session 50 — Top Picks screen brainstorm + plan + Task 1)
+# Project Status — Last updated 2026-04-16 (session 51 — Top Picks screen Tasks 2–11 complete)
 
 ## Active Milestone
 
@@ -64,7 +64,7 @@
 
 ## Numbers
 
-- **Tests:** 1538 passing / 65 suites
+- **Tests:** 1596 passing / 71 suites
 - **Decisions:** 129
 - **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -88,7 +88,6 @@
 - **PantryScreen.tsx:435 chip-background visual review** — still a carry-over from session 20. The `cardBorder → hairlineBorder` swap at line 435 is the only non-border use (chip unselected state background). `rgba(255,255,255,0.12)` may read too faint vs `#333333`. If unselected filter chips look broken or invisible, revert that single line to a dedicated chip-surface token.
 - **Stale browse scores** — CategoryBrowseScreen cache maturity check isn't form-aware (freeze-dried and other minority forms never get scored). Fix in both Edge Function and `batchScoreOnDevice.ts`.
 - **Pantry unit model gap (deferred spec)** — wet food as BASE in Custom Splits returns 0 servings; dry food lbs-vs-cups display unclear. Full analysis + 6 open questions + 5 proposed directions at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`. Pick up post-M9 or whenever user data motivates it.
-- Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`)
 - HomeScreen visual overhaul (custom assets, layout polish)
 - Custom icon rollout (5 pending v2 bold variants)
 - Search UX overhaul on HomeScreen
@@ -106,41 +105,71 @@
 
 ## Last Session
 
-- **Date:** 2026-04-15 (session 50 — Top Picks dedicated screen: brainstorm → spec → plan → Gemini mockups → Task 1)
-- **Branch:** `m9-top-picks-screen` off `m5-complete`. 4 new commits. **NOT pushed to origin yet.**
-- **Accomplished — full brainstorm + spec + plan cycle for the dedicated Top Picks screen, plus Task 1 of the implementation plan landed.**
-  - **`/boot`:** confirmed numbers all matched reality (1538 tests / 65 suites, 129 decisions, 39 migrations — no drift since session 49).
-  - **`superpowers:brainstorming`** for `CategoryTopPicksScreen` — a finite top-20 showcase that replaces the current `TopPicksCarousel` See All destination (which today routes to the flat-list `CategoryBrowseScreen`). Resolved scope, 4 category exception calls (supplements skip the new screen and route to CategoryBrowseScreen, vet_diet sub-filter unreachable, treats fully supported, toppers fully supported with no macro bullet).
-  - **Hard architectural constraint surfaced:** `pet_product_scores` deliberately does NOT cache `score_breakdown JSONB` (migration 012 comment: "list view only — full breakdown computed on tap"). Rejected Path B (cache the breakdown via migration 040) and Path C (re-run pipeline on screen mount) in favor of **Path A: static-signal insights**. Insights pulled from joined macros / AAFCO / preservative + a second batched query for top-10 `ingredients_dict.allergen_group` per pick. No migration, no engine re-run, UPVM-safe by construction.
-  - **`superpowers:writing-plans`** produced a 12-task TDD plan with bite-sized steps + exact code at every step + `~40-50` new tests when complete.
-  - **2 rounds of Gemini UI mockups** at `/Users/stevendiaz/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`. V1 mockups violated D-095 multiple times (`Immune Support`, `Skin & Coat Health`, `Ideal for digestion`). Flagged + sent back. **V2 mockups (file suffix `_v2_177628988…`) are locked in** — copy now uses spec templates verbatim (`Free of chicken`, `AAFCO Adult Maintenance`, `Lower-fat formula (10% DMB)`, `Top-tier ingredient quality`, `Natural preservatives only`). V2 also proposed a cleaner two-column hero layout (score ring LEFT, 3 bullets RIGHT) — supersedes my spec section 3 sketch.
-  - **`superpowers:subagent-driven-development`** kicked off — Task 1 (types scaffolding: `TopPickEntry` + `InsightBullet` + `InsightKind` in `src/types/categoryBrowse.ts`) shipped as commit `850dd6b`. Implementer + spec reviewer both ✅ green. Code quality reviewer (kiba-code-reviewer) crashed mid-review with `ConnectionRefused` — likely transient infrastructure issue, NOT a code problem. Task 1 is functionally complete (clean diff, typecheck pass, isolated additions).
-- **4 commits this session on `m9-top-picks-screen`:**
-  - `e3e0d7e` M9: top picks dedicated screen — design spec
-  - `c84e6b5` M9: top picks dedicated screen — implementation plan
-  - `7f3fa90` M9: defer Kiba Index as Top Picks signal
-  - `850dd6b` M9: add TopPickEntry + InsightBullet types (Task 1 implementation)
-- **Numbers (unchanged, all verified green):** 1538 tests / 65 suites / 3 snapshots, 129 decisions, 39 migrations, 19,058 products. No new tests added this session yet (Task 1 was types-only). When the plan completes the count will land around 1580+/70 suites.
+- **Date:** 2026-04-16 (session 51 — Top Picks Tasks 2–11 subagent-driven execution)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. **10 new commits** on top of session 50's 5. **NOT pushed to origin yet.**
+- **Accomplished — entire implementation plan executed via subagent-driven development. `CategoryTopPicksScreen` is code-complete.**
+  - **10 tasks shipped (Tasks 2–11 of the plan).** Each task: implementer dispatch → spec reviewer (verifies against plan by reading actual code) → code quality reviewer (superpowers:code-reviewer). All 10 tasks passed both review gates.
+  - **Insight helper complete (Tasks 2-5):** `src/services/topPickInsights.ts` — pure function `generateTopPickInsights(entry, ctx): InsightBullet[]` returns up to 3 D-094/D-095-compliant bullets. Priority: `allergen_safe > life_stage > macro (fat|protein, one only) > preservative > quality_tier`. UPVM blocklist regex unit test (`/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`) asserts every emitted bullet is clean. 37 unit tests.
+  - **Service layer (Task 6):** `fetchCategoryTopPicks` in `src/services/categoryBrowseService.ts` replaced the stub with a real 2-query composition — pet_product_scores + expanded SELECT (macros, AAFCO, preservative, life_stage_claim) then batched product_ingredients query for top-10 allergen_group preview. Inherits bypass filters (vet_diet/recalled/variety_pack/needs_review/species). Supplement category returns [] defensively. 4 tests.
+  - **Navigation (Task 7):** `CategoryTopPicks` route added to HomeStackParamList, placeholder screen created + registered. Params mirror CategoryBrowse exactly: `{ category, petId, subFilter? }`.
+  - **Components (Tasks 8-9):** `TopPickRankRow` + `TopPickHeroCard` in `src/components/browse/`. Matte Premium card anatomy. Hero uses a lightweight circular score badge (92px) rather than the full `ScoreRing` — ScoreRing requires `petPhotoUri`/`species` props that the browse layer doesn't pass down; this also matches Gemini's V2 compact ring. Documented in the hero component header comment. 5 render tests total.
+  - **Carousel wiring (Task 10):** `resolveSeeAllDestination(category)` helper — supplements route to `CategoryBrowse`, everything else to `CategoryTopPicks`. `TopPicksCarousel.handleSeeAll` updated to consume it. 5 unit tests.
+  - **Screen wiring (Task 11):** `CategoryTopPicksScreen` placeholder replaced with full implementation (225 lines). Hero + Leaderboard (ranks 2-20) + Escape Hatch. 4 states: loading / healthy (>=10) / partial (1-9, primary-tint escape hatch) / empty (no hero, empty card + escape hatch). Parallel fetch of picks + pet allergens via `Promise.all`. Insights computed client-side per pick. Tab bar hide/restore on focus (CompareScreen pattern). Paywall via `canSearch()`. Pure title/label helpers extracted to `src/screens/categoryTopPicksHelpers.ts` with 12 unit tests.
+  - **Code review follow-ups applied** on Task 9 (ScoreRing substitution rationale comment) + Task 11 (dependency array uses `pet?.species`/`pet?.name` directly instead of derived locals; leaderboard loop var renamed `i` → `rankOffset` for clarity).
+- **10 new commits this session on `m9-top-picks-screen`:**
+  - `805f6de` Task 2 — allergen_safe bullet
+  - `b613fd7` Task 3 — life_stage bullet
+  - `4e98f5b` Task 4 — macro bullets with DMB
+  - `e0a3f42` Task 5 — preservative, quality_tier, priority cap, UPVM sweep
+  - `cc0e002` Task 6 — fetchCategoryTopPicks real impl
+  - `3392dcb` Task 7 — navigation scaffolding
+  - `c728adf` Task 8 — TopPickRankRow
+  - `7b90b16` Task 9 — TopPickHeroCard
+  - `162aa97` Task 9 follow-up — document ScoreRing substitution rationale
+  - `687b550` Task 10 — resolveSeeAllDestination + carousel wiring
+  - `bcef873` Task 11 — CategoryTopPicksScreen full wiring
+  - `002c22e` Task 11 follow-up — dep array cleanup + loop variable rename
+- **Numbers (all verified green):** **1596 tests / 71 suites** / 3 snapshots (up from 1538/65 — +58 tests, +6 suites matches plan prediction), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53). Typecheck clean in `src/`.
 - **Not done yet:**
-  - **Tasks 2–12** of the Top Picks implementation plan still pending. Next up: Task 2 (`topPickInsights.ts` allergen_safe bullet, 5 unit tests).
-  - **Branch `m9-top-picks-screen` not pushed to origin** — push before the next subagent dispatch (or the first subagent that succeeds will push).
+  - **Task 12 of the plan:** final verification (full suite + regression + typecheck + lint + CURRENT.md update + push + on-device smoke test). Everything from that checklist EXCEPT the on-device smoke test + branch push has been done this handoff.
+  - **Branch `m9-top-picks-screen` still not pushed to origin.**
+  - **On-device QA:** scan Daily Food → Dry → See All → confirm it lands on the new screen; test hero tap, rank row tap, escape hatch; confirm tab bar hides + restores on pop; test supplements → See All → confirm it skips the new screen and goes to CategoryBrowse directly.
+  - **`docs/superpowers/specs/2026-04-15-top-picks-dedicated-screen-design.md` spec section 3** still describes the image-top / bullets-below hero layout. Consider updating it to match the implementation (compact circular score badge + vertical bullets), or leave as the original design intent with implementation comment explaining the deviation.
   - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
   - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
 - **Start the next session by:**
-  1. **`/boot`** to confirm nothing drifted (test count, decisions, migrations all unchanged from this handoff).
-  2. **Resume subagent-driven execution at Task 2.** Open `docs/superpowers/plans/2026-04-15-top-picks-dedicated-screen.md`, extract Task 2 text verbatim, dispatch via `Agent` tool with `general-purpose` subagent type (haiku model fine for this scale, sonnet OK too). Implementer prompt template at `/Users/stevendiaz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/subagent-driven-development/implementer-prompt.md`.
-  3. **After implementer DONE, run spec reviewer** (general-purpose, haiku) — read actual code, don't trust report.
-  4. **For code quality review, try `superpowers:code-reviewer` instead of `kiba-code-reviewer`** if the latter hits the same `ConnectionRefused` it did this session. Both are valid; superpowers:code-reviewer is safer if there's an MCP issue with kiba-code-reviewer.
-  5. **Push the branch first** if not already pushed: `git push -u origin m9-top-picks-screen`.
+  1. **`/boot`** to confirm numbers match (1596 tests / 71 suites / 129 decisions / 39 migrations).
+  2. **`git push -u origin m9-top-picks-screen`** — branch has 15 commits, ready to push.
+  3. **On-device smoke test** (option A). Start dev server, navigate Daily Food → Dry → See All, confirm full flow. OR —
+  4. **Open a PR** against `m5-complete` (option B). `gh pr create --base m5-complete --head m9-top-picks-screen`. Title: "M9: Top Picks dedicated screen". Body: link to spec + plan + reference to 58 new tests + V2 Gemini mockups.
+  5. Kiba Index integration + screen-level integration test are deferred enhancements documented in `2026-04-15-top-picks-deferred-enhancements.md`.
 - **Gotchas / context for next session:**
-  - **Path A insights are non-negotiable.** Spec is explicit that `score_breakdown` is NOT cached. Any subagent that proposes "look up the breakdown" should be redirected — the field doesn't exist in the cache.
-  - **UPVM regex unit test in Task 5** is the compliance gate. Templates: `/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`. Insight copy MUST pass. Gemini's V1 mockups failed this — V2 was forced to comply.
-  - **Plan task numbering vs TaskList IDs are offset.** Plan has Tasks 1-12; TaskList IDs are 7-18 (Task 1 = #7, Task 2 = #8, ... Task 12 = #18). Task #7 is already marked completed.
-  - **Hero layout deviation from spec:** Gemini V2 mockup has score ring LEFT + bullets RIGHT (not image+ring on top, bullets below as my section 3 sketched). When implementing Task 9 (`TopPickHeroCard`), follow Gemini's V2 mockup, not the spec text. Update the spec file at the same time so they align.
-  - **Brand in CAPS on rank rows + top-2 ingredients subtitle on hero** — small visual additions Gemini V2 made, worth including in V1: `.toUpperCase()` on brand display in `TopPickRankRow`, render `top_ingredients.slice(0,2).map(i => i.canonical_name).join(', ')` below name in `TopPickHeroCard`.
-  - **Kiba Index deferred** as item #1 in `2026-04-15-top-picks-deferred-enhancements.md`. Display + tiebreaker only, never a score modifier (D-019 brand-blind preserved). Vote density needs months to kick in before useful.
-  - **Gemini mockups path:** `/Users/stevendiaz/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`. Use `_v2_…` files only; ignore `_v1` versions (the UPVM-violating ones).
-  - **Session 49 + earlier gotchas still apply** — see Session 49 archive below.
+  - **ScoreRing wasn't used in the hero.** The hero component uses a lightweight circular score badge. ScoreRing requires petPhotoUri + species props not available in browse context. Documented in the component file header and matches Gemini V2 mockup. If someone wants the full ScoreRing later, route petPhotoUri + species through from CategoryTopPicksScreen.
+  - **Implementer adaptation:** Task 6 subagent reordered `.order()` in the Supabase query chain to come AFTER the conditional `.eq('is_supplemental', ...)`. Functionally identical in PostgREST. Tests were updated to match the new chain depth.
+  - **Brand CAPS + top-2 ingredients subtitle not yet added.** V2 Gemini mockup showed brand in `.toUpperCase()` on rank rows and `"chicken, brown rice"` subtitle on the hero. Both are trivial one-line renders — defer to Gemini's UI polish phase or a visual QA session.
+  - **Spec vs implementation layout drift:** Gemini V2 mockup's "score ring LEFT + bullets RIGHT" two-column hero was the ask, but my implementation is vertical (image top, score badge right, text + bullets below). Visually acceptable on a phone screen but not a literal match for the mockup. Adjust in Gemini's polish pass if desired.
+  - **Session 50 gotchas still apply** — see Session 50 archive below.
+  - **kiba-code-reviewer agent worked fine this session** — the session-50 ConnectionRefused was transient. Used `superpowers:code-reviewer` for all reviews this session and it worked well; kiba-code-reviewer remains viable for D-094/D-095-specific checks.
+
+---
+
+## Session 50
+
+- **Date:** 2026-04-15 (session 50 — Top Picks brainstorm + plan + Task 1)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. 5 commits total (4 before handoff, plus the handoff commit itself).
+- **Accomplished — full brainstorm + spec + plan cycle for the dedicated Top Picks screen, plus Task 1 of the implementation plan landed.**
+  - `superpowers:brainstorming` resolved scope — `CategoryTopPicksScreen` as a finite top-20 showcase replacing `TopPicksCarousel` See All destination (supplements skip the new screen and stay on CategoryBrowseScreen per D-096).
+  - Path A locked in: insights from static signals (joined macros, AAFCO, preservative, second batched query for `ingredients_dict.allergen_group`). `pet_product_scores` does NOT cache `score_breakdown` — migration 012 comment "list view only — full breakdown computed on tap" was the hard constraint. No migration, no engine re-run.
+  - `superpowers:writing-plans` produced a 12-task TDD plan with exact code at every step.
+  - 2 rounds of Gemini UI mockups. V1 violated D-095 multiple times (`Immune Support`, `Skin & Coat Health`, `Ideal for digestion`). V2 uses spec templates verbatim.
+  - `superpowers:subagent-driven-development` shipped Task 1 (types scaffolding). kiba-code-reviewer crashed mid-review with `ConnectionRefused` — transient infrastructure issue. Task 1 was functionally complete regardless.
+  - Kiba Index deferred as item #1 in `2026-04-15-top-picks-deferred-enhancements.md` — display + tiebreaker only, never a score modifier (D-019 brand-blind preserved).
+- **5 commits:** `e3e0d7e` design spec · `c84e6b5` plan · `7f3fa90` defer Kiba Index · `850dd6b` Task 1 types · `6649cc8` handoff CURRENT.md update.
+- **Numbers (unchanged this session):** 1538 tests / 65 suites / 129 decisions / 39 migrations. All regression anchors green.
+- **Gotchas surfaced:**
+  - V2 Gemini mockups (`_v2_…` files at `~/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`) supersede V1; use V2 only.
+  - Path A insights are non-negotiable — `score_breakdown` is NOT in the cache.
+  - UPVM regex (`/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`) is the compliance gate.
 
 ---
 
