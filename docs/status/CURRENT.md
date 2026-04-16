@@ -116,7 +116,8 @@
   - **Carousel wiring (Task 10):** `resolveSeeAllDestination(category)` helper — supplements route to `CategoryBrowse`, everything else to `CategoryTopPicks`. `TopPicksCarousel.handleSeeAll` updated to consume it. 5 unit tests.
   - **Screen wiring (Task 11):** `CategoryTopPicksScreen` placeholder replaced with full implementation (225 lines). Hero + Leaderboard (ranks 2-20) + Escape Hatch. 4 states: loading / healthy (>=10) / partial (1-9, primary-tint escape hatch) / empty (no hero, empty card + escape hatch). Parallel fetch of picks + pet allergens via `Promise.all`. Insights computed client-side per pick. Tab bar hide/restore on focus (CompareScreen pattern). Paywall via `canSearch()`. Pure title/label helpers extracted to `src/screens/categoryTopPicksHelpers.ts` with 12 unit tests.
   - **Code review follow-ups applied** on Task 9 (ScoreRing substitution rationale comment) + Task 11 (dependency array uses `pet?.species`/`pet?.name` directly instead of derived locals; leaderboard loop var renamed `i` → `rankOffset` for clarity).
-- **10 new commits this session on `m9-top-picks-screen`:**
+  - **Shipped summary doc written** — `docs/superpowers/specs/2026-04-16-top-picks-dedicated-screen-shipped.md` (239 lines). Companion to the design spec + plan + deferred docs. Documents files changed, test count deltas, 18-commit history, 8 captured architecture decisions, full copy templates, Gemini V1→V2 evolution, deferred enhancements list, not-done checklist, and how-to-review instructions.
+- **13 new commits this session on `m9-top-picks-screen`:**
   - `805f6de` Task 2 — allergen_safe bullet
   - `b613fd7` Task 3 — life_stage bullet
   - `4e98f5b` Task 4 — macro bullets with DMB
@@ -129,6 +130,8 @@
   - `687b550` Task 10 — resolveSeeAllDestination + carousel wiring
   - `bcef873` Task 11 — CategoryTopPicksScreen full wiring
   - `002c22e` Task 11 follow-up — dep array cleanup + loop variable rename
+  - `b9e7a1d` session 51 handoff — CURRENT.md update
+  - `7fa528d` shipped summary doc
 - **Numbers (all verified green):** **1596 tests / 71 suites** / 3 snapshots (up from 1538/65 — +58 tests, +6 suites matches plan prediction), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53). Typecheck clean in `src/`.
 - **Not done yet:**
   - **Task 12 of the plan:** final verification (full suite + regression + typecheck + lint + CURRENT.md update + push + on-device smoke test). Everything from that checklist EXCEPT the on-device smoke test + branch push has been done this handoff.
