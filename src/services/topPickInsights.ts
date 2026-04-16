@@ -80,6 +80,65 @@ function checkAllergenSafe(
   };
 }
 
+// ─── DMB conversion (D-016) ───────────────────────────────
+
+/** Returns DMB percentage, preferring pre-computed (migration 020) when available. */
+function resolveDmb(
+  asFedPct: number | null,
+  preComputedDmbPct: number | null,
+  moisturePct: number | null,
+): number | null {
+  if (preComputedDmbPct != null) return preComputedDmbPct;
+  if (asFedPct == null) return null;
+  if (moisturePct == null) return null;
+  if (moisturePct <= 10) return asFedPct; // kibble — as-fed ≈ DMB
+  const denom = 100 - moisturePct;
+  if (denom <= 0) return null;
+  return (asFedPct / denom) * 100;
+}
+
+/** Floor to integer for display (avoids "9.999% DMB" noise) */
+function roundForDisplay(n: number): number {
+  return Math.floor(n);
+}
+
+// ─── Macro checks ──────────────────────────────────────────
+
+const LOW_FAT_DMB_THRESHOLD = 12; // % DMB — below this = "lower-fat"
+const HIGH_PROTEIN_DMB_THRESHOLD = 32; // % DMB — at or above = "high protein"
+
+function wantsLowFat(ctx: InsightContext): boolean {
+  return ctx.weightGoalLevel < 0;
+}
+
+function wantsHighProtein(ctx: InsightContext): boolean {
+  return (
+    ctx.weightGoalLevel < 0 ||
+    ctx.activityLevel === 'high' ||
+    ctx.activityLevel === 'working'
+  );
+}
+
+function checkMacroFat(entry: TopPickEntry, ctx: InsightContext): InsightBullet | null {
+  if (ctx.category === 'treat') return null;
+  if (entry.is_supplemental) return null;
+  if (!wantsLowFat(ctx)) return null;
+  const dmb = resolveDmb(entry.ga_fat_pct, entry.ga_fat_dmb_pct, entry.ga_moisture_pct);
+  if (dmb == null) return null;
+  if (dmb >= LOW_FAT_DMB_THRESHOLD) return null;
+  return { kind: 'macro_fat', text: `Lower-fat formula (${roundForDisplay(dmb)}% DMB)` };
+}
+
+function checkMacroProtein(entry: TopPickEntry, ctx: InsightContext): InsightBullet | null {
+  if (ctx.category === 'treat') return null;
+  if (entry.is_supplemental) return null;
+  if (!wantsHighProtein(ctx)) return null;
+  const dmb = resolveDmb(entry.ga_protein_pct, entry.ga_protein_dmb_pct, entry.ga_moisture_pct);
+  if (dmb == null) return null;
+  if (dmb < HIGH_PROTEIN_DMB_THRESHOLD) return null;
+  return { kind: 'macro_protein', text: `High protein (${roundForDisplay(dmb)}% DMB)` };
+}
+
 // ─── Main ──────────────────────────────────────────────────
 
 export function generateTopPickInsights(
@@ -93,6 +152,15 @@ export function generateTopPickInsights(
 
   const lifeStage = checkLifeStageMatch(entry, ctx);
   if (lifeStage) bullets.push(lifeStage);
+
+  // Only one macro bullet — fat takes priority for weight-loss pets
+  const macroFat = checkMacroFat(entry, ctx);
+  if (macroFat) {
+    bullets.push(macroFat);
+  } else {
+    const macroProtein = checkMacroProtein(entry, ctx);
+    if (macroProtein) bullets.push(macroProtein);
+  }
 
   return bullets.slice(0, MAX_BULLETS);
 }

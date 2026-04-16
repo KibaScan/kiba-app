@@ -137,3 +137,76 @@ describe('generateTopPickInsights — life_stage', () => {
     expect(bullets.find((b) => b.kind === 'life_stage')).toBeUndefined();
   });
 });
+
+describe('generateTopPickInsights — macro bullets', () => {
+  it('emits "Lower-fat formula (10% DMB)" for weight-loss pet + low-fat wet food', () => {
+    // DMB = 2.2 / (100 - 78) * 100 = 10%
+    const entry = makeEntry({ ga_fat_pct: 2.2, ga_moisture_pct: 78 });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'macro_fat', text: 'Lower-fat formula (10% DMB)' });
+  });
+
+  it('omits low-fat bullet when DMB exceeds 12% threshold', () => {
+    // DMB = 3 / 22 * 100 = 13.6% (fails threshold)
+    const entry = makeEntry({ ga_fat_pct: 3, ga_moisture_pct: 78 });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'macro_fat')).toBeUndefined();
+  });
+
+  it('emits "High protein (40% DMB)" when weight-loss pet + protein-rich wet', () => {
+    // DMB = 9 / 22 * 100 ≈ 40.9% → rounds to 40
+    const entry = makeEntry({ ga_protein_pct: 9, ga_moisture_pct: 78 });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'macro_protein', text: 'High protein (40% DMB)' });
+  });
+
+  it('emits high-protein for high-activity pet even without weight goal', () => {
+    const entry = makeEntry({ ga_protein_pct: 36, ga_moisture_pct: 9 });
+    // Dry food — DMB ~= as-fed
+    const ctx = makeCtx({ weightGoalLevel: 0, activityLevel: 'high' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'macro_protein', text: 'High protein (36% DMB)' });
+  });
+
+  it('prefers pre-computed ga_fat_dmb_pct when available (migration 020)', () => {
+    const entry = makeEntry({ ga_fat_dmb_pct: 10, ga_fat_pct: 99, ga_moisture_pct: 99 });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets).toContainEqual({ kind: 'macro_fat', text: 'Lower-fat formula (10% DMB)' });
+  });
+
+  it('skips macro bullet for treats', () => {
+    const entry = makeEntry({ ga_protein_pct: 36, ga_moisture_pct: 9 });
+    const ctx = makeCtx({ category: 'treat', weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'macro_fat' || b.kind === 'macro_protein')).toBeUndefined();
+  });
+
+  it('skips macro bullet for toppers (is_supplemental)', () => {
+    const entry = makeEntry({ ga_protein_pct: 36, ga_moisture_pct: 9, is_supplemental: true });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'macro_fat' || b.kind === 'macro_protein')).toBeUndefined();
+  });
+
+  it('skips macro bullet when DMB unresolvable (no moisture, no pre-computed)', () => {
+    const entry = makeEntry({
+      ga_fat_pct: 2,
+      ga_moisture_pct: null,
+      ga_fat_dmb_pct: null,
+    });
+    const ctx = makeCtx({ weightGoalLevel: -2 });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'macro_fat')).toBeUndefined();
+  });
+
+  it('skips macro bullet when weight goal is 0 and activity is moderate', () => {
+    const entry = makeEntry({ ga_protein_pct: 36, ga_fat_pct: 5, ga_moisture_pct: 9 });
+    const ctx = makeCtx({ weightGoalLevel: 0, activityLevel: 'moderate' });
+    const bullets = generateTopPickInsights(entry, ctx);
+    expect(bullets.find((b) => b.kind === 'macro_fat' || b.kind === 'macro_protein')).toBeUndefined();
+  });
+});
