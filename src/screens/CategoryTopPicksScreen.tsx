@@ -90,7 +90,7 @@ export default function CategoryTopPicksScreen({ navigation, route }: Props) {
       }
     })();
     return () => { mountedRef.current = false; };
-  }, [petId, category, subFilter, species, petName, pet?.life_stage, pet?.weight_goal_level, pet?.activity_level]);
+  }, [petId, category, subFilter, pet?.species, pet?.name, pet?.life_stage, pet?.weight_goal_level, pet?.activity_level]);
 
   const handleProductTap = useCallback(
     (productId: string) => navigation.navigate('Result', { productId, petId }),
@@ -169,11 +169,11 @@ export default function CategoryTopPicksScreen({ navigation, route }: Props) {
           {picks.length > 1 && (
             <>
               <Text style={styles.leaderboardLabel}>The Leaderboard</Text>
-              {picks.slice(1).map((pick, i) => (
+              {picks.slice(1).map((pick, rankOffset) => (
                 <TopPickRankRow
                   key={pick.product_id}
                   pick={pick}
-                  rank={i + 2}
+                  rank={rankOffset + 2}
                   insight={insightsMap[pick.product_id]?.[0] ?? null}
                   onPress={() => handleProductTap(pick.product_id)}
                 />
