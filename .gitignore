@@ -87,3 +87,6 @@ task.md
 
 # local-only backup of files removed during repo cleanup — never tracked
 _scratch/
+
+# superpowers brainstorm session artifacts (visual companion mockups, state)
+.superpowers/

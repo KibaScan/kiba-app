@@ -105,6 +105,45 @@
 
 ## Last Session
 
+- **Date:** 2026-04-16 (session 52 — on-device smoke test + BenchmarkBar skeleton bug fix + housekeeping)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. Pushed to origin as part of this handoff.
+- **Accomplished — Top Picks smoke-tested, latent BenchmarkBar bug found and fixed, two doc/config drifts cleaned up.**
+  - **On-device smoke test of `CategoryTopPicksScreen`** — user walked the new flow on simulator. Hero + Leaderboard + escape hatch render correctly. No blockers surfaced.
+  - **Found and diagnosed a "white flash" on the BenchmarkBar at the bottom of ResultScreen.** Initial guess (ScoreRing track too bright at `chipSurface`) was wrong. Real culprit: `BenchmarkBar.tsx:265,272,278` skeleton fields hard-coded `backgroundColor: '#E5E5EA'` (iOS light-mode systemGray5), reading as bright white on the dark theme.
+  - **Verified the bug is NOT a Top Picks regression.** Two-step proof: (a) `git log m5-complete..HEAD -- src/components/scoring/ src/utils/benchmarkData.ts src/utils/constants.ts` returned zero commits; (b) user `git checkout m5-complete` and rescanned the same Pupford treat — white flash reproduced identically. Bug has existed since M4 Session 1 commit `bdbd6be` when BenchmarkBar was created. Visible now only because heavy smoke-testing reload cadence keeps the `useBenchmarkStore` Zustand cache cold.
+  - **Skeleton paints on EVERY mount, not just cold cache.** `getCategoryAverage` is `async` — even on cache hit, the `await` yields a microtask, so `loading: true` paints at least one frame before `setLoading(false)` re-renders. Warm cache = imperceptible flash; cold cache = noticeable.
+  - **Fix shipped:** 3-line edit in `src/components/scoring/BenchmarkBar.tsx` — `'#E5E5EA'` → `Colors.chipSurface` (the established matte-premium dark-mode elevation token). Skeleton now blends into the dark theme instead of popping white.
+  - **Sweep verified clean:** grep across `src/` for `#E5E5EA|#F2F2F7|#D1D1D6|#C7C7CC|#AEAEB2|#8E8E93` (all iOS light-mode greys) found only the 3 BenchmarkBar hits + one incidental `#C7C7CC` in `PositionMap.tsx:28` for `UNRATED_COLOR` (intentional, NOT a skeleton — leave alone). No further skeleton/loading components are using light-mode greys.
+  - **Housekeeping fix 1:** `.gitignore` — added `.superpowers/` so brainstorming visual-companion mockup artifacts and session state don't get tracked.
+  - **Housekeeping fix 2:** `CLAUDE.md` line 38 — migration count `001–038` → `001–039`. Doc-drift detected during `/boot`; CURRENT.md was already at 39 but CLAUDE.md hadn't rolled over after migration 039 landed in session 47.
+  - **Brainstorming session for the BenchmarkBar fix used the `superpowers:brainstorming` skill with the visual-companion browser tool** — 2 mockup screens (track-darkness comparison, then skeleton-fix comparison) helped resolve the ScoreRing vs. BenchmarkBar misdiagnosis quickly.
+- **Files changed this session (4 files, 3 commits planned):**
+  - `src/components/scoring/BenchmarkBar.tsx` — `#E5E5EA` × 3 → `Colors.chipSurface`
+  - `.gitignore` — added `.superpowers/`
+  - `CLAUDE.md` — migration count 038 → 039
+  - `docs/status/CURRENT.md` — this handoff update
+- **Numbers (all verified green):** **1596 tests / 71 suites / 3 snapshots** (unchanged — color-only fix), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0). `npx jest` total runtime 5.6s.
+- **Not done yet:**
+  - **On-device smoke test of the BenchmarkBar fix** — user gave verbal "looks good" but the canonical verification is `npx expo start -c` + cold simulator + scan Pupford treat → confirm no white flash on the benchmark bar at the bottom. Defer to next session if you want a clean before/after.
+  - **PR against `m5-complete`.** Branch is now pushed and ready. `gh pr create --base m5-complete --head m9-top-picks-screen`. Title: "M9: Top Picks dedicated screen + BenchmarkBar skeleton fix". Body: link spec/plan/shipped doc + reference 58 new tests + note the BenchmarkBar polish fix as a session-52 hitchhiker.
+  - **Top Picks visual polish carry-overs from session 51:** Brand CAPS on rank rows, top-2 ingredients subtitle on hero, two-column hero layout (V2 Gemini mockup deltas).
+  - **Top Picks design spec section 3** still describes original image-top / bullets-below hero layout — implementation went vertical compact ring. Update spec or add implementation-note callout.
+  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
+  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
+- **Start the next session by:**
+  1. **`/boot`** to confirm numbers match (1596 tests / 71 suites / 129 decisions / 39 migrations).
+  2. **On-device smoke test of the skeleton fix** if not yet done — `npx expo start -c`, scan a treat that hits a cold benchmark cache, confirm no white bars at the bottom.
+  3. **Open the PR** against `m5-complete`. Branch is pushed and clean.
+  4. Pick up the Top Picks polish carry-overs OR start the next M9 thread (HomeScreen overhaul, custom icons, etc.).
+- **Gotchas / context for next session:**
+  - **The BenchmarkBar skeleton bug was OLD, not a Top Picks regression.** This was confirmed by git archeology AND a manual rollback to `m5-complete`. Don't re-introduce iOS light-mode greys (`#E5E5EA` / `#F2F2F7` / `#D1D1D6` / `#C7C7CC`) in any future skeleton/loading component — use `Colors.chipSurface` instead. `PositionMap.tsx:28` `UNRATED_COLOR` is intentional and NOT in scope.
+  - **`getCategoryAverage` skeleton always paints at least one frame.** `useBenchmarkStore.getCategoryAverage` is `async`, so even on cache hit the `await` yields a microtask before `setLoading(false)`. Same pattern likely exists in other zustand-backed loaders — if a "white flash" surfaces elsewhere, look for the same hard-coded skeleton color first.
+  - **Session 51 gotchas still apply** — see Session 51 archive below for ScoreRing-substitution-in-hero, Brand CAPS deferral, spec drift, and Gemini V2 mockup deltas.
+
+---
+
+## Session 51
+
 - **Date:** 2026-04-16 (session 51 — Top Picks Tasks 2–11 subagent-driven execution)
 - **Branch:** `m9-top-picks-screen` off `m5-complete`. **10 new commits** on top of session 50's 5. **NOT pushed to origin yet.**
 - **Accomplished — entire implementation plan executed via subagent-driven development. `CategoryTopPicksScreen` is code-complete.**
@@ -117,41 +156,12 @@
   - **Screen wiring (Task 11):** `CategoryTopPicksScreen` placeholder replaced with full implementation (225 lines). Hero + Leaderboard (ranks 2-20) + Escape Hatch. 4 states: loading / healthy (>=10) / partial (1-9, primary-tint escape hatch) / empty (no hero, empty card + escape hatch). Parallel fetch of picks + pet allergens via `Promise.all`. Insights computed client-side per pick. Tab bar hide/restore on focus (CompareScreen pattern). Paywall via `canSearch()`. Pure title/label helpers extracted to `src/screens/categoryTopPicksHelpers.ts` with 12 unit tests.
   - **Code review follow-ups applied** on Task 9 (ScoreRing substitution rationale comment) + Task 11 (dependency array uses `pet?.species`/`pet?.name` directly instead of derived locals; leaderboard loop var renamed `i` → `rankOffset` for clarity).
   - **Shipped summary doc written** — `docs/superpowers/specs/2026-04-16-top-picks-dedicated-screen-shipped.md` (239 lines). Companion to the design spec + plan + deferred docs. Documents files changed, test count deltas, 18-commit history, 8 captured architecture decisions, full copy templates, Gemini V1→V2 evolution, deferred enhancements list, not-done checklist, and how-to-review instructions.
-- **13 new commits this session on `m9-top-picks-screen`:**
-  - `805f6de` Task 2 — allergen_safe bullet
-  - `b613fd7` Task 3 — life_stage bullet
-  - `4e98f5b` Task 4 — macro bullets with DMB
-  - `e0a3f42` Task 5 — preservative, quality_tier, priority cap, UPVM sweep
-  - `cc0e002` Task 6 — fetchCategoryTopPicks real impl
-  - `3392dcb` Task 7 — navigation scaffolding
-  - `c728adf` Task 8 — TopPickRankRow
-  - `7b90b16` Task 9 — TopPickHeroCard
-  - `162aa97` Task 9 follow-up — document ScoreRing substitution rationale
-  - `687b550` Task 10 — resolveSeeAllDestination + carousel wiring
-  - `bcef873` Task 11 — CategoryTopPicksScreen full wiring
-  - `002c22e` Task 11 follow-up — dep array cleanup + loop variable rename
-  - `b9e7a1d` session 51 handoff — CURRENT.md update
-  - `7fa528d` shipped summary doc
 - **Numbers (all verified green):** **1596 tests / 71 suites** / 3 snapshots (up from 1538/65 — +58 tests, +6 suites matches plan prediction), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53). Typecheck clean in `src/`.
-- **Not done yet:**
-  - **Task 12 of the plan:** final verification (full suite + regression + typecheck + lint + CURRENT.md update + push + on-device smoke test). Everything from that checklist EXCEPT the on-device smoke test + branch push has been done this handoff.
-  - **Branch `m9-top-picks-screen` still not pushed to origin.**
-  - **On-device QA:** scan Daily Food → Dry → See All → confirm it lands on the new screen; test hero tap, rank row tap, escape hatch; confirm tab bar hides + restores on pop; test supplements → See All → confirm it skips the new screen and goes to CategoryBrowse directly.
-  - **`docs/superpowers/specs/2026-04-15-top-picks-dedicated-screen-design.md` spec section 3** still describes the image-top / bullets-below hero layout. Consider updating it to match the implementation (compact circular score badge + vertical bullets), or leave as the original design intent with implementation comment explaining the deviation.
-  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
-  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
-- **Start the next session by:**
-  1. **`/boot`** to confirm numbers match (1596 tests / 71 suites / 129 decisions / 39 migrations).
-  2. **`git push -u origin m9-top-picks-screen`** — branch has 15 commits, ready to push.
-  3. **On-device smoke test** (option A). Start dev server, navigate Daily Food → Dry → See All, confirm full flow. OR —
-  4. **Open a PR** against `m5-complete` (option B). `gh pr create --base m5-complete --head m9-top-picks-screen`. Title: "M9: Top Picks dedicated screen". Body: link to spec + plan + reference to 58 new tests + V2 Gemini mockups.
-  5. Kiba Index integration + screen-level integration test are deferred enhancements documented in `2026-04-15-top-picks-deferred-enhancements.md`.
-- **Gotchas / context for next session:**
+- **Gotchas (carried forward to session 52):**
   - **ScoreRing wasn't used in the hero.** The hero component uses a lightweight circular score badge. ScoreRing requires petPhotoUri + species props not available in browse context. Documented in the component file header and matches Gemini V2 mockup. If someone wants the full ScoreRing later, route petPhotoUri + species through from CategoryTopPicksScreen.
   - **Implementer adaptation:** Task 6 subagent reordered `.order()` in the Supabase query chain to come AFTER the conditional `.eq('is_supplemental', ...)`. Functionally identical in PostgREST. Tests were updated to match the new chain depth.
   - **Brand CAPS + top-2 ingredients subtitle not yet added.** V2 Gemini mockup showed brand in `.toUpperCase()` on rank rows and `"chicken, brown rice"` subtitle on the hero. Both are trivial one-line renders — defer to Gemini's UI polish phase or a visual QA session.
   - **Spec vs implementation layout drift:** Gemini V2 mockup's "score ring LEFT + bullets RIGHT" two-column hero was the ask, but my implementation is vertical (image top, score badge right, text + bullets below). Visually acceptable on a phone screen but not a literal match for the mockup. Adjust in Gemini's polish pass if desired.
-  - **Session 50 gotchas still apply** — see Session 50 archive below.
   - **kiba-code-reviewer agent worked fine this session** — the session-50 ConnectionRefused was transient. Used `superpowers:code-reviewer` for all reviews this session and it worked well; kiba-code-reviewer remains viable for D-094/D-095-specific checks.
 
 ---
