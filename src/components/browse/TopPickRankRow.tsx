@@ -55,7 +55,7 @@ export function TopPickRankRow({ pick, rank, insight, onPress }: TopPickRankRowP
 
       {pick.final_score != null && scoreColor && (
         <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
-          <Text style={[styles.scoreText, { color: scoreColor }]}>{pick.final_score}%</Text>
+          <Text style={[styles.scoreText, { color: scoreColor }]}>{pick.final_score}% match</Text>
         </View>
       )}
     </TouchableOpacity>

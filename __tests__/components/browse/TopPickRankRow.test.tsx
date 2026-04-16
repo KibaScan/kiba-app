@@ -39,7 +39,7 @@ describe('TopPickRankRow', () => {
     expect(getByText('#2')).toBeTruthy();
     expect(getByText('Test Brand')).toBeTruthy();
     expect(getByText('Salmon Recipe')).toBeTruthy();
-    expect(getByText('88%')).toBeTruthy();
+    expect(getByText('88% match')).toBeTruthy();
     expect(getByText('Free of chicken')).toBeTruthy();
   });
 
