@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-16 (session 51 — Top Picks screen Tasks 2–11 complete)
+# Project Status — Last updated 2026-04-16 (session 53 — PR #10 open + /code-review run + D-094 polish fix)
 
 ## Active Milestone
 
@@ -104,6 +104,55 @@
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-16 (session 53 — PR #10 opened + full `/code-review` pipeline on PR #10 + D-094 score-framing polish fix)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. 2 new commits on top of session 52 (22 total on branch). Pushed to origin.
+- **PR:** [#10](https://github.com/KibaScan/kiba-app/pull/10) — "M9: Top Picks dedicated screen + BenchmarkBar skeleton fix". OPEN against `m5-complete`. 0 reviewer comments. Auto-posted `### Code review / No issues found` summary comment from `/code-review` run.
+- **Accomplished — `/boot` + PR opened + full `/code-review:code-review` pipeline + one proactive D-094 fix shipped on top of the PR.**
+  - **`/boot`:** numbers verified green (1596/71, 129 decisions, 39 migrations — all matched). On-device BenchmarkBar smoke test was already done by user pre-session; skipped re-verification per user direction.
+  - **PR #10 opened** via `gh pr create --base m5-complete --head m9-top-picks-screen`. Body covers Top Picks ship + BenchmarkBar hitchhiker, D-094/D-095/D-096/D-146 compliance notes, test deltas (1538 → 1596, +58 tests / +6 suites), 6-item manual test plan.
+  - **`/code-review:code-review` run on PR #10** — full pipeline executed (eligibility check, CLAUDE.md path list, PR summary, 5 parallel Sonnet reviewers covering {CLAUDE.md adherence, shallow bug scan, git history/blame, prior PR comments, code-comment compliance}, then 9 parallel Haiku confidence scorers per-issue, then re-check + gh comment). **9 unique issues surfaced, 0 scored ≥80**, so per skill threshold the posted comment was "No issues found." Highest-scored issues (75) were D-094 naked `{pick.final_score}%` in the new `TopPickHeroCard` score badge + `TopPickRankRow` score pill — filtered at 75 as "pre-existing pattern consistency with `TopPicksCarousel` on `m5-complete`." Recommended proactive fix anyway since D-094 is non-negotiable rule #9 in CLAUDE.md.
+  - **D-094 fix shipped as `fc56363`** — 3-file surgical patch (9 additions, 2 deletions):
+    - `TopPickHeroCard.tsx` — circular score badge now renders `{score}%` + a small "match" label beneath (new `scoreLabel` style, FontSizes.xs, -2 marginTop, letterSpacing 0.3). The existing trophy badge above the image row continues to carry "Best overall match for {petName}" — the new label closes the loop on the numeric element.
+    - `TopPickRankRow.tsx` — score pill now renders `{score}% match` (was naked `{score}%`). Screen title on `CategoryTopPicksScreen` ("Ranked 1–N matches for {petName}") continues to carry "for {petName}" at screen scope. The file-header comment at line 3 already said `D-094: "X% match" framing (score pill)` — the rendering was the only thing out of alignment with the stated intent.
+    - `__tests__/components/browse/TopPickRankRow.test.tsx` — assertion string updated `'88%'` → `'88% match'`. Hero test didn't assert on the score text, so no update needed there.
+  - **Tests verified green post-fix.** 5 render tests (HeroCard + RankRow) pass. Full suite: 1596/71/3, 5.7s runtime.
+- **Files changed this session (3 code files + 1 status doc, 2 commits, 1 PR opened, 1 PR comment posted):**
+  - `src/components/browse/TopPickHeroCard.tsx` — +7 lines ("match" label + `scoreLabel` style)
+  - `src/components/browse/TopPickRankRow.tsx` — 1-line swap (`{score}%` → `{score}% match`)
+  - `__tests__/components/browse/TopPickRankRow.test.tsx` — 1-line assertion swap
+  - `docs/status/CURRENT.md` — this handoff
+  - Remote: PR [#10](https://github.com/KibaScan/kiba-app/pull/10) opened, comment at https://github.com/KibaScan/kiba-app/pull/10#issuecomment-4263969473
+- **Numbers (all verified green):** **1596 tests / 71 suites / 3 snapshots** (unchanged — only a test-assertion string change, no count delta). 129 decisions. 39 migrations. 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0). `npx jest` total runtime 5.7s.
+- **Not done yet:**
+  - **PR #10 review + merge.** Opened this session, 0 reviewer comments at handoff. Also needs an on-device visual check of the new "match" framing (Hero badge circle + Leaderboard pill) to confirm it reads well at real font sizes — the "match" label under the big 92px score number was sized at FontSizes.xs with -2 marginTop to fit; eyeballs haven't seen it yet.
+  - **`TopPicksCarousel.tsx` is now the D-094 outlier** — still renders naked `{item.final_score}%` (pre-existing on `m5-complete`, flagged at 75 in this session's review but scoped out of PR #10). Ripe for a follow-up symmetry fix on a new branch off `m5-complete` (or fold into HomeScreen polish thread). Same pattern likely exists on `TopMatchesCarousel` — verify before touching.
+  - **Other code-review borderline issues (all <80, deferred):**
+    - `fetchCategoryTopPicks` silently returns `[]` for the `vet_diet` sub-filter. Blocked upstream today (TopPicksCarousel is hidden when `activeSubFilter === 'vet_diet'` — per HomeScreen render guard), so users can't reach the "See All" tap. If that guard ever changes, add `vet_diet` to `resolveSeeAllDestination` short-circuits alongside `supplement`.
+    - `matchesPetLifeStage` in `topPickInsights.ts` uses `\bmaintenance\b` regex for the adult branch — would match "Senior Maintenance" for adult pets. AAFCO has no official "Senior Maintenance" stage so production data shouldn't hit it, but defensive hardening option is to check for absence of `senior` before the maintenance branch fires.
+    - `formatLifeStageText` unconditionally prepends `AAFCO ` then title-cases — if the raw `aafco_statement` field ever starts with "AAFCO", result would be "AAFCO Aafco Adult Maintenance". Current data pipeline (migration 036 synthesizer + `import_products.py`) produces clean claims with no "AAFCO" prefix, so latent only. Strip any leading `AAFCO ` before formatting if you ever touch that helper.
+    - `CategoryTopPicksScreen` doesn't wrap `pets.find(p => p.id === petId)` in `useMemo`. CompareScreen does (that screen is cited as the tab-bar-hide pattern reference), but `CategoryBrowseScreen` and `SafeSwitchSetupScreen` also skip it, so the convention isn't universal. Micro-perf only.
+    - `mountedRef` race pattern in the fetch effect (theoretical — not exploitable given this is a dedicated "See All" destination, dep changes require full navigation). If the screen is ever repurposed for in-screen filter toggling, switch to a per-invocation `let cancelled = false` closure-captured flag.
+  - **Top Picks visual polish carry-overs from session 51:** Brand CAPS on rank rows, top-2 ingredients subtitle on hero, two-column hero layout (V2 Gemini mockup deltas).
+  - **Top Picks design spec section 3** still describes original image-top layout; implementation went vertical. Spec drift to address in a polish pass.
+  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
+  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
+- **Start the next session by:**
+  1. **`/boot`** to confirm numbers match (1596/71, 129 decisions, 39 migrations).
+  2. **`gh pr view 10`** — check status + address any reviewer comments that landed overnight.
+  3. **On-device eyeball** of the D-094 "match" framing — cold simulator, open Top Picks, confirm the hero's small "match" label under the 92px number doesn't look cramped, and the leaderboard pill's "X% match" reads well at small sizes.
+  4. Pick scope: (a) extend D-094 fix to `TopPicksCarousel` + `TopMatchesCarousel` for symmetry, (b) Top Picks visual polish carry-overs (Brand CAPS, top-2 ingredients, V2 two-column hero), (c) tackle one of the 5 deferred code-review items above, or (d) start the next M9 thread (HomeScreen overhaul, custom icons).
+- **Gotchas / context for next session:**
+  - **D-094 score-pill pattern is now `{score}% match` on new browse components** (TopPickHeroCard + TopPickRankRow). `TopPicksCarousel` + likely `TopMatchesCarousel` are pre-existing outliers still rendering naked `{score}%`. If you touch either, adopt the "X% match" pattern — the "for {petName}" piece is carried at screen/card scope by the trophy badge or screen title.
+  - **Hero "match" label sizing is hand-tuned** — `FontSizes.xs` / fontWeight 600 / marginTop -2 / letterSpacing 0.3, centered under the 92px FontSizes.xl number. If anyone changes `FontSizes.xl` or the 92px badge radius, re-check the fit before committing.
+  - **Highest-risk of the 9 deferred code-review items is the `fetchCategoryTopPicks` vet_diet gap.** It's safe today only because TopPicksCarousel is hidden for vet_diet. If that hide-guard is ever removed (e.g., a future "browse vet diets" feature), the gap lights up silently — add vet_diet to `resolveSeeAllDestination` at the same time.
+  - **Code review pipeline on this PR cleared the threshold bar cleanly** — 9 issues surfaced, 0 ≥80, D-094 fix applied proactively despite filter. If a future review run finds 0 issues total (instead of 9 scored low), that's more suspicious — the scorers should find *something* on a PR of this size.
+  - **Skeleton color gotcha from session 52 still applies.** Don't reintroduce iOS light-mode greys (`#E5E5EA` / `#F2F2F7` / `#D1D1D6` / `#C7C7CC`) in skeleton/loading components — use `Colors.chipSurface`. `PositionMap.tsx:28` `UNRATED_COLOR` is intentional and out of scope.
+  - **Session 51 gotchas still apply** — ScoreRing substitution in hero, Brand CAPS deferral, spec drift, Gemini V2 mockup deltas.
+
+---
+
+## Session 52
 
 - **Date:** 2026-04-16 (session 52 — on-device smoke test + BenchmarkBar skeleton bug fix + housekeeping)
 - **Branch:** `m9-top-picks-screen` off `m5-complete`. Pushed to origin as part of this handoff.
