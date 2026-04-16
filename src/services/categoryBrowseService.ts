@@ -11,6 +11,7 @@ import type {
   BrowseProduct,
   BrowsePage,
   BrowseCounts,
+  TopPickEntry,
 } from '../types/categoryBrowse';
 
 // ─── Constants ─────────────────────────────────────────
@@ -337,16 +338,149 @@ export async function fetchBrowseCounts(species: 'dog' | 'cat'): Promise<BrowseC
 }
 
 /**
- * Stub for future Top Picks screen.
- * Fetches the top N products for a category + sub-filter.
+ * Fetches the top N scored products for a category + optional sub-filter,
+ * enriched with insight-source fields (macros, AAFCO, preservative,
+ * top-10 ingredient preview). One-shot — no pagination.
+ *
+ * Supplements return [] (caller should route to CategoryBrowseScreen instead).
+ * Inherits bypass filters from fetchScoredResults: vet_diet, recalled,
+ * variety_pack, needs_review, species mismatch.
  */
 export async function fetchCategoryTopPicks(
   petId: string,
   category: BrowseCategory,
   subFilterKey: string | null,
   species: 'dog' | 'cat',
-  limit: number = 50,
-): Promise<BrowseProduct[]> {
-  const result = await fetchBrowseResults(petId, category, subFilterKey, species, null, limit);
-  return result.products;
+  limit: number = 20,
+): Promise<TopPickEntry[]> {
+  if (category === 'supplement') return [];
+
+  const dbCategory: 'daily_food' | 'treat' =
+    category === 'treat' ? 'treat' : 'daily_food';
+  const isSupplemental: boolean | null =
+    category === 'toppers_mixers' ? true : category === 'daily_food' ? false : null;
+
+  // Resolve product_form filter from sub-filter (same mapping as fetchScoredResults)
+  let productFormFilter: string | null = null;
+  if (category === 'daily_food' || category === 'toppers_mixers') {
+    const formMap: Record<string, string> = { dry: 'dry', wet: 'wet', freeze_dried: 'freeze_dried', other: 'other' };
+    productFormFilter = subFilterKey ? formMap[subFilterKey] ?? null : null;
+  } else if (category === 'treat' && subFilterKey === 'freeze_dried') {
+    productFormFilter = 'freeze_dried';
+  }
+
+  // Treat name patterns for treats + other sub-filters
+  let namePatterns: string[] | null = null;
+  if (category === 'treat' && subFilterKey && subFilterKey !== 'freeze_dried') {
+    namePatterns = TREAT_NAME_PATTERNS[subFilterKey] ?? null;
+  }
+
+  // ── Query 1: pet_product_scores !inner products with expanded SELECT ──
+  let q = supabase
+    .from('pet_product_scores')
+    .select(`
+      product_id, final_score, is_supplemental, category,
+      products!inner(
+        name, brand, image_url, product_form, is_vet_diet, is_recalled,
+        target_species, is_supplemental, is_variety_pack, needs_review,
+        ga_protein_pct, ga_fat_pct, ga_moisture_pct,
+        ga_protein_dmb_pct, ga_fat_dmb_pct,
+        preservative_type, aafco_statement, life_stage_claim
+      )
+    `)
+    .eq('pet_id', petId)
+    .eq('category', dbCategory);
+
+  if (isSupplemental !== null) {
+    q = q.eq('is_supplemental', isSupplemental);
+  }
+
+  q = q.order('final_score', { ascending: false });
+
+  // Overfetch 3x to survive post-query filters (vet_diet, variety_pack, etc.)
+  const fetchLimit = (productFormFilter || namePatterns) ? limit * 10 : limit * 3;
+  q = q.limit(fetchLimit);
+
+  const { data, error } = await q;
+  if (error || !data) return [];
+
+  // ── Post-query filtering ──
+  const filtered: TopPickEntry[] = [];
+  for (const row of data as Record<string, unknown>[]) {
+    const p = row.products as Record<string, unknown> | null;
+    if (!p) continue;
+    if (p.is_vet_diet) continue;
+    if (p.is_recalled) continue;
+    if (p.is_variety_pack) continue;
+    if (p.needs_review) continue;
+    if (p.target_species !== species) continue;
+
+    if (productFormFilter) {
+      const form = p.product_form as string | null;
+      if (productFormFilter === 'other') {
+        if (form && ['dry', 'wet', 'freeze_dried', 'freeze-dried'].includes(form)) continue;
+      } else if (productFormFilter === 'freeze_dried') {
+        if (form !== 'freeze_dried' && form !== 'freeze-dried') continue;
+      } else if (form !== productFormFilter) {
+        continue;
+      }
+    }
+
+    if (namePatterns) {
+      const nameLower = ((p.name as string) ?? '').toLowerCase();
+      const matches = namePatterns.some((pat) =>
+        nameLower.includes(pat.replace(/%/g, '').toLowerCase()),
+      );
+      if (!matches) continue;
+    }
+
+    filtered.push({
+      product_id: row.product_id as string,
+      product_name: (p.name as string) ?? '',
+      brand: (p.brand as string) ?? '',
+      image_url: (p.image_url as string) ?? null,
+      product_form: (p.product_form as string) ?? null,
+      final_score: row.final_score as number,
+      is_supplemental: (row.is_supplemental as boolean) ?? false,
+      is_vet_diet: false,
+      ga_protein_pct: (p.ga_protein_pct as number) ?? null,
+      ga_fat_pct: (p.ga_fat_pct as number) ?? null,
+      ga_moisture_pct: (p.ga_moisture_pct as number) ?? null,
+      ga_protein_dmb_pct: (p.ga_protein_dmb_pct as number) ?? null,
+      ga_fat_dmb_pct: (p.ga_fat_dmb_pct as number) ?? null,
+      preservative_type: (p.preservative_type as TopPickEntry['preservative_type']) ?? null,
+      aafco_statement: (p.aafco_statement as string) ?? null,
+      life_stage_claim: (p.life_stage_claim as string) ?? null,
+      top_ingredients: [],
+    });
+
+    if (filtered.length >= limit) break;
+  }
+
+  if (filtered.length === 0) return [];
+
+  // ── Query 2: ingredient preview (top 10 per product, allergen_group) ──
+  const productIds = filtered.map((e) => e.product_id);
+  const { data: ingData } = await supabase
+    .from('product_ingredients')
+    .select('product_id, position, canonical_name, ingredients_dict!inner(allergen_group)')
+    .in('product_id', productIds)
+    .lte('position', 10)
+    .order('position', { ascending: true });
+
+  if (ingData) {
+    for (const row of ingData as Record<string, unknown>[]) {
+      const pid = row.product_id as string;
+      const target = filtered.find((e) => e.product_id === pid);
+      if (!target) continue;
+      const dict = row.ingredients_dict as { allergen_group: string | null } | null;
+      target.top_ingredients.push({
+        position: row.position as number,
+        canonical_name: (row.canonical_name as string) ?? '',
+        allergen_group: dict?.allergen_group ?? null,
+      });
+    }
+  }
+
+  return filtered;
 }
