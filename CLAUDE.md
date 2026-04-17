@@ -70,6 +70,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `pet_appointments` — `UUID[]` for `pet_ids` (not junction table), `type` CHECK ('vet_visit','grooming','medication','vaccination','other'), `reminder` default '1_day', `recurring` default 'none', hard delete (not soft-delete). RLS on user_id. Free tier: 2 active max (`canCreateAppointment` in permissions.ts).
 - `kiba_index_votes` — community taste/tummy voting. UNIQUE(user_id, pet_id, product_id). `taste_vote`/`tummy_vote` nullable (partial submissions). `get_kiba_index_stats` RPC for species-filtered aggregation (SECURITY DEFINER). Migration 026.
 - `scan_history` — per-pet scan records (NOT `scans`), FK to `products(id)`. Only non-bypass scans are inserted (ResultScreen:231). `permissions.ts` uses `from('scans')` for rate limiting — different concern.
+- `bookmarks` — per-pet watchlist, UNIQUE(pet_id, product_id), 20-item client cap, RLS via user_id. Live score from `pet_product_scores` cache. Migration 040 (D-169).
 - **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
 - **Tab navigation:** Home | Community | (Scan) | Pantry | Me — Search tab was replaced by Community tab. `SearchScreen` deleted; premium text search lives on HomeScreen v2. `CommunityStackParamList` in navigation types.
 

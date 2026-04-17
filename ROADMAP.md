@@ -706,6 +706,7 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] **Custom Feeding Style** — `CustomFeedingStyleScreen`, kcal inputs per food, DER banner, visual sum bar, scale-invariant pct storage. Service layer: `updateCalorieShares`, `transitionToCustomMode/FromCustomMode`. 4th option in `FeedingStyleSetupSheet`
 - [x] **`rebalanceBaseShares` auto-split** — even calorie_share_pct across base foods after add/remove/share, proportional serving_size scaling
 - [x] **Feeding style mismatch detection** — `AddToPantrySheet` re-shows `FeedingStyleSetupSheet` when adding non-dry to `dry_only` (or dry to `wet_only`)
+- [x] **Bookmarks + expanded history** — per-pet bookmarks (migration 040, cap 20), dedicated `BookmarksScreen` + `ScanHistoryScreen`, ResultScreen bookmark icon + overflow menu (Share / Report issue via `mailto:`), long-press entry on scan rows. D-169.
 - [ ] Top Picks per category/sub-filter (up to 50, dedicated screen — stub ready)
 - [ ] HomeScreen visual overhaul (custom assets, layout polish)
 - [ ] General UX friction fixes

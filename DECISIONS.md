@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: April 7, 2026 (129 decisions, D-001 through D-167, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: condition-aware feeding frequency.)
+> Updated: April 17, 2026 (131 decisions, D-001 through D-169, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: condition-aware feeding frequency. D-168: tiered score framing — supersedes D-094. D-169: Bookmarks feature — per-pet, 20 cap, no paywall.)
 
 ---
 
@@ -2976,6 +2976,73 @@ This is optional — user can stay in weight mode if they prefer.
 **Does NOT replace D-129:** The IQ override continues to apply position-weighted severity deductions. The cap is a ceiling on top — they're complementary.
 
 **Regression impact:** Pure Balance (62) and Temptations (9) are scored without pet allergens — cap code path never entered. Zero regression risk.
+
+### D-168: Score Framing Simplification — Terse by Default, Hero Exception — SUPERSEDES D-094
+**Status:** LOCKED
+**Date:** April 16, 2026
+**Milestone:** M9
+**Supersedes:** D-094 (Score Framing — Suitability Match Language)
+
+**Problem:** D-094's universal `"[X]% match for [Pet Name]"` rule was written when the app had few score surfaces. M8/M9 added browse, carousels, Top Picks, Safe Swap, Safe Switch, scan history, and pantry cards — repeating "match for [Pet Name]" across every pill saturated lists with redundant pet context and forced awkward line-wrapping on narrow rows. Across sessions, the phrase was iteratively stripped from most browse surfaces; this decision codifies the resulting pattern so it does not regress.
+
+**Decision:** Score framing is tiered by surface density.
+
+| Tier | Visible text | Surfaces |
+|------|--------------|----------|
+| **Hero / outbound share** | `{score}% match for {petName}` | `ScoreRing` (ResultScreen centerpiece), `PetShareCard` (outbound share to non-users) |
+| **List row (moderate space)** | `{score}% match` | `ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet` |
+| **Tight pill / dense browse** | `{score}%` | `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows |
+
+**Accessibility invariant:** Every score element MUST expose the full phrase `"${score}% match for ${petName}"` to assistive tech. On hero/share surfaces where visible text already is the full phrase, the visible `<Text>` itself satisfies the invariant. On list-row and tight-pill tiers where visible text abbreviates, add an explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Screen readers always hear the full context; sighted users see density appropriate to surface.
+
+**Legal defensibility preserved:** The three-tier defensibility structure from D-094 (TOS clickwrap + persistent disclaimer tooltip + suitability framing) is unchanged. The suitability framing requirement migrates from "always in visible text" to "always in `accessibilityLabel` + visible on hero/share surfaces." A visible `{score}%` or `{score}% match` is still a match/suitability claim, not a universal quality rating — "match" is retained everywhere it fits, and context from surrounding UI (selected pet name in header, card product image, screen title) anchors the pet reference even when omitted from the pill.
+
+**Rationale for hero/share exceptions:**
+- **`ScoreRing`:** ResultScreen's central scoring visualization, one pet in focus, ample space, the phrase is the semantic anchor of the screen.
+- **`PetShareCard`:** Outbound share audience (non-users seeing a screenshot) has no other pet context; phrase is load-bearing.
+
+**Rejected alternatives:**
+- **Strip everywhere (including hero/share):** Loses pet identity on the flagship visualization; outbound shares become generic.
+- **Keep D-094 as universal rule:** Re-introduces noise stripped across M8/M9 and forces awkward wrapping on narrow pills.
+- **Split into visible-tier + a11y-tier without codifying surfaces:** Future agents regenerate conflicting decisions per surface. Explicit surface table prevents drift.
+
+**Implementation:**
+- `src/components/ScanHistoryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
+- `src/components/pantry/PantryCard.tsx` — same treatment
+- `ScoreRing.tsx`, `PetShareCard.tsx`, browse components unchanged (already match tier)
+
+**Self-check on new score surfaces:**
+- Is it a flagship/centerpiece visualization or outbound share? → full phrase in visible text (accessibility invariant satisfied).
+- Is it a list row with room for 1–2 extra words? → `{score}% match` + `accessibilityLabel` with full phrase.
+- Is it a tight pill, chip, or dense browse item? → naked `{score}%` + `accessibilityLabel` with full phrase.
+
+**Known compliance gap at landing (backfill follow-up):** These 7 terse-tier score surfaces currently render visible text without an `accessibilityLabel` carrying the full phrase. They satisfy the visible-text tier of D-168 but not the accessibility invariant. Backfill is scheduled as a follow-up task (add `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score `<Text>` in each):
+- `src/components/browse/BrowseProductRow.tsx:64`
+- `src/components/browse/TopPicksCarousel.tsx:228`
+- `src/components/browse/TopPickHeroCard.tsx:57` (score pill only — outer card has its own `accessibilityLabel`)
+- `src/components/browse/TopPickRankRow.tsx:58` (score pill only — outer pressable has its own `accessibilityLabel`)
+- `src/components/scoring/ScoreWaterfall.tsx:608`
+- `src/components/result/SafeSwapSection.tsx:243`
+- `src/components/pantry/SharePantrySheet.tsx:181`
+
+Some of these surfaces do not currently have `petName` in local scope and require threading it as a prop. The backfill should land as a single sweep under M9. `ScanHistoryCard` and `PantryCard` were backfilled in the D-168 landing commit and are the reference pattern.
+
+### D-169: Bookmarks — Per-Pet Watchlist
+**Status:** LOCKED
+**Date:** April 17, 2026
+**Milestone:** M9
+**Decision:** Add a per-pet `bookmarks` table (migration 040) with `UNIQUE(pet_id, product_id)` and a hard client-side cap of 20 bookmarks per pet. No paywall gate; bookmarks are free. Scores displayed on bookmark rows are *live* reads from `pet_product_scores`, not snapshots at save time. Scan history is expanded to 20 on a dedicated `ScanHistoryScreen` but scans remain immutable (no delete). Entry points: a visible bookmark icon in the ResultScreen header (outline/filled state), and long-press on any scan row. Share and Report issue live in an ellipsis overflow menu next to the bookmark icon. `mailto:support@kibascan.com` is the MVP Report-issue destination.
+
+**Rationale:**
+- **Per-pet scoping** matches every other list in the app (scans, pantry, top picks). User-scoped bookmarks would require awkward score-display decisions when the score shifts on pet switch.
+- **Hard cap vs. paywall** preserves the free-tier ethos (pantry, recalls, scan rate limit are the only gates). 20 is generous enough that most users never hit it.
+- **Live score, not snapshot** reflects the current pet's profile accurately. A saved 97% that no longer fits after a life-stage change would mislead; the live score is honest.
+- **Visible bookmark icon (not in overflow menu)** communicates saved state at a glance and avoids burying a high-frequency action behind an extra tap.
+- **mailto: for Report issue** ships today with zero new UI and gives us direct signal for the first N reports; a dedicated pipeline can replace it post-launch.
+
+**Out of scope (may revisit):** cross-pet sharing of bookmarks, filter/sort on dedicated screens, scan deletion, premium bump above 20.
+
+**Files:** `supabase/migrations/040_bookmarks.sql`, `src/types/bookmark.ts`, `src/services/bookmarkService.ts`, `src/stores/useBookmarkStore.ts`, `src/screens/{Bookmarks,ScanHistory}Screen.tsx`, `src/components/result/ResultHeaderMenu.tsx`, `src/components/common/BookmarkToggleSheet.tsx`.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

@@ -24,9 +24,9 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1596 passing / 71 suites
-- **Decisions:** 129
-- **Migrations:** 39 (001–039)
+- **Tests:** 1621 passing / 74 suites
+- **Decisions:** 131
+- **Migrations:** 40 (001–040)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -65,6 +65,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
+- **M9 Bookmarks shipped (2026-04-17, branch `m9-bookmarks-history`)** — migration 040, `BookmarksScreen` + `ScanHistoryScreen`, ResultScreen bookmark icon + overflow menu (Share / Report issue via `mailto:`), long-press entry on scan rows, HomeScreen bookmarks section. D-169.
 - **Date:** 2026-04-17 (session 55 — merge cascade: PRs #10 + #11 → `m5-complete`, PR #12 → `main`)
 - **Branch:** `m5-complete` (no feature branch — session was all merges + this handoff).
 - **PRs shipped:**
