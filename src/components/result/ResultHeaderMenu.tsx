@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../../utils/constants';
 
@@ -19,6 +20,7 @@ export function ResultHeaderMenu({
   onShare,
   onReportIssue,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const handle = (fn: () => void) => () => {
     fn();
     onClose();
@@ -31,8 +33,16 @@ export function ResultHeaderMenu({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close menu"
+      >
+        <Pressable
+          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) + Spacing.md }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <MenuItem
             icon="share-outline"
             label="Share"
@@ -83,7 +93,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingVertical: Spacing.sm,
-    paddingBottom: Spacing.xl,
   },
   item: {
     flexDirection: 'row',
