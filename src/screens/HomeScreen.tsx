@@ -12,7 +12,11 @@ import {
   Image,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { BookmarksFullError } from '../types/bookmark';
+import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -116,6 +120,26 @@ export default function HomeScreen() {
   );
   const loadBookmarks = useBookmarkStore((s) => s.loadForPet);
   const [bookmarkCards, setBookmarkCards] = useState<BookmarkCardData[]>([]);
+
+  // ── Long-press bookmark state ──
+  const [longPressTarget, setLongPressTarget] = useState<{ productId: string } | null>(null);
+
+  const longPressIsBookmarked = useBookmarkStore((s) =>
+    longPressTarget && activePetId ? s.isBookmarked(activePetId, longPressTarget.productId) : false,
+  );
+
+  const longPressToggle = useBookmarkStore((s) => s.toggle);
+
+  const handleLongPressToggle = async () => {
+    if (!activePetId || !longPressTarget) return;
+    try {
+      await longPressToggle(activePetId, longPressTarget.productId);
+    } catch (err) {
+      if (err instanceof BookmarksFullError) {
+        Alert.alert('Bookmarks full', 'Remove one to save another.');
+      }
+    }
+  };
 
   // ── Search state (local to HomeScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
@@ -758,6 +782,11 @@ export default function HomeScreen() {
                           });
                         }
                       }}
+                      onLongPress={() => {
+                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        setLongPressTarget({ productId: scan.product_id });
+                      }}
+                      delayLongPress={400}
                       activeOpacity={0.7}
                     >
                       {scan.product.image_url ? (
@@ -825,6 +854,14 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+      {longPressTarget && (
+        <BookmarkToggleSheet
+          visible={longPressTarget !== null}
+          onClose={() => setLongPressTarget(null)}
+          isBookmarked={longPressIsBookmarked}
+          onToggle={handleLongPressToggle}
+        />
+      )}
     </SafeAreaView>
   );
 }
