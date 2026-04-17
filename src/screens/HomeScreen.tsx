@@ -39,6 +39,9 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import { getActiveSwitchForPet } from '../services/safeSwitchService';
+import { useBookmarkStore } from '../stores/useBookmarkStore';
+import { fetchBookmarkCards } from '../services/bookmarkService';
+import type { BookmarkCardData } from '../types/bookmark';
 
 type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
@@ -108,6 +111,10 @@ export default function HomeScreen() {
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
+  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+  const loadBookmarks = useBookmarkStore((s) => s.loadForPet);
+  const [bookmarkCards, setBookmarkCards] = useState<BookmarkCardData[]>([]);
+
   // ── Search state (local to HomeScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ProductSearchResult[]>([]);
@@ -135,6 +142,19 @@ export default function HomeScreen() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // ── Bookmark loading ──
+  useEffect(() => {
+    loadBookmarks(activePetId);
+  }, [activePetId, loadBookmarks]);
+
+  useEffect(() => {
+    if (!activePet) {
+      setBookmarkCards([]);
+      return;
+    }
+    void fetchBookmarkCards(activePet).then((cards) => setBookmarkCards(cards.slice(0, 3)));
+  }, [activePet, bookmarks]);
 
   // ── Derived values ──
 
@@ -616,6 +636,76 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
 
+            {/* 6.5 Bookmarks (hidden when empty) */}
+            {bookmarkCards.length > 0 && activePet && (
+              <View style={styles.bookmarksSection}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.recentScansTitle}>Bookmarks</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Bookmarks')}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="See all bookmarks"
+                  >
+                    <Text style={styles.seeAllLink}>See all ›</Text>
+                  </TouchableOpacity>
+                </View>
+                {bookmarkCards.map((card) => {
+                  const scoreColor =
+                    card.final_score != null
+                      ? getScoreColor(card.final_score, card.product.is_supplemental)
+                      : null;
+                  return (
+                    <TouchableOpacity
+                      key={card.bookmark.id}
+                      style={[styles.scanRow, card.product.is_recalled && styles.rowRecalled]}
+                      onPress={() => {
+                        if (card.product.is_recalled) {
+                          navigation.navigate('RecallDetail', { productId: card.product.id });
+                        } else {
+                          navigation.navigate('Result', {
+                            productId: card.product.id,
+                            petId: activePetId,
+                          });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                      accessibilityLabel={
+                        card.final_score != null && activePet
+                          ? `${card.final_score}% match for ${activePet.name}`
+                          : undefined
+                      }
+                    >
+                      {card.product.image_url ? (
+                        <Image source={{ uri: card.product.image_url }} style={styles.scanRowImage} />
+                      ) : (
+                        <View style={styles.scanRowImagePlaceholder}>
+                          <Ionicons name="cube-outline" size={18} color={Colors.textTertiary} />
+                        </View>
+                      )}
+                      <View style={styles.scanRowInfo}>
+                        <Text style={styles.scanRowBrand} numberOfLines={1}>
+                          {sanitizeBrand(card.product.brand)}
+                        </Text>
+                        <Text style={styles.scanRowName} numberOfLines={2}>
+                          {stripBrandFromName(card.product.brand, card.product.name)}
+                        </Text>
+                      </View>
+                      {scoreColor ? (
+                        <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
+                          <Text style={[styles.scorePillText, { color: scoreColor }]}>
+                            {card.final_score}%
+                          </Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
             {/* 7. Recent Scans — redesigned counter */}
             {recentScans.length > 0 && activePet && (
               <View style={styles.recentScansSection}>
@@ -1040,5 +1130,27 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  // Bookmarks section
+  bookmarksSection: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  seeAllLink: {
+    color: Colors.accent,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  rowRecalled: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.severityRed,
+    paddingLeft: Spacing.md - 3,
   },
 });
