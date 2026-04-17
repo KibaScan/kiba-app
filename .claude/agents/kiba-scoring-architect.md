@@ -90,7 +90,7 @@ If the design includes any user-facing copy, flag banned verbs: **prescribe, tre
 
 ### Score Framing (D-168, supersedes D-094)
 
-Score framing is tiered by surface density — hero/share surfaces (`ScoreRing`, `PetShareCard`) show `{score}% match for {petName}`; list rows show `{score}% match`; tight pills show `{score}%`. Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech — via visible text on hero/share, via explicit `accessibilityLabel` on terse tiers. If your design introduces a new score surface, cite its tier and the a11y approach in the design doc.
+Score framing is tiered by whether pet context is recoverable from surrounding UI. Only `PetShareCard` (outbound share) shows `{score}% match for {petName}` — it is the sole surface whose audience has no app context. In-app list rows show `{score}% match`; in-app dense or hero-minimal surfaces (including `ScoreRing`) show `{score}%`. Every in-app score element MUST carry `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element; outbound share satisfies the invariant via visible text. If your design introduces a new score surface, cite its tier and the a11y approach in the design doc.
 
 ## Files You Load on Every Invocation
 

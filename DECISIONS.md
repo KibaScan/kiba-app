@@ -2986,21 +2986,22 @@ This is optional — user can stay in weight mode if they prefer.
 
 **Problem:** D-094's universal `"[X]% match for [Pet Name]"` rule was written when the app had few score surfaces. M8/M9 added browse, carousels, Top Picks, Safe Swap, Safe Switch, scan history, and pantry cards — repeating "match for [Pet Name]" across every pill saturated lists with redundant pet context and forced awkward line-wrapping on narrow rows. Across sessions, the phrase was iteratively stripped from most browse surfaces; this decision codifies the resulting pattern so it does not regress.
 
-**Decision:** Score framing is tiered by surface density.
+**Decision:** Score framing is tiered by whether pet context is recoverable from surrounding UI.
 
 | Tier | Visible text | Surfaces |
 |------|--------------|----------|
-| **Hero / outbound share** | `{score}% match for {petName}` | `ScoreRing` (ResultScreen centerpiece), `PetShareCard` (outbound share to non-users) |
-| **List row (moderate space)** | `{score}% match` | `ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet` |
-| **Tight pill / dense browse** | `{score}%` | `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows |
+| **Outbound share** (no app context) | `{score}% match for {petName}` | `PetShareCard` — audience is non-users viewing a screenshot; no surrounding pet context exists |
+| **In-app, moderate space** | `{score}% match` | `ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet` — list rows where the "match" label clarifies that `%` is a suitability, not a generic percentage |
+| **In-app, dense or hero-minimal** | `{score}%` | `ScoreRing` (ResultScreen centerpiece — pet photo anchors context, caption is redundant noise), `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows |
 
 **Accessibility invariant:** Every score element MUST expose the full phrase `"${score}% match for ${petName}"` to assistive tech. On hero/share surfaces where visible text already is the full phrase, the visible `<Text>` itself satisfies the invariant. On list-row and tight-pill tiers where visible text abbreviates, add an explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Screen readers always hear the full context; sighted users see density appropriate to surface.
 
 **Legal defensibility preserved:** The three-tier defensibility structure from D-094 (TOS clickwrap + persistent disclaimer tooltip + suitability framing) is unchanged. The suitability framing requirement migrates from "always in visible text" to "always in `accessibilityLabel` + visible on hero/share surfaces." A visible `{score}%` or `{score}% match` is still a match/suitability claim, not a universal quality rating — "match" is retained everywhere it fits, and context from surrounding UI (selected pet name in header, card product image, screen title) anchors the pet reference even when omitted from the pill.
 
-**Rationale for hero/share exceptions:**
-- **`ScoreRing`:** ResultScreen's central scoring visualization, one pet in focus, ample space, the phrase is the semantic anchor of the screen.
-- **`PetShareCard`:** Outbound share audience (non-users seeing a screenshot) has no other pet context; phrase is load-bearing.
+**Rationale for the outbound-share exception:**
+- **`PetShareCard`:** Share-card audience (non-users viewing a screenshot) has no surrounding app context. Product, pet, and the "match" framing must all appear on the card itself or the score is meaningless. This is the only surface where visible context cannot be recovered from elsewhere on the screen.
+
+**Why `ScoreRing` is NOT an exception despite being the flagship visualization:** The pet photo is already rendered in the ring's bottom-right corner, the product image and name anchor the surrounding ResultScreen, and the "match for {petName}" caption duplicates context that is already visually present. Removing it reduces redundant chrome without losing meaning. The full phrase is preserved in the score number's `accessibilityLabel` so screen readers still hear "{score}% match for {petName}".
 
 **Rejected alternatives:**
 - **Strip everywhere (including hero/share):** Loses pet identity on the flagship visualization; outbound shares become generic.
@@ -3010,12 +3011,13 @@ This is optional — user can stay in weight mode if they prefer.
 **Implementation:**
 - `src/components/ScanHistoryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
 - `src/components/pantry/PantryCard.tsx` — same treatment
-- `ScoreRing.tsx`, `PetShareCard.tsx`, browse components unchanged (already match tier)
+- `src/components/scoring/ScoreRing.tsx` — removed the "match for {petName}" caption entirely; full phrase moved to `accessibilityLabel` on the score number. Orphaned `matchLabel` style removed. Screen reader flow preserved via `importantForAccessibility="no-hide-descendants"` on the percent sign so the score number's `accessibilityLabel` is the single utterance.
+- `PetShareCard.tsx`, browse components unchanged (already match tier; PetShareCard keeps full phrase as the sole outbound-share surface)
 
 **Self-check on new score surfaces:**
-- Is it a flagship/centerpiece visualization or outbound share? → full phrase in visible text (accessibility invariant satisfied).
-- Is it a list row with room for 1–2 extra words? → `{score}% match` + `accessibilityLabel` with full phrase.
-- Is it a tight pill, chip, or dense browse item? → naked `{score}%` + `accessibilityLabel` with full phrase.
+- Does the surface appear outside the app (outbound share, screenshot export, email digest)? → full phrase in visible text (accessibility invariant satisfied by visible text).
+- Is it an in-app list row with room for 1–2 extra words? → `{score}% match` + `accessibilityLabel` with full phrase.
+- Is it an in-app tight pill, chip, dense browse item, or a hero visualization where surrounding UI already conveys pet + product context? → `{score}%` + `accessibilityLabel` with full phrase.
 
 **Known compliance gap at landing (backfill follow-up):** These 7 terse-tier score surfaces currently render visible text without an `accessibilityLabel` carrying the full phrase. They satisfy the visible-text tier of D-168 but not the accessibility invariant. Backfill is scheduled as a follow-up task (add `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score `<Text>` in each):
 - `src/components/browse/BrowseProductRow.tsx:64`

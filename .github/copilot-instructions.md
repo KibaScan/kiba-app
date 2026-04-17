@@ -201,7 +201,7 @@ These are the most common mistakes. Memorize these.
 6. **Every penalty has `citation_source`** — no unattributed claims
 7. **RLS on every user-data table** — enforced via Supabase policies
 8. **No `any` types** in TypeScript — project is `strict: true`
-9. **Score framing (D-168, supersedes D-094)** — tiered: `{score}%` on tight pills, `{score}% match` on list rows, `{score}% match for {petName}` on hero/share only. Full phrase must reach assistive tech — via visible text on hero/share, via explicit `accessibilityLabel` on terse tiers
+9. **Score framing (D-168, supersedes D-094)** — `{score}% match for {petName}` only on outbound share (`PetShareCard`); `{score}% match` on in-app list rows; `{score}%` on dense surfaces incl. `ScoreRing`. All in-app surfaces need explicit `accessibilityLabel` with the full phrase
 10. **UPVM compliance (D-095)** — NEVER use: "prescribe," "treat," "cure," "prevent," "diagnose"
 11. **Bypasses skip scoring entirely** — vet diet, species mismatch, variety pack, recalled product
 12. **API keys server-side only (D-127)** — all external calls via Supabase Edge Functions

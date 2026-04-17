@@ -42,12 +42,12 @@ Every new `CREATE TABLE` in `supabase/migrations/` on a user-scoped entity must 
 Flag `any` types in `src/types/`, `src/services/scoring/`, `src/utils/permissions.ts`. Other locations are softer but still worth a nit flag if gratuitous.
 
 ### 9. Score Framing (D-168, supersedes D-094)
-Score framing is tiered by surface density:
-- **Hero / outbound share:** `{score}% match for {petName}` (`ScoreRing`, `PetShareCard`)
-- **List rows:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
-- **Tight pills / dense browse:** `{score}%` (`BrowseProductRow`, `TopPicksCarousel`, etc.)
+Score framing is tiered by whether pet context is recoverable from surrounding UI:
+- **Outbound share** (audience has no app context): `{score}% match for {petName}` — `PetShareCard` only
+- **In-app list rows:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **In-app dense or hero-minimal:** `{score}%` (`ScoreRing`, `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
 
-Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech — via visible text on hero/share tiers, via explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on terse tiers. This preserves D-094's legal defensibility. Flag terse-tier score `<Text>` that lacks the `accessibilityLabel`. Flag any visible text that violates its surface tier (e.g., `ScoreRing` showing only `{score}%`, or `BrowseProductRow` showing the full phrase). Known backfill gap at D-168 landing: 7 terse-tier surfaces tracked in D-168 decision body. Exception: debug logs, test fixtures.
+Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. `PetShareCard` satisfies this via visible text. All in-app surfaces require explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. This preserves D-094's legal defensibility. Flag in-app score `<Text>` that lacks the `accessibilityLabel`. Flag any visible text that violates its surface tier (e.g., `ScoreRing` showing the full phrase in visible text, or `BrowseProductRow` showing it). Known backfill gap at D-168 landing: 7 terse-tier surfaces tracked in D-168 decision body. Exception: debug logs, test fixtures.
 
 ### 10. UPVM Compliance (D-095)
 Never in user-facing JSX strings: **prescribe, treat, cure, prevent, diagnose, diagnosis**. Grep for these in added string literals in `src/screens/` and `src/components/`. Mark legitimate uses (inside citation strings, database field names, test fixtures) as "likely legitimate, verify manually" — do not auto-flag as blocker.

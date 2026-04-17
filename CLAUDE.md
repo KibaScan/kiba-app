@@ -41,12 +41,12 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 ## Score Framing (D-168, supersedes D-094)
 
-Tiered by surface density:
-- **Hero / outbound share:** `{score}% match for {petName}` (`ScoreRing` on ResultScreen, `PetShareCard`)
-- **List rows with moderate space:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
-- **Tight pills / dense browse:** `{score}%` (`BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
+Tiered by whether pet context is recoverable from surrounding UI:
+- **Outbound share (no app context):** `{score}% match for {petName}` (`PetShareCard` only — audience is non-users viewing a screenshot)
+- **In-app, moderate space:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **In-app, dense or hero-minimal:** `{score}%` (`ScoreRing` — pet photo in-ring anchors context, caption was redundant noise; `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
 
-Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. Hero/share surfaces satisfy this via visible text. Terse tiers require explicit `accessibilityLabel={\`${score}% match for ${petName}\`}`. Preserves D-094's legal defensibility. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
+Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. `PetShareCard` satisfies this via visible text. All in-app surfaces require explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Preserves D-094's legal defensibility. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
 
 ## Scoring Engine — Quick Reference
 
@@ -88,7 +88,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 6. Every penalty has **`citation_source`** — no unattributed claims
 7. **Supabase RLS** on every user-data table
 8. **No `any` types** in TypeScript core entities
-9. **Score framing (D-168, supersedes D-094)** — tiered by surface: `{score}%` on tight pills, `{score}% match` on list rows, `{score}% match for {petName}` on hero/share only. Full phrase must reach assistive tech — on terse tiers via explicit `accessibilityLabel`
+9. **Score framing (D-168, supersedes D-094)** — `{score}% match for {petName}` only on outbound share (`PetShareCard`); `{score}% match` on in-app list rows; `{score}%` on dense surfaces incl. `ScoreRing`. Full phrase must reach assistive tech — all in-app surfaces need explicit `accessibilityLabel`
 10. **UPVM compliance (D-095)** — never: "prescribe," "treat," "cure," "prevent," "diagnose"
 11. **Bypasses:** vet diet (D-135), species mismatch (D-144), variety pack (D-145), recalled product (D-158) — no scoring
 12. **API keys server-side only (D-127)** — all external calls via Edge Functions

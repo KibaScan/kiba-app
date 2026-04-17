@@ -3,7 +3,7 @@
 ## UI rules
 - Zero emoji (D-084) — Ionicons only
 - Dark theme (D-086) — use `Colors` from `utils/constants`
-- Score framing (D-168, supersedes D-094): tiered — `{score}%` on tight pills, `{score}% match` on list rows, `{score}% match for {petName}` on hero (`ScoreRing`) / outbound share (`PetShareCard`) only. Full phrase must reach assistive tech: hero/share satisfy via visible text; terse tiers need explicit `accessibilityLabel={\`${score}% match for ${petName}\`}`
+- Score framing (D-168, supersedes D-094): tiered — `{score}% match for {petName}` only on outbound share (`PetShareCard`); `{score}% match` on list rows; `{score}%` on dense surfaces incl. `ScoreRing`. All in-app score elements MUST carry `accessibilityLabel={\`${score}% match for ${petName}\`}` (only outbound share satisfies via visible text)
 - UPVM compliance (D-095): never "prescribe," "treat," "cure," "prevent," "diagnose"
 - Clinical copy only — objective, citation-backed, never editorial
 
