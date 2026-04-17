@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-16 (session 54 — CURRENT.md trim + /handoff rolling-window enforcement)
+# Project Status — Last updated 2026-04-17 (session 55 — merge cascade PRs #10 + #11 + #12, production caught up to m5-complete)
 
 ## Active Milestone
 
@@ -65,9 +65,38 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
+- **Date:** 2026-04-17 (session 55 — merge cascade: PRs #10 + #11 → `m5-complete`, PR #12 → `main`)
+- **Branch:** `m5-complete` (no feature branch — session was all merges + this handoff).
+- **PRs shipped:**
+  - [#10](https://github.com/KibaScan/kiba-app/pull/10) squash-merged → `d2f566e` (Top Picks dedicated screen + BenchmarkBar skeleton fix)
+  - [#11](https://github.com/KibaScan/kiba-app/pull/11) squash-merged → `e6c8069` (CURRENT.md trim + rolling-window `/handoff`)
+  - [#12](https://github.com/KibaScan/kiba-app/pull/12) merge-merged → `6171116` (cascade `m5-complete` → `main`, the "PR #2 equivalent")
+- **Accomplished — merge chain + production sync + rolling-window `/handoff` validated live.**
+  - **Session 54's `/handoff` rewrite had its first pre-merge run** — wrote session 54 as Last Session with session 53 as Previous Session. Rolling window worked as spec'd.
+  - **PR #10 merged first** per merge-order plan (session 54's handoff flagged this). Squash commit picked up sessions 50-53.
+  - **PR #11 hit the squash-rebase gotcha** — after PR #10 squashed into `m5-complete`, PR #11's diff showed 26 commits because git didn't auto-detect patch equivalence across the squash boundary. Plain `git rebase origin/m5-complete` hit add/add conflicts on the PR #10 spec files. Recovered with `git rebase --onto origin/m5-complete 9e4ac91 m9-current-md-trim` — replays just my 3 commits onto the new tip, skipping PR #10's now-squashed work. Force-push (blocked by settings perms — user ran `!git push --force-with-lease` directly) cleaned PR #11's view to 3 commits.
+  - **PR #12 (cascade) opened + merged with `--merge` strategy** (not squash) to match the prior PR #2 pattern — preserves individual PR squash commits on `main` for history.
+  - **Local branch `m9-current-md-trim` deleted.** Remote merged branches (`m9-top-picks-screen` + `m9-current-md-trim`) left intact — can be deleted when convenient.
+  - **`main` now caught up to `m5-complete`.** Both tips converge at `6171116`.
+- **Files changed this session:** none direct — all via merges. This handoff's CURRENT.md update is the only file touched in the working tree.
+- **Numbers (all green, unchanged from session 54):** 1596 tests / 71 suites / 3 snapshots. 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
+- **Not done yet:**
+  - **On-device D-094 visual QA** on Top Picks hero badge + leaderboard pill — carried from session 53, still unchecked.
+  - **Remote feature branches** `m9-top-picks-screen` + `m9-current-md-trim` still exist on origin — safe to delete via `gh api` or GitHub UI. Settings could enable auto-delete-on-merge to avoid this next time.
+  - All "Not done yet" items from Previous Session (session 54) still apply — D-094 carousel outliers, Top Picks polish carry-overs, deferred code-review items, HomeScreen overhaul, etc.
+- **Start the next session by:**
+  1. **`/boot`** — third validation of the trimmed CURRENT.md + rolling-window pattern. Should single-read cleanly.
+  2. Pick scope from the carryover backlog: (a) D-094 carousel symmetry (`TopPicksCarousel` + `TopMatchesCarousel`), (b) Top Picks visual polish (Brand CAPS, top-2 ingredients, V2 two-column hero), (c) one of the 5 deferred code-review items from session 53, or (d) the next M9 thread (HomeScreen overhaul, custom icons).
+- **Gotchas / context for next session:**
+  - **Squash-merge rebase gotcha:** when a squash merge lands on an integration branch, downstream branches based on the pre-squash state can't use plain `git rebase origin/<base>` — git doesn't detect patch equivalence across the squash boundary and tries to re-apply every now-squashed commit. Use `git rebase --onto origin/<base> <last-upstream-commit-before-mine> <branch>` to replay just your commits. We hit this on PR #11 after PR #10 landed.
+  - **Force-push is blocked by settings perms.** When you need to force-push to clean up a branch history, run `!git push --force-with-lease origin <branch>` yourself — Claude can't do it through the Bash tool.
+  - **Merge strategy convention:** feature branches → `m5-complete` use `--squash` (clean per-PR commits on integration); `m5-complete` → `main` cascade PRs use `--merge` (preserves PR history on main). PR #10/#11 were squash; PR #12 was merge. Match this going forward.
+  - **`main` and `m5-complete` are both at `6171116`** post-cascade. Future feature work follows the normal `m9-<feature>` → `m5-complete` pattern, with periodic cascade PRs to main whenever production needs to catch up.
+
+## Previous Session
+
 - **Date:** 2026-04-16 (session 54 — CURRENT.md trim + `/handoff` rolling-window enforcement)
-- **Branch:** `m9-current-md-trim` off `m9-top-picks-screen`. 2 commits.
-- **PR:** [#11](https://github.com/KibaScan/kiba-app/pull/11) — "M9: trim CURRENT.md + enforce rolling 2-session window". OPEN against `m5-complete`, stacked on PR #10 (5 commits visible until #10 merges, then auto-cleans to 2).
+- **Branch:** `m9-current-md-trim` off `m9-top-picks-screen`. 2 commits + 1 handoff commit = 3 total. Merged via PR #11.
 - **Accomplished — brainstormed + spec'd + shipped a doc-only trim to kill `/boot` context bloat.**
   - **Design spec:** `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (`ff9280f`) — approved-in-flow during brainstorming.
   - **Trim (`b40cd03`):**
@@ -93,50 +122,3 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **PR #11 stacking:** base is `m5-complete` per user direction, not `m9-top-picks-screen`. Diff is noisy until #10 merges. GitHub handles commit auto-cleanup on merge — don't manually rebase unless #10 gets closed without merging.
   - **`## What Works` max 5 bullets** going forward — that's the cap the spec set. If it grows, prune oldest on each `/handoff` to stay in budget, or close M9.
   - **Historical session detail** lives in git. `git show HEAD~N:docs/status/CURRENT.md` retrieves any prior state. Don't re-add session archive blocks.
-
-## Previous Session
-
-- **Date:** 2026-04-16 (session 53 — PR #10 opened + full `/code-review` pipeline on PR #10 + D-094 score-framing polish fix)
-- **Branch:** `m9-top-picks-screen` off `m5-complete`. 2 new commits on top of session 52 (22 total on branch). Pushed to origin.
-- **PR:** [#10](https://github.com/KibaScan/kiba-app/pull/10) — "M9: Top Picks dedicated screen + BenchmarkBar skeleton fix". OPEN against `m5-complete`. 0 reviewer comments. Auto-posted `### Code review / No issues found` summary comment from `/code-review` run.
-- **Accomplished — `/boot` + PR opened + full `/code-review:code-review` pipeline + one proactive D-094 fix shipped on top of the PR.**
-  - **`/boot`:** numbers verified green (1596/71, 129 decisions, 39 migrations — all matched). On-device BenchmarkBar smoke test was already done by user pre-session; skipped re-verification per user direction.
-  - **PR #10 opened** via `gh pr create --base m5-complete --head m9-top-picks-screen`. Body covers Top Picks ship + BenchmarkBar hitchhiker, D-094/D-095/D-096/D-146 compliance notes, test deltas (1538 → 1596, +58 tests / +6 suites), 6-item manual test plan.
-  - **`/code-review:code-review` run on PR #10** — full pipeline executed (eligibility check, CLAUDE.md path list, PR summary, 5 parallel Sonnet reviewers covering {CLAUDE.md adherence, shallow bug scan, git history/blame, prior PR comments, code-comment compliance}, then 9 parallel Haiku confidence scorers per-issue, then re-check + gh comment). **9 unique issues surfaced, 0 scored ≥80**, so per skill threshold the posted comment was "No issues found." Highest-scored issues (75) were D-094 naked `{pick.final_score}%` in the new `TopPickHeroCard` score badge + `TopPickRankRow` score pill — filtered at 75 as "pre-existing pattern consistency with `TopPicksCarousel` on `m5-complete`." Recommended proactive fix anyway since D-094 is non-negotiable rule #9 in CLAUDE.md.
-  - **D-094 fix shipped as `fc56363`** — 3-file surgical patch (9 additions, 2 deletions):
-    - `TopPickHeroCard.tsx` — circular score badge now renders `{score}%` + a small "match" label beneath (new `scoreLabel` style, FontSizes.xs, -2 marginTop, letterSpacing 0.3). The existing trophy badge above the image row continues to carry "Best overall match for {petName}" — the new label closes the loop on the numeric element.
-    - `TopPickRankRow.tsx` — score pill now renders `{score}% match` (was naked `{score}%`). Screen title on `CategoryTopPicksScreen` ("Ranked 1–N matches for {petName}") continues to carry "for {petName}" at screen scope. The file-header comment at line 3 already said `D-094: "X% match" framing (score pill)` — the rendering was the only thing out of alignment with the stated intent.
-    - `__tests__/components/browse/TopPickRankRow.test.tsx` — assertion string updated `'88%'` → `'88% match'`. Hero test didn't assert on the score text, so no update needed there.
-  - **Tests verified green post-fix.** 5 render tests (HeroCard + RankRow) pass. Full suite: 1596/71/3, 5.7s runtime.
-- **Files changed this session (3 code files + 1 status doc, 2 commits, 1 PR opened, 1 PR comment posted):**
-  - `src/components/browse/TopPickHeroCard.tsx` — +7 lines ("match" label + `scoreLabel` style)
-  - `src/components/browse/TopPickRankRow.tsx` — 1-line swap (`{score}%` → `{score}% match`)
-  - `__tests__/components/browse/TopPickRankRow.test.tsx` — 1-line assertion swap
-  - `docs/status/CURRENT.md` — this handoff
-  - Remote: PR [#10](https://github.com/KibaScan/kiba-app/pull/10) opened, comment at https://github.com/KibaScan/kiba-app/pull/10#issuecomment-4263969473
-- **Numbers (all verified green):** **1596 tests / 71 suites / 3 snapshots** (unchanged — only a test-assertion string change, no count delta). 129 decisions. 39 migrations. 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0). `npx jest` total runtime 5.7s.
-- **Not done yet:**
-  - **PR #10 review + merge.** Opened this session, 0 reviewer comments at handoff. Also needs an on-device visual check of the new "match" framing (Hero badge circle + Leaderboard pill) to confirm it reads well at real font sizes — the "match" label under the big 92px score number was sized at FontSizes.xs with -2 marginTop to fit; eyeballs haven't seen it yet.
-  - **`TopPicksCarousel.tsx` is now the D-094 outlier** — still renders naked `{item.final_score}%` (pre-existing on `m5-complete`, flagged at 75 in this session's review but scoped out of PR #10). Ripe for a follow-up symmetry fix on a new branch off `m5-complete` (or fold into HomeScreen polish thread). Same pattern likely exists on `TopMatchesCarousel` — verify before touching.
-  - **Other code-review borderline issues (all <80, deferred):**
-    - `fetchCategoryTopPicks` silently returns `[]` for the `vet_diet` sub-filter. Blocked upstream today (TopPicksCarousel is hidden when `activeSubFilter === 'vet_diet'` — per HomeScreen render guard), so users can't reach the "See All" tap. If that guard ever changes, add `vet_diet` to `resolveSeeAllDestination` short-circuits alongside `supplement`.
-    - `matchesPetLifeStage` in `topPickInsights.ts` uses `\bmaintenance\b` regex for the adult branch — would match "Senior Maintenance" for adult pets. AAFCO has no official "Senior Maintenance" stage so production data shouldn't hit it, but defensive hardening option is to check for absence of `senior` before the maintenance branch fires.
-    - `formatLifeStageText` unconditionally prepends `AAFCO ` then title-cases — if the raw `aafco_statement` field ever starts with "AAFCO", result would be "AAFCO Aafco Adult Maintenance". Current data pipeline (migration 036 synthesizer + `import_products.py`) produces clean claims with no "AAFCO" prefix, so latent only. Strip any leading `AAFCO ` before formatting if you ever touch that helper.
-    - `CategoryTopPicksScreen` doesn't wrap `pets.find(p => p.id === petId)` in `useMemo`. CompareScreen does (that screen is cited as the tab-bar-hide pattern reference), but `CategoryBrowseScreen` and `SafeSwitchSetupScreen` also skip it, so the convention isn't universal. Micro-perf only.
-    - `mountedRef` race pattern in the fetch effect (theoretical — not exploitable given this is a dedicated "See All" destination, dep changes require full navigation). If the screen is ever repurposed for in-screen filter toggling, switch to a per-invocation `let cancelled = false` closure-captured flag.
-  - **Top Picks visual polish carry-overs from session 51:** Brand CAPS on rank rows, top-2 ingredients subtitle on hero, two-column hero layout (V2 Gemini mockup deltas).
-  - **Top Picks design spec section 3** still describes original image-top layout; implementation went vertical. Spec drift to address in a polish pass.
-  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
-  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
-- **Start the next session by:**
-  1. **`/boot`** to confirm numbers match (1596/71, 129 decisions, 39 migrations).
-  2. **`gh pr view 10`** — check status + address any reviewer comments that landed overnight.
-  3. **On-device eyeball** of the D-094 "match" framing — cold simulator, open Top Picks, confirm the hero's small "match" label under the 92px number doesn't look cramped, and the leaderboard pill's "X% match" reads well at small sizes.
-  4. Pick scope: (a) extend D-094 fix to `TopPicksCarousel` + `TopMatchesCarousel` for symmetry, (b) Top Picks visual polish carry-overs (Brand CAPS, top-2 ingredients, V2 two-column hero), (c) tackle one of the 5 deferred code-review items above, or (d) start the next M9 thread (HomeScreen overhaul, custom icons).
-- **Gotchas / context for next session:**
-  - **D-094 score-pill pattern is now `{score}% match` on new browse components** (TopPickHeroCard + TopPickRankRow). `TopPicksCarousel` + likely `TopMatchesCarousel` are pre-existing outliers still rendering naked `{score}%`. If you touch either, adopt the "X% match" pattern — the "for {petName}" piece is carried at screen/card scope by the trophy badge or screen title.
-  - **Hero "match" label sizing is hand-tuned** — `FontSizes.xs` / fontWeight 600 / marginTop -2 / letterSpacing 0.3, centered under the 92px FontSizes.xl number. If anyone changes `FontSizes.xl` or the 92px badge radius, re-check the fit before committing.
-  - **Highest-risk of the 9 deferred code-review items is the `fetchCategoryTopPicks` vet_diet gap.** It's safe today only because TopPicksCarousel is hidden for vet_diet. If that hide-guard is ever removed (e.g., a future "browse vet diets" feature), the gap lights up silently — add vet_diet to `resolveSeeAllDestination` at the same time.
-  - **Code review pipeline on this PR cleared the threshold bar cleanly** — 9 issues surfaced, 0 ≥80, D-094 fix applied proactively despite filter. If a future review run finds 0 issues total (instead of 9 scored low), that's more suspicious — the scorers should find *something* on a PR of this size.
-  - **Skeleton color gotcha from session 52 still applies.** Don't reintroduce iOS light-mode greys (`#E5E5EA` / `#F2F2F7` / `#D1D1D6` / `#C7C7CC`) in skeleton/loading components — use `Colors.chipSurface`. `PositionMap.tsx:28` `UNRATED_COLOR` is intentional and out of scope.
-  - **Session 51 gotchas still apply** — ScoreRing substitution in hero, Brand CAPS deferral, spec drift, Gemini V2 mockup deltas.
