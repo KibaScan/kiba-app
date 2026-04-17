@@ -7,12 +7,19 @@ import {
   toggleBookmark,
   getBookmarksForPet,
   isBookmarked,
+  fetchBookmarkCards,
 } from '../../src/services/bookmarkService';
+import type { Pet } from '../../src/types/pet';
 import {
   BookmarkOfflineError,
   BookmarksFullError,
   MAX_BOOKMARKS_PER_PET,
 } from '../../src/types/bookmark';
+
+jest.mock('../../src/services/batchScoreOnDevice', () => ({
+  batchScoreHybrid: jest.fn().mockResolvedValue({ scored: 0, duration_ms: 0 }),
+  SCORING_COLUMNS: [],
+}));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -64,14 +71,17 @@ describe('offline guards', () => {
 
   test('addBookmark throws BookmarkOfflineError when offline', async () => {
     await expect(addBookmark('pet-1', 'prod-1')).rejects.toBeInstanceOf(BookmarkOfflineError);
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 
   test('removeBookmark throws BookmarkOfflineError when offline', async () => {
     await expect(removeBookmark('pet-1', 'prod-1')).rejects.toBeInstanceOf(BookmarkOfflineError);
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 
   test('getBookmarksForPet returns [] when offline', async () => {
     await expect(getBookmarksForPet('pet-1')).resolves.toEqual([]);
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });
 
@@ -148,5 +158,63 @@ describe('CRUD', () => {
 
     const result = await toggleBookmark('pet-1', 'prod-1');
     expect(result).toBe(true);
+  });
+});
+
+const makeTestPet = (id = 'pet-1'): Pet => ({
+  id,
+  user_id: 'user-1',
+  name: 'Test',
+  species: 'dog',
+  breed: 'mixed',
+  weight_current_lbs: 50,
+  life_stage: 'adult',
+  activity_level: 'moderate',
+  is_neutered: true,
+} as Pet);
+
+describe('fetchBookmarkCards', () => {
+  test('returns [] when offline', async () => {
+    (isOnline as jest.Mock).mockResolvedValue(false);
+    await expect(fetchBookmarkCards(makeTestPet())).resolves.toEqual([]);
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  test('returns cards hydrated with scores; triggers batchScoreHybrid only when a score is null', async () => {
+    // First call: bookmarks joined with product
+    const bookmarksChain = mockChain({
+      data: [
+        {
+          id: 'bm-1',
+          user_id: 'user-1',
+          pet_id: 'pet-1',
+          product_id: 'prod-1',
+          created_at: 'now',
+          product: {
+            id: 'prod-1',
+            brand: 'Acme',
+            name: 'Food',
+            image_url: null,
+            is_recalled: false,
+            is_vet_diet: false,
+            is_variety_pack: false,
+            is_supplemental: false,
+            target_species: 'dog',
+          },
+        },
+      ],
+      error: null,
+    });
+    // Second call: pet_product_scores (no row → null score → should trigger JIT)
+    const scoresChain = mockChain({ data: [], error: null });
+
+    (supabase.from as jest.Mock)
+      .mockReturnValueOnce(bookmarksChain)
+      .mockReturnValueOnce(scoresChain);
+
+    const cards = await fetchBookmarkCards(makeTestPet());
+    expect(cards).toHaveLength(1);
+    expect(cards[0].final_score).toBeNull();
+    expect(cards[0].product.brand).toBe('Acme');
   });
 });
