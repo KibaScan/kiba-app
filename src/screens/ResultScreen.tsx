@@ -84,7 +84,7 @@ import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
 import { ResultHeaderMenu } from '../components/result/ResultHeaderMenu';
 import { useBookmarkStore } from '../stores/useBookmarkStore';
-import { BookmarksFullError } from '../types/bookmark';
+import { BookmarkOfflineError, BookmarksFullError } from '../types/bookmark';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -187,6 +187,8 @@ export default function ResultScreen() {
     } catch (err) {
       if (err instanceof BookmarksFullError) {
         Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
       } else {
         Alert.alert('Could not save', err instanceof Error ? err.message : 'Unknown error');
       }
@@ -200,7 +202,7 @@ export default function ResultScreen() {
   const handleReportIssue = async () => {
     const subject = encodeURIComponent(`Report issue — ${product?.brand ?? ''} ${product?.name ?? ''}`.trim());
     const body = encodeURIComponent(
-      `Product: ${productId}\nPet: ${petId ?? '(none)'}\nPlatform: ${Platform.OS} ${Platform.Version}\n\nDescribe the issue:\n`,
+      `Product: ${productId}\nPet: ${petId ?? '(none)'}\nPlatform: ${Platform.OS} ${String(Platform.Version)}\n\nDescribe the issue:\n`,
     );
     const url = `mailto:support@kibascan.com?subject=${subject}&body=${body}`;
     const ok = await Linking.canOpenURL(url);
@@ -524,7 +526,13 @@ export default function ResultScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerIconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
