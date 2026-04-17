@@ -21,11 +21,11 @@ import { Colors, Spacing, getScoreColor } from '../utils/constants';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useBookmarkStore } from '../stores/useBookmarkStore';
-import { fetchBookmarkCards, removeBookmark } from '../services/bookmarkService';
+import { fetchBookmarkCards } from '../services/bookmarkService';
 import { sanitizeBrand, stripBrandFromName } from '../utils/formatters';
 import SwipeableRow from '../components/ui/SwipeableRow';
 import type { BookmarkCardData } from '../types/bookmark';
-import { MAX_BOOKMARKS_PER_PET } from '../types/bookmark';
+import { MAX_BOOKMARKS_PER_PET, BookmarkOfflineError } from '../types/bookmark';
 
 type Nav = CompositeNavigationProp<
   NativeStackNavigationProp<HomeStackParamList, 'Bookmarks'>,
@@ -39,6 +39,7 @@ export default function BookmarksScreen() {
   const activePet = pets.find((p) => p.id === activePetId);
   const bookmarkIds = useBookmarkStore((s) => s.bookmarks.map((b) => b.id).join(','));
   const loadForPet = useBookmarkStore((s) => s.loadForPet);
+  const toggle = useBookmarkStore((s) => s.toggle);
   const [cards, setCards] = useState<BookmarkCardData[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -62,10 +63,13 @@ export default function BookmarksScreen() {
   const handleDelete = async (productId: string) => {
     if (!activePetId) return;
     try {
-      await removeBookmark(activePetId, productId);
-      await loadForPet(activePetId);
+      await toggle(activePetId, productId);
     } catch (err) {
-      Alert.alert('Could not remove', err instanceof Error ? err.message : 'Unknown error');
+      if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be removed once you are back online.');
+      } else {
+        Alert.alert('Could not remove', err instanceof Error ? err.message : 'Unknown error');
+      }
     }
   };
 

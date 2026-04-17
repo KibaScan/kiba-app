@@ -25,7 +25,7 @@ import { useBookmarkStore } from '../stores/useBookmarkStore';
 import { getRecentScans } from '../services/scanHistoryService';
 import { sanitizeBrand, stripBrandFromName } from '../utils/formatters';
 import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
-import { BookmarksFullError } from '../types/bookmark';
+import { BookmarksFullError, BookmarkOfflineError } from '../types/bookmark';
 
 type Nav = CompositeNavigationProp<
   NativeStackNavigationProp<HomeStackParamList, 'ScanHistory'>,
@@ -67,6 +67,8 @@ export default function ScanHistoryScreen() {
     } catch (err) {
       if (err instanceof BookmarksFullError) {
         Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
       }
     }
   };

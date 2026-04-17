@@ -15,7 +15,7 @@ import {
   Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { BookmarksFullError } from '../types/bookmark';
+import { BookmarksFullError, BookmarkOfflineError } from '../types/bookmark';
 import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -137,6 +137,8 @@ export default function HomeScreen() {
     } catch (err) {
       if (err instanceof BookmarksFullError) {
         Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
       }
     }
   };
@@ -788,6 +790,11 @@ export default function HomeScreen() {
                       }}
                       delayLongPress={400}
                       activeOpacity={0.7}
+                      accessibilityLabel={
+                        scan.final_score != null && activePet
+                          ? `${scan.final_score}% match for ${activePet.name}, ${scan.product.brand} ${scan.product.name}`
+                          : `${scan.product.brand} ${scan.product.name}${scan.product.is_recalled ? ', recalled product' : ''}`
+                      }
                     >
                       {scan.product.image_url ? (
                         <Image
