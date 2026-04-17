@@ -57,7 +57,7 @@ Full walkthrough: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | Path                                    | Why                                                         |
 |-----------------------------------------|-------------------------------------------------------------|
 | `src/services/scoring/`                 | The core product. 3 layers + bypasses, pure functions, deterministic. |
-| `DECISIONS.md`                          | 129 decisions with rationale, dated, superseded ones marked. |
+| `DECISIONS.md`                          | 130 decisions with rationale, dated, superseded ones marked. |
 | `docs/references/scoring-rules.md`      | Authoritative scoring math: AAFCO thresholds, DMB, curves.  |
 | `.agent/design.md`                      | Design system. Tokens, card anatomy, anti-patterns.         |
 | `supabase/migrations/`                  | 38 migrations. RLS applied per user-data table.             |

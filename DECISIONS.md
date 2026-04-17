@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: April 7, 2026 (129 decisions, D-001 through D-167, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: condition-aware feeding frequency.)
+> Updated: April 16, 2026 (130 decisions, D-001 through D-168, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-094 superseded by D-168. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: allergen score cap at 50. D-168: score framing simplification — tiered by surface density, supersedes D-094.)
 
 ---
 
@@ -581,8 +581,9 @@ IQ raw = 19 (base 52, minus 45 colorant penalties, plus other adjustments). Taur
 ---
 
 ### D-094: Score Framing — Suitability Match Language
-**Status:** LOCKED — Non-negotiable
+**Status:** SUPERSEDED by D-168
 **Date:** Feb 24, 2026
+**Superseded:** April 16, 2026 — Iterative visual-noise reduction across M8/M9 stripped "match for [Pet Name]" from most browse, carousel, and list-row surfaces. The universal rule proved too verbose in list-dense contexts where pet context is already anchored elsewhere on the screen. D-168 replaces the universal rule with a tiered pattern (terse by default; full phrase only on hero / outbound-share surfaces) and preserves legal defensibility by retaining the full phrase in `accessibilityLabel` on every score element.
 
 All scores display as "[X]% match for [Pet Name]" — never "This product scores [X]." The score is a pet-specific suitability match, not a universal product quality rating.
 
@@ -2976,6 +2977,56 @@ This is optional — user can stay in weight mode if they prefer.
 **Does NOT replace D-129:** The IQ override continues to apply position-weighted severity deductions. The cap is a ceiling on top — they're complementary.
 
 **Regression impact:** Pure Balance (62) and Temptations (9) are scored without pet allergens — cap code path never entered. Zero regression risk.
+
+### D-168: Score Framing Simplification — Terse by Default, Hero Exception — SUPERSEDES D-094
+**Status:** LOCKED
+**Date:** April 16, 2026
+**Milestone:** M9
+**Supersedes:** D-094 (Score Framing — Suitability Match Language)
+
+**Problem:** D-094's universal `"[X]% match for [Pet Name]"` rule was written when the app had few score surfaces. M8/M9 added browse, carousels, Top Picks, Safe Swap, Safe Switch, scan history, and pantry cards — repeating "match for [Pet Name]" across every pill saturated lists with redundant pet context and forced awkward line-wrapping on narrow rows. Across sessions, the phrase was iteratively stripped from most browse surfaces; this decision codifies the resulting pattern so it does not regress.
+
+**Decision:** Score framing is tiered by surface density.
+
+| Tier | Visible text | Surfaces |
+|------|--------------|----------|
+| **Hero / outbound share** | `{score}% match for {petName}` | `ScoreRing` (ResultScreen centerpiece), `PetShareCard` (outbound share to non-users) |
+| **List row (moderate space)** | `{score}% match` | `ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet` |
+| **Tight pill / dense browse** | `{score}%` | `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows |
+
+**Accessibility invariant:** Every score element MUST expose the full phrase `"${score}% match for ${petName}"` to assistive tech. On hero/share surfaces where visible text already is the full phrase, the visible `<Text>` itself satisfies the invariant. On list-row and tight-pill tiers where visible text abbreviates, add an explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Screen readers always hear the full context; sighted users see density appropriate to surface.
+
+**Legal defensibility preserved:** The three-tier defensibility structure from D-094 (TOS clickwrap + persistent disclaimer tooltip + suitability framing) is unchanged. The suitability framing requirement migrates from "always in visible text" to "always in `accessibilityLabel` + visible on hero/share surfaces." A visible `{score}%` or `{score}% match` is still a match/suitability claim, not a universal quality rating — "match" is retained everywhere it fits, and context from surrounding UI (selected pet name in header, card product image, screen title) anchors the pet reference even when omitted from the pill.
+
+**Rationale for hero/share exceptions:**
+- **`ScoreRing`:** ResultScreen's central scoring visualization, one pet in focus, ample space, the phrase is the semantic anchor of the screen.
+- **`PetShareCard`:** Outbound share audience (non-users seeing a screenshot) has no other pet context; phrase is load-bearing.
+
+**Rejected alternatives:**
+- **Strip everywhere (including hero/share):** Loses pet identity on the flagship visualization; outbound shares become generic.
+- **Keep D-094 as universal rule:** Re-introduces noise stripped across M8/M9 and forces awkward wrapping on narrow pills.
+- **Split into visible-tier + a11y-tier without codifying surfaces:** Future agents regenerate conflicting decisions per surface. Explicit surface table prevents drift.
+
+**Implementation:**
+- `src/components/ScanHistoryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
+- `src/components/pantry/PantryCard.tsx` — same treatment
+- `ScoreRing.tsx`, `PetShareCard.tsx`, browse components unchanged (already match tier)
+
+**Self-check on new score surfaces:**
+- Is it a flagship/centerpiece visualization or outbound share? → full phrase in visible text (accessibility invariant satisfied).
+- Is it a list row with room for 1–2 extra words? → `{score}% match` + `accessibilityLabel` with full phrase.
+- Is it a tight pill, chip, or dense browse item? → naked `{score}%` + `accessibilityLabel` with full phrase.
+
+**Known compliance gap at landing (backfill follow-up):** These 7 terse-tier score surfaces currently render visible text without an `accessibilityLabel` carrying the full phrase. They satisfy the visible-text tier of D-168 but not the accessibility invariant. Backfill is scheduled as a follow-up task (add `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score `<Text>` in each):
+- `src/components/browse/BrowseProductRow.tsx:64`
+- `src/components/browse/TopPicksCarousel.tsx:228`
+- `src/components/browse/TopPickHeroCard.tsx:57` (score pill only — outer card has its own `accessibilityLabel`)
+- `src/components/browse/TopPickRankRow.tsx:58` (score pill only — outer pressable has its own `accessibilityLabel`)
+- `src/components/scoring/ScoreWaterfall.tsx:608`
+- `src/components/result/SafeSwapSection.tsx:243`
+- `src/components/pantry/SharePantrySheet.tsx:181`
+
+Some of these surfaces do not currently have `petName` in local scope and require threading it as a prop. The backfill should land as a single sweep under M9. `ScanHistoryCard` and `PantryCard` were backfilled in the D-168 landing commit and are the reference pattern.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

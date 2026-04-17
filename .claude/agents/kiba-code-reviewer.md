@@ -1,6 +1,6 @@
 ---
 name: kiba-code-reviewer
-description: Use PROACTIVELY after writing or editing code, before committing. Especially important for UI copy changes (D-094/D-095 compliance), new Supabase migrations (RLS), permission check additions, pantry/auto-deplete logic, or features that cross multiple services. Report-only — suggests fixes, does NOT apply them.
+description: Use PROACTIVELY after writing or editing code, before committing. Especially important for UI copy changes (D-168/D-095 compliance), new Supabase migrations (RLS), permission check additions, pantry/auto-deplete logic, or features that cross multiple services. Report-only — suggests fixes, does NOT apply them.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -41,8 +41,13 @@ Every new `CREATE TABLE` in `supabase/migrations/` on a user-scoped entity must 
 ### 8. No `any` Types in Core Entities
 Flag `any` types in `src/types/`, `src/services/scoring/`, `src/utils/permissions.ts`. Other locations are softer but still worth a nit flag if gratuitous.
 
-### 9. Suitability Framing (D-094)
-Every score display must use the `[X]% match for [Pet Name]` pattern. Grep for naked score renders: `{score}%`, `{final_score}`, inline `score` references in JSX without a pet name. Flag any naked score. Exception: debug logs, test fixtures.
+### 9. Score Framing (D-168, supersedes D-094)
+Score framing is tiered by surface density:
+- **Hero / outbound share:** `{score}% match for {petName}` (`ScoreRing`, `PetShareCard`)
+- **List rows:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **Tight pills / dense browse:** `{score}%` (`BrowseProductRow`, `TopPicksCarousel`, etc.)
+
+Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech — via visible text on hero/share tiers, via explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on terse tiers. This preserves D-094's legal defensibility. Flag terse-tier score `<Text>` that lacks the `accessibilityLabel`. Flag any visible text that violates its surface tier (e.g., `ScoreRing` showing only `{score}%`, or `BrowseProductRow` showing the full phrase). Known backfill gap at D-168 landing: 7 terse-tier surfaces tracked in D-168 decision body. Exception: debug logs, test fixtures.
 
 ### 10. UPVM Compliance (D-095)
 Never in user-facing JSX strings: **prescribe, treat, cure, prevent, diagnose, diagnosis**. Grep for these in added string literals in `src/screens/` and `src/components/`. Mark legitimate uses (inside citation strings, database field names, test fixtures) as "likely legitimate, verify manually" — do not auto-flag as blocker.
@@ -72,6 +77,7 @@ Grep for references to superseded decisions in code comments, docs, variable nam
 
 - **D-013 → D-137** (DCM advisory: count-based → pulse framework)
 - **D-061 → D-160** (goal weight: raw lbs → slider level)
+- **D-094 → D-168** (score framing: universal "match for [Pet Name]" → tiered by surface)
 - **D-113 → D-136** (supplemental classification)
 - **D-141 → D-143** (section headers)
 - **D-065 → D-152** (pantry recommendation behavior)
@@ -118,7 +124,7 @@ UI changes must use the 4 Matte Premium tokens: `cardSurface`, `chipSurface`, `h
 - **Rule #7 (RLS)** supabase/migrations/039_new_feature.sql:18 — table `user_feature_prefs` missing RLS. Add: `ALTER TABLE user_feature_prefs ENABLE ROW LEVEL SECURITY;` + policy via `auth.uid()`.
 
 ### Warnings (should fix)
-- **D-094 (Suitability Framing)** src/components/ScoreCard.tsx:67 — renders `{score}%` without pet name. Wrap in "[X]% match for [Pet Name]" format.
+- **D-168 (Score Framing)** src/components/ScoreCard.tsx:67 — score element lacks `accessibilityLabel` with full `"${score}% match for ${petName}"` phrase. Add: `accessibilityLabel={\`${score}% match for ${petName}\`}`.
 
 ### Nits (optional)
 - src/utils/helpers.ts:23 — could use a more descriptive variable name

@@ -21,7 +21,7 @@ description: Multi-pass code review of uncommitted/unpushed changes against proj
    - **Self-Check items** from CLAUDE.md (scoring deterministic, UPVM compliance, paywall in permissions.ts only, RLS, bypasses intact)
    - **Non-Negotiable Rules** — any violations?
    - **Schema Traps** — are the correct table/column names used?
-   - **Score framing** — is D-094 suitability framing used everywhere?
+   - **Score framing** — is D-168 tiered framing respected (hero/share full phrase, list rows `{score}% match`, tight pills `{score}%`), and is the full phrase exposed to assistive tech (visible text on hero/share, explicit `accessibilityLabel` on terse tiers)?
    - **No `any` types** in core entities?
    - **Do NOT Build** list — are we building something forbidden?
 

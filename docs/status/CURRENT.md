@@ -25,7 +25,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 ## Numbers
 
 - **Tests:** 1596 passing / 71 suites
-- **Decisions:** 129
+- **Decisions:** 130
 - **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
@@ -79,7 +79,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **Local branch `m9-current-md-trim` deleted.** Remote merged branches (`m9-top-picks-screen` + `m9-current-md-trim`) left intact — can be deleted when convenient.
   - **`main` now caught up to `m5-complete`.** Both tips converge at `6171116`.
 - **Files changed this session:** none direct — all via merges. This handoff's CURRENT.md update is the only file touched in the working tree.
-- **Numbers (all green, unchanged from session 54):** 1596 tests / 71 suites / 3 snapshots. 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
+- **Numbers (all green, unchanged from session 54):** 1596 tests / 71 suites / 3 snapshots. 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
 - **Not done yet:**
   - **On-device D-094 visual QA** on Top Picks hero badge + leaderboard pill — carried from session 53, still unchecked.
   - **Remote feature branches** `m9-top-picks-screen` + `m9-current-md-trim` still exist on origin — safe to delete via `gh api` or GitHub UI. Settings could enable auto-delete-on-merge to avoid this next time.
@@ -108,7 +108,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (new, 124 lines)
   - `docs/status/CURRENT.md` (-751 / +15 net)
   - `.claude/commands/handoff.md` (+10 / -5)
-- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots (unchanged — doc-only work). 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
+- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots (unchanged — doc-only work). 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
 - **Not done yet:**
   - **PR #11 review + merge.** Stacked on PR #10 — may want to wait until #10 lands so the diff shows clean.
   - All "Not done yet" items from Previous Session (session 53) still apply — D-094 carousel outliers, Top Picks polish carry-overs, deferred code-review items, HomeScreen overhaul, etc.
