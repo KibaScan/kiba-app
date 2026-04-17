@@ -24,6 +24,7 @@ import { batchScoreHybrid } from '../../services/batchScoreOnDevice';
 import { useActivePetStore } from '../../stores/useActivePetStore';
 import type { BrowseProduct, BrowseCategory } from '../../types/categoryBrowse';
 import type { HomeStackParamList, TabParamList } from '../../types/navigation';
+import { resolveSeeAllDestination } from './topPicksCarouselHelpers';
 
 // ─── Constants ──────────────────────────────────────────
 
@@ -115,8 +116,10 @@ export function TopPicksCarousel({
   );
 
   const handleSeeAll = useCallback(() => {
-    navigation.navigate('CategoryBrowse', {
-      category: activeCategory ?? 'daily_food',
+    const category = activeCategory ?? 'daily_food';
+    const destination = resolveSeeAllDestination(category);
+    navigation.navigate(destination, {
+      category,
       petId,
       subFilter: activeSubFilter ?? undefined,
     });

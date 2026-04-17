@@ -262,20 +262,20 @@ const styles = StyleSheet.create({
   skeletonLabel: {
     width: 180,
     height: 13,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: Colors.chipSurface,
     borderRadius: 4,
     alignSelf: 'center',
     marginBottom: 8,
   },
   skeletonBar: {
     height: 8,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: Colors.chipSurface,
     borderRadius: 4,
   },
   skeletonFooter: {
     width: 80,
     height: 12,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: Colors.chipSurface,
     borderRadius: 4,
     alignSelf: 'center',
     marginTop: 8,
