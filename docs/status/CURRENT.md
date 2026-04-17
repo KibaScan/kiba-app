@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-15 (session 49 — PR #9 → m5-complete + PR #2 → main merge cascade)
+# Project Status — Last updated 2026-04-16 (session 53 — PR #10 open + /code-review run + D-094 polish fix)
 
 ## Active Milestone
 
@@ -64,7 +64,7 @@
 
 ## Numbers
 
-- **Tests:** 1538 passing / 65 suites
+- **Tests:** 1596 passing / 71 suites
 - **Decisions:** 129
 - **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -88,7 +88,6 @@
 - **PantryScreen.tsx:435 chip-background visual review** — still a carry-over from session 20. The `cardBorder → hairlineBorder` swap at line 435 is the only non-border use (chip unselected state background). `rgba(255,255,255,0.12)` may read too faint vs `#333333`. If unselected filter chips look broken or invisible, revert that single line to a dedicated chip-surface token.
 - **Stale browse scores** — CategoryBrowseScreen cache maturity check isn't form-aware (freeze-dried and other minority forms never get scored). Fix in both Edge Function and `batchScoreOnDevice.ts`.
 - **Pantry unit model gap (deferred spec)** — wet food as BASE in Custom Splits returns 0 servings; dry food lbs-vs-cups display unclear. Full analysis + 6 open questions + 5 proposed directions at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`. Pick up post-M9 or whenever user data motivates it.
-- Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`)
 - HomeScreen visual overhaul (custom assets, layout polish)
 - Custom icon rollout (5 pending v2 bold variants)
 - Search UX overhaul on HomeScreen
@@ -106,7 +105,139 @@
 
 ## Last Session
 
-- **Date:** 2026-04-15 (session 49 — merge cascade)
+- **Date:** 2026-04-16 (session 53 — PR #10 opened + full `/code-review` pipeline on PR #10 + D-094 score-framing polish fix)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. 2 new commits on top of session 52 (22 total on branch). Pushed to origin.
+- **PR:** [#10](https://github.com/KibaScan/kiba-app/pull/10) — "M9: Top Picks dedicated screen + BenchmarkBar skeleton fix". OPEN against `m5-complete`. 0 reviewer comments. Auto-posted `### Code review / No issues found` summary comment from `/code-review` run.
+- **Accomplished — `/boot` + PR opened + full `/code-review:code-review` pipeline + one proactive D-094 fix shipped on top of the PR.**
+  - **`/boot`:** numbers verified green (1596/71, 129 decisions, 39 migrations — all matched). On-device BenchmarkBar smoke test was already done by user pre-session; skipped re-verification per user direction.
+  - **PR #10 opened** via `gh pr create --base m5-complete --head m9-top-picks-screen`. Body covers Top Picks ship + BenchmarkBar hitchhiker, D-094/D-095/D-096/D-146 compliance notes, test deltas (1538 → 1596, +58 tests / +6 suites), 6-item manual test plan.
+  - **`/code-review:code-review` run on PR #10** — full pipeline executed (eligibility check, CLAUDE.md path list, PR summary, 5 parallel Sonnet reviewers covering {CLAUDE.md adherence, shallow bug scan, git history/blame, prior PR comments, code-comment compliance}, then 9 parallel Haiku confidence scorers per-issue, then re-check + gh comment). **9 unique issues surfaced, 0 scored ≥80**, so per skill threshold the posted comment was "No issues found." Highest-scored issues (75) were D-094 naked `{pick.final_score}%` in the new `TopPickHeroCard` score badge + `TopPickRankRow` score pill — filtered at 75 as "pre-existing pattern consistency with `TopPicksCarousel` on `m5-complete`." Recommended proactive fix anyway since D-094 is non-negotiable rule #9 in CLAUDE.md.
+  - **D-094 fix shipped as `fc56363`** — 3-file surgical patch (9 additions, 2 deletions):
+    - `TopPickHeroCard.tsx` — circular score badge now renders `{score}%` + a small "match" label beneath (new `scoreLabel` style, FontSizes.xs, -2 marginTop, letterSpacing 0.3). The existing trophy badge above the image row continues to carry "Best overall match for {petName}" — the new label closes the loop on the numeric element.
+    - `TopPickRankRow.tsx` — score pill now renders `{score}% match` (was naked `{score}%`). Screen title on `CategoryTopPicksScreen` ("Ranked 1–N matches for {petName}") continues to carry "for {petName}" at screen scope. The file-header comment at line 3 already said `D-094: "X% match" framing (score pill)` — the rendering was the only thing out of alignment with the stated intent.
+    - `__tests__/components/browse/TopPickRankRow.test.tsx` — assertion string updated `'88%'` → `'88% match'`. Hero test didn't assert on the score text, so no update needed there.
+  - **Tests verified green post-fix.** 5 render tests (HeroCard + RankRow) pass. Full suite: 1596/71/3, 5.7s runtime.
+- **Files changed this session (3 code files + 1 status doc, 2 commits, 1 PR opened, 1 PR comment posted):**
+  - `src/components/browse/TopPickHeroCard.tsx` — +7 lines ("match" label + `scoreLabel` style)
+  - `src/components/browse/TopPickRankRow.tsx` — 1-line swap (`{score}%` → `{score}% match`)
+  - `__tests__/components/browse/TopPickRankRow.test.tsx` — 1-line assertion swap
+  - `docs/status/CURRENT.md` — this handoff
+  - Remote: PR [#10](https://github.com/KibaScan/kiba-app/pull/10) opened, comment at https://github.com/KibaScan/kiba-app/pull/10#issuecomment-4263969473
+- **Numbers (all verified green):** **1596 tests / 71 suites / 3 snapshots** (unchanged — only a test-assertion string change, no count delta). 129 decisions. 39 migrations. 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0). `npx jest` total runtime 5.7s.
+- **Not done yet:**
+  - **PR #10 review + merge.** Opened this session, 0 reviewer comments at handoff. Also needs an on-device visual check of the new "match" framing (Hero badge circle + Leaderboard pill) to confirm it reads well at real font sizes — the "match" label under the big 92px score number was sized at FontSizes.xs with -2 marginTop to fit; eyeballs haven't seen it yet.
+  - **`TopPicksCarousel.tsx` is now the D-094 outlier** — still renders naked `{item.final_score}%` (pre-existing on `m5-complete`, flagged at 75 in this session's review but scoped out of PR #10). Ripe for a follow-up symmetry fix on a new branch off `m5-complete` (or fold into HomeScreen polish thread). Same pattern likely exists on `TopMatchesCarousel` — verify before touching.
+  - **Other code-review borderline issues (all <80, deferred):**
+    - `fetchCategoryTopPicks` silently returns `[]` for the `vet_diet` sub-filter. Blocked upstream today (TopPicksCarousel is hidden when `activeSubFilter === 'vet_diet'` — per HomeScreen render guard), so users can't reach the "See All" tap. If that guard ever changes, add `vet_diet` to `resolveSeeAllDestination` short-circuits alongside `supplement`.
+    - `matchesPetLifeStage` in `topPickInsights.ts` uses `\bmaintenance\b` regex for the adult branch — would match "Senior Maintenance" for adult pets. AAFCO has no official "Senior Maintenance" stage so production data shouldn't hit it, but defensive hardening option is to check for absence of `senior` before the maintenance branch fires.
+    - `formatLifeStageText` unconditionally prepends `AAFCO ` then title-cases — if the raw `aafco_statement` field ever starts with "AAFCO", result would be "AAFCO Aafco Adult Maintenance". Current data pipeline (migration 036 synthesizer + `import_products.py`) produces clean claims with no "AAFCO" prefix, so latent only. Strip any leading `AAFCO ` before formatting if you ever touch that helper.
+    - `CategoryTopPicksScreen` doesn't wrap `pets.find(p => p.id === petId)` in `useMemo`. CompareScreen does (that screen is cited as the tab-bar-hide pattern reference), but `CategoryBrowseScreen` and `SafeSwitchSetupScreen` also skip it, so the convention isn't universal. Micro-perf only.
+    - `mountedRef` race pattern in the fetch effect (theoretical — not exploitable given this is a dedicated "See All" destination, dep changes require full navigation). If the screen is ever repurposed for in-screen filter toggling, switch to a per-invocation `let cancelled = false` closure-captured flag.
+  - **Top Picks visual polish carry-overs from session 51:** Brand CAPS on rank rows, top-2 ingredients subtitle on hero, two-column hero layout (V2 Gemini mockup deltas).
+  - **Top Picks design spec section 3** still describes original image-top layout; implementation went vertical. Spec drift to address in a polish pass.
+  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
+  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
+- **Start the next session by:**
+  1. **`/boot`** to confirm numbers match (1596/71, 129 decisions, 39 migrations).
+  2. **`gh pr view 10`** — check status + address any reviewer comments that landed overnight.
+  3. **On-device eyeball** of the D-094 "match" framing — cold simulator, open Top Picks, confirm the hero's small "match" label under the 92px number doesn't look cramped, and the leaderboard pill's "X% match" reads well at small sizes.
+  4. Pick scope: (a) extend D-094 fix to `TopPicksCarousel` + `TopMatchesCarousel` for symmetry, (b) Top Picks visual polish carry-overs (Brand CAPS, top-2 ingredients, V2 two-column hero), (c) tackle one of the 5 deferred code-review items above, or (d) start the next M9 thread (HomeScreen overhaul, custom icons).
+- **Gotchas / context for next session:**
+  - **D-094 score-pill pattern is now `{score}% match` on new browse components** (TopPickHeroCard + TopPickRankRow). `TopPicksCarousel` + likely `TopMatchesCarousel` are pre-existing outliers still rendering naked `{score}%`. If you touch either, adopt the "X% match" pattern — the "for {petName}" piece is carried at screen/card scope by the trophy badge or screen title.
+  - **Hero "match" label sizing is hand-tuned** — `FontSizes.xs` / fontWeight 600 / marginTop -2 / letterSpacing 0.3, centered under the 92px FontSizes.xl number. If anyone changes `FontSizes.xl` or the 92px badge radius, re-check the fit before committing.
+  - **Highest-risk of the 9 deferred code-review items is the `fetchCategoryTopPicks` vet_diet gap.** It's safe today only because TopPicksCarousel is hidden for vet_diet. If that hide-guard is ever removed (e.g., a future "browse vet diets" feature), the gap lights up silently — add vet_diet to `resolveSeeAllDestination` at the same time.
+  - **Code review pipeline on this PR cleared the threshold bar cleanly** — 9 issues surfaced, 0 ≥80, D-094 fix applied proactively despite filter. If a future review run finds 0 issues total (instead of 9 scored low), that's more suspicious — the scorers should find *something* on a PR of this size.
+  - **Skeleton color gotcha from session 52 still applies.** Don't reintroduce iOS light-mode greys (`#E5E5EA` / `#F2F2F7` / `#D1D1D6` / `#C7C7CC`) in skeleton/loading components — use `Colors.chipSurface`. `PositionMap.tsx:28` `UNRATED_COLOR` is intentional and out of scope.
+  - **Session 51 gotchas still apply** — ScoreRing substitution in hero, Brand CAPS deferral, spec drift, Gemini V2 mockup deltas.
+
+---
+
+## Session 52
+
+- **Date:** 2026-04-16 (session 52 — on-device smoke test + BenchmarkBar skeleton bug fix + housekeeping)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. Pushed to origin as part of this handoff.
+- **Accomplished — Top Picks smoke-tested, latent BenchmarkBar bug found and fixed, two doc/config drifts cleaned up.**
+  - **On-device smoke test of `CategoryTopPicksScreen`** — user walked the new flow on simulator. Hero + Leaderboard + escape hatch render correctly. No blockers surfaced.
+  - **Found and diagnosed a "white flash" on the BenchmarkBar at the bottom of ResultScreen.** Initial guess (ScoreRing track too bright at `chipSurface`) was wrong. Real culprit: `BenchmarkBar.tsx:265,272,278` skeleton fields hard-coded `backgroundColor: '#E5E5EA'` (iOS light-mode systemGray5), reading as bright white on the dark theme.
+  - **Verified the bug is NOT a Top Picks regression.** Two-step proof: (a) `git log m5-complete..HEAD -- src/components/scoring/ src/utils/benchmarkData.ts src/utils/constants.ts` returned zero commits; (b) user `git checkout m5-complete` and rescanned the same Pupford treat — white flash reproduced identically. Bug has existed since M4 Session 1 commit `bdbd6be` when BenchmarkBar was created. Visible now only because heavy smoke-testing reload cadence keeps the `useBenchmarkStore` Zustand cache cold.
+  - **Skeleton paints on EVERY mount, not just cold cache.** `getCategoryAverage` is `async` — even on cache hit, the `await` yields a microtask, so `loading: true` paints at least one frame before `setLoading(false)` re-renders. Warm cache = imperceptible flash; cold cache = noticeable.
+  - **Fix shipped:** 3-line edit in `src/components/scoring/BenchmarkBar.tsx` — `'#E5E5EA'` → `Colors.chipSurface` (the established matte-premium dark-mode elevation token). Skeleton now blends into the dark theme instead of popping white.
+  - **Sweep verified clean:** grep across `src/` for `#E5E5EA|#F2F2F7|#D1D1D6|#C7C7CC|#AEAEB2|#8E8E93` (all iOS light-mode greys) found only the 3 BenchmarkBar hits + one incidental `#C7C7CC` in `PositionMap.tsx:28` for `UNRATED_COLOR` (intentional, NOT a skeleton — leave alone). No further skeleton/loading components are using light-mode greys.
+  - **Housekeeping fix 1:** `.gitignore` — added `.superpowers/` so brainstorming visual-companion mockup artifacts and session state don't get tracked.
+  - **Housekeeping fix 2:** `CLAUDE.md` line 38 — migration count `001–038` → `001–039`. Doc-drift detected during `/boot`; CURRENT.md was already at 39 but CLAUDE.md hadn't rolled over after migration 039 landed in session 47.
+  - **Brainstorming session for the BenchmarkBar fix used the `superpowers:brainstorming` skill with the visual-companion browser tool** — 2 mockup screens (track-darkness comparison, then skeleton-fix comparison) helped resolve the ScoreRing vs. BenchmarkBar misdiagnosis quickly.
+- **Files changed this session (4 files, 3 commits planned):**
+  - `src/components/scoring/BenchmarkBar.tsx` — `#E5E5EA` × 3 → `Colors.chipSurface`
+  - `.gitignore` — added `.superpowers/`
+  - `CLAUDE.md` — migration count 038 → 039
+  - `docs/status/CURRENT.md` — this handoff update
+- **Numbers (all verified green):** **1596 tests / 71 suites / 3 snapshots** (unchanged — color-only fix), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0). `npx jest` total runtime 5.6s.
+- **Not done yet:**
+  - **On-device smoke test of the BenchmarkBar fix** — user gave verbal "looks good" but the canonical verification is `npx expo start -c` + cold simulator + scan Pupford treat → confirm no white flash on the benchmark bar at the bottom. Defer to next session if you want a clean before/after.
+  - **PR against `m5-complete`.** Branch is now pushed and ready. `gh pr create --base m5-complete --head m9-top-picks-screen`. Title: "M9: Top Picks dedicated screen + BenchmarkBar skeleton fix". Body: link spec/plan/shipped doc + reference 58 new tests + note the BenchmarkBar polish fix as a session-52 hitchhiker.
+  - **Top Picks visual polish carry-overs from session 51:** Brand CAPS on rank rows, top-2 ingredients subtitle on hero, two-column hero layout (V2 Gemini mockup deltas).
+  - **Top Picks design spec section 3** still describes original image-top / bullets-below hero layout — implementation went vertical compact ring. Update spec or add implementation-note callout.
+  - 2 deferred follow-ups from sessions 47/48 still open (`evaluateDietCompleteness` negative-case tests + D-161 accumulator gap at `auto-deplete/index.ts:494`).
+  - HomeScreen visual overhaul + custom icon rollout + carry-over QA sweeps from sessions 39/41 — all still on the M9 board.
+- **Start the next session by:**
+  1. **`/boot`** to confirm numbers match (1596 tests / 71 suites / 129 decisions / 39 migrations).
+  2. **On-device smoke test of the skeleton fix** if not yet done — `npx expo start -c`, scan a treat that hits a cold benchmark cache, confirm no white bars at the bottom.
+  3. **Open the PR** against `m5-complete`. Branch is pushed and clean.
+  4. Pick up the Top Picks polish carry-overs OR start the next M9 thread (HomeScreen overhaul, custom icons, etc.).
+- **Gotchas / context for next session:**
+  - **The BenchmarkBar skeleton bug was OLD, not a Top Picks regression.** This was confirmed by git archeology AND a manual rollback to `m5-complete`. Don't re-introduce iOS light-mode greys (`#E5E5EA` / `#F2F2F7` / `#D1D1D6` / `#C7C7CC`) in any future skeleton/loading component — use `Colors.chipSurface` instead. `PositionMap.tsx:28` `UNRATED_COLOR` is intentional and NOT in scope.
+  - **`getCategoryAverage` skeleton always paints at least one frame.** `useBenchmarkStore.getCategoryAverage` is `async`, so even on cache hit the `await` yields a microtask before `setLoading(false)`. Same pattern likely exists in other zustand-backed loaders — if a "white flash" surfaces elsewhere, look for the same hard-coded skeleton color first.
+  - **Session 51 gotchas still apply** — see Session 51 archive below for ScoreRing-substitution-in-hero, Brand CAPS deferral, spec drift, and Gemini V2 mockup deltas.
+
+---
+
+## Session 51
+
+- **Date:** 2026-04-16 (session 51 — Top Picks Tasks 2–11 subagent-driven execution)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. **10 new commits** on top of session 50's 5. **NOT pushed to origin yet.**
+- **Accomplished — entire implementation plan executed via subagent-driven development. `CategoryTopPicksScreen` is code-complete.**
+  - **10 tasks shipped (Tasks 2–11 of the plan).** Each task: implementer dispatch → spec reviewer (verifies against plan by reading actual code) → code quality reviewer (superpowers:code-reviewer). All 10 tasks passed both review gates.
+  - **Insight helper complete (Tasks 2-5):** `src/services/topPickInsights.ts` — pure function `generateTopPickInsights(entry, ctx): InsightBullet[]` returns up to 3 D-094/D-095-compliant bullets. Priority: `allergen_safe > life_stage > macro (fat|protein, one only) > preservative > quality_tier`. UPVM blocklist regex unit test (`/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`) asserts every emitted bullet is clean. 37 unit tests.
+  - **Service layer (Task 6):** `fetchCategoryTopPicks` in `src/services/categoryBrowseService.ts` replaced the stub with a real 2-query composition — pet_product_scores + expanded SELECT (macros, AAFCO, preservative, life_stage_claim) then batched product_ingredients query for top-10 allergen_group preview. Inherits bypass filters (vet_diet/recalled/variety_pack/needs_review/species). Supplement category returns [] defensively. 4 tests.
+  - **Navigation (Task 7):** `CategoryTopPicks` route added to HomeStackParamList, placeholder screen created + registered. Params mirror CategoryBrowse exactly: `{ category, petId, subFilter? }`.
+  - **Components (Tasks 8-9):** `TopPickRankRow` + `TopPickHeroCard` in `src/components/browse/`. Matte Premium card anatomy. Hero uses a lightweight circular score badge (92px) rather than the full `ScoreRing` — ScoreRing requires `petPhotoUri`/`species` props that the browse layer doesn't pass down; this also matches Gemini's V2 compact ring. Documented in the hero component header comment. 5 render tests total.
+  - **Carousel wiring (Task 10):** `resolveSeeAllDestination(category)` helper — supplements route to `CategoryBrowse`, everything else to `CategoryTopPicks`. `TopPicksCarousel.handleSeeAll` updated to consume it. 5 unit tests.
+  - **Screen wiring (Task 11):** `CategoryTopPicksScreen` placeholder replaced with full implementation (225 lines). Hero + Leaderboard (ranks 2-20) + Escape Hatch. 4 states: loading / healthy (>=10) / partial (1-9, primary-tint escape hatch) / empty (no hero, empty card + escape hatch). Parallel fetch of picks + pet allergens via `Promise.all`. Insights computed client-side per pick. Tab bar hide/restore on focus (CompareScreen pattern). Paywall via `canSearch()`. Pure title/label helpers extracted to `src/screens/categoryTopPicksHelpers.ts` with 12 unit tests.
+  - **Code review follow-ups applied** on Task 9 (ScoreRing substitution rationale comment) + Task 11 (dependency array uses `pet?.species`/`pet?.name` directly instead of derived locals; leaderboard loop var renamed `i` → `rankOffset` for clarity).
+  - **Shipped summary doc written** — `docs/superpowers/specs/2026-04-16-top-picks-dedicated-screen-shipped.md` (239 lines). Companion to the design spec + plan + deferred docs. Documents files changed, test count deltas, 18-commit history, 8 captured architecture decisions, full copy templates, Gemini V1→V2 evolution, deferred enhancements list, not-done checklist, and how-to-review instructions.
+- **Numbers (all verified green):** **1596 tests / 71 suites** / 3 snapshots (up from 1538/65 — +58 tests, +6 suites matches plan prediction), 129 decisions, 39 migrations, 19,058 products. Regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53). Typecheck clean in `src/`.
+- **Gotchas (carried forward to session 52):**
+  - **ScoreRing wasn't used in the hero.** The hero component uses a lightweight circular score badge. ScoreRing requires petPhotoUri + species props not available in browse context. Documented in the component file header and matches Gemini V2 mockup. If someone wants the full ScoreRing later, route petPhotoUri + species through from CategoryTopPicksScreen.
+  - **Implementer adaptation:** Task 6 subagent reordered `.order()` in the Supabase query chain to come AFTER the conditional `.eq('is_supplemental', ...)`. Functionally identical in PostgREST. Tests were updated to match the new chain depth.
+  - **Brand CAPS + top-2 ingredients subtitle not yet added.** V2 Gemini mockup showed brand in `.toUpperCase()` on rank rows and `"chicken, brown rice"` subtitle on the hero. Both are trivial one-line renders — defer to Gemini's UI polish phase or a visual QA session.
+  - **Spec vs implementation layout drift:** Gemini V2 mockup's "score ring LEFT + bullets RIGHT" two-column hero was the ask, but my implementation is vertical (image top, score badge right, text + bullets below). Visually acceptable on a phone screen but not a literal match for the mockup. Adjust in Gemini's polish pass if desired.
+  - **kiba-code-reviewer agent worked fine this session** — the session-50 ConnectionRefused was transient. Used `superpowers:code-reviewer` for all reviews this session and it worked well; kiba-code-reviewer remains viable for D-094/D-095-specific checks.
+
+---
+
+## Session 50
+
+- **Date:** 2026-04-15 (session 50 — Top Picks brainstorm + plan + Task 1)
+- **Branch:** `m9-top-picks-screen` off `m5-complete`. 5 commits total (4 before handoff, plus the handoff commit itself).
+- **Accomplished — full brainstorm + spec + plan cycle for the dedicated Top Picks screen, plus Task 1 of the implementation plan landed.**
+  - `superpowers:brainstorming` resolved scope — `CategoryTopPicksScreen` as a finite top-20 showcase replacing `TopPicksCarousel` See All destination (supplements skip the new screen and stay on CategoryBrowseScreen per D-096).
+  - Path A locked in: insights from static signals (joined macros, AAFCO, preservative, second batched query for `ingredients_dict.allergen_group`). `pet_product_scores` does NOT cache `score_breakdown` — migration 012 comment "list view only — full breakdown computed on tap" was the hard constraint. No migration, no engine re-run.
+  - `superpowers:writing-plans` produced a 12-task TDD plan with exact code at every step.
+  - 2 rounds of Gemini UI mockups. V1 violated D-095 multiple times (`Immune Support`, `Skin & Coat Health`, `Ideal for digestion`). V2 uses spec templates verbatim.
+  - `superpowers:subagent-driven-development` shipped Task 1 (types scaffolding). kiba-code-reviewer crashed mid-review with `ConnectionRefused` — transient infrastructure issue. Task 1 was functionally complete regardless.
+  - Kiba Index deferred as item #1 in `2026-04-15-top-picks-deferred-enhancements.md` — display + tiebreaker only, never a score modifier (D-019 brand-blind preserved).
+- **5 commits:** `e3e0d7e` design spec · `c84e6b5` plan · `7f3fa90` defer Kiba Index · `850dd6b` Task 1 types · `6649cc8` handoff CURRENT.md update.
+- **Numbers (unchanged this session):** 1538 tests / 65 suites / 129 decisions / 39 migrations. All regression anchors green.
+- **Gotchas surfaced:**
+  - V2 Gemini mockups (`_v2_…` files at `~/.gemini/antigravity/brain/f0c232ab-d2dc-4bf4-a029-dcec47c17c7b/`) supersede V1; use V2 only.
+  - Path A insights are non-negotiable — `score_breakdown` is NOT in the cache.
+  - UPVM regex (`/\b(prescribe|treat|cure|prevent|diagnose|heal|remedy|support|improve|good for|helps with|manages?|reduces|eliminates)\b/i`) is the compliance gate.
+
+---
+
+## Session 49
+
+- **Date:** 2026-04-15 (session 49 — merge cascade, same day as session 48)
 - **Branch:** local on `m5-complete` (auto-switched by `gh pr merge`). No new local commits this session — merges executed via `gh pr merge` GitHub-side.
 - **PRs merged this session:** [#9](https://github.com/KibaScan/kiba-app/pull/9) + [#2](https://github.com/KibaScan/kiba-app/pull/2). Both now MERGED.
 - **Accomplished — `/boot` + full merge cascade landing M5–M9 on `main`.**
@@ -115,35 +246,12 @@
   - **Step 1 — PR #9 squash-merged** `m9-wet-food-extras → m5-complete` as commit `92450b1` at 2026-04-15T16:57:45Z. Remote branch deleted, stale remote-tracking refs pruned, memory entry `[In-flight PR #9]` removed from `MEMORY.md` index.
   - **Step 2 — PR #2 merged to `main`.** Discovered PR #2 had been open against `main` since 2026-03-20 with title "M5 complete" + empty body, but had silently accumulated 137 commits spanning M5 + M6 + M7 + M8 + M9 (including today's PR #9 squash). Updated title → `M5–M9: behavioral feeding, pantry v5, Matte Premium, wet food extras` + wrote full release-notes body (per-milestone breakdown, migration range, regression anchors, test state). Merged via `--merge` (preserves PR #5–#9 squash commits on `main` history for bisect/blame) as merge commit `e94f3ad` at 2026-04-15T18:22:52Z.
   - **Post-merge topology:** `origin/main` at `e94f3ad` — full M5–M9 shipped. `origin/m5-complete` at `92450b1` (one commit behind `main`; only delta is the merge commit itself, code-content identical). Local `main` fast-forwarded to match origin.
-- **No new commits on `m5-complete` this session.** Both merges happened on GitHub via `gh pr merge`.
 - **Numbers (unchanged, all verified green):** 1538 tests / 65 suites / 3 snapshots, 129 decisions, 39 migrations, 19,058 products. Full `npx jest` run confirmed — regression anchors pass (Pure Balance = 61, Temptations = 0, cardiac zero-out = 0, pancreatitis = 53).
-- **Not done yet (carry-overs):**
-  - Two deferred follow-ups from sessions 47 + 48 (still open):
-    - Add 2 negative-case tests for `evaluateDietCompleteness` branch precedence (dry_only + base present → complete; dry_only + no rotational + has daily → falls to style-mismatch branch).
-    - Pre-existing D-161 accumulator gap: `auto-deplete/index.ts:494` only queries `feeding_log` for pets already in `petIntake` — a dry_only topper-only pet never reaches the accumulator. Not introduced by any recent branch.
-  - Open M9 remaining scope:
-    - Top Picks per category/sub-filter dedicated screen (stub ready in `categoryBrowseService.ts`).
-    - HomeScreen visual overhaul (custom assets, layout polish).
-    - General UX friction fixes.
-  - Carry-over QA from session 41+ (inherited from session 48 "Up Next"):
-    - On-device QA for session 41 token edits (subtle press-overlay visual confirmation on PantryCard + BrowseProductRow).
-    - Broader Matte Premium alpha audit (~17 sites) — dedicated session to catalog + design 1-3 new tokens (`dividerBorder`, `nestedCardTint`).
-    - Chipsurface visual QA (session 39 carry-over) — ~14 touched surfaces need eyeballs at 0.12.
-    - TopPicksCarousel populated-state border check (only zero state visually verified).
-    - On-device fuzzy search stress test.
-    - PantryScreen.tsx:435 chip-background visual review (only non-border `cardBorder → hairlineBorder` swap).
-    - Form-aware cache maturity for stale browse scores.
-- **Start the next session by:**
-  1. **Branch decision:** continue on `m5-complete` (workflow memory pattern) or switch to `main` as the new base. Recommendation: keep `m5-complete` as the integration branch for M9 remainder + M10 scope; schedule the next `m5-complete → main` release PR when M9 fully closes or a themed batch is ready. `m5-complete` is functionally identical to `main` post-merge — only delta is the merge commit itself.
-  2. **Pick the next scope:** Top Picks dedicated screen (highest-leverage user-facing remaining M9 item, stub already wired) OR HomeScreen visual overhaul OR a dedicated carry-over QA sweep.
-  3. **Don't re-apply migration 039** — already live on production.
-- **Gotchas / context for next session:**
+- **Gotchas surfaced:**
   - **`m5-complete` is NOT stale.** At `92450b1`, functionally identical to `main` at `e94f3ad` (the only delta is the merge commit itself). New `m9-<feature>` branches should still branch off `m5-complete` per workflow memory — that pattern hasn't changed.
-  - **PR #2 is now MERGED + closed.** Future `m5-complete → main` sync will be a new PR number. Don't look for PR #2 as the integration target anymore.
+  - **PR #2 is now MERGED + closed.** Future `m5-complete → main` sync will be a new PR number.
   - **Migration 039 is live on prod.** Don't attempt a re-apply.
-  - **Memory entry `project_inflight_pr9.md` removed from `MEMORY.md` index.** The file itself still exists on disk (couldn't `rm` this session due to permission-mode block) but no longer loads on `/boot`. Harmless orphan.
-  - **Session 48 gotcha still applies:** `__tests__/CLAUDE.md` now documents render tests directly. Don't drop the "Pure-presentation sheet/card → Render test" row if rewriting the testing pyramid table.
-  - **Session 47 gotchas still apply** to anything touching `FeedingIntentSheet`, `AddToPantrySheet` routing, or `wet_intent_resolved_at` — re-read the session 47 archive below before editing those code paths.
+  - **Memory entry `project_inflight_pr9.md` removed from `MEMORY.md` index.** File still on disk but no longer loads on `/boot`.
 
 ---
 

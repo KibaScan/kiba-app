@@ -27,6 +27,35 @@ export interface BrowsePage {
   nextCursor: string | null;
 }
 
+/** Expanded BrowseProduct for Top Picks screen — insight-source fields joined in */
+export interface TopPickEntry extends BrowseProduct {
+  ga_protein_pct: number | null;
+  ga_fat_pct: number | null;
+  ga_moisture_pct: number | null;
+  ga_protein_dmb_pct: number | null;  // migration 020 — pre-computed when available
+  ga_fat_dmb_pct: number | null;
+  preservative_type: 'natural' | 'synthetic' | 'mixed' | 'unknown' | null;
+  aafco_statement: string | null;
+  life_stage_claim: string | null;
+  /** Top 10 ingredients with allergen_group — from product_ingredients + ingredients_dict */
+  top_ingredients: Array<{ position: number; canonical_name: string; allergen_group: string | null }>;
+}
+
+/** A single insight bullet rendered on Hero or Rank Row. Priority key drives ordering + cap. */
+export type InsightKind =
+  | 'allergen_safe'
+  | 'life_stage'
+  | 'macro_fat'
+  | 'macro_protein'
+  | 'preservative'
+  | 'quality_tier';
+
+export interface InsightBullet {
+  kind: InsightKind;
+  /** Display text — already interpolated, already UPVM-compliant */
+  text: string;
+}
+
 /** Counts returned by get_browse_counts RPC */
 export interface BrowseCounts {
   daily_food: number;
