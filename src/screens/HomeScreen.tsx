@@ -713,20 +713,28 @@ export default function HomeScreen() {
               <View style={styles.recentScansSection}>
                 <View style={styles.recentScansHeader}>
                   <Text style={styles.recentScansTitle}>Recent Scans</Text>
-                  {!premium && scanWindowInfo ? (
-                    <View style={styles.scanCounterRow}>
-                      <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
-                        <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
-                          {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
-                        </Text>
+                  <View style={styles.recentScansHeaderRight}>
+                    {!premium && scanWindowInfo ? (
+                      <View style={styles.scanCounterRow}>
+                        <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
+                          <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
+                            {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
+                          </Text>
+                        </View>
+                        <InfoTooltip text={scanTooltipText} size={14} />
                       </View>
-                      <InfoTooltip text={scanTooltipText} size={14} />
-                    </View>
-                  ) : (
-                    <Text style={styles.recentScansWeekly}>
-                      {weeklyCount} this week
-                    </Text>
-                  )}
+                    ) : (
+                      <Text style={styles.recentScansWeekly}>{weeklyCount} this week</Text>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('ScanHistory')}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="See all recent scans"
+                    >
+                      <Text style={styles.seeAllLink}>See all ›</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {recentScans.map((scan) => {
                   const scoreColor =
@@ -1064,6 +1072,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.sm,
+  },
+  recentScansHeaderRight: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
   recentScansTitle: {
     fontSize: FontSizes.md,
