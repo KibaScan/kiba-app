@@ -28,7 +28,7 @@ import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
 import { BookmarksFullError } from '../types/bookmark';
 
 type Nav = CompositeNavigationProp<
-  NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>,
+  NativeStackNavigationProp<HomeStackParamList, 'ScanHistory'>,
   BottomTabNavigationProp<TabParamList>
 >;
 

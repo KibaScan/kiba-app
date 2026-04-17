@@ -28,7 +28,7 @@ import type { BookmarkCardData } from '../types/bookmark';
 import { MAX_BOOKMARKS_PER_PET } from '../types/bookmark';
 
 type Nav = CompositeNavigationProp<
-  NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>,
+  NativeStackNavigationProp<HomeStackParamList, 'Bookmarks'>,
   BottomTabNavigationProp<TabParamList>
 >;
 

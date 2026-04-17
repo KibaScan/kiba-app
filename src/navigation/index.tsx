@@ -41,6 +41,8 @@ import SafeSwitchSetupScreen from '../screens/SafeSwitchSetupScreen';
 import SafeSwitchDetailScreen from '../screens/SafeSwitchDetailScreen';
 import CategoryBrowseScreen from '../screens/CategoryBrowseScreen';
 import CategoryTopPicksScreen from '../screens/CategoryTopPicksScreen';
+import BookmarksScreen from '../screens/BookmarksScreen';
+import ScanHistoryScreen from '../screens/ScanHistoryScreen';
 import CustomFeedingStyleScreen from '../screens/CustomFeedingStyleScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
@@ -69,6 +71,8 @@ function HomeStackScreen() {
       <HomeStack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
       <HomeStack.Screen name="Compare" component={CompareScreen} />
       <HomeStack.Screen name="SafeSwitchDetail" component={SafeSwitchDetailScreen} />
+      <HomeStack.Screen name="Bookmarks" component={BookmarksScreen} />
+      <HomeStack.Screen name="ScanHistory" component={ScanHistoryScreen} />
     </HomeStack.Navigator>
   );
 }
