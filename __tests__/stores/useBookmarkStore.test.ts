@@ -39,6 +39,16 @@ describe('loadForPet', () => {
     await useBookmarkStore.getState().loadForPet(null);
     expect(useBookmarkStore.getState().bookmarks).toEqual([]);
   });
+
+  test('clears bookmarks and isLoading on service error', async () => {
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockRejectedValue(new Error('boom'));
+    useBookmarkStore.setState({ bookmarks: [{ id: 'stale' } as any], isLoading: true });
+
+    await useBookmarkStore.getState().loadForPet('p1');
+
+    expect(useBookmarkStore.getState().bookmarks).toEqual([]);
+    expect(useBookmarkStore.getState().isLoading).toBe(false);
+  });
 });
 
 describe('toggle', () => {

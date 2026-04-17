@@ -11,6 +11,7 @@ import {
 interface BookmarkState {
   bookmarks: Bookmark[];
   currentPetId: string | null;
+  /** True while an initial fetch (`loadForPet`) is in flight. Toggle ops use optimistic UI and do NOT set this flag. */
   isLoading: boolean;
   loadForPet: (petId: string | null) => Promise<void>;
   toggle: (petId: string, productId: string) => Promise<boolean>;
@@ -31,12 +32,19 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
     try {
       const rows = await svcLoad(petId);
       set({ bookmarks: rows, isLoading: false });
-    } catch {
+    } catch (err) {
+      console.warn('[useBookmarkStore] loadForPet error:', err);
       set({ bookmarks: [], isLoading: false });
     }
   },
 
   toggle: async (petId, productId) => {
+    // Sync guard: if caller's petId doesn't match loaded pet, resync first.
+    // Prevents stale state from cross-pet race conditions.
+    if (get().currentPetId !== petId) {
+      await get().loadForPet(petId);
+    }
+
     const existing = get().bookmarks.find(
       (b) => b.pet_id === petId && b.product_id === productId,
     );
