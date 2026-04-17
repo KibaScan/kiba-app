@@ -111,7 +111,9 @@ export default function HomeScreen() {
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
-  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+  const bookmarkIds = useBookmarkStore((s) =>
+    s.bookmarks.map((b) => b.id).join(','),
+  );
   const loadBookmarks = useBookmarkStore((s) => s.loadForPet);
   const [bookmarkCards, setBookmarkCards] = useState<BookmarkCardData[]>([]);
 
@@ -154,7 +156,7 @@ export default function HomeScreen() {
       return;
     }
     void fetchBookmarkCards(activePet).then((cards) => setBookmarkCards(cards.slice(0, 3)));
-  }, [activePet, bookmarks]);
+  }, [activePet, bookmarkIds]);
 
   // ── Derived values ──
 
@@ -636,7 +638,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
 
-            {/* 6.5 Bookmarks (hidden when empty) */}
+            {/* 6. Bookmarks (hidden when empty) */}
             {bookmarkCards.length > 0 && activePet && (
               <View style={styles.bookmarksSection}>
                 <View style={styles.sectionHeaderRow}>
@@ -672,8 +674,8 @@ export default function HomeScreen() {
                       activeOpacity={0.7}
                       accessibilityLabel={
                         card.final_score != null && activePet
-                          ? `${card.final_score}% match for ${activePet.name}`
-                          : undefined
+                          ? `${card.final_score}% match for ${activePet.name}, ${card.product.brand} ${card.product.name}`
+                          : `${card.product.brand} ${card.product.name}${card.product.is_recalled ? ', recalled product' : ''}`
                       }
                     >
                       {card.product.image_url ? (
