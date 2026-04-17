@@ -1,11 +1,14 @@
 Before we end this session, do the following:
 
-1. Update docs/status/CURRENT.md under "## Last Session":
-   - Files changed this session
-   - What was accomplished
-   - What's not done yet
-   - What the next session should start with
-   - Any gotchas or context the next session needs
+1. Update docs/status/CURRENT.md (rolling 2-session window — newest two handoffs only):
+   a. If a `## Last Session` block already exists, rename its heading to `## Previous Session` (overwriting any existing `## Previous Session` — do not stack).
+   b. Delete every section whose heading matches `## Session \d+` (defensive — catches any legacy archive stragglers).
+   c. Write the new `## Last Session` block containing:
+      - Files changed this session
+      - What was accomplished
+      - What's not done yet
+      - What the next session should start with
+      - Any gotchas or context the next session needs
 
 2. Run the test suite and update the test count in CURRENT.md if it changed.
 
