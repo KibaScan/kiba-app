@@ -3019,16 +3019,16 @@ This is optional — user can stay in weight mode if they prefer.
 - Is it an in-app list row with room for 1–2 extra words? → `{score}% match` + `accessibilityLabel` with full phrase.
 - Is it an in-app tight pill, chip, dense browse item, or a hero visualization where surrounding UI already conveys pet + product context? → `{score}%` + `accessibilityLabel` with full phrase.
 
-**Known compliance gap at landing (backfill follow-up):** These 7 terse-tier score surfaces currently render visible text without an `accessibilityLabel` carrying the full phrase. They satisfy the visible-text tier of D-168 but not the accessibility invariant. Backfill is scheduled as a follow-up task (add `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score `<Text>` in each):
-- `src/components/browse/BrowseProductRow.tsx:64`
-- `src/components/browse/TopPicksCarousel.tsx:228`
-- `src/components/browse/TopPickHeroCard.tsx:57` (score pill only — outer card has its own `accessibilityLabel`)
-- `src/components/browse/TopPickRankRow.tsx:58` (score pill only — outer pressable has its own `accessibilityLabel`)
-- `src/components/scoring/ScoreWaterfall.tsx:608`
-- `src/components/result/SafeSwapSection.tsx:243`
-- `src/components/pantry/SharePantrySheet.tsx:181`
+**Compliance backfill (completed):** The 7 terse-tier surfaces below were backfilled in the D-168 follow-up commit. All now expose the full `"${score}% match for ${petName}"` phrase to assistive tech.
+- `src/components/browse/BrowseProductRow.tsx` — added `petName` prop; `accessibilityLabel` on outer `Pressable` with product + score + pet. Caller `CategoryBrowseScreen` updated to thread `petName`.
+- `src/components/browse/TopPicksCarousel.tsx` — `accessibilityLabel` computed per-item, applied to card `TouchableOpacity` (`petName` was already a prop).
+- `src/components/browse/TopPickHeroCard.tsx` — existing outer `TouchableOpacity` `accessibilityLabel` extended to include score + pet when scored.
+- `src/components/browse/TopPickRankRow.tsx` — added `petName` prop; existing outer `TouchableOpacity` `accessibilityLabel` extended to include score + pet. Caller `CategoryTopPicksScreen` updated.
+- `src/components/scoring/ScoreWaterfall.tsx` — `accessibilityLabel` on the final-score `<Text>` (no outer pressable, so Text-level label is reliable).
+- `src/components/result/SafeSwapSection.tsx` — `accessibilityLabel` on the per-candidate card `TouchableOpacity`.
+- `src/components/pantry/SharePantrySheet.tsx` — `petScore` hoisted out of IIFE; `accessibilityLabel` on the per-pet row `TouchableOpacity` with pet name + score + sharing state.
 
-Some of these surfaces do not currently have `petName` in local scope and require threading it as a prop. The backfill should land as a single sweep under M9. `ScanHistoryCard` and `PantryCard` were backfilled in the D-168 landing commit and are the reference pattern.
+**Reference pattern for future score surfaces:** When the score lives inside a `TouchableOpacity` / `Pressable` card, put the `accessibilityLabel` on the outer pressable (React Native flattens inner element labels by default). When the score is in a plain `View` / `Text` hierarchy (e.g., `ScoreWaterfall`, `ScanHistoryCard`, `PantryCard`), the `accessibilityLabel` can go directly on the score `<Text>`. If an outer pressable already carries a semantic label (e.g., `"${product_name}, rank ${rank}"`), extend it with score + pet rather than creating a conflicting inner element.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

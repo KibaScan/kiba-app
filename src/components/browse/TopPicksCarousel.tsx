@@ -196,11 +196,16 @@ export function TopPicksCarousel({
               ? getScoreColor(item.final_score, item.is_supplemental)
               : null;
 
+          const cardA11y = item.final_score != null
+            ? `${sanitizeBrand(item.brand)} ${stripBrandFromName(item.brand, item.product_name)}, ${item.final_score}% match for ${petName}`
+            : `${sanitizeBrand(item.brand)} ${stripBrandFromName(item.brand, item.product_name)}`;
+
           return (
             <TouchableOpacity
               style={styles.card}
               onPress={() => handleProductTap(item.product_id)}
               activeOpacity={0.7}
+              accessibilityLabel={cardA11y}
             >
               <View style={styles.cardImageStage}>
                 {item.image_url ? (

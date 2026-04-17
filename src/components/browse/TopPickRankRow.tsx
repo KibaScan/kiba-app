@@ -12,11 +12,12 @@ import type { TopPickEntry, InsightBullet } from '../../types/categoryBrowse';
 interface TopPickRankRowProps {
   pick: TopPickEntry;
   rank: number;
+  petName: string;
   insight: InsightBullet | null;
   onPress: () => void;
 }
 
-export function TopPickRankRow({ pick, rank, insight, onPress }: TopPickRankRowProps) {
+export function TopPickRankRow({ pick, rank, petName, insight, onPress }: TopPickRankRowProps) {
   const scoreColor = pick.final_score != null
     ? getScoreColor(pick.final_score, pick.is_supplemental)
     : null;
@@ -26,7 +27,11 @@ export function TopPickRankRow({ pick, rank, insight, onPress }: TopPickRankRowP
       style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={`${pick.product_name}, rank ${rank}`}
+      accessibilityLabel={
+        pick.final_score != null
+          ? `${pick.product_name}, rank ${rank}, ${pick.final_score}% match for ${petName}`
+          : `${pick.product_name}, rank ${rank}`
+      }
     >
       <View style={styles.rankBadge}>
         <Text style={styles.rankText}>#{rank}</Text>
