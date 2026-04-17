@@ -1,4 +1,5 @@
-// Bookmarks types + error classes. Mirrors src/types/pantry.ts pattern.
+// Kiba — M9 Bookmarks Types
+// Matches bookmarks table (migration 040). Mirrors src/types/pantry.ts pattern.
 
 export interface Bookmark {
   id: string;
