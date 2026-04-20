@@ -13,6 +13,8 @@ interface BookmarkState {
   currentPetId: string | null;
   /** True while an initial fetch (`loadForPet`) is in flight. Toggle ops use optimistic UI and do NOT set this flag. */
   isLoading: boolean;
+  /** Set of "${petId}:${productId}" keys currently being toggled — prevents mash-tap race causing duplicate INSERTs. */
+  inFlight: Set<string>;
   loadForPet: (petId: string | null) => Promise<void>;
   toggle: (petId: string, productId: string) => Promise<boolean>;
   isBookmarked: (petId: string, productId: string) => boolean;
@@ -22,6 +24,7 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
   bookmarks: [],
   currentPetId: null,
   isLoading: false,
+  inFlight: new Set(),
 
   loadForPet: async (petId) => {
     if (!petId) {
@@ -39,43 +42,58 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
   },
 
   toggle: async (petId, productId) => {
-    // Sync guard: if caller's petId doesn't match loaded pet, resync first.
-    // Prevents stale state from cross-pet race conditions.
-    if (get().currentPetId !== petId) {
-      await get().loadForPet(petId);
+    const key = `${petId}:${productId}`;
+    if (get().inFlight.has(key)) {
+      // Mash-tap: return current state without firing another service call.
+      return get().isBookmarked(petId, productId);
     }
 
-    const existing = get().bookmarks.find(
-      (b) => b.pet_id === petId && b.product_id === productId,
-    );
-
-    // Synchronous cap check — prevents UI flicker of a 21st row before server rejects.
-    if (!existing && get().bookmarks.length >= MAX_BOOKMARKS_PER_PET) {
-      throw new BookmarksFullError();
-    }
-
-    const optimisticBookmarks = existing
-      ? get().bookmarks.filter((b) => b.id !== existing.id)
-      : [
-          ...get().bookmarks,
-          {
-            id: `__optimistic_${Date.now()}`,
-            user_id: '',
-            pet_id: petId,
-            product_id: productId,
-            created_at: new Date().toISOString(),
-          } as Bookmark,
-        ];
-    set({ bookmarks: optimisticBookmarks });
+    set({ inFlight: new Set(get().inFlight).add(key) });
 
     try {
-      const newState = await svcToggle(petId, productId);
-      await get().loadForPet(petId);
-      return newState;
-    } catch (err) {
-      // Resync from server rather than manual re-insert — preserves DESC sort order.
-      await get().loadForPet(petId);
-      throw err;
+      // Sync guard: if caller's petId doesn't match loaded pet, resync first.
+      // Prevents stale state from cross-pet race conditions.
+      if (get().currentPetId !== petId) {
+        await get().loadForPet(petId);
+      }
+
+      const existing = get().bookmarks.find(
+        (b) => b.pet_id === petId && b.product_id === productId,
+      );
+
+      // Synchronous cap check — prevents UI flicker of a 21st row before server rejects.
+      if (!existing && get().bookmarks.length >= MAX_BOOKMARKS_PER_PET) {
+        throw new BookmarksFullError();
+      }
+
+      const optimisticBookmarks = existing
+        ? get().bookmarks.filter((b) => b.id !== existing.id)
+        : [
+            ...get().bookmarks,
+            {
+              id: `__optimistic_${Date.now()}`,
+              user_id: '',
+              pet_id: petId,
+              product_id: productId,
+              created_at: new Date().toISOString(),
+            } as Bookmark,
+          ];
+      set({ bookmarks: optimisticBookmarks });
+
+      try {
+        const newState = await svcToggle(petId, productId);
+        await get().loadForPet(petId);
+        return newState;
+      } catch (err) {
+        // Resync from server rather than manual re-insert — preserves DESC sort order.
+        await get().loadForPet(petId);
+        throw err;
+      }
+    } finally {
+      // Always clear the in-flight key, even on throw.
+      const next = new Set(get().inFlight);
+      next.delete(key);
+      set({ inFlight: next });
     }
   },
 

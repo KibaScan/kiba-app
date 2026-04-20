@@ -19,7 +19,7 @@ import { BookmarksFullError } from '../../src/types/bookmark';
 
 beforeEach(() => {
   jest.clearAllMocks();
-  useBookmarkStore.setState({ bookmarks: [], isLoading: false, currentPetId: null });
+  useBookmarkStore.setState({ bookmarks: [], isLoading: false, currentPetId: null, inFlight: new Set() });
 });
 
 describe('loadForPet', () => {
@@ -96,6 +96,52 @@ describe('toggle', () => {
     ).rejects.toThrow('net fail');
 
     expect(useBookmarkStore.getState().bookmarks).toEqual([]);
+  });
+
+  test('mash-tap: second call returns early while first is in flight', async () => {
+    // First call's svcToggle hangs; second call must return without calling svcToggle again.
+    let resolveFirst!: (v: boolean) => void;
+    (bookmarkService.toggleBookmark as jest.Mock).mockImplementationOnce(
+      () => new Promise<boolean>((resolve) => { resolveFirst = resolve; }),
+    );
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockResolvedValue([]);
+    useBookmarkStore.setState({ currentPetId: 'p1', bookmarks: [] });
+
+    const first = useBookmarkStore.getState().toggle('p1', 'prod-1');
+    // Second tap before first resolves
+    const second = useBookmarkStore.getState().toggle('p1', 'prod-1');
+
+    // Second resolves immediately without touching the service again
+    await expect(second).resolves.toBeDefined();
+    expect(bookmarkService.toggleBookmark).toHaveBeenCalledTimes(1);
+
+    // Let the first finish so state doesn't leak
+    resolveFirst(true);
+    await first;
+  });
+
+  test('inFlight key clears after successful toggle', async () => {
+    (bookmarkService.toggleBookmark as jest.Mock).mockResolvedValue(true);
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockResolvedValue([
+      { id: 'b1', user_id: 'u1', pet_id: 'p1', product_id: 'prod-1', created_at: 'now' },
+    ]);
+    useBookmarkStore.setState({ currentPetId: 'p1', bookmarks: [] });
+
+    await useBookmarkStore.getState().toggle('p1', 'prod-1');
+
+    expect(useBookmarkStore.getState().inFlight.has('p1:prod-1')).toBe(false);
+  });
+
+  test('inFlight key clears after failed toggle', async () => {
+    (bookmarkService.toggleBookmark as jest.Mock).mockRejectedValue(new Error('boom'));
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockResolvedValue([]);
+    useBookmarkStore.setState({ currentPetId: 'p1', bookmarks: [] });
+
+    await expect(
+      useBookmarkStore.getState().toggle('p1', 'prod-1'),
+    ).rejects.toThrow('boom');
+
+    expect(useBookmarkStore.getState().inFlight.has('p1:prod-1')).toBe(false);
   });
 });
 
