@@ -21,7 +21,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 130 decisions (D-001–D-168, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
+| `DECISIONS.md` | 131 decisions (D-001–D-169, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
 | `ROADMAP.md` | Milestone plan, current scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
@@ -35,7 +35,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 | `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–039). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–040). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -75,6 +75,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `pet_appointments` — `UUID[]` for `pet_ids` (not junction table), `type` CHECK ('vet_visit','grooming','medication','vaccination','other'), `reminder` default '1_day', `recurring` default 'none', hard delete (not soft-delete). RLS on user_id. Free tier: 2 active max (`canCreateAppointment` in permissions.ts).
 - `kiba_index_votes` — community taste/tummy voting. UNIQUE(user_id, pet_id, product_id). `taste_vote`/`tummy_vote` nullable (partial submissions). `get_kiba_index_stats` RPC for species-filtered aggregation (SECURITY DEFINER). Migration 026.
 - `scan_history` — per-pet scan records (NOT `scans`), FK to `products(id)`. Only non-bypass scans are inserted (ResultScreen:231). `permissions.ts` uses `from('scans')` for rate limiting — different concern.
+- `bookmarks` — per-pet watchlist, UNIQUE(pet_id, product_id), 20-item client cap, RLS via user_id. Live score from `pet_product_scores` cache. Migration 040 (D-169).
 - **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
 - **Tab navigation:** Home | Community | (Scan) | Pantry | Me — Search tab was replaced by Community tab. `SearchScreen` deleted; premium text search lives on HomeScreen v2. `CommunityStackParamList` in navigation types.
 

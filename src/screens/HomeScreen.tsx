@@ -12,7 +12,11 @@ import {
   Image,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { BookmarksFullError, BookmarkOfflineError } from '../types/bookmark';
+import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,6 +43,9 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import { getActiveSwitchForPet } from '../services/safeSwitchService';
+import { useBookmarkStore } from '../stores/useBookmarkStore';
+import { fetchBookmarkCards } from '../services/bookmarkService';
+import type { BookmarkCardData } from '../types/bookmark';
 
 type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 
@@ -108,6 +115,34 @@ export default function HomeScreen() {
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
 
+  const bookmarkIds = useBookmarkStore((s) =>
+    s.bookmarks.map((b) => b.id).join(','),
+  );
+  const loadBookmarks = useBookmarkStore((s) => s.loadForPet);
+  const [bookmarkCards, setBookmarkCards] = useState<BookmarkCardData[]>([]);
+
+  // ── Long-press bookmark state ──
+  const [longPressTarget, setLongPressTarget] = useState<{ productId: string } | null>(null);
+
+  const longPressIsBookmarked = useBookmarkStore((s) =>
+    longPressTarget && activePetId ? s.isBookmarked(activePetId, longPressTarget.productId) : false,
+  );
+
+  const longPressToggle = useBookmarkStore((s) => s.toggle);
+
+  const handleLongPressToggle = async () => {
+    if (!activePetId || !longPressTarget) return;
+    try {
+      await longPressToggle(activePetId, longPressTarget.productId);
+    } catch (err) {
+      if (err instanceof BookmarksFullError) {
+        Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
+      }
+    }
+  };
+
   // ── Search state (local to HomeScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ProductSearchResult[]>([]);
@@ -135,6 +170,19 @@ export default function HomeScreen() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // ── Bookmark loading ──
+  useEffect(() => {
+    loadBookmarks(activePetId);
+  }, [activePetId, loadBookmarks]);
+
+  useEffect(() => {
+    if (!activePet) {
+      setBookmarkCards([]);
+      return;
+    }
+    void fetchBookmarkCards(activePet).then((cards) => setBookmarkCards(cards.slice(0, 3)));
+  }, [activePet, bookmarkIds]);
 
   // ── Derived values ──
 
@@ -616,25 +664,103 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
 
+            {/* 6. Bookmarks (hidden when empty) */}
+            {bookmarkCards.length > 0 && activePet && (
+              <View style={styles.bookmarksSection}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.recentScansTitle}>Bookmarks</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Bookmarks')}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="See all bookmarks"
+                  >
+                    <Text style={styles.seeAllLink}>See all ›</Text>
+                  </TouchableOpacity>
+                </View>
+                {bookmarkCards.map((card) => {
+                  const scoreColor =
+                    card.final_score != null
+                      ? getScoreColor(card.final_score, card.product.is_supplemental)
+                      : null;
+                  return (
+                    <TouchableOpacity
+                      key={card.bookmark.id}
+                      style={[styles.scanRow, card.product.is_recalled && styles.rowRecalled]}
+                      onPress={() => {
+                        if (card.product.is_recalled) {
+                          navigation.navigate('RecallDetail', { productId: card.product.id });
+                        } else {
+                          navigation.navigate('Result', {
+                            productId: card.product.id,
+                            petId: activePetId,
+                          });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                      accessibilityLabel={
+                        card.final_score != null && activePet
+                          ? `${card.final_score}% match for ${activePet.name}, ${card.product.brand} ${card.product.name}`
+                          : `${card.product.brand} ${card.product.name}${card.product.is_recalled ? ', recalled product' : ''}`
+                      }
+                    >
+                      {card.product.image_url ? (
+                        <Image source={{ uri: card.product.image_url }} style={styles.scanRowImage} />
+                      ) : (
+                        <View style={styles.scanRowImagePlaceholder}>
+                          <Ionicons name="cube-outline" size={18} color={Colors.textTertiary} />
+                        </View>
+                      )}
+                      <View style={styles.scanRowInfo}>
+                        <Text style={styles.scanRowBrand} numberOfLines={1}>
+                          {sanitizeBrand(card.product.brand)}
+                        </Text>
+                        <Text style={styles.scanRowName} numberOfLines={2}>
+                          {stripBrandFromName(card.product.brand, card.product.name)}
+                        </Text>
+                      </View>
+                      {scoreColor ? (
+                        <View style={[styles.scorePill, { backgroundColor: `${scoreColor}1A` }]}>
+                          <Text style={[styles.scorePillText, { color: scoreColor }]}>
+                            {card.final_score}%
+                          </Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
             {/* 7. Recent Scans — redesigned counter */}
             {recentScans.length > 0 && activePet && (
               <View style={styles.recentScansSection}>
                 <View style={styles.recentScansHeader}>
                   <Text style={styles.recentScansTitle}>Recent Scans</Text>
-                  {!premium && scanWindowInfo ? (
-                    <View style={styles.scanCounterRow}>
-                      <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
-                        <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
-                          {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
-                        </Text>
+                  <View style={styles.recentScansHeaderRight}>
+                    {!premium && scanWindowInfo ? (
+                      <View style={styles.scanCounterRow}>
+                        <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
+                          <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
+                            {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
+                          </Text>
+                        </View>
+                        <InfoTooltip text={scanTooltipText} size={14} />
                       </View>
-                      <InfoTooltip text={scanTooltipText} size={14} />
-                    </View>
-                  ) : (
-                    <Text style={styles.recentScansWeekly}>
-                      {weeklyCount} this week
-                    </Text>
-                  )}
+                    ) : (
+                      <Text style={styles.recentScansWeekly}>{weeklyCount} this week</Text>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('ScanHistory')}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="See all recent scans"
+                    >
+                      <Text style={styles.seeAllLink}>See all ›</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {recentScans.map((scan) => {
                   const scoreColor =
@@ -658,7 +784,17 @@ export default function HomeScreen() {
                           });
                         }
                       }}
+                      onLongPress={() => {
+                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        setLongPressTarget({ productId: scan.product_id });
+                      }}
+                      delayLongPress={400}
                       activeOpacity={0.7}
+                      accessibilityLabel={
+                        scan.final_score != null && activePet
+                          ? `${scan.final_score}% match for ${activePet.name}, ${scan.product.brand} ${scan.product.name}`
+                          : `${scan.product.brand} ${scan.product.name}${scan.product.is_recalled ? ', recalled product' : ''}`
+                      }
                     >
                       {scan.product.image_url ? (
                         <Image
@@ -725,6 +861,14 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+      {longPressTarget && (
+        <BookmarkToggleSheet
+          visible={longPressTarget !== null}
+          onClose={() => setLongPressTarget(null)}
+          isBookmarked={longPressIsBookmarked}
+          onToggle={handleLongPressToggle}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -973,6 +1117,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
+  recentScansHeaderRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
   recentScansTitle: {
     fontSize: FontSizes.md,
     fontWeight: '700',
@@ -1040,5 +1188,27 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  // Bookmarks section
+  bookmarksSection: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  seeAllLink: {
+    color: Colors.accent,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  rowRecalled: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.severityRed,
+    paddingLeft: Spacing.md - 3,
   },
 });

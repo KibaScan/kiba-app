@@ -12,6 +12,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -80,6 +82,9 @@ import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { computePetDer, pickBaseForSwap } from '../utils/pantryHelpers';
 import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
+import { ResultHeaderMenu } from '../components/result/ResultHeaderMenu';
+import { useBookmarkStore } from '../stores/useBookmarkStore';
+import { BookmarkOfflineError, BookmarksFullError } from '../types/bookmark';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -166,6 +171,50 @@ export default function ResultScreen() {
   const [petConditions, setPetConditions] = useState<string[]>([]);
   const [petAllergenGroups, setPetAllergenGroups] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const isBookmarked = useBookmarkStore((s) =>
+    petId ? s.isBookmarked(petId, productId) : false,
+  );
+  const toggleBookmark = useBookmarkStore((s) => s.toggle);
+
+  const handleToggleBookmark = async () => {
+    if (!petId) {
+      Alert.alert('Select a pet', 'Choose an active pet before bookmarking.');
+      return;
+    }
+    try {
+      await toggleBookmark(petId, productId);
+    } catch (err) {
+      if (err instanceof BookmarksFullError) {
+        Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
+      } else {
+        Alert.alert('Could not save', err instanceof Error ? err.message : 'Unknown error');
+      }
+    }
+  };
+
+  const handleShare = () => {
+    captureAndShare(shareCardRef, displayName, score);
+  };
+
+  const handleReportIssue = async () => {
+    const subject = encodeURIComponent(`Report issue — ${product?.brand ?? ''} ${product?.name ?? ''}`.trim());
+    const body = encodeURIComponent(
+      `Product: ${productId}\nPet: ${petId ?? '(none)'}\nPlatform: ${Platform.OS} ${String(Platform.Version)}\n\nDescribe the issue:\n`,
+    );
+    const url = `mailto:support@kibascan.com?subject=${subject}&body=${body}`;
+    const ok = await Linking.canOpenURL(url);
+    if (ok) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        'No email client configured',
+        'Email support@kibascan.com directly with the product name and what went wrong.',
+      );
+    }
+  };
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -477,7 +526,13 @@ export default function ResultScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerIconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -488,12 +543,28 @@ export default function ResultScreen() {
             {stripBrandFromName(product!.brand, product!.name)}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => captureAndShare(shareCardRef, displayName, score)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleToggleBookmark}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+          >
+            <Ionicons
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={isBookmarked ? Colors.accent : Colors.textSecondary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setMenuVisible(true)}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel="More actions"
+          >
+            <Ionicons name="ellipsis-horizontal-circle" size={22} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -1038,6 +1109,13 @@ export default function ResultScreen() {
           scoreColor={getScoreColor(score, isSupplemental)}
         />
       </View>
+
+      <ResultHeaderMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onShare={handleShare}
+        onReportIssue={handleReportIssue}
+      />
     </SafeAreaView>
   );
 }

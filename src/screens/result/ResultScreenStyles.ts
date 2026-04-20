@@ -21,6 +21,14 @@ export const styles = StyleSheet.create({
   headerSpacer: {
     width: 24,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerIconButton: {
+    padding: Spacing.xs,
+  },
   productBrand: {
     fontSize: FontSizes.sm,
     fontWeight: '500',

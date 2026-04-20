@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: April 16, 2026 (130 decisions, D-001 through D-168, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-094 superseded by D-168. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: allergen score cap at 50. D-168: score framing simplification — tiered by surface density, supersedes D-094.)
+> Updated: April 17, 2026 (131 decisions, D-001 through D-169, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-094 superseded by D-168. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: allergen score cap at 50. D-168: score framing simplification — tiered by surface density, supersedes D-094. D-169: Bookmarks feature — per-pet, 20 cap, no paywall.)
 
 ---
 
@@ -3029,6 +3029,23 @@ This is optional — user can stay in weight mode if they prefer.
 - `src/components/pantry/SharePantrySheet.tsx` — `petScore` hoisted out of IIFE; `accessibilityLabel` on the per-pet row `TouchableOpacity` with pet name + score + sharing state.
 
 **Reference pattern for future score surfaces:** When the score lives inside a `TouchableOpacity` / `Pressable` card, put the `accessibilityLabel` on the outer pressable (React Native flattens inner element labels by default). When the score is in a plain `View` / `Text` hierarchy (e.g., `ScoreWaterfall`, `ScanHistoryCard`, `PantryCard`), the `accessibilityLabel` can go directly on the score `<Text>`. If an outer pressable already carries a semantic label (e.g., `"${product_name}, rank ${rank}"`), extend it with score + pet rather than creating a conflicting inner element.
+
+### D-169: Bookmarks — Per-Pet Watchlist
+**Status:** LOCKED
+**Date:** April 17, 2026
+**Milestone:** M9
+**Decision:** Add a per-pet `bookmarks` table (migration 040) with `UNIQUE(pet_id, product_id)` and a hard client-side cap of 20 bookmarks per pet. No paywall gate; bookmarks are free. Scores displayed on bookmark rows are *live* reads from `pet_product_scores`, not snapshots at save time. Scan history is expanded to 20 on a dedicated `ScanHistoryScreen` but scans remain immutable (no delete). Entry points: a visible bookmark icon in the ResultScreen header (outline/filled state), and long-press on any scan row. Share and Report issue live in an ellipsis overflow menu next to the bookmark icon. `mailto:support@kibascan.com` is the MVP Report-issue destination.
+
+**Rationale:**
+- **Per-pet scoping** matches every other list in the app (scans, pantry, top picks). User-scoped bookmarks would require awkward score-display decisions when the score shifts on pet switch.
+- **Hard cap vs. paywall** preserves the free-tier ethos (pantry, recalls, scan rate limit are the only gates). 20 is generous enough that most users never hit it.
+- **Live score, not snapshot** reflects the current pet's profile accurately. A saved 97% that no longer fits after a life-stage change would mislead; the live score is honest.
+- **Visible bookmark icon (not in overflow menu)** communicates saved state at a glance and avoids burying a high-frequency action behind an extra tap.
+- **mailto: for Report issue** ships today with zero new UI and gives us direct signal for the first N reports; a dedicated pipeline can replace it post-launch.
+
+**Out of scope (may revisit):** cross-pet sharing of bookmarks, filter/sort on dedicated screens, scan deletion, premium bump above 20.
+
+**Files:** `supabase/migrations/040_bookmarks.sql`, `src/types/bookmark.ts`, `src/services/bookmarkService.ts`, `src/stores/useBookmarkStore.ts`, `src/screens/{Bookmarks,ScanHistory}Screen.tsx`, `src/components/result/ResultHeaderMenu.tsx`, `src/components/common/BookmarkToggleSheet.tsx`.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

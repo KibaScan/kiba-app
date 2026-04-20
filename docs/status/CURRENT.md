@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-17 (session 56 — D-094 retired; D-168 tiered score framing landed; ScoreRing captionless; 7-surface a11y backfilled)
+# Project Status — Last updated 2026-04-20 (session 58 — cross-pet toggle race fixed on useBookmarkStore, PR #13 still open)
 
 ## Active Milestone
 
@@ -17,6 +17,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **HomeScreen category browse + Top Picks dedicated screen** (PR #10 open) — 4 category cards with sub-filter chips, `CategoryTopPicksScreen`, cache-maturity + self-healing scoring
 - **Safe Switch premium UI overhaul** — recipe layout, saturated proportion gauge, retroactive logging, outcome-aware completion card, Phase B pantry-anchored swap RPC
 - **D-168 tiered score framing** (supersedes D-094) — outbound share (`PetShareCard`) full phrase; in-app list rows `{score}% match`; dense surfaces incl. `ScoreRing` just `{score}%`. 7 terse surfaces backfilled with `accessibilityLabel` carrying the full phrase
+- **M9 Bookmarks (D-169)** — per-pet watchlist (cap 20, free), `BookmarksScreen` + `ScanHistoryScreen` (up to 20 each), ResultScreen bookmark icon + overflow menu (Share / Report issue via `mailto:`), long-press on scan rows. Migration 040. PR #13 open.
 
 ## What's Broken / Known Issues
 
@@ -24,9 +25,9 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1597 passing / 71 suites
-- **Decisions:** 130
-- **Migrations:** 39 (001–039)
+- **Tests:** 1626 passing / 74 suites
+- **Decisions:** 131
+- **Migrations:** 40 (001–040)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -65,53 +66,52 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
-- **Date:** 2026-04-17 (session 56 — D-094 retired + D-168 tiered score framing landed + ScoreRing captionless + 7-surface a11y backfill)
-- **Branch:** `m9-reduce-score-noise` off `m5-complete` (`a79d43b`). 3 commits + 1 handoff commit = 4 total. PR not yet opened.
-- **Prior branch abandoned:** `m9-scorebadge-d094` (3 commits: spec, plan, shared `ScoreBadge` component + tests) — Steven recognized mid-session that the unification plan would re-introduce "match for [Pet Name]" noise that iterative M8/M9 work had already stripped. Branch left intact for reference; delete when convenient with `git branch -D m9-scorebadge-d094`.
-- **Commits:**
-  - `92a58f9` — retired D-094, added D-168 tiered framing. Stripped `ScanHistoryCard` + `PantryCard` visible text to `{score}% match` with full phrase in `accessibilityLabel`. Updated 6 enforcement mirrors (CLAUDE.md rule #9 + Score Framing, `src/components/CLAUDE.md`, `.github/copilot-instructions.md`, both `kiba-*` agents, `.agent/workflows/review.md`). Decision count bumped 129→130 across 5 doc sources.
-  - `144d2e0` — ScoreRing: removed the "match for {displayName}" caption entirely. Full phrase migrated to `accessibilityLabel` on the score number with `importantForAccessibility="no-hide-descendants"` on the `%` sign. Orphaned `matchLabel` style deleted. SafeSwitchSetupScreen: both old + new score badges stripped to `{score}% match`. D-168 tier model restructured from "surface density" to "whether pet context is recoverable from surrounding UI" — `PetShareCard` is now the sole "full phrase visible" surface; ScoreRing moved to dense tier.
-  - `8f9bb3e` — D-168 a11y backfill: 7 terse-tier surfaces got `accessibilityLabel` with full phrase. 2 required prop threading (`BrowseProductRow`, `TopPickRankRow`) with caller updates. `TopPickRankRow` test got a new D-168 assertion (+1 test). D-168 body updated: "Known compliance gap at landing" → "Compliance backfill (completed)" + "Reference pattern for future score surfaces" subsection.
-- **Files changed (26 unique across 3 commits + handoff):**
-  - **Decision doc:** `DECISIONS.md` (D-094 SUPERSEDED, D-168 added with tier table/rationale/reference pattern/self-check)
-  - **Component edits:** `src/components/ScanHistoryCard.tsx`, `src/components/pantry/PantryCard.tsx`, `src/components/scoring/ScoreRing.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/components/browse/TopPicksCarousel.tsx`, `src/components/browse/TopPickHeroCard.tsx`, `src/components/browse/TopPickRankRow.tsx`, `src/components/scoring/ScoreWaterfall.tsx`, `src/components/result/SafeSwapSection.tsx`, `src/components/pantry/SharePantrySheet.tsx`
-  - **Screen edits:** `src/screens/ResultScreen.tsx` (file-top comment refresh), `src/screens/SafeSwitchSetupScreen.tsx` (2 badges), `src/screens/CategoryBrowseScreen.tsx` (prop thread), `src/screens/CategoryTopPicksScreen.tsx` (prop thread)
-  - **Enforcement mirrors:** `CLAUDE.md`, `src/components/CLAUDE.md`, `.github/copilot-instructions.md`, `.claude/agents/kiba-code-reviewer.md`, `.claude/agents/kiba-scoring-architect.md`, `.agent/workflows/review.md`
-  - **Count references:** `README.md`, `ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_OVERVIEW.md`
-  - **Test:** `__tests__/components/browse/TopPickRankRow.test.tsx` (+1 D-168 a11y assertion; 3 callsites updated for required `petName` prop)
-  - **Doc artifact (this handoff commit):** `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` — review audit for the a11y backfill
-- **New decisions:** **D-168** — Score Framing Simplification (terse by default, outbound-share exception). Supersedes D-094. Accessibility invariant preserved via `accessibilityLabel`. Reference pattern documented: inside a `TouchableOpacity`/`Pressable` card put the label on the OUTER pressable (RN flattens inner labels); on plain `View`/`Text` trees the score `<Text>` is fine.
-- **Numbers (all green):** 1597 tests (+1 from D-168 a11y assertion) / 71 suites / 3 snapshots. 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
+- **Date:** 2026-04-20 (session 58 — follow-up to session 57: cross-pet toggle race fixed on `useBookmarkStore`; PR #13 still open on same branch)
+- **Branch:** `m9-bookmarks-history` (continuing from session 57). 24 commits on branch (22 from session 57 + 2 new: `9a7c115` race fix, `00e82be` handoff).
+- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — still awaiting human review. Fast-forward pushed to origin (`961644e..00e82be`) — race fix + regression tests + this rotation now on remote.
+- **Accomplished:**
+  - **`/boot`** — verified session-57 rolling-window rewrite landed correctly; working tree clean; milestone = M9 in progress.
+  - **`/code-review` on PR #13** — 4-agent parallel review (2 CLAUDE.md-compliance sonnets + 2 opus bug scans) with a validation pass per finding. Surfaced **1 high-signal race** and correctly filtered **1 false-positive** (D-168 accessibility invariant — the outer `TouchableOpacity` already carries the full `"${score}% match for ${petName}"` label, which is what VoiceOver reads; the pill child is subsumed under the parent element and does not need a duplicate label).
+  - **Race fix on `src/stores/useBookmarkStore.ts:85,89`** — wrapped both post-`svcToggle` `loadForPet(petId)` calls in `if (get().currentPetId === petId)` guards. Before the fix, a toggle for pet A that resolved *after* the user switched to pet B would overwrite the store's `currentPetId` back to A and replace `bookmarks` with A's list — producing dark bookmark indicators on HomeScreen (because `isBookmarked` pet-id guard at `:102` returns `false` on mismatch) and wrong list on BookmarksScreen until the next pet-switch self-heal. With the guard, stale toggles skip the reload entirely and the active pet's state is preserved.
+  - **2 new TDD regression tests** in `__tests__/stores/useBookmarkStore.test.ts` — success-path and error-path variants. Both failed against the unpatched code (`Expected: "B" / Received: "A"`), both pass after the fix.
+- **No new decisions, no new migrations, no scoring changes.**
+- **Files changed (3 in diff vs. `m9-bookmarks-history@HEAD^`):**
+  - `src/stores/useBookmarkStore.ts` — guard added at lines 85 and 89 (+8 / −2)
+  - `__tests__/stores/useBookmarkStore.test.ts` — 2 new tests (+57 / 0)
+  - `docs/status/CURRENT.md` — this rotation (handoff only)
+- **Numbers (all green):** **1626 tests / 74 suites / 3 snapshots** (up from 1624; +2 for race regressions). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.68s.
 - **Not done yet:**
-  - **On-device VoiceOver QA across 11 surfaces** — critical before PR. 4 stripped surfaces need layout sanity: `ScanHistoryCard`, `PantryCard`, `ScoreRing` (captionless), `SafeSwitchSetupScreen` badges. 7 backfilled surfaces need VoiceOver announcement check: `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `TopPickRankRow`, `ScoreWaterfall`, `SafeSwapSection`, `SharePantrySheet`. Full plan in `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` "What's left before merging the branch" section.
-  - **PR not opened.** `m9-reduce-score-noise` → `m5-complete` pending QA.
-  - **Abandoned branch cleanup:** `m9-scorebadge-d094` still reachable locally.
-  - All "Not done yet" items from Previous Session (session 55) still apply — remote branch cleanup, deferred code-review items, HomeScreen overhaul, etc.
+  - **PR #13 review + merge.** Still awaiting human review. Merge-order decision unchanged from session 57 — recommend landing `m9-reduce-score-noise` first so D-168 dupe resolves cleanly on PR #13.
+  - **On-device QA** — VoiceOver announcement check on 11 bookmark/scan score surfaces + recalled-product red-border + `RecallDetail` routing across three surfaces. Carried over from session 57.
+  - **Next M9 scope pick** — HomeScreen visual overhaul, custom icon rollout, stale browse scores form-aware fix, or broader Matte Premium alpha audit (~17 rgba sites).
 - **Start the next session by:**
-  1. **`/boot`** — should single-read CURRENT.md cleanly. Verify the rolling window rewrote session 55 → Previous, session 56 → Last, session 54 deleted.
-  2. **On-device VoiceOver QA sweep** — follow the 11-surface plan in the shipped.md doc. Flag any a11yLabel that doesn't fire (would indicate a surface-specific RN flattening exception needing custom handling).
-  3. If QA passes, **open PR** from `m9-reduce-score-noise` → `m5-complete`. Squash-merge per convention.
-  4. If any Layout regressions on ScoreRing without caption, adjust before PR.
+  1. **`/boot`** — verify rolling window rewrote session 57 → Previous, session 58 → Last, session 55 deleted.
+  2. **Land `m9-reduce-score-noise`** (session 56's D-168 work — 4 commits, PR not yet opened) so D-168 is baked into `m5-complete` before PR #13 resolves its D-168 dupe.
+  3. **Merge PR #13** after (1).
+  4. Execute VoiceOver + recalled-product QA on the merged branch.
+  5. Pick next M9 scope.
 - **Gotchas / context for next session:**
-  - **RN `accessibilityLabel` flattens inside `TouchableOpacity`/`Pressable` cards.** VoiceOver reads the parent's label and ignores inner Text-level labels. Always put the label on the outermost pressable; extend any existing semantic label rather than conflict with an inner a11y element. This cost 4 redo edits mid-sweep before being pattern-locked in D-168 + kiba-code-reviewer rule #9. When writing a future score surface, this is the first thing to check.
-  - **D-168 tier model is about recoverable pet context, not surface density.** If a future hero surface has the pet photo/name visible from surrounding UI, it belongs in the terse tier, not the full-phrase tier. `PetShareCard` is the only current exception because screenshots leave the app.
-  - **ScoreRing is visibly captionless now** — only the big `{displayScore}` + `%` + info button + pet photo in corner. If that reads too bare on device, the minimum-viable caption would be a single-word "match" with the full phrase in `accessibilityLabel`. Don't re-introduce the pet name.
-  - **D-168 `Known compliance gap` is CLOSED** in the decision body, but until on-device QA confirms VoiceOver works on each of the 7 surfaces, the backfill is only theoretically complete. The reviewer pattern noted in D-168 handles this risk.
-  - **Uncommitted artifact at handoff time:** `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` is the a11y review audit written at Steven's request. This handoff commit bundles it in so the branch stays clean.
-  - **Old `m9-scorebadge-d094` branch still has the (wrong-direction) ScoreBadge component + test file.** If you delete it, you lose those artifacts from git — they're not referenced from anywhere on `m9-reduce-score-noise`. Safe cleanup.
+  - **Cross-pet store-write race is a pattern, not a one-off.** Any Zustand store that does optimistic-update → async server call → server-authoritative resync against a per-pet active context needs a symmetric guard on the resync. Pattern: `if (get().currentPetId === petId) await get().loadForPet(petId)` on both success and error paths. Only `useBookmarkStore` is patched. Worth auditing: `usePantryStore` (per-pet assignments + optimistic log-feeding / log-treat), `useTreatBatteryStore` (per-pet kcal), any scoring-cache refresh wired to active pet. Do this before declaring the class solved.
+  - **Code-review D-168 false-positive worth remembering.** The review agent flagged score pills for missing element-level `accessibilityLabel`. Validation subagent correctly ruled NOT a violation — in React Native, a `TouchableOpacity` / `Pressable` with `accessibilityLabel` IS the accessibility element and subsumes its children; VoiceOver reads only the row label. The new bookmark/scan rows carry the full `"${score}% match for ${petName}"` string on the row wrapper, which is compliance *stricter* than D-168's pill-only known-gap pattern. Don't re-flag. Worth adding to `.agent/design.md` accessibility guidance if we write one.
+  - **Previous-session mash-tap race** was only surfaced by rapid physical tapping. **This session's cross-pet race** was caught cleanly by code review without device repro. Different failure modes, both signals worth keeping: (a) ship to device before declaring "tests green = done"; (b) run `/code-review` before merge for races that tests miss.
+  - **All session-57 gotchas still apply:** D-168 merge conflict on DECISIONS.md tail when both branches land; `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export with `onDelete` / `deleteConfirmMessage` API; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility.
 
 ## Previous Session
 
-- **Date:** 2026-04-17 (session 55 — merge cascade: PRs #10 + #11 → `m5-complete`, PR #12 → `main`)
-- **Branch:** `m5-complete` (no feature branch — session was all merges + handoff).
-- **PRs shipped:** [#10](https://github.com/KibaScan/kiba-app/pull/10) squash → `d2f566e` (Top Picks dedicated screen); [#11](https://github.com/KibaScan/kiba-app/pull/11) squash → `e6c8069` (CURRENT.md trim + rolling-window `/handoff`); [#12](https://github.com/KibaScan/kiba-app/pull/12) merge → `6171116` (cascade `m5-complete` → `main`).
-- **Accomplished — merge chain + production sync + rolling-window `/handoff` validated live.** Session 54's `/handoff` rewrite had its first pre-merge run; PR #11 hit a squash-rebase gotcha (downstream branch couldn't auto-detect patch equivalence across squash boundary; recovered with `git rebase --onto origin/m5-complete 9e4ac91 m9-current-md-trim`); PR #12 used `--merge` not `--squash` to preserve PR history on main. `main` now caught up to `m5-complete` at `6171116`.
-- **Files changed this session:** none direct — all via merges. Handoff CURRENT.md update only.
-- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots. 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
-- **Not done yet (before session 56):**
-  - **On-device D-094 visual QA** on Top Picks hero badge + leaderboard pill — carried from session 53. (Largely obsoleted by session 56's D-094 retirement, but remaining layout QA still useful.)
-  - **Remote feature branches** `m9-top-picks-screen` + `m9-current-md-trim` still exist on origin — safe to delete via `gh api` or GitHub UI.
-- **Gotchas from session 55 still applicable:**
-  - **Squash-merge rebase gotcha:** when a squash merge lands on an integration branch, downstream branches based on pre-squash state can't use plain `git rebase origin/<base>`. Use `git rebase --onto origin/<base> <last-upstream-commit-before-mine> <branch>`.
-  - **Force-push is blocked by settings perms.** Run `!git push --force-with-lease origin <branch>` yourself when needed.
-  - **Merge strategy convention:** feature branches → `m5-complete` use `--squash`; `m5-complete` → `main` cascade PRs use `--merge`.
+- **Date:** 2026-04-20 (session 57 — M9 Bookmarks + expanded history shipped; PR #13 open; migration 040 applied to Supabase production)
+- **Branch:** `m9-bookmarks-history` off `m5-complete` (`a79d43b`). 21 commits (13 task commits + 6 review-fix commits + 1 final race-fix commit + 1 spec/plan docs commit).
+- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — `M9: Bookmarks + expanded scan history`. Awaiting human review.
+- **Accomplished — full M9 Bookmarks feature via Subagent-Driven Development across 13 plan tasks:**
+  - **Data layer:** migration 040 (`bookmarks` table, `UNIQUE(pet_id, product_id)`, RLS owner policy, `BEGIN/COMMIT` wrapped, `FOR ALL` policy), `src/types/bookmark.ts` (`Bookmark`, `BookmarkCardData`, `MAX_BOOKMARKS_PER_PET = 20`, `BookmarkOfflineError`, `BookmarksFullError`), `src/services/bookmarkService.ts` (CRUD + 20-cap + offline guards + `fetchBookmarkCards(pet)` with PostgREST nested select + fire-and-forget `batchScoreHybrid` JIT for null-score cache hydration).
+  - **State layer:** `src/stores/useBookmarkStore.ts` (Zustand, optimistic toggle, synchronous cap guard, cross-pet auto-resync, server-authoritative rollback via `loadForPet`, **per-key in-flight lock** keyed by `${petId}:${productId}` — race fix after on-device mash-tap bug surfaced `UNIQUE` violation).
+  - **UI components:** `src/components/result/ResultHeaderMenu.tsx` (Modal bottom-sheet, Share + Report issue only), `src/components/common/BookmarkToggleSheet.tsx` (one-action variant for long-press).
+  - **Screens:** `src/screens/ResultScreen.tsx` (replaced share icon with two-icon header: bookmark-outline/filled + ellipsis; wired mailto with `Platform.OS`/`Platform.Version`; added matching back-arrow padding for symmetry), `src/screens/HomeScreen.tsx` (Bookmarks section between Pantry row and Recent Scans, 3 rows, hidden when empty; `See all ›` on Recent Scans with stacked counter; long-press scan rows → `BookmarkToggleSheet`), `src/screens/BookmarksScreen.tsx` (new — FlatList, `SwipeableRow` delete via `store.toggle`, pull-to-refresh, empty-state CTA scan button, recalled red left border), `src/screens/ScanHistoryScreen.tsx` (new — up to 20 deduped scans, immutable, long-press → bookmark, empty-state CTA).
+  - **Navigation:** `Bookmarks` + `ScanHistory` routes added to `HomeStackParamList` + `HomeStack.Navigator`.
+  - **Docs:** D-168 (backfilled onto this branch to keep DECISIONS.md internally consistent, since branch was cut before `m9-reduce-score-noise` landed) + **D-169: Bookmarks — Per-Pet Watchlist** (new). Updated CLAUDE.md Schema Traps, ROADMAP.md M9 item, CURRENT.md numbers. Spec + plan docs committed to `docs/superpowers/`.
+  - **Gemini external review mid-plan:** adopted 8/10 (JIT hydration, service extraction, sync cap check, server-resync rollback, PostgREST nested select, recalled red border, empty-state CTA, Platform info in mailto). Pushed back on 2 (long-press discoverability — user's explicit design choice; report-issue Copy email — `expo-clipboard` not in deps).
+  - **Final integration review round:** caught 3 cross-surface gaps — `BookmarkOfflineError` branch missing on long-press handlers (HomeScreen + ScanHistoryScreen), `accessibilityLabel` missing on HomeScreen Recent Scans rows that gained `onLongPress`, `handleDelete` on BookmarksScreen bypassed store (now routes through `store.toggle` for symmetry). All fixed.
+- **New decisions:**
+  - **D-169 (session 57):** Bookmarks — per-pet watchlist, hard cap 20, no paywall, live score (not snapshot), immutable scans, mailto-based Report issue stub.
+  - **D-168 (backfilled on session 57):** Tiered score framing (terse by default, outbound-share exception). Originally written on `m9-reduce-score-noise`; added to this branch to keep it self-consistent. Will merge-conflict on DECISIONS.md tail.
+- **Files changed (22 in session-57 diff vs. `origin/m5-complete`):** 8 new source files, 5 modified source files, 4 doc files, 2 spec/plan docs, 2 test files new (bookmarkService + useBookmarkStore), 1 test file new (ResultHeaderMenu). +4,250 lines / −24 lines. 28 new tests (12 service + 11 store + 5 component).
+- **Numbers at session-57 close:** 1624 tests / 74 suites / 3 snapshots. 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.

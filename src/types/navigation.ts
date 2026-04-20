@@ -31,6 +31,8 @@ export type HomeStackParamList = {
   AppointmentDetail: { appointmentId: string };
   Compare: { productAId: string; productBId: string; petId: string };
   SafeSwitchDetail: { switchId: string };
+  Bookmarks: undefined;
+  ScanHistory: undefined;
 };
 
 export type CommunityStackParamList = {
