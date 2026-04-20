@@ -66,8 +66,8 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 ## Last Session
 
 - **Date:** 2026-04-20 (session 58 — follow-up to session 57: cross-pet toggle race fixed on `useBookmarkStore`; PR #13 still open on same branch)
-- **Branch:** `m9-bookmarks-history` (continuing from session 57). 22 commits after this session's handoff commit lands.
-- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — still awaiting human review. Will be force-pushed with race fix + regression tests + this rotation.
+- **Branch:** `m9-bookmarks-history` (continuing from session 57). 24 commits on branch (22 from session 57 + 2 new: `9a7c115` race fix, `00e82be` handoff).
+- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — still awaiting human review. Fast-forward pushed to origin (`961644e..00e82be`) — race fix + regression tests + this rotation now on remote.
 - **Accomplished:**
   - **`/boot`** — verified session-57 rolling-window rewrite landed correctly; working tree clean; milestone = M9 in progress.
   - **`/code-review` on PR #13** — 4-agent parallel review (2 CLAUDE.md-compliance sonnets + 2 opus bug scans) with a validation pass per finding. Surfaced **1 high-signal race** and correctly filtered **1 false-positive** (D-168 accessibility invariant — the outer `TouchableOpacity` already carries the full `"${score}% match for ${petName}"` label, which is what VoiceOver reads; the pill child is subsumed under the parent element and does not need a duplicate label).
