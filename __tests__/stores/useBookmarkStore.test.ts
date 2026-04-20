@@ -143,6 +143,64 @@ describe('toggle', () => {
 
     expect(useBookmarkStore.getState().inFlight.has('p1:prod-1')).toBe(false);
   });
+
+  test('does not clobber active pet when user switches mid-toggle (success path)', async () => {
+    let resolveToggleA!: (v: boolean) => void;
+    (bookmarkService.toggleBookmark as jest.Mock).mockImplementationOnce(
+      () => new Promise<boolean>((resolve) => { resolveToggleA = resolve; }),
+    );
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockImplementation((petId: string) => {
+      if (petId === 'A') return Promise.resolve([
+        { id: 'bA', user_id: 'u1', pet_id: 'A', product_id: 'prod-x', created_at: 'now' },
+      ]);
+      if (petId === 'B') return Promise.resolve([
+        { id: 'bB', user_id: 'u1', pet_id: 'B', product_id: 'prod-y', created_at: 'now' },
+      ]);
+      return Promise.resolve([]);
+    });
+    useBookmarkStore.setState({ currentPetId: 'A', bookmarks: [] });
+
+    const togglePromise = useBookmarkStore.getState().toggle('A', 'prod-x');
+
+    // User switches to pet B before toggle resolves
+    await useBookmarkStore.getState().loadForPet('B');
+    expect(useBookmarkStore.getState().currentPetId).toBe('B');
+    expect(useBookmarkStore.getState().bookmarks[0].pet_id).toBe('B');
+
+    // Stale toggle for A resolves — must NOT overwrite pet B's state
+    resolveToggleA(true);
+    await togglePromise;
+
+    expect(useBookmarkStore.getState().currentPetId).toBe('B');
+    expect(useBookmarkStore.getState().bookmarks).toHaveLength(1);
+    expect(useBookmarkStore.getState().bookmarks[0].pet_id).toBe('B');
+  });
+
+  test('does not clobber active pet when user switches mid-toggle (error path)', async () => {
+    let rejectToggleA!: (err: Error) => void;
+    (bookmarkService.toggleBookmark as jest.Mock).mockImplementationOnce(
+      () => new Promise<boolean>((_, reject) => { rejectToggleA = reject; }),
+    );
+    (bookmarkService.getBookmarksForPet as jest.Mock).mockImplementation((petId: string) => {
+      if (petId === 'B') return Promise.resolve([
+        { id: 'bB', user_id: 'u1', pet_id: 'B', product_id: 'prod-y', created_at: 'now' },
+      ]);
+      return Promise.resolve([]);
+    });
+    useBookmarkStore.setState({ currentPetId: 'A', bookmarks: [] });
+
+    const togglePromise = useBookmarkStore.getState().toggle('A', 'prod-x');
+
+    await useBookmarkStore.getState().loadForPet('B');
+    expect(useBookmarkStore.getState().currentPetId).toBe('B');
+
+    rejectToggleA(new Error('boom'));
+    await expect(togglePromise).rejects.toThrow('boom');
+
+    // Stale toggle failure resync must NOT overwrite pet B's state
+    expect(useBookmarkStore.getState().currentPetId).toBe('B');
+    expect(useBookmarkStore.getState().bookmarks[0].pet_id).toBe('B');
+  });
 });
 
 describe('isBookmarked', () => {

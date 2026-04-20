@@ -82,11 +82,18 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
 
       try {
         const newState = await svcToggle(petId, productId);
-        await get().loadForPet(petId);
+        // Skip resync if user has switched pets mid-toggle — a stale reload would
+        // clobber the now-active pet's state (currentPetId + bookmarks).
+        if (get().currentPetId === petId) {
+          await get().loadForPet(petId);
+        }
         return newState;
       } catch (err) {
         // Resync from server rather than manual re-insert — preserves DESC sort order.
-        await get().loadForPet(petId);
+        // Same cross-pet guard: only reload if the toggled pet is still active.
+        if (get().currentPetId === petId) {
+          await get().loadForPet(petId);
+        }
         throw err;
       }
     } finally {
