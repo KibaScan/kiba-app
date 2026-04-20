@@ -174,6 +174,7 @@ export default function CategoryTopPicksScreen({ navigation, route }: Props) {
                   key={pick.product_id}
                   pick={pick}
                   rank={rankOffset + 2}
+                  petName={petName}
                   insight={insightsMap[pick.product_id]?.[0] ?? null}
                   onPress={() => handleProductTap(pick.product_id)}
                 />

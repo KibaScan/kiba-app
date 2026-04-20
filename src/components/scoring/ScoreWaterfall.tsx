@@ -604,7 +604,10 @@ export function ScoreWaterfall({
       {/* Final score */}
       <View style={styles.finalRow}>
         <Text style={styles.finalLabel}>Final</Text>
-        <Text style={[styles.finalScore, { color: scoreColor }]}>
+        <Text
+          accessibilityLabel={`${scoredResult.finalScore}% match for ${petName}`}
+          style={[styles.finalScore, { color: scoreColor }]}
+        >
           {scoredResult.finalScore}% · {verdictLabel}
         </Text>
       </View>

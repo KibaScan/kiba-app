@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-17 (session 55 — merge cascade PRs #10 + #11 + #12, production caught up to m5-complete)
+# Project Status — Last updated 2026-04-17 (session 56 — D-094 retired; D-168 tiered score framing landed; ScoreRing captionless; 7-surface a11y backfilled)
 
 ## Active Milestone
 
@@ -16,7 +16,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **Matte Premium design system** — `.agent/design.md`, `cardSurface` / `hairlineBorder` / `chipSurface` tokens, SwipeableRow, legacy `Colors.card` + `Colors.cardBorder` fully retired
 - **HomeScreen category browse + Top Picks dedicated screen** (PR #10 open) — 4 category cards with sub-filter chips, `CategoryTopPicksScreen`, cache-maturity + self-healing scoring
 - **Safe Switch premium UI overhaul** — recipe layout, saturated proportion gauge, retroactive logging, outcome-aware completion card, Phase B pantry-anchored swap RPC
-- **D-094 score framing extended** to new browse components (`TopPickHeroCard`, `TopPickRankRow`) — `{score}% match` pattern
+- **D-168 tiered score framing** (supersedes D-094) — outbound share (`PetShareCard`) full phrase; in-app list rows `{score}% match`; dense surfaces incl. `ScoreRing` just `{score}%`. 7 terse surfaces backfilled with `accessibilityLabel` carrying the full phrase
 
 ## What's Broken / Known Issues
 
@@ -24,8 +24,8 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1596 passing / 71 suites
-- **Decisions:** 129
+- **Tests:** 1597 passing / 71 suites
+- **Decisions:** 130
 - **Migrations:** 39 (001–039)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
@@ -65,60 +65,53 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
-- **Date:** 2026-04-17 (session 55 — merge cascade: PRs #10 + #11 → `m5-complete`, PR #12 → `main`)
-- **Branch:** `m5-complete` (no feature branch — session was all merges + this handoff).
-- **PRs shipped:**
-  - [#10](https://github.com/KibaScan/kiba-app/pull/10) squash-merged → `d2f566e` (Top Picks dedicated screen + BenchmarkBar skeleton fix)
-  - [#11](https://github.com/KibaScan/kiba-app/pull/11) squash-merged → `e6c8069` (CURRENT.md trim + rolling-window `/handoff`)
-  - [#12](https://github.com/KibaScan/kiba-app/pull/12) merge-merged → `6171116` (cascade `m5-complete` → `main`, the "PR #2 equivalent")
-- **Accomplished — merge chain + production sync + rolling-window `/handoff` validated live.**
-  - **Session 54's `/handoff` rewrite had its first pre-merge run** — wrote session 54 as Last Session with session 53 as Previous Session. Rolling window worked as spec'd.
-  - **PR #10 merged first** per merge-order plan (session 54's handoff flagged this). Squash commit picked up sessions 50-53.
-  - **PR #11 hit the squash-rebase gotcha** — after PR #10 squashed into `m5-complete`, PR #11's diff showed 26 commits because git didn't auto-detect patch equivalence across the squash boundary. Plain `git rebase origin/m5-complete` hit add/add conflicts on the PR #10 spec files. Recovered with `git rebase --onto origin/m5-complete 9e4ac91 m9-current-md-trim` — replays just my 3 commits onto the new tip, skipping PR #10's now-squashed work. Force-push (blocked by settings perms — user ran `!git push --force-with-lease` directly) cleaned PR #11's view to 3 commits.
-  - **PR #12 (cascade) opened + merged with `--merge` strategy** (not squash) to match the prior PR #2 pattern — preserves individual PR squash commits on `main` for history.
-  - **Local branch `m9-current-md-trim` deleted.** Remote merged branches (`m9-top-picks-screen` + `m9-current-md-trim`) left intact — can be deleted when convenient.
-  - **`main` now caught up to `m5-complete`.** Both tips converge at `6171116`.
-- **Files changed this session:** none direct — all via merges. This handoff's CURRENT.md update is the only file touched in the working tree.
-- **Numbers (all green, unchanged from session 54):** 1596 tests / 71 suites / 3 snapshots. 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
+- **Date:** 2026-04-17 (session 56 — D-094 retired + D-168 tiered score framing landed + ScoreRing captionless + 7-surface a11y backfill)
+- **Branch:** `m9-reduce-score-noise` off `m5-complete` (`a79d43b`). 3 commits + 1 handoff commit = 4 total. PR not yet opened.
+- **Prior branch abandoned:** `m9-scorebadge-d094` (3 commits: spec, plan, shared `ScoreBadge` component + tests) — Steven recognized mid-session that the unification plan would re-introduce "match for [Pet Name]" noise that iterative M8/M9 work had already stripped. Branch left intact for reference; delete when convenient with `git branch -D m9-scorebadge-d094`.
+- **Commits:**
+  - `92a58f9` — retired D-094, added D-168 tiered framing. Stripped `ScanHistoryCard` + `PantryCard` visible text to `{score}% match` with full phrase in `accessibilityLabel`. Updated 6 enforcement mirrors (CLAUDE.md rule #9 + Score Framing, `src/components/CLAUDE.md`, `.github/copilot-instructions.md`, both `kiba-*` agents, `.agent/workflows/review.md`). Decision count bumped 129→130 across 5 doc sources.
+  - `144d2e0` — ScoreRing: removed the "match for {displayName}" caption entirely. Full phrase migrated to `accessibilityLabel` on the score number with `importantForAccessibility="no-hide-descendants"` on the `%` sign. Orphaned `matchLabel` style deleted. SafeSwitchSetupScreen: both old + new score badges stripped to `{score}% match`. D-168 tier model restructured from "surface density" to "whether pet context is recoverable from surrounding UI" — `PetShareCard` is now the sole "full phrase visible" surface; ScoreRing moved to dense tier.
+  - `8f9bb3e` — D-168 a11y backfill: 7 terse-tier surfaces got `accessibilityLabel` with full phrase. 2 required prop threading (`BrowseProductRow`, `TopPickRankRow`) with caller updates. `TopPickRankRow` test got a new D-168 assertion (+1 test). D-168 body updated: "Known compliance gap at landing" → "Compliance backfill (completed)" + "Reference pattern for future score surfaces" subsection.
+- **Files changed (26 unique across 3 commits + handoff):**
+  - **Decision doc:** `DECISIONS.md` (D-094 SUPERSEDED, D-168 added with tier table/rationale/reference pattern/self-check)
+  - **Component edits:** `src/components/ScanHistoryCard.tsx`, `src/components/pantry/PantryCard.tsx`, `src/components/scoring/ScoreRing.tsx`, `src/components/browse/BrowseProductRow.tsx`, `src/components/browse/TopPicksCarousel.tsx`, `src/components/browse/TopPickHeroCard.tsx`, `src/components/browse/TopPickRankRow.tsx`, `src/components/scoring/ScoreWaterfall.tsx`, `src/components/result/SafeSwapSection.tsx`, `src/components/pantry/SharePantrySheet.tsx`
+  - **Screen edits:** `src/screens/ResultScreen.tsx` (file-top comment refresh), `src/screens/SafeSwitchSetupScreen.tsx` (2 badges), `src/screens/CategoryBrowseScreen.tsx` (prop thread), `src/screens/CategoryTopPicksScreen.tsx` (prop thread)
+  - **Enforcement mirrors:** `CLAUDE.md`, `src/components/CLAUDE.md`, `.github/copilot-instructions.md`, `.claude/agents/kiba-code-reviewer.md`, `.claude/agents/kiba-scoring-architect.md`, `.agent/workflows/review.md`
+  - **Count references:** `README.md`, `ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_OVERVIEW.md`
+  - **Test:** `__tests__/components/browse/TopPickRankRow.test.tsx` (+1 D-168 a11y assertion; 3 callsites updated for required `petName` prop)
+  - **Doc artifact (this handoff commit):** `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` — review audit for the a11y backfill
+- **New decisions:** **D-168** — Score Framing Simplification (terse by default, outbound-share exception). Supersedes D-094. Accessibility invariant preserved via `accessibilityLabel`. Reference pattern documented: inside a `TouchableOpacity`/`Pressable` card put the label on the OUTER pressable (RN flattens inner labels); on plain `View`/`Text` trees the score `<Text>` is fine.
+- **Numbers (all green):** 1597 tests (+1 from D-168 a11y assertion) / 71 suites / 3 snapshots. 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.6s.
 - **Not done yet:**
-  - **On-device D-094 visual QA** on Top Picks hero badge + leaderboard pill — carried from session 53, still unchecked.
-  - **Remote feature branches** `m9-top-picks-screen` + `m9-current-md-trim` still exist on origin — safe to delete via `gh api` or GitHub UI. Settings could enable auto-delete-on-merge to avoid this next time.
-  - All "Not done yet" items from Previous Session (session 54) still apply — D-094 carousel outliers, Top Picks polish carry-overs, deferred code-review items, HomeScreen overhaul, etc.
+  - **On-device VoiceOver QA across 11 surfaces** — critical before PR. 4 stripped surfaces need layout sanity: `ScanHistoryCard`, `PantryCard`, `ScoreRing` (captionless), `SafeSwitchSetupScreen` badges. 7 backfilled surfaces need VoiceOver announcement check: `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `TopPickRankRow`, `ScoreWaterfall`, `SafeSwapSection`, `SharePantrySheet`. Full plan in `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` "What's left before merging the branch" section.
+  - **PR not opened.** `m9-reduce-score-noise` → `m5-complete` pending QA.
+  - **Abandoned branch cleanup:** `m9-scorebadge-d094` still reachable locally.
+  - All "Not done yet" items from Previous Session (session 55) still apply — remote branch cleanup, deferred code-review items, HomeScreen overhaul, etc.
 - **Start the next session by:**
-  1. **`/boot`** — third validation of the trimmed CURRENT.md + rolling-window pattern. Should single-read cleanly.
-  2. Pick scope from the carryover backlog: (a) D-094 carousel symmetry (`TopPicksCarousel` + `TopMatchesCarousel`), (b) Top Picks visual polish (Brand CAPS, top-2 ingredients, V2 two-column hero), (c) one of the 5 deferred code-review items from session 53, or (d) the next M9 thread (HomeScreen overhaul, custom icons).
+  1. **`/boot`** — should single-read CURRENT.md cleanly. Verify the rolling window rewrote session 55 → Previous, session 56 → Last, session 54 deleted.
+  2. **On-device VoiceOver QA sweep** — follow the 11-surface plan in the shipped.md doc. Flag any a11yLabel that doesn't fire (would indicate a surface-specific RN flattening exception needing custom handling).
+  3. If QA passes, **open PR** from `m9-reduce-score-noise` → `m5-complete`. Squash-merge per convention.
+  4. If any Layout regressions on ScoreRing without caption, adjust before PR.
 - **Gotchas / context for next session:**
-  - **Squash-merge rebase gotcha:** when a squash merge lands on an integration branch, downstream branches based on the pre-squash state can't use plain `git rebase origin/<base>` — git doesn't detect patch equivalence across the squash boundary and tries to re-apply every now-squashed commit. Use `git rebase --onto origin/<base> <last-upstream-commit-before-mine> <branch>` to replay just your commits. We hit this on PR #11 after PR #10 landed.
-  - **Force-push is blocked by settings perms.** When you need to force-push to clean up a branch history, run `!git push --force-with-lease origin <branch>` yourself — Claude can't do it through the Bash tool.
-  - **Merge strategy convention:** feature branches → `m5-complete` use `--squash` (clean per-PR commits on integration); `m5-complete` → `main` cascade PRs use `--merge` (preserves PR history on main). PR #10/#11 were squash; PR #12 was merge. Match this going forward.
-  - **`main` and `m5-complete` are both at `6171116`** post-cascade. Future feature work follows the normal `m9-<feature>` → `m5-complete` pattern, with periodic cascade PRs to main whenever production needs to catch up.
+  - **RN `accessibilityLabel` flattens inside `TouchableOpacity`/`Pressable` cards.** VoiceOver reads the parent's label and ignores inner Text-level labels. Always put the label on the outermost pressable; extend any existing semantic label rather than conflict with an inner a11y element. This cost 4 redo edits mid-sweep before being pattern-locked in D-168 + kiba-code-reviewer rule #9. When writing a future score surface, this is the first thing to check.
+  - **D-168 tier model is about recoverable pet context, not surface density.** If a future hero surface has the pet photo/name visible from surrounding UI, it belongs in the terse tier, not the full-phrase tier. `PetShareCard` is the only current exception because screenshots leave the app.
+  - **ScoreRing is visibly captionless now** — only the big `{displayScore}` + `%` + info button + pet photo in corner. If that reads too bare on device, the minimum-viable caption would be a single-word "match" with the full phrase in `accessibilityLabel`. Don't re-introduce the pet name.
+  - **D-168 `Known compliance gap` is CLOSED** in the decision body, but until on-device QA confirms VoiceOver works on each of the 7 surfaces, the backfill is only theoretically complete. The reviewer pattern noted in D-168 handles this risk.
+  - **Uncommitted artifact at handoff time:** `docs/superpowers/specs/2026-04-17-d168-a11y-backfill-shipped.md` is the a11y review audit written at Steven's request. This handoff commit bundles it in so the branch stays clean.
+  - **Old `m9-scorebadge-d094` branch still has the (wrong-direction) ScoreBadge component + test file.** If you delete it, you lose those artifacts from git — they're not referenced from anywhere on `m9-reduce-score-noise`. Safe cleanup.
 
 ## Previous Session
 
-- **Date:** 2026-04-16 (session 54 — CURRENT.md trim + `/handoff` rolling-window enforcement)
-- **Branch:** `m9-current-md-trim` off `m9-top-picks-screen`. 2 commits + 1 handoff commit = 3 total. Merged via PR #11.
-- **Accomplished — brainstormed + spec'd + shipped a doc-only trim to kill `/boot` context bloat.**
-  - **Design spec:** `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (`ff9280f`) — approved-in-flow during brainstorming.
-  - **Trim (`b40cd03`):**
-    - Deleted session archive (sessions 46-52, ~700 lines)
-    - Replaced `## What Works` (50-line feature list) with ROADMAP pointer + 5 M9 highlights bullet
-    - Updated `.claude/commands/handoff.md` step 1 to enforce rolling 2-session window: rename existing `## Last Session` → `## Previous Session` + defensive `## Session \d+` delete sweep on every run
-  - **Result:** CURRENT.md 850 → 111 lines. Now single-read-able by Read tool (was blowing the 25k-token limit every `/boot`). Historical detail recoverable via `git log` + `gh pr view`.
-- **Files changed:**
-  - `docs/superpowers/specs/2026-04-16-current-md-trim-design.md` (new, 124 lines)
-  - `docs/status/CURRENT.md` (-751 / +15 net)
-  - `.claude/commands/handoff.md` (+10 / -5)
-- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots (unchanged — doc-only work). 129 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
-- **Not done yet:**
-  - **PR #11 review + merge.** Stacked on PR #10 — may want to wait until #10 lands so the diff shows clean.
-  - All "Not done yet" items from Previous Session (session 53) still apply — D-094 carousel outliers, Top Picks polish carry-overs, deferred code-review items, HomeScreen overhaul, etc.
-  - **First real-world test of the rolling-window `/handoff`** — this file is the first output of the new rules. Verify structure reads cleanly on next `/boot`.
-- **Start the next session by:**
-  1. **`/boot`** — the exercise's whole point. Should now single-shot-read CURRENT.md with no 25k error.
-  2. **`gh pr view 10`** and **`gh pr view 11`** — status on both, merge order decision (lean: #10 first, then #11 auto-cleans).
-  3. Pick scope from Previous Session's menu (D-094 carousel symmetry, Top Picks polish, HomeScreen overhaul, etc.).
-- **Gotchas / context for next session:**
-  - **Rolling-window `/handoff` is live.** If a future run leaves stacked `## Previous Session` headings or doesn't overwrite cleanly, check the Edit tool's string-match on `## Last Session` exact casing. The defensive `## Session \d+` delete in step 1b is there to recover from any stragglers, not a substitute for correct rename.
-  - **PR #11 stacking:** base is `m5-complete` per user direction, not `m9-top-picks-screen`. Diff is noisy until #10 merges. GitHub handles commit auto-cleanup on merge — don't manually rebase unless #10 gets closed without merging.
-  - **`## What Works` max 5 bullets** going forward — that's the cap the spec set. If it grows, prune oldest on each `/handoff` to stay in budget, or close M9.
-  - **Historical session detail** lives in git. `git show HEAD~N:docs/status/CURRENT.md` retrieves any prior state. Don't re-add session archive blocks.
+- **Date:** 2026-04-17 (session 55 — merge cascade: PRs #10 + #11 → `m5-complete`, PR #12 → `main`)
+- **Branch:** `m5-complete` (no feature branch — session was all merges + handoff).
+- **PRs shipped:** [#10](https://github.com/KibaScan/kiba-app/pull/10) squash → `d2f566e` (Top Picks dedicated screen); [#11](https://github.com/KibaScan/kiba-app/pull/11) squash → `e6c8069` (CURRENT.md trim + rolling-window `/handoff`); [#12](https://github.com/KibaScan/kiba-app/pull/12) merge → `6171116` (cascade `m5-complete` → `main`).
+- **Accomplished — merge chain + production sync + rolling-window `/handoff` validated live.** Session 54's `/handoff` rewrite had its first pre-merge run; PR #11 hit a squash-rebase gotcha (downstream branch couldn't auto-detect patch equivalence across squash boundary; recovered with `git rebase --onto origin/m5-complete 9e4ac91 m9-current-md-trim`); PR #12 used `--merge` not `--squash` to preserve PR history on main. `main` now caught up to `m5-complete` at `6171116`.
+- **Files changed this session:** none direct — all via merges. Handoff CURRENT.md update only.
+- **Numbers (all green):** 1596 tests / 71 suites / 3 snapshots. 130 decisions. 39 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
+- **Not done yet (before session 56):**
+  - **On-device D-094 visual QA** on Top Picks hero badge + leaderboard pill — carried from session 53. (Largely obsoleted by session 56's D-094 retirement, but remaining layout QA still useful.)
+  - **Remote feature branches** `m9-top-picks-screen` + `m9-current-md-trim` still exist on origin — safe to delete via `gh api` or GitHub UI.
+- **Gotchas from session 55 still applicable:**
+  - **Squash-merge rebase gotcha:** when a squash merge lands on an integration branch, downstream branches based on pre-squash state can't use plain `git rebase origin/<base>`. Use `git rebase --onto origin/<base> <last-upstream-commit-before-mine> <branch>`.
+  - **Force-push is blocked by settings perms.** Run `!git push --force-with-lease origin <branch>` yourself when needed.
+  - **Merge strategy convention:** feature branches → `m5-complete` use `--squash`; `m5-complete` → `main` cascade PRs use `--merge`.

@@ -1,6 +1,6 @@
 // Kiba — Result Screen
 // Single scrollable screen with progressive disclosure (D-108).
-// Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
+// Score framing: tiered per D-168 (supersedes D-094) — ScoreRing shows "{score}%" in visible text; full phrase in accessibilityLabel. Zero emoji (D-084).
 // Wires LoadingTerminal + scoreProduct pipeline.
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';

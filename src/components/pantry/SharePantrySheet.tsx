@@ -155,6 +155,10 @@ export function SharePantrySheet({
                   const assign = getAssignment(pet.id);
                   const assigned = assign !== null;
                   const isBusy = busy === pet.id;
+                  const petScore = petScores.get(pet.id) ?? item.product.base_score;
+                  const a11yLabel = petScore != null
+                    ? `${pet.name}, ${petScore}% match for ${pet.name}, ${assigned ? 'sharing' : 'not sharing'}`
+                    : `${pet.name}, not scored, ${assigned ? 'sharing' : 'not sharing'}`;
 
                   return (
                     <View key={pet.id} style={styles.petRow}>
@@ -163,6 +167,7 @@ export function SharePantrySheet({
                         onPress={() => handleToggle(pet)}
                         activeOpacity={0.7}
                         disabled={isBusy}
+                        accessibilityLabel={a11yLabel}
                       >
                         <View style={styles.petInfo}>
                           <View style={styles.petAvatar}>
@@ -174,16 +179,13 @@ export function SharePantrySheet({
                           </View>
                           <View style={styles.petNameCol}>
                             <Text style={styles.petName}>{pet.name}</Text>
-                            {(() => {
-                              const petScore = petScores.get(pet.id) ?? item.product.base_score;
-                              return petScore != null ? (
-                                <Text style={[styles.petScore, { color: getScoreColor(petScore, item.product.is_supplemental) }]}>
-                                  {petScore}% match
-                                </Text>
-                              ) : (
-                                <Text style={styles.petScoreMuted}>Not scored</Text>
-                              );
-                            })()}
+                            {petScore != null ? (
+                              <Text style={[styles.petScore, { color: getScoreColor(petScore, item.product.is_supplemental) }]}>
+                                {petScore}% match
+                              </Text>
+                            ) : (
+                              <Text style={styles.petScoreMuted}>Not scored</Text>
+                            )}
                           </View>
                         </View>
                         {isBusy ? (
