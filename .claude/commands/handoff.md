@@ -1,5 +1,9 @@
 Before we end this session, do the following:
 
+**Ordering:** run this AFTER your substantive session commits are already committed (and ideally pushed). The handoff block must describe *actual* commits by SHA + subject — never predict commit counts, push mechanics ("will be force-pushed"), or any state that depends on what happens after you hit commit. Aggregate counts are self-referential (the handoff commit itself is one of them) and drift; skip them and list specific SHAs instead.
+
+
+
 1. Update docs/status/CURRENT.md (rolling 2-session window — newest two handoffs only):
    a. If a `## Last Session` block already exists, rename its heading to `## Previous Session` (overwriting any existing `## Previous Session` — do not stack).
    b. Delete every section whose heading matches `## Session \d+` (defensive — catches any legacy archive stragglers).
