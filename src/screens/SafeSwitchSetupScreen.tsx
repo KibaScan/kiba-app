@@ -259,8 +259,11 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
             <Text style={styles.productName} numberOfLines={2}>{oldProduct.brand} {oldName}</Text>
             {oldScore != null && (
               <View style={[styles.scoreBadge, { backgroundColor: `${getScoreColor(oldScore, oldProduct.is_supplemental)}33` }]}>
-                <Text style={[styles.scoreBadgeText, { color: getScoreColor(oldScore, oldProduct.is_supplemental) }]}>
-                  {oldScore}% match for {petName}
+                <Text
+                  accessibilityLabel={`${oldScore}% match for ${petName}`}
+                  style={[styles.scoreBadgeText, { color: getScoreColor(oldScore, oldProduct.is_supplemental) }]}
+                >
+                  {oldScore}% match
                 </Text>
               </View>
             )}
@@ -293,8 +296,11 @@ export default function SafeSwitchSetupScreen({ navigation, route }: Props) {
             <Text style={styles.productName} numberOfLines={2}>{newProduct.brand} {newName}</Text>
             {newScore != null && (
               <View style={[styles.scoreBadge, { backgroundColor: `${getScoreColor(newScore, newProduct.is_supplemental)}33` }]}>
-                <Text style={[styles.scoreBadgeText, { color: getScoreColor(newScore, newProduct.is_supplemental) }]}>
-                  {newScore}% match for {petName}
+                <Text
+                  accessibilityLabel={`${newScore}% match for ${petName}`}
+                  style={[styles.scoreBadgeText, { color: getScoreColor(newScore, newProduct.is_supplemental) }]}
+                >
+                  {newScore}% match
                 </Text>
               </View>
             )}

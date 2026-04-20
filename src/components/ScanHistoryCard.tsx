@@ -99,8 +99,11 @@ function ScoreBadge({
 
   const color = getScoreColor(score, isSupplemental);
   return (
-    <Text style={[styles.scoreText, { color }]}>
-      {score}% match for {petName}
+    <Text
+      accessibilityLabel={`${score}% match for ${petName}`}
+      style={[styles.scoreText, { color }]}
+    >
+      {score}% match
     </Text>
   );
 }

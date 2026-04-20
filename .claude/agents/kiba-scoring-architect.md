@@ -88,9 +88,9 @@ If your design changes weights, cite the new D-number and predict anchor impact.
 
 If the design includes any user-facing copy, flag banned verbs: **prescribe, treat, cure, prevent, diagnose**. Clinical copy is always objective and citation-backed.
 
-### Suitability Framing (D-094)
+### Score Framing (D-168, supersedes D-094)
 
-Any new score display must use the "[X]% match for [Pet Name]" pattern. Never naked scores.
+Score framing is tiered by whether pet context is recoverable from surrounding UI. Only `PetShareCard` (outbound share) shows `{score}% match for {petName}` — it is the sole surface whose audience has no app context. In-app list rows show `{score}% match`; in-app dense or hero-minimal surfaces (including `ScoreRing`) show `{score}%`. Every in-app score element MUST carry `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element; outbound share satisfies the invariant via visible text. If your design introduces a new score surface, cite its tier and the a11y approach in the design doc.
 
 ## Files You Load on Every Invocation
 

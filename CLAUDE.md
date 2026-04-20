@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: April 2, 2026 — M9 in progress. Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: April 16, 2026 — M9 in progress. Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -21,7 +21,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 129 decisions (D-001–D-167, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
+| `DECISIONS.md` | 131 decisions (D-001–D-169, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
 | `ROADMAP.md` | Milestone plan, current scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
@@ -35,13 +35,18 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 | `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–039). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–040). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
-## Score Framing (D-094)
+## Score Framing (D-168, supersedes D-094)
 
-All scores: `"[X]% match for [Pet Name]"` — NEVER naked scores. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
+Tiered by whether pet context is recoverable from surrounding UI:
+- **Outbound share (no app context):** `{score}% match for {petName}` (`PetShareCard` only — audience is non-users viewing a screenshot)
+- **In-app, moderate space:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **In-app, dense or hero-minimal:** `{score}%` (`ScoreRing` — pet photo in-ring anchors context, caption was redundant noise; `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
+
+Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. `PetShareCard` satisfies this via visible text. All in-app surfaces require explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Preserves D-094's legal defensibility. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
 
 ## Scoring Engine — Quick Reference
 
@@ -84,7 +89,7 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 6. Every penalty has **`citation_source`** — no unattributed claims
 7. **Supabase RLS** on every user-data table
 8. **No `any` types** in TypeScript core entities
-9. **Suitability framing (D-094)** — always "[X]% match for [Pet Name]"
+9. **Score framing (D-168, supersedes D-094)** — `{score}% match for {petName}` only on outbound share (`PetShareCard`); `{score}% match` on in-app list rows; `{score}%` on dense surfaces incl. `ScoreRing`. Full phrase must reach assistive tech — all in-app surfaces need explicit `accessibilityLabel`
 10. **UPVM compliance (D-095)** — never: "prescribe," "treat," "cure," "prevent," "diagnose"
 11. **Bypasses:** vet diet (D-135), species mismatch (D-144), variety pack (D-145), recalled product (D-158) — no scoring
 12. **API keys server-side only (D-127)** — all external calls via Edge Functions

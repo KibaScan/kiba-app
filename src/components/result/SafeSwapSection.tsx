@@ -201,6 +201,7 @@ export function SafeSwapSection(props: SafeSwapSectionProps) {
             key={c.product_id}
             style={s.card}
             activeOpacity={0.7}
+            accessibilityLabel={`${c.brand} ${c.product_name}, ${Math.round(c.final_score)}% match for ${petName}`}
             onPress={() => {
               navigation.push('Result', { productId: c.product_id, petId });
             }}

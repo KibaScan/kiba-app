@@ -1,7 +1,7 @@
 # Kiba Feature Overview
 
 > What the app does by M11 (launch-ready) and what comes after.
-> Source of truth: ROADMAP.md + DECISIONS.md (129 decisions, D-001 through D-167).
+> Source of truth: ROADMAP.md + DECISIONS.md (130 decisions, D-001 through D-168).
 
 ---
 

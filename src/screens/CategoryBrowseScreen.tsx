@@ -167,9 +167,10 @@ export default function CategoryBrowseScreen({ navigation, route }: Props) {
     <BrowseProductRow
       product={item}
       rank={index + 1}
+      petName={petName}
       onPress={() => handleProductPress(item)}
     />
-  ), [handleProductPress]);
+  ), [handleProductPress, petName]);
 
   const keyExtractor = useCallback((item: BrowseProduct) => item.product_id, []);
 

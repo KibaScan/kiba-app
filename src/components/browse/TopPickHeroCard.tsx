@@ -31,7 +31,11 @@ export function TopPickHeroCard({ pick, petName, insights, onPress }: TopPickHer
       style={[styles.card, { borderColor: scoreColor }]}
       onPress={onPress}
       activeOpacity={0.85}
-      accessibilityLabel={`${pick.product_name}, best overall match`}
+      accessibilityLabel={
+        pick.final_score != null
+          ? `${pick.product_name}, best overall match, ${pick.final_score}% match for ${petName}`
+          : `${pick.product_name}, best overall match`
+      }
     >
       <View style={styles.accentBadge}>
         <Ionicons name="trophy" size={14} color={scoreColor} />

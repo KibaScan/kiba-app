@@ -307,10 +307,18 @@ export function ScoreRing({
         {/* Center content — positioned relative to layout container */}
         <View style={styles.centerContent}>
           <View style={styles.scoreRow}>
-            <Text style={[styles.scoreValue, { color: ringColor }]}>
+            <Text
+              accessibilityLabel={`${displayScore}% match for ${displayName}`}
+              style={[styles.scoreValue, { color: ringColor }]}
+            >
               {displayScore}
             </Text>
-            <Text style={[styles.scorePercent, { color: ringColor }]}>%</Text>
+            <Text
+              importantForAccessibility="no-hide-descendants"
+              style={[styles.scorePercent, { color: ringColor }]}
+            >
+              %
+            </Text>
             <TouchableOpacity
               onPress={showDisclaimer}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -323,9 +331,6 @@ export function ScoreRing({
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.matchLabel} numberOfLines={1}>
-            match for {displayName}
-          </Text>
         </View>
 
         {/* Pet photo — bottom-right corner with glow + glass backing */}
@@ -417,11 +422,6 @@ const styles = StyleSheet.create({
   infoButton: {
     marginLeft: 4,
     marginBottom: 6,
-  },
-  matchLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
   },
   petPhotoOuter: {
     position: 'absolute',
