@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-20 (session 58 — cross-pet toggle race fixed on useBookmarkStore, PR #13 still open)
+# Project Status — Last updated 2026-04-21 (session 59 — merge cascade landed: PR #14 D-168 reduce-score-noise + PR #13 Bookmarks squash-merged into m5-complete)
 
 ## Active Milestone
 
@@ -25,7 +25,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1626 passing / 74 suites
+- **Tests:** 1627 passing / 74 suites
 - **Decisions:** 131
 - **Migrations:** 40 (001–040)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -66,6 +66,45 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
+- **Date:** 2026-04-21 (session 59 — merge cascade: PR #14 `m9-reduce-score-noise` + PR #13 `m9-bookmarks-history` both squash-merged into `m5-complete`; no new code, only reconcile)
+- **Branch:** `m9-bookmarks-history` (local) — squash-absorbed into `m5-complete`. Single new local commit `e2fe777` (merge-reconcile) + handoff commit.
+- **PRs shipped:**
+  - **[#14](https://github.com/KibaScan/kiba-app/pull/14)** — squash-merged as `30a596a` on `m5-complete`. Title: "M9: D-168 score framing — terse by default, supersedes D-094". Opened + merged without `/code-review` at user direction `(b)`.
+  - **[#13](https://github.com/KibaScan/kiba-app/pull/13)** — squash-merged as `66657f9` on `m5-complete`. Title: "M9: Bookmarks + expanded scan history". Was CLEAN/MERGEABLE after reconcile push.
+- **Accomplished:**
+  - **`/boot`** — oriented on M9; verified session-58 handoff landed; flagged CLAUDE.md count drift (130→131 decisions, 039→040 migrations) as low-priority carry-over.
+  - **Advisor call** pre-merge — confirmed ordering (reduce-score-noise first), flagged non-conflict dual-touch files (`ResultScreen.tsx`, `CLAUDE.md`, `ROADMAP.md`, `CURRENT.md`) + DECISIONS.md resolution rules. Surfaced "no prior review on reduce-score-noise" for user decision. User picked `(b)` merge-immediately.
+  - **PR #14 open + squash-merge** — 4 commits on `m9-reduce-score-noise` (retire D-094 / add D-168 / strip ScoreRing caption / a11y backfill 7 surfaces / session-56 handoff). CLEAN, zero status checks.
+  - **Reconcile merge `m5-complete` → `m9-bookmarks-history`** — expected D-168 dupe conflict + 3 other regions in DECISIONS.md + 4 regions in CURRENT.md. ResultScreen.tsx auto-merged clean (orthogonal touches confirmed pre-merge). Resolution per advisor guidance:
+    - **DECISIONS.md:** kept reduce-score-noise's D-168 body as canonical (ScoreRing in dense tier, "Compliance backfill (completed)" section, outbound-share sole exception, reference pattern for future surfaces) + appended D-169 body from bookmarks-history. Header → 131 / D-001–D-169; supersedes list now includes `D-094 superseded by D-168`; fixed stale "D-167: condition-aware feeding frequency" (D-167 body was retitled to Allergen Score Cap in session 56 but header summary was never updated).
+    - **CURRENT.md:** kept HEAD (session 58 `Last` + session 57 `Previous`); merged the two What Works bullets (D-168 framing + D-169 bookmarks are orthogonal); kept accurate numbers.
+    - **CLAUDE.md:** auto-merged but freshened stale counts 130→131 and 039→040.
+  - **Commit `e2fe777` pushed** to origin/m9-bookmarks-history. `npx jest` green: 1626 → **1627** tests (+1 from reduce-score-noise's D-168 a11y assertion on TopPickRankRow).
+  - **PR #13 squash-merge** — GitHub mergeability went UNKNOWN briefly post-push, resolved to CLEAN/MERGEABLE after one re-query. Squashed to `66657f9`.
+- **No new decisions, no new migrations, no scoring changes, no UI changes.** D-168 + D-169 already existed; this session deduped the double-backfill and shipped both to `m5-complete`.
+- **Files changed this session (1 local code commit):**
+  - `e2fe777` — merge-reconcile. Touched DECISIONS.md, CLAUDE.md, docs/status/CURRENT.md + absorbed the full `m9-reduce-score-noise` diff (28 files from PR #14: browse/scoring/result components, enforcement mirrors, TopPickRankRow test, new a11y-backfill-shipped spec doc).
+- **Numbers (all green):** 1627 tests / 74 suites / 3 snapshots. 131 decisions (D-001–D-169). 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest regressionAnchors` confirmed anchors post-merge.
+- **Not done yet:**
+  - **On-device VoiceOver QA** — 11 bookmark/scan surfaces (session 57/58 carry) + 7 D-168 a11y-backfill surfaces (session 56 carry) + recalled-product red-border + `RecallDetail` routing.
+  - **Cross-pet store-write race audit** — same pattern as session-58 `useBookmarkStore` guard (`if (get().currentPetId === petId)` on post-async resync). Audit `usePantryStore` (per-pet assignments + optimistic log-feeding / log-treat), `useTreatBatteryStore` (per-pet kcal), any scoring-cache refresh wired to active pet. Open until done.
+  - **Next M9 scope pick** — HomeScreen visual overhaul, custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, or broader Matte Premium alpha audit (~17 rgba sites cataloged in Up Next).
+  - **Optional branch cleanup:** `m9-bookmarks-history`, `m9-reduce-score-noise` merged; `m9-scorebadge-d094`, `m9-top-picks-screen`, `m9-current-md-trim` still exist on origin from prior sessions.
+- **Start the next session by:**
+  1. **`/boot`** — verify rolling window rotated session 58 → Previous, session 59 → Last, session 57 dropped.
+  2. **Fast-forward local `m5-complete`:** `git checkout m5-complete && git pull --ff-only` — picks up `30a596a` + `66657f9`.
+  3. **Cut fresh session branch** off updated `m5-complete` (per "branch per session" memory) before first commit.
+  4. Pick one carry-over: VoiceOver QA (tactical), cross-pet race audit (architectural), or next M9 scope (HomeScreen overhaul = most user-visible pre-launch).
+- **Gotchas / context for next session:**
+  - **Post-squash-merge dead branches:** `m9-bookmarks-history` and `m9-reduce-score-noise` local branches still hold their original commit history; the squashes on GitHub created equivalent single commits on `m5-complete`. Don't rebase these — delete or ignore. `git branch -d` will refuse because git sees them as unmerged (squash ≠ merge-base advance); use `-D` if cleaning up.
+  - **Merge-strategy convention re-confirmed this session:** feature → `m5-complete` uses `--squash` (preserves clean single-commit history on integration branch); `m5-complete` → `main` cascade uses `--merge` (preserves PR history for production audit trail). Repo allows all three modes — convention is the guard.
+  - **`gh pr view` JSON fields:** no `merged` field — use `state`, `mergedAt`, `mergeCommit`. Silent stdout from `gh pr merge` on success is normal (no news = good news).
+  - **Post-push mergeability lag:** GitHub computes `mergeable` asynchronously; first `gh pr view` after a push often returns `UNKNOWN`. Re-query once — don't assume broken.
+  - **D-094 residue hunt pending:** D-168 replaces D-094 in `CLAUDE.md` (rule #9 + Score Framing), `src/components/CLAUDE.md`, `.github/copilot-instructions.md`, both `kiba-*` agents, `.agent/workflows/review.md`, `ResultScreen.tsx` file-top comment. Any stray D-094 reference elsewhere (other docs, comments) is a next-audit-pass item.
+  - **All session-57/58 gotchas still apply:** `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export with `onDelete` / `deleteConfirmMessage` API; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility.
+
+## Previous Session
+
 - **Date:** 2026-04-20 (session 58 — follow-up to session 57: cross-pet toggle race fixed on `useBookmarkStore`; PR #13 still open on same branch)
 - **Branch:** `m9-bookmarks-history` (continuing from session 57). 24 commits on branch (22 from session 57 + 2 new: `9a7c115` race fix, `00e82be` handoff).
 - **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — still awaiting human review. Fast-forward pushed to origin (`961644e..00e82be`) — race fix + regression tests + this rotation now on remote.
@@ -96,22 +135,3 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **Previous-session mash-tap race** was only surfaced by rapid physical tapping. **This session's cross-pet race** was caught cleanly by code review without device repro. Different failure modes, both signals worth keeping: (a) ship to device before declaring "tests green = done"; (b) run `/code-review` before merge for races that tests miss.
   - **All session-57 gotchas still apply:** D-168 merge conflict on DECISIONS.md tail when both branches land; `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export with `onDelete` / `deleteConfirmMessage` API; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility.
 
-## Previous Session
-
-- **Date:** 2026-04-20 (session 57 — M9 Bookmarks + expanded history shipped; PR #13 open; migration 040 applied to Supabase production)
-- **Branch:** `m9-bookmarks-history` off `m5-complete` (`a79d43b`). 21 commits (13 task commits + 6 review-fix commits + 1 final race-fix commit + 1 spec/plan docs commit).
-- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — `M9: Bookmarks + expanded scan history`. Awaiting human review.
-- **Accomplished — full M9 Bookmarks feature via Subagent-Driven Development across 13 plan tasks:**
-  - **Data layer:** migration 040 (`bookmarks` table, `UNIQUE(pet_id, product_id)`, RLS owner policy, `BEGIN/COMMIT` wrapped, `FOR ALL` policy), `src/types/bookmark.ts` (`Bookmark`, `BookmarkCardData`, `MAX_BOOKMARKS_PER_PET = 20`, `BookmarkOfflineError`, `BookmarksFullError`), `src/services/bookmarkService.ts` (CRUD + 20-cap + offline guards + `fetchBookmarkCards(pet)` with PostgREST nested select + fire-and-forget `batchScoreHybrid` JIT for null-score cache hydration).
-  - **State layer:** `src/stores/useBookmarkStore.ts` (Zustand, optimistic toggle, synchronous cap guard, cross-pet auto-resync, server-authoritative rollback via `loadForPet`, **per-key in-flight lock** keyed by `${petId}:${productId}` — race fix after on-device mash-tap bug surfaced `UNIQUE` violation).
-  - **UI components:** `src/components/result/ResultHeaderMenu.tsx` (Modal bottom-sheet, Share + Report issue only), `src/components/common/BookmarkToggleSheet.tsx` (one-action variant for long-press).
-  - **Screens:** `src/screens/ResultScreen.tsx` (replaced share icon with two-icon header: bookmark-outline/filled + ellipsis; wired mailto with `Platform.OS`/`Platform.Version`; added matching back-arrow padding for symmetry), `src/screens/HomeScreen.tsx` (Bookmarks section between Pantry row and Recent Scans, 3 rows, hidden when empty; `See all ›` on Recent Scans with stacked counter; long-press scan rows → `BookmarkToggleSheet`), `src/screens/BookmarksScreen.tsx` (new — FlatList, `SwipeableRow` delete via `store.toggle`, pull-to-refresh, empty-state CTA scan button, recalled red left border), `src/screens/ScanHistoryScreen.tsx` (new — up to 20 deduped scans, immutable, long-press → bookmark, empty-state CTA).
-  - **Navigation:** `Bookmarks` + `ScanHistory` routes added to `HomeStackParamList` + `HomeStack.Navigator`.
-  - **Docs:** D-168 (backfilled onto this branch to keep DECISIONS.md internally consistent, since branch was cut before `m9-reduce-score-noise` landed) + **D-169: Bookmarks — Per-Pet Watchlist** (new). Updated CLAUDE.md Schema Traps, ROADMAP.md M9 item, CURRENT.md numbers. Spec + plan docs committed to `docs/superpowers/`.
-  - **Gemini external review mid-plan:** adopted 8/10 (JIT hydration, service extraction, sync cap check, server-resync rollback, PostgREST nested select, recalled red border, empty-state CTA, Platform info in mailto). Pushed back on 2 (long-press discoverability — user's explicit design choice; report-issue Copy email — `expo-clipboard` not in deps).
-  - **Final integration review round:** caught 3 cross-surface gaps — `BookmarkOfflineError` branch missing on long-press handlers (HomeScreen + ScanHistoryScreen), `accessibilityLabel` missing on HomeScreen Recent Scans rows that gained `onLongPress`, `handleDelete` on BookmarksScreen bypassed store (now routes through `store.toggle` for symmetry). All fixed.
-- **New decisions:**
-  - **D-169 (session 57):** Bookmarks — per-pet watchlist, hard cap 20, no paywall, live score (not snapshot), immutable scans, mailto-based Report issue stub.
-  - **D-168 (backfilled on session 57):** Tiered score framing (terse by default, outbound-share exception). Originally written on `m9-reduce-score-noise`; added to this branch to keep it self-consistent. Will merge-conflict on DECISIONS.md tail.
-- **Files changed (22 in session-57 diff vs. `origin/m5-complete`):** 8 new source files, 5 modified source files, 4 doc files, 2 spec/plan docs, 2 test files new (bookmarkService + useBookmarkStore), 1 test file new (ResultHeaderMenu). +4,250 lines / −24 lines. 28 new tests (12 service + 11 store + 5 component).
-- **Numbers at session-57 close:** 1624 tests / 74 suites / 3 snapshots. 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
