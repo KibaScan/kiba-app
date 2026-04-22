@@ -203,7 +203,7 @@ Expected: single commit on `m9-deadcode-sweep`, 3-4 files changed.
 - Delete: `docs/plans/search-uiux/` (directory + 10 files)
 - Delete: any repo-wide `*.ref` / `*.bak` / `*.orig` / `*~`
 
-**Purpose:** Clear the pre-existing `docs/plans/search-uiux/*.ts` tsc errors (14 of them) so the downstream agents' tsc-diff gate is tight. D1 is first for this reason.
+**Purpose:** Clear the pre-existing `docs/plans/search-uiux/*.ts` tsc errors (approximately 68) so the downstream agents' tsc-diff gate is tight. D1 is first for this reason.
 
 - [ ] **Step 1: Enumerate the search-uiux files that will be deleted**
 
@@ -236,7 +236,7 @@ wc -l /tmp/tsc-post-d1.txt
 diff .tsc-baseline.txt /tmp/tsc-post-d1.txt | head -30
 ```
 
-Expected: `/tmp/tsc-post-d1.txt` shows ~11 lines (the persistent `supabase/functions/batch-score/scoring/` errors). Diff shows the 14 `docs/plans/search-uiux/` errors removed, nothing added.
+Expected: `/tmp/tsc-post-d1.txt` shows ~11 lines (the persistent `supabase/functions/batch-score/scoring/` errors). Diff shows approximately 68 `docs/plans/search-uiux/` errors removed, nothing added.
 
 - [ ] **Step 5: Refresh the tsc baseline to the post-D1 state**
 
