@@ -43,7 +43,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 Tiered by whether pet context is recoverable from surrounding UI:
 - **Outbound share (no app context):** `{score}% match for {petName}` (`PetShareCard` only — audience is non-users viewing a screenshot)
-- **In-app, moderate space:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **In-app, moderate space:** `{score}% match` (`PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
 - **In-app, dense or hero-minimal:** `{score}%` (`ScoreRing` — pet photo in-ring anchors context, caption was redundant noise; `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
 
 Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. `PetShareCard` satisfies this via visible text. All in-app surfaces require explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Preserves D-094's legal defensibility. Two color scales in `getScoreColor()`: green family (daily food), teal/cyan family (supplemental), converge at yellow/amber/red. 360° ring = daily food + treats, 270° arc = supplemental.
