@@ -18,7 +18,7 @@ export function speciesToggle(): void {
 }
 
 /** Scan button press */
-export function scanButton(): void {
+function scanButton(): void {
   if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 }
 
@@ -38,7 +38,7 @@ export function profileComplete(): void {
 }
 
 /** Hepatic lipidosis warning (D-062) */
-export function hepaticWarning(): void {
+function hepaticWarning(): void {
   if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 }
 

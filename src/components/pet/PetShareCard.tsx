@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../utils/constants';
 
-export interface PetShareCardProps {
+interface PetShareCardProps {
   petName: string;
   petPhoto: string | null;
   species: 'dog' | 'cat';
@@ -83,7 +83,7 @@ export const PetShareCard = React.forwardRef<View, PetShareCardProps>(
  * Simplified share card for PetHub — no product context.
  * Just pet photo + name + Kiba branding.
  */
-export interface PetHubShareCardProps {
+interface PetHubShareCardProps {
   petName: string;
   petPhoto: string | null;
   species: 'dog' | 'cat';

@@ -84,7 +84,7 @@ export async function registerPushToken(expoPushToken: string): Promise<void> {
  * Deactivates the push token for the current device.
  * Called on logout (future).
  */
-export async function unregisterPushToken(): Promise<void> {
+async function unregisterPushToken(): Promise<void> {
   try {
     if (!(await isOnline())) return;
 

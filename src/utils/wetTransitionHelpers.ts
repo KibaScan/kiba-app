@@ -27,7 +27,7 @@ export interface WetTransitionRecord {
   dismissed: boolean;
 }
 
-export interface CurrentPhaseResult {
+interface CurrentPhaseResult {
   phase: WetTransitionPhase;
   dayInPhase: number;
   overallDay: number;

@@ -37,5 +37,5 @@ export const CONDITION_ICONS: Record<string, ImageSourcePropType> = {
 } as const;
 
 // ─── Type-safe key types ─────────────────────────────────
-export type CategoryKey = keyof typeof CATEGORY_ICONS;
-export type ConditionKey = keyof typeof CONDITION_ICONS;
+type CategoryKey = keyof typeof CATEGORY_ICONS;
+type ConditionKey = keyof typeof CONDITION_ICONS;

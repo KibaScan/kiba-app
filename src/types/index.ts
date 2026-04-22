@@ -26,7 +26,7 @@ export enum Category {
   Supplement = 'supplement',
 }
 
-export enum Severity {
+enum Severity {
   None = 'none',
   Low = 'low',
   Moderate = 'moderate',
@@ -40,7 +40,7 @@ export enum ConfidenceLevel {
   Unknown = 'unknown',
 }
 
-export enum SymptomType {
+enum SymptomType {
   Vomiting = 'vomiting',
   Diarrhea = 'diarrhea',
   Itching = 'itching',
@@ -146,7 +146,7 @@ export interface Product {
   updated_at: string;
 }
 
-export interface ProductUpc {
+interface ProductUpc {
   upc: string;
   product_id: string;
 }
@@ -184,7 +184,7 @@ export interface IngredientDict {
   created_at: string;
 }
 
-export interface ProductIngredientRow {
+interface ProductIngredientRow {
   product_id: string;
   ingredient_id: string;
   position: number;
@@ -242,7 +242,7 @@ export interface ScanRecord {
 // ─── Pantry & Logging ───────────────────────────────────
 export type { PantryItem, PantryPetAssignment, PantryCardData, AddToPantryInput } from './pantry';
 
-export interface SymptomLog {
+interface SymptomLog {
   id: string;
   user_id: string;
   pet_id: string;
@@ -255,7 +255,7 @@ export interface SymptomLog {
 
 // ─── App State Types ────────────────────────────────────
 
-export interface OnboardingPetInput {
+interface OnboardingPetInput {
   name: string;
   species: Species;
 }

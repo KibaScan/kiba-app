@@ -19,7 +19,7 @@ import type { ProductIngredient } from '../types/scoring';
 
 // ─── Types ────────────────────────────────────────────────
 
-export interface ConditionAdjustment {
+interface ConditionAdjustment {
   condition: string;
   rule: string;
   points: number;
@@ -28,7 +28,7 @@ export interface ConditionAdjustment {
   reason: string;
 }
 
-export interface ConditionScoringResult {
+interface ConditionScoringResult {
   adjustments: ConditionAdjustment[];
   totalAdjustment: number;
   /** When true, score must be set to 0 — a critical safety override (e.g., cardiac + DCM). */

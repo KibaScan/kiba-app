@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, FontSizes, Spacing } from '../../../utils/constants';
 import { VoteBarChart } from './VoteBarChart';
 
-export type FeedbackOption = {
+type FeedbackOption = {
   id: string; // The db value e.g., 'loved', 'picky', 'refused'
   label: string; // The display string e.g., 'Cleared the Bowl'
 };

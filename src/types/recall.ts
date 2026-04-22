@@ -13,7 +13,7 @@ export interface RecallEntry {
 }
 
 /** Matches recall_review_queue table exactly (7 columns). */
-export interface RecallReviewEntry {
+interface RecallReviewEntry {
   id: string;
   fda_entry_title: string;
   fda_entry_url: string | null;
@@ -25,7 +25,7 @@ export interface RecallReviewEntry {
 }
 
 /** Matches recall_notifications table exactly (4 columns). */
-export interface RecallNotification {
+interface RecallNotification {
   id: string;
   user_id: string;
   product_id: string;

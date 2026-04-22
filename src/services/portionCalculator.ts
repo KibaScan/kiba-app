@@ -11,18 +11,18 @@ import { getDerLifeStage } from '../utils/lifeStage';
 
 type DerBucket = 'puppy' | 'adult' | 'senior' | 'geriatric';
 
-export interface DerMultiplierResult {
+interface DerMultiplierResult {
   multiplier: number;
   label: string;
   source: string;
 }
 
-export interface DailyPortionResult {
+interface DailyPortionResult {
   cups: number | null;
   grams: number | null;
 }
 
-export interface GoalWeightResult {
+interface GoalWeightResult {
   derKcal: number;
   multiplier: number;
   weeklyLossPercent: number;

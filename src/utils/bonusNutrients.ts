@@ -3,7 +3,7 @@
 
 import type { ProductIngredient } from '../types/scoring';
 
-export interface BonusNutrientFlags {
+interface BonusNutrientFlags {
   lcarnitine: boolean;
   zinc: boolean;
   probiotics: boolean;

@@ -14,12 +14,12 @@ const LOOKUP_TIMEOUT_MS = 5000;
 
 // ─── Result Types ──────────────────────────────────────
 
-export type LookupResult =
+type LookupResult =
   | { status: 'found'; product: Product }
   | { status: 'not_found' }
   | { status: 'error'; code: 'NETWORK_TIMEOUT' | 'DB_ERROR'; message: string };
 
-export interface ExternalUpcResult {
+interface ExternalUpcResult {
   found: boolean;
   product_name: string | null;
   brand: string | null;
@@ -153,7 +153,7 @@ export async function parseIngredients(
 
 // ─── Community Product Save ───────────────────────────
 
-export interface CommunitySaveParams {
+interface CommunitySaveParams {
   upc: string;
   name: string;
   brand: string;
@@ -167,7 +167,7 @@ export interface CommunitySaveParams {
   userCorrectedSpecies: boolean;
 }
 
-export interface CommunitySaveResult {
+interface CommunitySaveResult {
   status: 'saved' | 'error';
   productId: string | null;
   message?: string;

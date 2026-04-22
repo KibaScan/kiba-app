@@ -154,7 +154,7 @@ export async function assembleVetReportData(
 
 // ─── Ingredient Fetch ───────────────────────────────────
 
-export async function fetchIngredientNames(
+async function fetchIngredientNames(
   productIds: string[],
 ): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();

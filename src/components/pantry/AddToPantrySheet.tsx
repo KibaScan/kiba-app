@@ -97,7 +97,7 @@ export function buildAddToPantryInput(params: {
   };
 }
 
-export interface InferredAssignmentDefaults {
+interface InferredAssignmentDefaults {
   isSimpleAdd: boolean;           // treat/topper/supplement — simple add form layout
   inferredRole: FeedingRole;
   inferredFreq: FeedingFrequency;

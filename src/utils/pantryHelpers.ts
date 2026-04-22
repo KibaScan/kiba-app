@@ -51,7 +51,7 @@ export function convertFromKg(kg: number, unit: QuantityUnit): number {
  * Matches supabase/functions/auto-deplete/index.ts:45 (server-side depletion cron) for consistent client/server math.
  * Used only when a dry product has ga_kcal_per_kg but no scraped ga_kcal_per_cup.
  */
-export const DRY_KIBBLE_KG_PER_CUP = 0.1134;
+const DRY_KIBBLE_KG_PER_CUP = 0.1134;
 
 /**
  * Resolve kcal-per-cup for a DRY product, preferring scraped label data.

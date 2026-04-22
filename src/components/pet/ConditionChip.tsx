@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { chipToggle } from '../../utils/haptics';
 
-export interface ConditionChipProps {
+interface ConditionChipProps {
   label: string;
   isSelected: boolean;
   isSpecial?: boolean;

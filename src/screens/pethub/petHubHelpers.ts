@@ -53,7 +53,7 @@ export function formatStaleWeightMessage(months: number): string {
 
 // ─── Internal Helpers ─────────────────────────────────────
 
-export function computeDER(pet: Pet): number | null {
+function computeDER(pet: Pet): number | null {
   if (pet.weight_current_lbs == null) return null;
   const ageMonths = getAgeMonths(pet.date_of_birth) ?? undefined;
   const rer = calculateRER(lbsToKg(pet.weight_current_lbs));

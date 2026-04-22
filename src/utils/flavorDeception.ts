@@ -6,7 +6,7 @@ import { toDisplayName } from './formatters';
 
 // ─── Types ──────────────────────────────────────────────
 
-export interface FlavorDeceptionResult {
+interface FlavorDeceptionResult {
   detected: boolean;
   namedProtein: string | null;
   namedProteinPosition: number | null;
