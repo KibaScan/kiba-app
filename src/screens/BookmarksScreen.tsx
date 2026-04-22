@@ -18,14 +18,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, FontSizes, Spacing, getScoreColor } from '../utils/constants';
+import { Colors, FontSizes, Spacing } from '../utils/constants';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useBookmarkStore } from '../stores/useBookmarkStore';
 import { fetchBookmarkCards } from '../services/bookmarkService';
-import { sanitizeBrand, stripBrandFromName } from '../utils/formatters';
 import { groupBookmarksByCategory, type BookmarkSection } from '../utils/bookmarkGrouping';
 import SwipeableRow from '../components/ui/SwipeableRow';
+import BookmarkRow from '../components/bookmarks/BookmarkRow';
 import type { BookmarkCardData } from '../types/bookmark';
 import { MAX_BOOKMARKS_PER_PET, BookmarkOfflineError } from '../types/bookmark';
 
@@ -162,99 +162,20 @@ export default function BookmarksScreen() {
               <BookmarkRow
                 card={item}
                 petName={activePet.name}
-                petId={activePetId!}
-                navigation={navigation}
                 isLastInSection={index === section.data.length - 1}
+                onPress={() => {
+                  if (item.product.is_recalled) {
+                    navigation.navigate('RecallDetail', { productId: item.product.id });
+                  } else {
+                    navigation.navigate('Result', { productId: item.product.id, petId: activePetId! });
+                  }
+                }}
               />
             </SwipeableRow>
           )}
         />
       )}
     </View>
-  );
-}
-
-function BookmarkRow({
-  card,
-  petName,
-  petId,
-  navigation,
-  isLastInSection,
-}: {
-  card: BookmarkCardData;
-  petName: string;
-  petId: string;
-  navigation: Nav;
-  isLastInSection: boolean;
-}) {
-  const isRecalled = card.product.is_recalled;
-  const isBypass =
-    !isRecalled &&
-    (card.product.is_vet_diet || card.product.is_variety_pack || card.final_score == null);
-  const scoreColor =
-    !isRecalled && !isBypass && card.final_score != null
-      ? getScoreColor(card.final_score, card.product.is_supplemental)
-      : null;
-
-  const a11yLabel = isRecalled
-    ? `${card.product.brand} ${card.product.name}, recalled`
-    : scoreColor != null
-    ? `${card.final_score}% match for ${petName}, ${card.product.brand} ${card.product.name}`
-    : `${card.product.brand} ${card.product.name}${card.product.is_vet_diet ? ', vet diet' : ''}${card.product.is_variety_pack ? ', variety pack' : ''}`;
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.row,
-        isRecalled && styles.rowRecalled,
-        !isLastInSection && styles.rowDivider,
-      ]}
-      onPress={() => {
-        if (isRecalled) {
-          navigation.navigate('RecallDetail', { productId: card.product.id });
-        } else {
-          navigation.navigate('Result', { productId: card.product.id, petId });
-        }
-      }}
-      activeOpacity={0.7}
-      accessibilityLabel={a11yLabel}
-    >
-      {card.product.image_url ? (
-        <Image source={{ uri: card.product.image_url }} style={styles.image} />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Ionicons name="cube-outline" size={18} color={Colors.textTertiary} />
-        </View>
-      )}
-      <View style={styles.info}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brand} numberOfLines={1}>
-            {sanitizeBrand(card.product.brand)}
-          </Text>
-          {card.product.is_vet_diet && (
-            <View style={styles.vetDietChip}>
-              <Text style={styles.vetDietChipText}>Vet diet</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.name} numberOfLines={2}>
-          {stripBrandFromName(card.product.brand, card.product.name)}
-        </Text>
-      </View>
-      {isRecalled ? (
-        <View style={styles.recalledChip}>
-          <Text style={styles.recalledChipText}>Recalled</Text>
-        </View>
-      ) : scoreColor ? (
-        <View style={[styles.pill, { backgroundColor: `${scoreColor}1A` }]}>
-          <Text style={[styles.pillText, { color: scoreColor }]}>{card.final_score}%</Text>
-        </View>
-      ) : (
-        <View style={styles.bypassChip}>
-          <Text style={styles.bypassChipText}>—</Text>
-        </View>
-      )}
-    </TouchableOpacity>
   );
 }
 
@@ -324,32 +245,6 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { color: Colors.textPrimary, fontSize: 17, fontWeight: '600', marginBottom: Spacing.sm },
   emptySubtitle: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-  },
-  rowRecalled: {
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.severityRed,
-    paddingLeft: Spacing.lg - 3,
-  },
-  image: { width: 40, height: 40, borderRadius: 8 },
-  imagePlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: Colors.cardSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: { flex: 1 },
-  brand: { color: Colors.textSecondary, fontSize: FontSizes.xs },
-  name: { color: Colors.textPrimary, fontSize: 15, fontWeight: '500' },
-  pill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  pillText: { fontSize: 13, fontWeight: '700' },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,48 +275,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairlineBorder,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: 2,
-  },
-  vetDietChip: {
-    backgroundColor: Colors.chipSurface,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  vetDietChipText: {
-    color: Colors.textSecondary,
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-  },
-  recalledChip: {
-    backgroundColor: `${Colors.severityRed}1A`,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  recalledChipText: {
-    color: Colors.severityRed,
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
-  },
-  bypassChip: {
-    backgroundColor: Colors.chipSurface,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  bypassChipText: {
-    color: Colors.textTertiary,
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
   },
 });
