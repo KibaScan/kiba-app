@@ -17,8 +17,9 @@
 | Path | Action | Responsibility |
 |---|---|---|
 | `knip.json` | create | Knip config with RN/Expo-aware entry array |
-| `.knip-report.json` | create (temporary) | Candidate list — consulted by agents, deleted before merge |
-| `.tsc-baseline.txt` | create (temporary) | Pre-agent tsc output for diff-gate — deleted before merge |
+| `.knip-report.json` | create (temporary) | Candidate list — consulted by Phase 1 agents, deleted before merge |
+| `.tsc-baseline.txt` (Phase 1) | create (temporary) | Pre-agent tsc output for diff-gate during dead-code pass — deleted before merge |
+| `/tmp/kiba-tsc-baseline.txt` (Phase 2) | create (temporary) | Absolute-path baseline for refactor agents because git worktrees don't contain gitignored files |
 | `package.json`, `package-lock.json` | modify | `knip` as devDependency (Task 1); Agent C removes unused deps + `@types/*` siblings |
 | `docs/plans/search-uiux/**` | delete | 10 stale planning artifacts cleared by Agent D1 |
 | Repo-wide `*.ref` / `*.bak` / `*.orig` / `*~` | delete | Backup files cleared by Agent D1 |
@@ -501,9 +502,12 @@ Contract:
 4. Run both gates:
    - tsc diff (same command pattern as prior agents).
    - `npm test -- --silent 2>&1 | tail -5` — 79 suites / 1665 tests.
-5. Additionally, verify the native bundler still resolves:
-   - `node -e "require('react-native')"` — should not throw.
-   - `node -e "require('@react-navigation/native')"` — should not throw.
+5. Additionally, verify package resolution (NOT module load — RN
+   assumes Metro globals like __DEV__ and will throw if actually
+   required in bare node):
+   - `node -e "require.resolve('react-native')"` — prints a path, exits 0.
+   - `node -e "require.resolve('@react-navigation/native')"` — same.
+   Failure here means a critical package was removed by accident.
 6. If any gate fails, restore the offending package and skip.
 7. Commit with message:
    "chore(deadcode): Agent C — remove N unused deps + M @types siblings"
@@ -544,7 +548,7 @@ Expected: diff shows no new errors (ideally shrinks further if structural). Test
 - [ ] **Step 1: Prep a candidate file list via pattern scan**
 
 ```bash
-grep -rln -P '^\s*//\s*(if \(false\)|export|import|const|function|return|switch|class)' src/ 2>/dev/null > /tmp/agent-d2-suspects.txt
+grep -rlnE '^[[:space:]]*//[[:space:]]*(if \(false\)|export|import|const|function|return|switch|class)' src/ 2>/dev/null > /tmp/agent-d2-suspects.txt
 wc -l /tmp/agent-d2-suspects.txt
 ```
 
@@ -766,14 +770,16 @@ npm i -D madge
 
 Madge is small, no peer-dep surprises. Alternative: skip madge and have agents manually trace import chains — but madge makes Rule 8 mechanical and fast.
 
-- [ ] **Step 3: Capture the refactor-pass tsc baseline**
+- [ ] **Step 3: Capture the refactor-pass tsc baseline to an absolute path**
 
 ```bash
-npx tsc --noEmit 2>&1 | sort > .tsc-baseline.txt
-wc -l .tsc-baseline.txt
+npx tsc --noEmit 2>&1 | sort > /tmp/kiba-tsc-baseline.txt
+wc -l /tmp/kiba-tsc-baseline.txt
 ```
 
 Expected: roughly 11 lines (the persistent `batch-score/scoring/` structural noise only, since dead-code pass cleared search-uiux).
+
+**Why `/tmp/` instead of repo root:** Refactor agents in Task 10 run in isolated `git worktree` directories. Worktrees only check out tracked files, so a gitignored `.tsc-baseline.txt` in the parent would not exist in the agent's worktree. An absolute `/tmp/` path is reachable from any worktree on the same machine.
 
 - [ ] **Step 4: Confirm the baseline is clean of circular imports**
 
@@ -791,22 +797,20 @@ npm test -- --silent 2>&1 | tail -5
 
 Expected: green.
 
-- [ ] **Step 6: Add the ephemeral baseline to .gitignore if not already**
+- [ ] **Step 6: Commit setup (no .gitignore churn needed — baseline lives in /tmp/)**
 
 ```bash
-grep -q '.tsc-baseline.txt' .gitignore || echo '.tsc-baseline.txt' >> .gitignore
-```
-
-- [ ] **Step 7: Commit setup**
-
-```bash
-git add package.json package-lock.json .gitignore
+git add package.json package-lock.json
 git commit -m "$(cat <<'EOF'
-chore(refactor): install madge + capture refactor baseline
+chore(refactor): install madge for circular-import verification
 
-- madge for circular-import detection (Rule 8 of refactor contract).
-- .tsc-baseline.txt captured post-dead-code-merge; refactor agents
-  diff against it to detect any new type errors.
+madge supports Rule 8 of the refactor contract — after each agent
+extracts sub-components, a madge --circular run must show no new
+cycles relative to the pre-pass baseline. RN Metro bundler chokes
+on circular imports at runtime even when tsc accepts them.
+
+The refactor-pass tsc baseline lives at /tmp/kiba-tsc-baseline.txt
+(absolute path, reachable from each refactor agent's worktree).
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -848,23 +852,31 @@ Contract (non-negotiable, §4.4 of spec):
    when a helper moves (e.g., EditPantryItemScreen.test.ts imports
    `formatTime` from the screen — if you extract it, update that
    import line). Do NOT change assertions, mocks, or setup.
-5. Per-agent gates before committing:
-   a. `npx tsc --noEmit 2>&1 | sort > /tmp/tsc-check.txt && diff ../parent-worktree/.tsc-baseline.txt /tmp/tsc-check.txt`
-      (baseline path is relative to where you launch; if unsure, use
-      the baseline at the root of the parent repo worktree)
-      Must show no new errors.
-   b. `npm test -- --silent 2>&1 | tail -5` — 79 suites / 1665 tests.
-      No new tests added; test import path updates are fine.
+5. Environment prep inside your worktree:
+   Git worktrees do NOT copy node_modules. Before any gate can run:
+   `[ -d node_modules ] || (ln -s "$(git rev-parse --git-common-dir | xargs dirname)/node_modules" node_modules || npm ci)`
+   The symlink avoids a full reinstall (~minutes, ~gigabytes); fall
+   back to `npm ci` only if the symlink can't be created. Verify
+   with `node -e "require.resolve('expo')"` — prints a path, exits 0.
+6. Per-agent gates before committing:
+   a. `npx tsc --noEmit 2>&1 | sort > /tmp/tsc-check.txt && diff /tmp/kiba-tsc-baseline.txt /tmp/tsc-check.txt`
+      Must show no new error lines.
+   b. `npm test -- --silent --maxWorkers=1 2>&1 | tail -5` — 79 suites
+      / 1665 tests green. The `--maxWorkers=1` throttle is NON-
+      NEGOTIABLE: 8 parallel agents × jest's default worker count
+      would swamp a laptop's RAM (8 cores × 8 workers ≈ 60 node
+      processes) and trigger OOM kills. Serialized-within-agent is
+      fine; total wall-clock still parallelizes across agents.
    c. `npx madge --circular --extensions ts,tsx src/ 2>&1` — must
       report no circular dependencies that didn't exist in the
       baseline.
-6. No cross-screen shared abstractions. If another agent is
+7. No cross-screen shared abstractions. If another agent is
    splitting a similar card shape, ignore — each screen's extract
    stays local (session-61 advisor rule).
-7. Escape hatch: if the screen resists clean extraction, skip with
+8. Escape hatch: if the screen resists clean extraction, skip with
    a report. Partial splits (e.g., 3 of 6 possible extracts) are
    acceptable.
-8. No circular imports. Shared TS types go to `types.ts`. Madge
+9. No circular imports. Shared TS types go to `types.ts`. Madge
    verifies.
 
 Commit message template:
@@ -920,7 +932,7 @@ and investigate which agent stepped outside its scope.
 
 ```bash
 npx tsc --noEmit 2>&1 | sort > /tmp/tsc-post-merge.txt
-diff .tsc-baseline.txt /tmp/tsc-post-merge.txt
+diff /tmp/kiba-tsc-baseline.txt /tmp/tsc-post-merge.txt
 npm test -- --silent 2>&1 | tail -5
 npx madge --circular --extensions ts,tsx src/ 2>&1 | tail -10
 ```
@@ -950,10 +962,10 @@ Re-run madge; verify clean.
 - [ ] **Step 1: Remove the ephemeral tsc baseline**
 
 ```bash
-rm -f .tsc-baseline.txt
+rm -f /tmp/kiba-tsc-baseline.txt /tmp/tsc-post-merge.txt /tmp/tsc-check.txt
 ```
 
-Only in gitignore, but confirm.
+These are ephemeral `/tmp/` artifacts — no commit needed (they were never tracked).
 
 - [ ] **Step 2: Final verification pass**
 
@@ -980,7 +992,7 @@ Expected: Pure Balance = 61, Temptations = 0.
 
 ```bash
 for screen in SafeSwitchDetail EditPantryItem Home Result EditPet PetHub Compare Pantry; do
-  grep -rn "from.*screens/${screen}Screen" src/ __tests__/ | grep -v "^${screen}" | head -3
+  grep -rn "from.*screens/${screen}Screen" src/ __tests__/ 2>/dev/null | grep -v "src/screens/${screen}Screen\\.tsx" | head -3
 done
 ```
 
