@@ -1,4 +1,4 @@
-// Scan history types — used by scanHistoryService and ScanHistoryCard.
+// Scan history types — used by scanHistoryService and inline rendering in ScanHistoryScreen.
 
 export interface ScanHistoryItem {
   id: string;

@@ -1,5 +1,5 @@
 // BookmarkRow — list item for BookmarksScreen.
-// Colocated sibling of PantryCard / ScanHistoryCard.
+// Colocated sibling of PantryCard.
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
