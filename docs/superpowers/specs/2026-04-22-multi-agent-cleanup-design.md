@@ -28,34 +28,41 @@ Both passes are **high-confidence, mechanical** work. No behavior change. No new
 ```
 m5-complete @ 3d61319
    │
-   ├── branch: m9-deadcode-sweep
-   │     ├── commit: knip install + config
-   │     ├── commit: Agent A — unused files
-   │     ├── commit: Agent B — unused exports
-   │     ├── commit: Agent C — unused deps
-   │     ├── commit: Agent D — search-uiux + .ref + commented sweeps
+   ├── branch: m9-deadcode-sweep   (serialized — dead-code graph is cascading)
+   │     ├── commit 1: knip install + config
+   │     ├── commit 2: Agent D1 — docs/plans/search-uiux/ + *.ref/.bak/.orig delete
+   │     │              (clears tsc noise, establishes post-D1 baseline)
+   │     ├── commit 3: Agent A — unused files (fresh knip run before)
+   │     ├── commit 4: Agent B — unused exports (fresh knip run before)
+   │     ├── commit 5: Agent C — unused deps + @types siblings (fresh knip run before)
+   │     ├── commit 6: Agent D2 — commented-code in src/ (runs against minimal tree)
    │     └── kiba-code-reviewer → /ultrareview → squash-merge to m5-complete
    │
-   └── (after merge) branch: m9-screen-splits
-         ├── Agent 1: SafeSwitchDetailScreen
-         ├── Agent 2: EditPantryItemScreen
-         ├── Agent 3: HomeScreen
-         ├── Agent 4: ResultScreen
-         ├── Agent 5: EditPetScreen
-         ├── Agent 6: PetHubScreen
-         ├── Agent 7: CompareScreen
-         ├── Agent 8: PantryScreen
+   └── (after merge) branch: m9-screen-splits   (parallel — files non-overlapping)
+         Each agent runs in an isolated worktree (Agent tool `isolation: "worktree"`),
+         merges sequentially back to m9-screen-splits. No cross-file contention.
+         │
+         ├── Agent 1: SafeSwitchDetailScreen  ┐
+         ├── Agent 2: EditPantryItemScreen    │
+         ├── Agent 3: HomeScreen              │
+         ├── Agent 4: ResultScreen            │  dispatched in parallel;
+         ├── Agent 5: EditPetScreen           │  each owns one screen file
+         ├── Agent 6: PetHubScreen            │
+         ├── Agent 7: CompareScreen           │
+         ├── Agent 8: PantryScreen            ┘
          └── kiba-code-reviewer → /ultrareview → squash-merge to m5-complete
 ```
 
-**Why sequential:**
+**Why sequential between passes:**
 - File-level contention: dead-code agents may delete files that refactor agents are extracting sub-components from.
 - Wasted work: refactor could extract into a file that dead-code was about to delete.
 - Ultrareview clarity: each pass produces a narrow, focused diff. Concurrent changes mix two concerns into one review.
 
 **Why two branches not one:** Standing "branch per session" preference. Independent rollback per pass. Each ultrareview has narrow scope.
 
-**Parallelism within a pass is safe** because slices are disjoint by construction (see §3.3 and §4.2).
+**Parallelism model differs by pass:**
+- **Dead-code pass is serialized.** Dead code is a cascading graph — after Agent A deletes files, the exports they consumed become newly dead (B's scope) and the deps they solely used become newly dead (C's scope). Running B and C against A's pre-execution knip report misses the cascade. A fresh `knip` run precedes each of A/B/C. Also, dispatching concurrent agents to the same working tree creates race conditions on `jest` (one agent's in-flight edit breaks another's test run) and dispatching to separate worktrees produces modify/delete merge conflicts where one worktree deletes a file another worktree edited.
+- **Refactor pass is parallel.** Each of the 8 refactor agents owns one unique screen file. Non-overlap is guaranteed by file ownership, so worktree merge-back is clean. Agents dispatch concurrently with `isolation: "worktree"` (see Agent tool docs) so their `jest` runs don't interleave on a shared tree.
 
 ---
 
@@ -64,66 +71,75 @@ m5-complete @ 3d61319
 ### 3.1 Pre-agent setup (done manually before dispatch)
 
 1. `npm i -D knip`
-2. Add minimal `knip.json` at repo root:
+2. Add `knip.json` at repo root with RN/Expo-aware `entry` array:
    ```json
    {
-     "entry": ["index.ts", "App.tsx", "supabase/functions/**/index.ts"],
+     "entry": [
+       "index.ts",
+       "App.tsx",
+       "supabase/functions/**/index.ts",
+       "babel.config.js",
+       "metro.config.js",
+       "app.json",
+       "*.config.{js,ts,cjs,mjs}"
+     ],
      "project": ["src/**/*.{ts,tsx}", "__tests__/**/*.{ts,tsx}"],
      "ignore": ["supabase/functions/batch-score/scoring/**", "docs/**"]
    }
    ```
-   Excludes the `batch-score/scoring/` subfolder (intentional duplicate of `src/services/scoring/` — Deno Edge Functions can't import from `src/`) and `docs/` (handled manually by Agent D).
+   The expanded `entry` prevents Knip from flagging Babel plugins, Metro resolvers, and Expo config deps (app.json) as unused. Without it, Agent C would uninstall build-critical packages. Excludes the `batch-score/scoring/` subfolder (intentional duplicate of `src/services/scoring/` — Deno Edge Functions can't import from `src/`) and `docs/` (handled manually by Agent D1/D2).
 3. `npx knip --reporter json > .knip-report.json`. Reference artifact — deleted at end of pass.
 4. **Commit 1:** knip install + config + baseline report (tracked temporarily).
+5. **Capture tsc baseline:** `npx tsc --noEmit 2>&1 | sort > .tsc-baseline.txt`. Current baseline includes noise in `docs/plans/search-uiux/` (to be cleared by Agent D1) and `supabase/functions/batch-score/scoring/` (structural — persists). Baseline file is the diff target for every agent's tsc gate (see §5.2 redefined gate).
 
 ### 3.2 Agent briefing template
 
 Every dead-code agent operates under these invariants:
 
-- **Slice is disjoint** — no two agents touch the same file *as a file* (see §3.3).
+- **Dispatched in series, one at a time.** No two dead-code agents run concurrently. A fresh `npx knip --reporter json` runs **before** Agents A, B, and C to catch cascading dead-code (e.g., exports become dead only after their consumer files are deleted).
 - **Grep-verify every candidate** — knip's static analysis misses string-based dynamic imports, JSX consumed by react-navigation object-literal keys, and JSON-manifest references. Grep the symbol/filename across the full repo before removal.
 - **Test cascade** — if deleting `src/foo.ts` orphans `__tests__/foo.test.ts`, delete the test too.
 - **Per-agent safety gate, hard:**
-  - `npx tsc --noEmit` must be clean.
+  - `npx tsc --noEmit 2>&1 | sort` must not introduce errors relative to `.tsc-baseline.txt` (the post-commit-1 baseline). New errors fail the gate; existing structural noise in `supabase/functions/batch-score/scoring/` is acceptable.
   - `npm test` must show 79 suites / 1665 tests green.
   - Regression anchors unchanged: Pure Balance = 61 (Dog), Temptations = 0 (Cat Treat).
   - Agent commits only after both pass. If either fails, agent skips that candidate and reports, rather than forcing.
-- **Report format** — each agent reports: candidates removed, candidates skipped + reason, final tsc + test status.
+- **Report format** — each agent reports: candidates removed, candidates skipped + reason, tsc diff vs baseline, test status.
 
-### 3.3 Per-agent scope
+### 3.3 Per-agent scope (dispatch order: D1 → A → B → C → D2)
 
-| Agent | Input slice | Contract |
-|---|---|---|
-| **A — unused files** | `knip` `files` array | Grep each filename across repo. If zero references, delete file. Delete associated test if orphaned. Special caution: anything under `src/navigation/` (react-navigation may reference via config keys). |
-| **B — unused exports** | `knip` `exports` array | Grep each symbol across repo. If zero external callers, remove `export` keyword (keep internal symbol if locally referenced). Special caution: default exports used by `src/navigation/` stack configs. |
-| **C — unused deps** | `knip` `dependencies` + `devDependencies` arrays | Remove from `package.json`. Run `npm install` to regenerate lockfile. Special caution: Expo config plugins registered in `app.json` / `app.config.*` — cross-check before removing. |
-| **D — non-tool sweep** | Manual targets | Delete `docs/plans/search-uiux/` entirely (10 files — `.tsx`, `.ts`, `.sql`, `.md`, `.ref`). Delete any repo-wide `*.ref` / `*.bak` / `*.orig` / `*~`. Scan `src/` for commented blocks >5 lines that exist for obvious historical reasons (`if (false) { ... }`, entire commented component exports). Borderline cases: skip and report. |
+| # | Agent | Input slice | Contract |
+|---|---|---|---|
+| 1 | **D1 — docs + backup file sweep** | Manual targets | Delete `docs/plans/search-uiux/` entirely (10 files — `.tsx`, `.ts`, `.sql`, `.md`, `.ref`). Delete repo-wide `*.ref` / `*.bak` / `*.orig` / `*~`. No src/ edits in D1. **Rationale for running first:** clears the 14 pre-existing `docs/plans/search-uiux/*.ts` tsc errors so the tsc-diff-vs-baseline gate is tight for downstream agents. |
+| 2 | **A — unused files** | Fresh `knip` `files` array (re-run after D1) | Grep each filename across repo. If zero references, delete file. Delete associated test if orphaned. Special caution: anything under `src/navigation/` (react-navigation may reference via config keys — read navigation files manually before deleting any candidate there). |
+| 3 | **B — unused exports** | Fresh `knip` `exports` array (re-run after A) | Grep each symbol across repo. If zero external callers, remove `export` keyword (keep internal symbol if locally referenced). Special caution: default exports used by `src/navigation/` stack configs; any `type` / `interface` export whose name ends in `ParamList`. |
+| 4 | **C — unused deps** | Fresh `knip` `dependencies` + `devDependencies` arrays (re-run after B) | Remove from `package.json`. **Also remove the matching `@types/<pkg>` entry** when removing a typed dependency. Run `npm install` to regenerate lockfile. Special caution: Expo config plugins registered in `app.json` — cross-check before removing. |
+| 5 | **D2 — commented-code sweep** | Manual scan of post-reduction `src/` | Scan remaining `src/` files for commented blocks >5 lines that exist for obvious historical reasons (`if (false) { ... }`, entire commented component exports, commented-out old imports). Borderline cases: skip and report. Runs last so the tree is already minimal and the scan is cheaper. |
 
-### 3.4 Contention analysis
+### 3.4 Why serialized, not parallel
 
-Slices are disjoint by file-surface:
-- A touches whole files (deletions).
-- B touches exports *inside* remaining files.
-- C touches only `package.json` + `package-lock.json`.
-- D touches `docs/`, repo-root backup files, and comments inside `src/` files.
+Two concrete reasons parallelism fails on the dead-code graph:
 
-A and B both touch `src/`, but A deletes while B edits. If A deletes a file B had a candidate in, B's candidate no-ops. If B edits a file A is deleting, the edit is discarded on delete. Git merges resolve cleanly because the deletes and edits are at different granularities.
+1. **Cascade correctness.** Dead code propagates: deleting file `X` can make export `Y` in file `Z` newly-dead (if `X` was `Y`'s sole consumer) and package `P` newly-dead (if `X` was `P`'s sole importer). If B and C dispatch against A's *pre-execution* knip report, they miss these newly-dead artifacts. A fresh `knip` run between each of A/B/C catches the cascade.
 
-**Dispatch: all four agents in parallel.** The per-agent grep-verify + tsc + test triad is strong enough to absorb cross-agent churn. B's contract additionally includes "after your work lands, if A deleted files referenced by your candidate list, re-grep before finalizing".
+2. **Git & test-runner contention.** Concurrent agents on a shared working tree (no isolation) trigger interleaved `jest` runs where Agent 1's in-flight edit breaks Agent 2's test gate. Concurrent agents in isolated worktrees produce `CONFLICT (modify/delete)` on merge-back when one worktree deletes a file another worktree edited. Serializing eliminates both classes of problem.
+
+Dead-code throughput loss from serialization is small — each step is bounded by `npm test` runtime (~30s once warm) plus agent thinking time. Total pass: ~10–15 minutes wall-clock, not hours.
 
 ### 3.5 Known risks per agent
 
 - **A — navigation consumers.** `src/navigation/*Stack.tsx` may reference screen components via object keys, which knip's AST parser can miss. Agent manually reads `src/navigation/` and confirms each screen-file candidate is actually absent there before deleting.
 - **B — react-navigation type augmentation.** Some exports exist only to satisfy typing (e.g., `ParamList` exports). Agent skips exports whose names end in `ParamList` or that are `type`/`interface` declarations under `src/navigation/`.
-- **C — Expo plugin deps.** `expo-dev-client`, `expo-font`, `expo-notifications` etc. may be listed as deps but used only by Expo config + native runtime. Agent cross-checks `app.json`/`app.config.*` + searches for symbol import before removing.
-- **D — "load-bearing comments".** Commented code sometimes encodes a historical decision. Contract restricts deletions to obvious-dead patterns only. When in doubt, skip and report.
+- **C — Expo plugin deps + @types drift.** `expo-dev-client`, `expo-font`, `expo-notifications` etc. may be listed as deps but used only by Expo config + native runtime. Agent cross-checks `app.json` + searches for symbol import before removing. When a typed dep is removed, the sibling `@types/<pkg>` (if any) is removed in the same commit to prevent `@types` drift.
+- **D1 — nothing dynamic.** Static file deletes. Only risk is deleting a file that a doc index or sibling spec references — docs aren't part of the build, low-stakes even if so.
+- **D2 — "load-bearing comments".** Commented code sometimes encodes a historical decision. Contract restricts deletions to obvious-dead patterns only. When in doubt, skip and report.
 
 ### 3.6 Acceptance criteria (pass merges when all met)
 
 - [ ] `docs/plans/search-uiux/` deleted (10 files).
 - [ ] Repo-wide `*.ref` / `*.bak` / `*.orig` / `*~` files absent.
 - [ ] `knip` post-sweep report shows material reduction from the pre-sweep baseline, with every skipped candidate documented in the final agent report.
-- [ ] `npx tsc --noEmit` clean.
+- [ ] `npx tsc --noEmit` introduces **zero new errors** relative to the post-D1 baseline. (Existing `batch-score/scoring/` structural noise persists.)
 - [ ] 79 suites / 1665 tests green.
 - [ ] Pure Balance = 61, Temptations = 0.
 - [ ] `kiba-code-reviewer` returns no blockers.
@@ -137,6 +153,8 @@ A and B both touch `src/`, but A deletes while B edits. If A deletes a file B ha
 
 1. New branch `m9-screen-splits` off updated `m5-complete` (dead-code merged).
 2. No new tooling.
+3. **Each refactor agent dispatches with `isolation: "worktree"`** (Agent tool parameter). This gives each agent its own git worktree, eliminating interleaved `jest` runs and modify/delete conflicts. Since each agent's file set is non-overlapping (one screen + its sibling new component files), worktree merge-back is conflict-free.
+4. Capture post-dead-code tsc baseline: `npx tsc --noEmit 2>&1 | sort > .tsc-baseline.txt` for the refactor-pass diff target.
 
 ### 4.2 Eight parallel agents, one screen each
 
@@ -164,23 +182,28 @@ The "likely extracts" column is guidance, not prescription. Each agent picks bou
 1. **Zero behavior change.** Extracted sub-components receive the exact props they need via destructure. State and handlers stay in the parent screen. No new hooks, no new context, no memoization additions, no prop-drilling reshape.
 2. **No public API change.** Screen's default export signature is unchanged. Navigation types unchanged.
 3. **Colocate extracts.** New files live in `src/components/<screen-domain>/`, following the session-61 `src/components/bookmarks/BookmarkRow.tsx` precedent. One sub-component per file. Co-locate styles within the sub-component's file if self-contained; shared styles stay in the parent screen's StyleSheet.
-4. **Tests stay green, unchanged.** Do not modify existing tests. Do not add new tests in this pass.
-5. **Per-agent safety gate identical to dead-code pass:** `tsc --noEmit` green + `npm test` green (79 suites / 1665 tests) + regression anchors unchanged, **before commit**.
+4. **Test logic stays unchanged — test imports MAY update.** Do not alter test assertions, mock behavior, or setup logic. Updating a test's `import` path to follow a helper/component that was moved to a new location **is required and permitted**. Example: if `EditPantryItemScreen.test.ts` imports `formatTime` from `src/screens/EditPantryItemScreen` and the agent extracts `formatTime` to `src/utils/editPantryTimeHelpers.ts`, the test's import line MUST be updated to the new path. (Empirically: 2 of 8 target screens have tests importing named helpers from them — `EditPantryItemScreen`, `PantryScreen`.) Do not add new tests.
+5. **Per-agent safety gate identical to dead-code pass:** `npx tsc --noEmit` introduces no new errors vs `.tsc-baseline.txt` + `npm test` green (79 suites / 1665 tests) + regression anchors unchanged, **before commit**.
 6. **No cross-screen shared abstractions.** If Agent 1 and Agent 6 see similar card shapes, do NOT extract a shared abstraction in this pass. Session-61 advisor lesson: premature shared abstractions hide distinct bugs. Each screen's extract stays local.
 7. **Escape hatch.** If a screen resists clean extraction (every sub-block is deeply coupled to local state/handlers), agent reports "no clean cut available" and skips. A partial split (e.g., 3 of 6 possible extracts) is acceptable.
+8. **No circular imports.** When extracting a sub-component, the parent screen often contains locally-defined types (`type PetFormState`, `interface CardProps`). If the extracted child imports such a type from the parent AND the parent imports the child, that's a circular dependency. TypeScript may accept it; the React Native Metro bundler can fail at runtime with `require() is undefined` / white-screen errors that tests don't catch. Resolution: shared TS types MOVE to a colocated `src/components/<domain>/types.ts` (preferred) or inline into whichever file is the sole consumer. Agent verifies by running `npx madge --circular src/` (lightweight, install only if absent) OR by tracing import chains manually after extraction.
 
 ### 4.5 Known risks
 
 - **Line count is not inherently bad.** A 1,214-line screen may decompose into 6 tight components; it may also be 1,214 lines of unique top-level layout that should stay together. Partial extractions are acceptable per §4.4(7).
 - **Coupled state.** React screens often have state that several sub-sections read. Extract callers receive props; don't promote state upward or introduce context.
 - **Style sharing.** If a style is referenced from multiple sub-components, it stays in the parent screen's StyleSheet and gets passed via prop, not copied.
+- **Circular-import trap (see §4.4(8)).** The most common failure mode on RN screen extraction: parent defines a type, child imports the type from parent, parent imports the child. Metro bundler chokes at runtime even when tsc passes. Types → `types.ts` at extraction time.
+- **Test import drift (see §4.4(4)).** 2 of 8 target screens have test files importing named helpers from them. Agents 2 (EditPantryItemScreen) and 8 (PantryScreen) must update the respective test file's `import` statement when they extract helpers to sibling paths — otherwise their test gate fails.
 
 ### 4.6 Acceptance criteria
 
 - [ ] At least 5 of 8 target screens show a meaningful LOC reduction (partial / skipped acceptable per escape hatch).
 - [ ] Every extracted sub-component lives in `src/components/<domain>/`.
 - [ ] No screen's public surface changed (imports in sibling screens and navigation types unchanged — grep verifies).
-- [ ] 79 suites / 1665 tests green — no test files modified.
+- [ ] **No circular imports introduced** (§4.4(8) — verified via `madge --circular src/` or manual import-chain trace).
+- [ ] 79 suites / 1665 tests green. Test file `import` paths may have updated (§4.4(4)) but no test logic, assertions, mocks, or setup changes.
+- [ ] `npx tsc --noEmit` introduces zero new errors vs the refactor-pass baseline.
 - [ ] Pure Balance = 61, Temptations = 0.
 - [ ] `kiba-code-reviewer` returns no blockers.
 - [ ] `/ultrareview` returns no blockers.
@@ -191,16 +214,17 @@ The "likely extracts" column is guidance, not prescription. Each agent picks bou
 
 ### 5.1 Baseline snapshot (captured before each pass)
 
-- `npx tsc --noEmit` output recorded.
-- `npm test` output recorded (expect 79 suites / 1665 tests green).
+- `npx tsc --noEmit 2>&1 | sort > .tsc-baseline.txt` — captures current noise including the structural `supabase/functions/batch-score/scoring/` errors (intentional Deno duplicate). Used as the diff target for every agent's tsc gate.
+- `npm test` recorded as 79 suites / 1665 tests green.
 - Regression anchors: Pure Balance = 61, Temptations = 0.
 - `git rev-parse HEAD` pinned as rollback target.
+- **Dead-code pass baseline captures the PRE-D1 state** with search-uiux errors included. D1 runs first specifically to clear those, tightening the baseline for Agents A/B/C/D2 which refresh the baseline after D1's commit.
 
 ### 5.2 Three-layer safety gate per pass
 
 | Layer | When | Authority | Scope |
 |---|---|---|---|
-| **Per-agent self-verify** | Before each agent commit | Agent itself, hard gate | `tsc --noEmit` clean, full jest suite green, regression anchors unchanged |
+| **Per-agent self-verify** | Before each agent commit | Agent itself, hard gate | `tsc --noEmit` introduces **no new errors vs `.tsc-baseline.txt`** (not "tsc clean" — structural noise in `batch-score/scoring/` persists by design). Full jest suite green. Regression anchors unchanged. |
 | **`kiba-code-reviewer`** | After all agents land, before ultrareview | Report-only (human applies fixes) | Kiba-specific non-negotiables: UPVM (D-095), D-168 framing, RLS, paywall location (rule 3), scoring brand-blindness (rule 1), a11y labels on score surfaces |
 | **`/ultrareview`** | Final, before merge | Cloud multi-agent | Architectural issues, subtle logic bugs, cross-file patterns |
 
