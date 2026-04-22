@@ -159,4 +159,21 @@ describe('BookmarksScreen', () => {
     const { findByText } = renderWithPet(cards);
     expect(await findByText(/19\/20 saved/)).toBeTruthy();
   });
+
+  it('renders the pending shimmer placeholder for cache-miss rows (not the bypass em-dash)', async () => {
+    // final_score null + no bypass flags = cache miss / JIT scoring in flight.
+    const cards = [mockCard({ id: 'pm', category: 'daily_food', final_score: null, brand: 'Nulo', name: 'Challenger' })];
+    const { findByTestId, findByLabelText, queryByText } = renderWithPet(cards);
+    expect(await findByTestId('bookmark-row-pending')).toBeTruthy();
+    expect(await findByLabelText(/Nulo Challenger, score pending/)).toBeTruthy();
+    // The em-dash bypass chip must NOT appear on a pending row.
+    expect(queryByText('—')).toBeNull();
+  });
+
+  it('still renders the em-dash bypass chip on a vet-diet row with no score (bypass wins over pending)', async () => {
+    const cards = [mockCard({ id: 'vd', category: 'daily_food', is_vet_diet: true, final_score: null })];
+    const { findByText, queryByTestId } = renderWithPet(cards);
+    expect(await findByText('—')).toBeTruthy();
+    expect(queryByTestId('bookmark-row-pending')).toBeNull();
+  });
 });

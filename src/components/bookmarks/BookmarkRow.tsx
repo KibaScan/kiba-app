@@ -1,11 +1,12 @@
 // BookmarkRow — list item for BookmarksScreen.
 // Colocated sibling of PantryCard / ScanHistoryCard.
 
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSizes, Spacing, getScoreColor } from '../../utils/constants';
+import { Colors, FontSizes, Spacing } from '../../utils/constants';
 import { sanitizeBrand, stripBrandFromName } from '../../utils/formatters';
+import { deriveBookmarkRowState, type BookmarkRowState } from '../../utils/bookmarkRowState';
 import type { BookmarkCardData } from '../../types/bookmark';
 
 interface BookmarkRowProps {
@@ -16,26 +17,14 @@ interface BookmarkRowProps {
 }
 
 export default function BookmarkRow({ card, petName, isLastInSection, onPress }: BookmarkRowProps) {
-  const isRecalled = card.product.is_recalled;
-  const isBypass =
-    !isRecalled &&
-    (card.product.is_vet_diet || card.product.is_variety_pack || card.final_score == null);
-  const scoreColor =
-    !isRecalled && !isBypass && card.final_score != null
-      ? getScoreColor(card.final_score, card.product.is_supplemental)
-      : null;
-
-  const a11yLabel = isRecalled
-    ? `${card.product.brand} ${card.product.name}, recalled`
-    : scoreColor != null
-    ? `${card.final_score}% match for ${petName}, ${card.product.brand} ${card.product.name}`
-    : `${card.product.brand} ${card.product.name}${card.product.is_vet_diet ? ', vet diet' : ''}${card.product.is_variety_pack ? ', variety pack' : ''}`;
+  const state = deriveBookmarkRowState(card);
+  const a11yLabel = buildA11yLabel(card, petName, state);
 
   return (
     <TouchableOpacity
       style={[
         styles.row,
-        isRecalled && styles.rowRecalled,
+        state.kind === 'recalled' && styles.rowRecalled,
         !isLastInSection && styles.rowDivider,
       ]}
       onPress={onPress}
@@ -54,7 +43,7 @@ export default function BookmarkRow({ card, petName, isLastInSection, onPress }:
           <Text style={styles.brand} numberOfLines={1}>
             {sanitizeBrand(card.product.brand)}
           </Text>
-          {card.product.is_vet_diet && (
+          {state.kind === 'bypass' && state.reason === 'vet_diet' && (
             <View style={styles.vetDietChip}>
               <Text style={styles.vetDietChipText}>Vet diet</Text>
             </View>
@@ -64,21 +53,77 @@ export default function BookmarkRow({ card, petName, isLastInSection, onPress }:
           {stripBrandFromName(card.product.brand, card.product.name)}
         </Text>
       </View>
-      {isRecalled ? (
-        <View style={styles.recalledChip}>
-          <Text style={styles.recalledChipText}>Recalled</Text>
-        </View>
-      ) : scoreColor ? (
-        <View style={[styles.pill, { backgroundColor: `${scoreColor}1A` }]}>
-          <Text style={[styles.pillText, { color: scoreColor }]}>{card.final_score}%</Text>
-        </View>
-      ) : (
-        <View style={styles.bypassChip}>
-          <Text style={styles.bypassChipText}>—</Text>
-        </View>
-      )}
+      <TrailingChip state={state} />
     </TouchableOpacity>
   );
+}
+
+function TrailingChip({ state }: { state: BookmarkRowState }) {
+  if (state.kind === 'recalled') {
+    return (
+      <View style={styles.recalledChip}>
+        <Text style={styles.recalledChipText}>Recalled</Text>
+      </View>
+    );
+  }
+  if (state.kind === 'scored') {
+    return (
+      <View style={[styles.pill, { backgroundColor: `${state.color}1A` }]}>
+        <Text style={[styles.pillText, { color: state.color }]}>{state.score}%</Text>
+      </View>
+    );
+  }
+  if (state.kind === 'bypass') {
+    return (
+      <View style={styles.bypassChip}>
+        <Text style={styles.bypassChipText}>—</Text>
+      </View>
+    );
+  }
+  return <PendingShimmer />;
+}
+
+function PendingShimmer() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.85,
+          duration: 550,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 550,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+
+  // No a11y props: the parent TouchableOpacity's accessibilityLabel subsumes
+  // this view. VoiceOver will read the full "score pending" label on the row.
+  return <Animated.View testID="bookmark-row-pending" style={[styles.pendingPill, { opacity }]} />;
+}
+
+function buildA11yLabel(card: BookmarkCardData, petName: string, state: BookmarkRowState): string {
+  const name = `${card.product.brand} ${card.product.name}`;
+  switch (state.kind) {
+    case 'recalled':
+      return `${name}, recalled`;
+    case 'scored':
+      return `${state.score}% match for ${petName}, ${name}`;
+    case 'bypass':
+      return `${name}, ${state.reason === 'vet_diet' ? 'vet diet' : 'variety pack'}`;
+    case 'pending':
+      return `${name}, score pending`;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -150,5 +195,11 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     fontSize: FontSizes.sm,
     fontWeight: '700',
+  },
+  pendingPill: {
+    width: 40,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: Colors.chipSurface,
   },
 });
