@@ -116,7 +116,17 @@ Expected: `.knip-report.json` created. File is valid JSON. Contains top-level ke
 Verify the report shape:
 
 ```bash
-node -e "const r = require('./.knip-report.json'); console.log('files:', (r.files || []).length, 'exports:', Object.keys(r.exports || {}).length, 'deps:', (r.dependencies || []).length, 'devDeps:', (r.devDependencies || []).length);"
+node -e "
+const r = require('./.knip-report.json');
+const files = r.issues.flatMap(i => (i.files || []).map(f => f.name || f));
+const exports = r.issues.flatMap(i => (i.exports || []).map(e => e.name || e));
+const deps = new Set();
+r.issues.forEach(i => {
+  (i.dependencies || []).forEach(d => deps.add(d.name || d));
+  (i.devDependencies || []).forEach(d => deps.add(d.name || d));
+});
+console.log('unused_files:', files.length, 'unused_exports:', exports.length, 'unused_deps:', deps.size);
+"
 ```
 
 - [ ] **Step 6: Capture the tsc baseline**
@@ -126,7 +136,7 @@ npx tsc --noEmit 2>&1 | sort > .tsc-baseline.txt
 wc -l .tsc-baseline.txt
 ```
 
-Expected: roughly 25 lines (14 `docs/plans/search-uiux/` errors — cleared by Agent D1 — and 11 `supabase/functions/batch-score/scoring/` errors — structural, persist through the pass).
+Expected: roughly 79 lines (approximately 68 `docs/plans/search-uiux/` errors — cleared by Agent D1 — and 11 `supabase/functions/batch-score/scoring/` errors — structural, persist through the pass). If your count is materially different from ~68 + 11, stop and investigate.
 
 - [ ] **Step 7: Add ephemeral files to .gitignore**
 
@@ -279,7 +289,10 @@ Record the file candidate count. This is Agent A's input slice.
 - [ ] **Step 2: Dump the candidate file list to a working file**
 
 ```bash
-node -e "const r = require('./.knip-report.json'); (r.files || []).forEach(f => console.log(f));" > /tmp/agent-a-candidates.txt
+node -e "
+const r = require('./.knip-report.json');
+r.issues.flatMap(i => (i.files || []).map(f => f.name || f)).forEach(f => console.log(f));
+" > /tmp/agent-a-candidates.txt
 wc -l /tmp/agent-a-candidates.txt
 ```
 
@@ -367,7 +380,13 @@ Then re-dispatch Agent A with specific guidance on which candidate broke the gat
 
 ```bash
 npx knip --reporter json > .knip-report.json 2>/dev/null || true
-node -e "const r = require('./.knip-report.json'); const ex = r.exports || {}; console.log('files-with-unused-exports:', Object.keys(ex).length); let total = 0; Object.values(ex).forEach(arr => total += (arr || []).length); console.log('total-export-candidates:', total);"
+node -e "
+const r = require('./.knip-report.json');
+const filesWithExports = r.issues.filter(i => (i.exports || []).length > 0).length;
+const totalExports = r.issues.reduce((a, i) => a + (i.exports || []).length, 0);
+console.log('files-with-unused-exports:', filesWithExports);
+console.log('total-export-candidates:', totalExports);
+"
 ```
 
 Record the counts.
@@ -375,7 +394,12 @@ Record the counts.
 - [ ] **Step 2: Dump the per-file candidate exports to a working file**
 
 ```bash
-node -e "const r = require('./.knip-report.json'); const ex = r.exports || {}; for (const [file, syms] of Object.entries(ex)) { for (const s of syms) { console.log(file + '::' + (s.name || s)); } }" > /tmp/agent-b-candidates.txt
+node -e "
+const r = require('./.knip-report.json');
+r.issues.forEach(i => {
+  (i.exports || []).forEach(s => console.log(i.file + '::' + (s.name || s)));
+});
+" > /tmp/agent-b-candidates.txt
 wc -l /tmp/agent-b-candidates.txt
 ```
 
@@ -448,7 +472,17 @@ Expected: diff empty or only with disappearing errors. Tests green.
 
 ```bash
 npx knip --reporter json > .knip-report.json 2>/dev/null || true
-node -e "const r = require('./.knip-report.json'); console.log('deps:', (r.dependencies || []).map(d => d.name || d).join(',')); console.log('devDeps:', (r.devDependencies || []).map(d => d.name || d).join(','));"
+node -e "
+const r = require('./.knip-report.json');
+const deps = new Set();
+const devDeps = new Set();
+r.issues.forEach(i => {
+  (i.dependencies || []).forEach(d => deps.add(d.name || d));
+  (i.devDependencies || []).forEach(d => devDeps.add(d.name || d));
+});
+console.log('deps:', [...deps].join(','));
+console.log('devDeps:', [...devDeps].join(','));
+"
 ```
 
 Record the candidate lists.
@@ -459,7 +493,11 @@ Record the candidate lists.
 node -e "
 const r = require('./.knip-report.json');
 const pkg = require('./package.json');
-const allCandidates = [...(r.dependencies || []), ...(r.devDependencies || [])].map(d => d.name || d);
+const allCandidates = new Set();
+r.issues.forEach(i => {
+  (i.dependencies || []).forEach(d => allCandidates.add(d.name || d));
+  (i.devDependencies || []).forEach(d => allCandidates.add(d.name || d));
+});
 const withTypes = new Set(allCandidates);
 for (const c of allCandidates) {
   const typesPkg = '@types/' + c;

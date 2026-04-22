@@ -6,8 +6,13 @@
     "babel.config.js",
     "metro.config.js",
     "app.json",
-    "*.config.{js,ts,cjs,mjs}"
+    "*.config.{js,ts,cjs,mjs}",
+    "__tests__/**/*.{test,spec}.{ts,tsx}"
   ],
-  "project": ["src/**/*.{ts,tsx}", "__tests__/**/*.{ts,tsx}"],
-  "ignore": ["supabase/functions/batch-score/scoring/**", "docs/**"]
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["supabase/functions/batch-score/scoring/**", "docs/**"],
+  "ignoreDependencies": [
+    "babel-preset-expo",
+    "babel-plugin-transform-import-meta"
+  ]
 }
