@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-22 (session 61 — BookmarkRow extract + cache-miss shimmer + cross-pet race audit; PR #15 open)
+# Project Status — Last updated 2026-04-22 (session 61 — BookmarkRow extract + cache-miss shimmer + cross-pet race audit; PR #15 merged as `3d61319`)
 
 ## Active Milestone
 
@@ -68,7 +68,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 - **Date:** 2026-04-22 (session 61 — BookmarkRow extract + cache-miss shimmer + cross-pet race audit; three stacked commits on `m9-bookmark-row-extract` → PR #15)
 - **Branch:** `m9-bookmark-row-extract` off `m5-complete@c99e669`. Three commits stacked in one session: `c5d4e55` (extraction) → `8466b65` (pending split) → `b17a631` (race audit). Pushed to `origin/m9-bookmark-row-extract`.
-- **PR:** [#15](https://github.com/KibaScan/kiba-app/pull/15) — open against `m5-complete`, awaiting human review. `m5-complete` is still the branch that stays ahead of `main`; PR #15 is the next addition to it.
+- **PR:** [#15](https://github.com/KibaScan/kiba-app/pull/15) — **merged** (squash) to `m5-complete` as `3d61319`. Ultrareview returned zero findings. Feature branch `m9-bookmark-row-extract` deleted locally + remote. `origin/m5-complete` fast-forwarded `1f9e8d5..3d61319`.
 - **Accomplished:** closed three session-60 carry items as three stacked commits, each with a full red→green TDD cycle and a final full-suite pass.
   - **`c5d4e55` — `BookmarkRow` extraction.** Moved the inline `BookmarkRow` component from `BookmarksScreen.tsx` into `src/components/bookmarks/BookmarkRow.tsx` (new, 205 lines). Matches the colocated `PantryCard` / `ScanHistoryCard` pattern. Navigation decoupled via `onPress: () => void` callback instead of threading a `CompositeNavigationProp` into the row. `BookmarksScreen.tsx` dropped 148 net lines. Existing 6 render tests stayed green without modification — the extraction was pure refactor, not behavior change.
   - **`8466b65` — pending-vs-bypass state split + shimmer.** Added pure helper `src/utils/bookmarkRowState.ts` with discriminated union `BookmarkRowState = recalled | scored | bypass | pending` and precedence recalled > bypass > scored > pending. Rewired `BookmarkRow` to consume the helper. Added new `<PendingShimmer />` sub-component using `Animated.loop` opacity pulse (0.4 ↔ 0.85, 1.1 s total cycle, native driver). Pending state announces `"{brand} {name}, score pending"` to VoiceOver instead of falling through to the bare brand/name label (which was being announced previously because `isBypass` was conflating `final_score == null` with genuine vet-diet / variety-pack bypasses). Fixes the on-device regression surfaced in session 60 (transient Supabase hiccup → all 17 bookmark rows rendered `—` with no re-hydrate signal). 7 unit tests on the helper (incl. stale-score-on-vet-diet edge case) + 2 render tests on the screen (pending shows shimmer placeholder + no `—`; vet-diet with null score still shows `—` — bypass wins over pending).
@@ -91,7 +91,6 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - `__tests__/screens/BookmarksScreen.test.tsx` (+17 / 0) — pending shimmer render test + bypass-wins-over-pending test
 - **Numbers (all green):** 79 suites / **1665 tests** / 3 snapshots (+13 from 1652: 7 bookmarkRowState unit + 2 BookmarksScreen render + 2 pantry race + 2 topmatches race). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit` clean in `src/` + `__tests__/` (pre-existing noise in `docs/plans/search-uiux/` + `supabase/functions/batch-score/` only).
 - **Not done yet:**
-  - **Merge PR #15 into `m5-complete`** pending human review.
   - **On-device QA of all three commits:**
     1. Shimmer cadence on a populated Bookmarks list — confirm quiet and not busy on 17 rows. If distracting, bump off-state from 0.4 → 0.5 or slow the cycle to 1.3 s in `PendingShimmer`.
     2. Force a cache-miss (cold start after network flap) and confirm pending rows pulse while `pet_product_scores` JIT-rehydrates, flipping to scored pills one by one. VoiceOver should announce "score pending" on pulsing rows, "vet diet" on vet-diet rows (bypass precedence still intact).
@@ -100,10 +99,9 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **Carry items still open from session 60:** on-device VoiceOver QA on 11 bookmark/scan surfaces + 7 D-168 a11y-backfill surfaces; render-test hardening for near-cap amber `toHaveStyle` check; `batchScoreOnDevice` network-failure diagnosis at line 291.
   - **Next M9 scope pick:** HomeScreen visual overhaul, custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit (~17 rgba sites).
 - **Start the next session by:**
-  1. **`/boot`** — verify rolling window rotated: session 61 → Previous, new session → Last.
-  2. **Check PR #15 status** — merged / pending review / requesting changes. If merged, confirm `m5-complete` fast-forwarded and delete the feature branch locally. If review feedback, stack fixes on the same branch.
-  3. **On-device QA** of the three stacked commits — shimmer cadence, cache-miss force path, cross-pet race reproduction.
-  4. Pick one: (a) on-device findings from the QA pass; (b) `logTreat` narrow-window fix if flagged by QA; (c) next M9 scope.
+  1. **`/boot`** — verify rolling window rotated: session 61 → Previous, new session → Last. `m5-complete` HEAD should be `3d61319`.
+  2. **On-device QA** of the three stacked commits — shimmer cadence, cache-miss force path, cross-pet race reproduction.
+  3. Pick one: (a) on-device findings from the QA pass; (b) `logTreat` narrow-window fix if flagged by QA; (c) next M9 scope.
 - **Gotchas / context for next session:**
   - **Two race patterns are NOT one.** Bookmark / TopMatches (flat top-level state) and Pantry (per-pet `_petCache` + duplicated top-level `items`) are structurally different bugs. The advisor explicitly flagged against extracting a shared `withActivePetGuard` helper — one abstraction would hide the distinction. Pantry writes `_petCache[petId]` always, gates top-level on active. Bookmark/TopMatches skips the write entirely if not active. If you audit more stores, keep the two patterns separate.
   - **`accessibilityElementsHidden` + `importantForAccessibility="no"` hide the view from `@testing-library/react-native` `findByTestId`.** Dropping those props is fine when the parent `TouchableOpacity`'s `accessibilityLabel` subsumes the child — per session-58 D-168 learning, children of a labeled wrapper don't need their own a11y props. Caught by the pending-shimmer render test failing until the props were removed.
