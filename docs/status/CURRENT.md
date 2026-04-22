@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-20 (session 58 — cross-pet toggle race fixed on useBookmarkStore, PR #13 still open)
+# Project Status — Last updated 2026-04-22 (session 60 — Bookmarks polish: pet-anchored header + category grouping squash-merged to m5-complete as c99e669)
 
 ## Active Milestone
 
@@ -25,7 +25,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1626 passing / 74 suites
+- **Tests:** 1652 passing / 76 suites
 - **Decisions:** 131
 - **Migrations:** 40 (001–040)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
@@ -66,6 +66,50 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
+- **Date:** 2026-04-22 (session 60 — Bookmarks polish shipped to `m5-complete`: pet-anchored header + category grouping + D-158/D-168 compliance)
+- **Branch:** `m9-bookmarks-history` off `m5-complete@66657f9` (PR #13 Bookmarks + PR #14 D-168 merge-cascade baseline from session 59). 20 commits on the feature branch; squash-merged to `m5-complete` as a single commit and pushed. Local feature branch deleted; `origin/m9-bookmarks-history` retained as the full 20-commit reference trail.
+- **Squash commit on `m5-complete`:** `c99e669` — "M9: Bookmarks polish — pet-anchored header + category grouping". 9 files / +2392 / −33. Pushed to `origin/m5-complete` (`66657f9..c99e669`).
+- **Accomplished — full Brainstorming → Writing-Plans → Subagent-Driven Development → Finishing-a-Development-Branch loop:**
+  - **Spec:** `docs/superpowers/specs/2026-04-21-bookmarks-polish-design.md` — addresses the two on-device findings on D-169: Dynamic Island header collision on iPhone 14 Pro+ and a soulless flat row list that told the user nothing about what they saved. 3-bucket grouping (Daily Food / Toppers & Mixers / Treats), 3-tier sort (recalled pin / scored DESC with `created_at` tie-break / bypass sink).
+  - **Plan:** `docs/superpowers/plans/2026-04-21-bookmarks-polish.md` — 14 TDD-ordered tasks, 7 pure-helper + 1 type/service tweak + 1 sibling safe-area port + 3 screen-rewrite + 1 render-test + 1 verify.
+  - **Implementation via Subagent-Driven Development** — 14 tasks, each with implementer + spec-review + quality-review dispatch cycle. Two fix-forwards caught by reviewers (both preserved on `origin/m9-bookmarks-history`, absorbed into the squash):
+    1. **Task 5 spec gap (`2b9a68e`):** `sortWithinSection`'s scored tier filter was missing `!is_vet_diet && !is_variety_pack` guards required by spec §2.2. Caught by Task 6's implementer; fixed on the spot.
+    2. **Task 12 D-168 a11y bug (`ea2958c`):** `a11yLabel` branch-2 guard was `final_score != null`, which meant a vet-diet or variety-pack row with a cached score would render the `—` bypass chip visually but announce "X% match" audibly. Caught by the quality reviewer; fixed by switching the guard to `scoreColor != null` so visual and audio states share the same derived value.
+  - **Post-QA polish after on-device review** (`dea83b5` + `6c43d56`): (a) "Buster's Shortlist" → "Buster's Bookmarks" + `numberOfLines={2}` wrap for long names, (b) dropped "Live scores" subtitle (read as UI noise), (c) added `contentContainerStyle paddingBottom: 88` on both `BookmarksScreen`'s SectionList and `ScanHistoryScreen`'s FlatList (rows were hidden behind tab bar + floating scan button), (d) swapped 8px colored section dots for 24px `CATEGORY_ICONS_FILLED` assets (`daily_food` / `toppers_mixers` / `treat` — iconMaps uses `treat` singular while section key is `treats` plural, mapped inline in `SECTION_META`).
+  - **Final comprehensive code review** (opus) against entire implementation: APPROVED for merge. One Important non-blocking follow-up (BookmarkRow extraction — screen file grew to ~440 lines) + 4 minor observations (test hardening, cosmetic divider-under-recalled-border).
+- **New decisions, migrations, scoring changes:** none. D-169 already scoped Bookmarks in session 57; this session was presentation-layer polish only. No migration added. No scoring engine changes (regression anchors intact).
+- **Files changed on `m5-complete` (squash `c99e669`):**
+  - `src/utils/bookmarkGrouping.ts` (new, 91 lines) — pure helper: `groupBookmarksByCategory`, `BookmarkSection`, `BookmarkSectionKey`, private `bucketOf` + `sortWithinSection` + `createdAtDesc`, `SECTION_META` with `iconSource` from `CATEGORY_ICONS_FILLED`
+  - `src/screens/BookmarksScreen.tsx` (+244 / −33) — safe-area header with pet photo + `{petName}'s Bookmarks` title (2-line wrap) + `{n}/20 saved` progress chip with amber near-cap (>= 19), `SectionList` with 24px category icons in section headers, hairline dividers between rows (dropped on last-of-section), inline `Vet diet` chip, red `Recalled` chip (D-158 — no `0%`), bypass `—` chip, three-branch D-168 `accessibilityLabel`
+  - `src/screens/ScanHistoryScreen.tsx` (+6 / −1) — safe-area header port + bottom padding. No grouping (history is temporal, per spec §5.2)
+  - `src/services/bookmarkService.ts` (+1 / −1) — `category` added to `fetchBookmarkCards` PostgREST nested select
+  - `src/types/bookmark.ts` (+1) — `category: 'daily_food' | 'treat'` added to `BookmarkCardData.product`
+  - `__tests__/utils/bookmarkGrouping.test.ts` (new, 207 lines) — 19 unit tests: bucket matrix (5), empty-bucket filter (2), scored DESC + created_at tie-break (2), recalled pin (2), bypass/unscored routing (4), section meta contract (3), empty-input guard (1)
+  - `__tests__/screens/BookmarksScreen.test.tsx` (new, 162 lines) — 6 render tests: all-three-sections present, empty-section skipped, recalled chip + order, vet-diet chip, D-168 label pattern, near-cap amber at 19
+  - `docs/superpowers/specs/2026-04-21-bookmarks-polish-design.md` (new, 278 lines)
+  - `docs/superpowers/plans/2026-04-21-bookmarks-polish.md` (new, 1434 lines)
+- **Numbers (all green):** 76 suites / **1652 tests** / 3 snapshots (+25 from 1627 baseline: 19 grouping unit + 6 render). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit` clean in `src/` + `__tests__/` (pre-existing noise in `docs/plans/search-uiux/` and `supabase/functions/batch-score/` only).
+- **Not done yet:**
+  - **`BookmarkRow` extraction** — final reviewer flagged as Important non-blocking: extracting `BookmarkRow` to `src/components/bookmarks/BookmarkRow.tsx` would match the colocated `PantryCard` / `ScanHistoryCard` pattern and let render tests target the row directly without booting the full screen. ~10-min mechanical lift.
+  - **Cache-miss UX split** — `isBypass` in `BookmarkRow` currently lumps `final_score == null` with genuine bypass flags (`is_vet_diet`, `is_variety_pack`). During this session's on-device QA, a transient Supabase network hiccup on sim restart left `pet_product_scores` empty for Buster; all 17 bookmark rows rendered `—`. Self-healed on next reload but the UX is wrong: cache-miss (transient, waiting for JIT re-hydrate) should shimmer or show a subtle spinner; only genuine bypass should show `—`. Split `isBypass` vs `isUnscored` and render differently.
+  - **On-device VoiceOver QA** — 11 bookmark/scan surfaces (carry from session 57/58) + 7 D-168 a11y-backfill surfaces (carry from session 56). Plus the new grouped sections + new row chips (`Vet diet`, `Recalled`, `—`) + new pet-anchored header.
+  - **Cross-pet store-write race audit** — port `useBookmarkStore` guard to `usePantryStore`, `useTreatBatteryStore`, any scoring-cache refresh wired to active pet (carry from session 58).
+  - **Render-test hardening** — near-cap test asserts `19/20 saved` text but not the amber style application (reviewer flag, non-blocking); a `toHaveStyle({ backgroundColor: Colors.severityAmberTint })` check would close the loop.
+  - **`batchScoreOnDevice` network-failure diagnosis** — `TypeError: Network request failed` at line 291 (the `pet_product_scores` upsert) on sim restart. Didn't repro after reload — could be transient Supabase auth renewal, RLS edge case, or iOS sim network state.
+  - **Next M9 scope pick** — HomeScreen visual overhaul, custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit (~17 rgba sites).
+- **Start the next session by:**
+  1. **`/boot`** — verify rolling window rotated: session 60 → Previous, new session → Last.
+  2. **Reload sim + VoiceOver** on the new Bookmarks UI (grouped sections, 24px category icons, wrap-title header, amber near-cap chip, `—` / `Vet diet` / `Recalled` chips).
+  3. Pick one: (a) `BookmarkRow` extraction (10-min cleanup, closes final-reviewer finding); (b) cache-miss UX split (addresses the on-device regression surfaced this session); (c) cross-pet race audit (architectural, deeper); (d) next M9 scope.
+- **Gotchas / context for next session:**
+  - **Session 59 is a rolling-window ghost.** Session 59 was a merge-cascade session whose handoff commit (`13c9fc8`) rotated CURRENT.md on the `m9-bookmarks-history` feature branch, not on `m5-complete`. When this session squash-merged into `m5-complete`, we took `m5-complete`'s CURRENT.md during conflict resolution (correct choice — feature branch's CURRENT.md was stale). Session 59's handoff block lives only on `origin/m9-bookmarks-history`. For future merge-cascade sessions: rotate CURRENT.md on `m5-complete` directly via a second commit, not on the feature branch.
+  - **`CATEGORY_ICONS_FILLED.treat` is singular, section key is `treats` plural.** Any future category-icon work on Bookmarks or similar grouped screens must map inline in `SECTION_META`. Documented in `bookmarkGrouping.ts`.
+  - **Squash-merge absorbs feature-branch internal review work but loses the TDD trail.** Our 20 per-task commits collapsed to `c99e669`. The fix-forward commits (`2b9a68e` Task 5, `ea2958c` Task 12) are preserved only on `origin/m9-bookmarks-history`. Subagent-driven development caught two real bugs my plan missed — keep the two-stage (spec + quality) review discipline.
+  - **`batchScoreOnDevice` JIT re-hydrate can fail silently on cold start.** A `TypeError: Network request failed` at `batchScoreOnDevice.ts:291` (the `pet_product_scores` upsert) left the cache empty; all bookmark rows rendered `—`. Self-healed on next network call. Worth a defensive UX fix (see Cache-miss UX split above) even if the network cause is transient.
+  - **All session-57/58/59 gotchas still apply:** `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility.
+
+## Previous Session
+
 - **Date:** 2026-04-20 (session 58 — follow-up to session 57: cross-pet toggle race fixed on `useBookmarkStore`; PR #13 still open on same branch)
 - **Branch:** `m9-bookmarks-history` (continuing from session 57). 24 commits on branch (22 from session 57 + 2 new: `9a7c115` race fix, `00e82be` handoff).
 - **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — still awaiting human review. Fast-forward pushed to origin (`961644e..00e82be`) — race fix + regression tests + this rotation now on remote.
@@ -79,39 +123,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - `src/stores/useBookmarkStore.ts` — guard added at lines 85 and 89 (+8 / −2)
   - `__tests__/stores/useBookmarkStore.test.ts` — 2 new tests (+57 / 0)
   - `docs/status/CURRENT.md` — this rotation (handoff only)
-- **Numbers (all green):** **1626 tests / 74 suites / 3 snapshots** (up from 1624; +2 for race regressions). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx jest` runtime 5.68s.
-- **Not done yet:**
-  - **PR #13 review + merge.** Still awaiting human review. Merge-order decision unchanged from session 57 — recommend landing `m9-reduce-score-noise` first so D-168 dupe resolves cleanly on PR #13.
-  - **On-device QA** — VoiceOver announcement check on 11 bookmark/scan score surfaces + recalled-product red-border + `RecallDetail` routing across three surfaces. Carried over from session 57.
-  - **Next M9 scope pick** — HomeScreen visual overhaul, custom icon rollout, stale browse scores form-aware fix, or broader Matte Premium alpha audit (~17 rgba sites).
-- **Start the next session by:**
-  1. **`/boot`** — verify rolling window rewrote session 57 → Previous, session 58 → Last, session 55 deleted.
-  2. **Land `m9-reduce-score-noise`** (session 56's D-168 work — 4 commits, PR not yet opened) so D-168 is baked into `m5-complete` before PR #13 resolves its D-168 dupe.
-  3. **Merge PR #13** after (1).
-  4. Execute VoiceOver + recalled-product QA on the merged branch.
-  5. Pick next M9 scope.
-- **Gotchas / context for next session:**
-  - **Cross-pet store-write race is a pattern, not a one-off.** Any Zustand store that does optimistic-update → async server call → server-authoritative resync against a per-pet active context needs a symmetric guard on the resync. Pattern: `if (get().currentPetId === petId) await get().loadForPet(petId)` on both success and error paths. Only `useBookmarkStore` is patched. Worth auditing: `usePantryStore` (per-pet assignments + optimistic log-feeding / log-treat), `useTreatBatteryStore` (per-pet kcal), any scoring-cache refresh wired to active pet. Do this before declaring the class solved.
-  - **Code-review D-168 false-positive worth remembering.** The review agent flagged score pills for missing element-level `accessibilityLabel`. Validation subagent correctly ruled NOT a violation — in React Native, a `TouchableOpacity` / `Pressable` with `accessibilityLabel` IS the accessibility element and subsumes its children; VoiceOver reads only the row label. The new bookmark/scan rows carry the full `"${score}% match for ${petName}"` string on the row wrapper, which is compliance *stricter* than D-168's pill-only known-gap pattern. Don't re-flag. Worth adding to `.agent/design.md` accessibility guidance if we write one.
-  - **Previous-session mash-tap race** was only surfaced by rapid physical tapping. **This session's cross-pet race** was caught cleanly by code review without device repro. Different failure modes, both signals worth keeping: (a) ship to device before declaring "tests green = done"; (b) run `/code-review` before merge for races that tests miss.
-  - **All session-57 gotchas still apply:** D-168 merge conflict on DECISIONS.md tail when both branches land; `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export with `onDelete` / `deleteConfirmMessage` API; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility.
-
-## Previous Session
-
-- **Date:** 2026-04-20 (session 57 — M9 Bookmarks + expanded history shipped; PR #13 open; migration 040 applied to Supabase production)
-- **Branch:** `m9-bookmarks-history` off `m5-complete` (`a79d43b`). 21 commits (13 task commits + 6 review-fix commits + 1 final race-fix commit + 1 spec/plan docs commit).
-- **PR:** [#13](https://github.com/KibaScan/kiba-app/pull/13) — `M9: Bookmarks + expanded scan history`. Awaiting human review.
-- **Accomplished — full M9 Bookmarks feature via Subagent-Driven Development across 13 plan tasks:**
-  - **Data layer:** migration 040 (`bookmarks` table, `UNIQUE(pet_id, product_id)`, RLS owner policy, `BEGIN/COMMIT` wrapped, `FOR ALL` policy), `src/types/bookmark.ts` (`Bookmark`, `BookmarkCardData`, `MAX_BOOKMARKS_PER_PET = 20`, `BookmarkOfflineError`, `BookmarksFullError`), `src/services/bookmarkService.ts` (CRUD + 20-cap + offline guards + `fetchBookmarkCards(pet)` with PostgREST nested select + fire-and-forget `batchScoreHybrid` JIT for null-score cache hydration).
-  - **State layer:** `src/stores/useBookmarkStore.ts` (Zustand, optimistic toggle, synchronous cap guard, cross-pet auto-resync, server-authoritative rollback via `loadForPet`, **per-key in-flight lock** keyed by `${petId}:${productId}` — race fix after on-device mash-tap bug surfaced `UNIQUE` violation).
-  - **UI components:** `src/components/result/ResultHeaderMenu.tsx` (Modal bottom-sheet, Share + Report issue only), `src/components/common/BookmarkToggleSheet.tsx` (one-action variant for long-press).
-  - **Screens:** `src/screens/ResultScreen.tsx` (replaced share icon with two-icon header: bookmark-outline/filled + ellipsis; wired mailto with `Platform.OS`/`Platform.Version`; added matching back-arrow padding for symmetry), `src/screens/HomeScreen.tsx` (Bookmarks section between Pantry row and Recent Scans, 3 rows, hidden when empty; `See all ›` on Recent Scans with stacked counter; long-press scan rows → `BookmarkToggleSheet`), `src/screens/BookmarksScreen.tsx` (new — FlatList, `SwipeableRow` delete via `store.toggle`, pull-to-refresh, empty-state CTA scan button, recalled red left border), `src/screens/ScanHistoryScreen.tsx` (new — up to 20 deduped scans, immutable, long-press → bookmark, empty-state CTA).
-  - **Navigation:** `Bookmarks` + `ScanHistory` routes added to `HomeStackParamList` + `HomeStack.Navigator`.
-  - **Docs:** D-168 (backfilled onto this branch to keep DECISIONS.md internally consistent, since branch was cut before `m9-reduce-score-noise` landed) + **D-169: Bookmarks — Per-Pet Watchlist** (new). Updated CLAUDE.md Schema Traps, ROADMAP.md M9 item, CURRENT.md numbers. Spec + plan docs committed to `docs/superpowers/`.
-  - **Gemini external review mid-plan:** adopted 8/10 (JIT hydration, service extraction, sync cap check, server-resync rollback, PostgREST nested select, recalled red border, empty-state CTA, Platform info in mailto). Pushed back on 2 (long-press discoverability — user's explicit design choice; report-issue Copy email — `expo-clipboard` not in deps).
-  - **Final integration review round:** caught 3 cross-surface gaps — `BookmarkOfflineError` branch missing on long-press handlers (HomeScreen + ScanHistoryScreen), `accessibilityLabel` missing on HomeScreen Recent Scans rows that gained `onLongPress`, `handleDelete` on BookmarksScreen bypassed store (now routes through `store.toggle` for symmetry). All fixed.
-- **New decisions:**
-  - **D-169 (session 57):** Bookmarks — per-pet watchlist, hard cap 20, no paywall, live score (not snapshot), immutable scans, mailto-based Report issue stub.
-  - **D-168 (backfilled on session 57):** Tiered score framing (terse by default, outbound-share exception). Originally written on `m9-reduce-score-noise`; added to this branch to keep it self-consistent. Will merge-conflict on DECISIONS.md tail.
-- **Files changed (22 in session-57 diff vs. `origin/m5-complete`):** 8 new source files, 5 modified source files, 4 doc files, 2 spec/plan docs, 2 test files new (bookmarkService + useBookmarkStore), 1 test file new (ResultHeaderMenu). +4,250 lines / −24 lines. 28 new tests (12 service + 11 store + 5 component).
-- **Numbers at session-57 close:** 1624 tests / 74 suites / 3 snapshots. 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
+- **Numbers at session-58 close:** 1626 tests / 74 suites / 3 snapshots (up from 1624; +2 for race regressions). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0.
+- **Gotchas carried forward:**
+  - **Cross-pet store-write race is a pattern, not a one-off.** Any Zustand store that does optimistic-update → async server call → server-authoritative resync against a per-pet active context needs a symmetric guard on the resync. Pattern: `if (get().currentPetId === petId) await get().loadForPet(petId)` on both success and error paths. Only `useBookmarkStore` is patched. Worth auditing: `usePantryStore` (per-pet assignments + optimistic log-feeding / log-treat), `useTreatBatteryStore` (per-pet kcal), any scoring-cache refresh wired to active pet.
+  - **Code-review D-168 false-positive worth remembering.** In React Native, a `TouchableOpacity` / `Pressable` with `accessibilityLabel` IS the accessibility element and subsumes its children; VoiceOver reads only the row label. Row wrappers carrying the full `"${score}% match for ${petName}"` string are D-168-compliant without duplicate child labels.
