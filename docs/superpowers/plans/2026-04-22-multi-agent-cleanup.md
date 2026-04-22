@@ -67,7 +67,7 @@ git status
 git log -1 --oneline
 ```
 
-Expected output: working tree clean, HEAD at `f150014` (spec integration commit) or newer on `m5-complete`.
+Expected output: working tree clean, HEAD at `bce1796` (plan's "5 mechanical fixes" commit) or newer on `m5-complete`.
 
 - [ ] **Step 2: Create the dead-code branch**
 
@@ -98,12 +98,21 @@ Create `knip.json`:
     "babel.config.js",
     "metro.config.js",
     "app.json",
-    "*.config.{js,ts,cjs,mjs}"
+    "*.config.{js,ts,cjs,mjs}",
+    "__tests__/**/*.{test,spec}.{ts,tsx}"
   ],
-  "project": ["src/**/*.{ts,tsx}", "__tests__/**/*.{ts,tsx}"],
-  "ignore": ["supabase/functions/batch-score/scoring/**", "docs/**"]
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["supabase/functions/batch-score/scoring/**", "docs/**"],
+  "ignoreDependencies": [
+    "babel-preset-expo",
+    "babel-plugin-transform-import-meta"
+  ]
 }
 ```
+
+**Why `entry` covers tests and `ignoreDependencies` covers Babel packages:**
+- Test files live in `entry` (not `project`) so knip treats each test as a root of the import graph — imports in tests keep their targets alive, and the test files themselves don't get flagged as "never imported".
+- `babel-preset-expo` and `babel-plugin-transform-import-meta` are referenced as string literals inside `babel.config.js` and can't be discovered by knip's import-resolution (which only activates for `@babel/*` packages). `ignoreDependencies` is the correct escape hatch.
 
 - [ ] **Step 5: Run the initial knip pass — capture baseline candidate report**
 
@@ -281,7 +290,11 @@ Expected: commit with 10+ file deletions. No source changes.
 
 ```bash
 npx knip --reporter json > .knip-report.json 2>/dev/null || true
-node -e "const r = require('./.knip-report.json'); console.log('files:', (r.files || []).length);"
+node -e "
+const r = require('./.knip-report.json');
+const files = r.issues.flatMap(i => (i.files || []).map(f => f.name || f));
+console.log('unused_files:', files.length);
+"
 ```
 
 Record the file candidate count. This is Agent A's input slice.
