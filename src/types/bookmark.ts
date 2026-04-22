@@ -19,6 +19,7 @@ export interface BookmarkCardData {
     id: string;
     brand: string;
     name: string;
+    category: 'daily_food' | 'treat';
     image_url: string | null;
     is_recalled: boolean;
     is_vet_diet: boolean;

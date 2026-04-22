@@ -125,7 +125,7 @@ export async function fetchBookmarkCards(pet: Pet): Promise<BookmarkCardData[]> 
     const { data, error } = await supabase
       .from('bookmarks')
       .select(
-        '*, product:products(id, brand, name, image_url, is_recalled, is_vet_diet, is_variety_pack, is_supplemental, target_species)',
+        '*, product:products(id, brand, name, category, image_url, is_recalled, is_vet_diet, is_variety_pack, is_supplemental, target_species)',
       )
       .eq('pet_id', pet.id)
       .order('created_at', { ascending: false })

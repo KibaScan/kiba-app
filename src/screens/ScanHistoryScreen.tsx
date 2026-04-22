@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,6 +40,7 @@ export default function ScanHistoryScreen() {
   const activePetId = useActivePetStore((s) => s.activePetId);
   const pets = useActivePetStore((s) => s.pets);
   const activePet = pets.find((p) => p.id === activePetId);
+  const insets = useSafeAreaInsets();
   const [scans, setScans] = useState<ScanRow[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [longPressTarget, setLongPressTarget] = useState<{ productId: string } | null>(null);
@@ -83,7 +85,7 @@ export default function ScanHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Text style={styles.title}>Recent Scans</Text>
         <Text style={styles.subtitle}>
           {activePet.name} · {scans.length} recent
@@ -113,6 +115,7 @@ export default function ScanHistoryScreen() {
         <FlatList
           data={scans}
           keyExtractor={(s) => s.id}
+          contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.accent} />}
           renderItem={({ item }) => {
             const scoreColor =
@@ -190,6 +193,7 @@ const styles = StyleSheet.create({
   },
   title: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700' },
   subtitle: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },
+  listContent: { paddingBottom: 88 },
   empty: {
     flex: 1,
     alignItems: 'center',
