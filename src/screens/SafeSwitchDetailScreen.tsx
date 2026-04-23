@@ -7,21 +7,17 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   ScrollView,
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Modal,
-  Pressable,
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { Colors, FontSizes, Spacing, getScoreColor } from '../utils/constants';
+import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { stripBrandFromName } from '../utils/formatters';
 import {
   getAmountSplit,
@@ -45,7 +41,12 @@ import { saveSuccess } from '../utils/haptics';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { supabase } from '../services/supabase';
 import type { PantryStackParamList } from '../types/navigation';
-import type { SafeSwitchCardData, SwitchOutcome, TummyCheck } from '../types/safeSwitch';
+import type { SafeSwitchCardData, TummyCheck } from '../types/safeSwitch';
+import ComparisonCard from '../components/safeSwitch/ComparisonCard';
+import CompletedCard from '../components/safeSwitch/CompletedCard';
+import MissedWarningBanner from '../components/safeSwitch/MissedWarningBanner';
+import TodayMixCard from '../components/safeSwitch/TodayMixCard';
+import RetroLogSheet from '../components/safeSwitch/RetroLogSheet';
 
 type Props = NativeStackScreenProps<PantryStackParamList, 'SafeSwitchDetail'>;
 
@@ -63,43 +64,6 @@ const TUMMY_RESULT_COLORS: Record<string, string> = {
   soft_stool: Colors.severityAmber,
   upset: Colors.severityRed,
 };
-
-// ─── Completion outcome helpers (Phase A) ───────────────
-
-type OutcomeTone = 'good' | 'neutral' | 'caution';
-
-function outcomeToneColor(tone: OutcomeTone): string {
-  if (tone === 'good') return Colors.severityGreen;
-  if (tone === 'caution') return Colors.severityAmber;
-  return Colors.textPrimary;
-}
-
-function outcomeToneIcon(tone: OutcomeTone): keyof typeof Ionicons.glyphMap {
-  return tone === 'caution' ? 'alert-circle' : 'checkmark-circle';
-}
-
-interface OutcomeStatItem {
-  label: string;
-  count: number;
-  dot: string;
-}
-
-function buildOutcomeStatItems(outcome: SwitchOutcome): OutcomeStatItem[] {
-  const items: OutcomeStatItem[] = [];
-  if (outcome.perfectCount > 0) {
-    items.push({ label: 'Perfect', count: outcome.perfectCount, dot: Colors.severityGreen });
-  }
-  if (outcome.softStoolCount > 0) {
-    items.push({ label: 'Soft Stool', count: outcome.softStoolCount, dot: Colors.severityAmber });
-  }
-  if (outcome.upsetCount > 0) {
-    items.push({ label: 'Upset', count: outcome.upsetCount, dot: Colors.severityRed });
-  }
-  if (outcome.missedDays > 0) {
-    items.push({ label: 'Missed', count: outcome.missedDays, dot: Colors.textTertiary });
-  }
-  return items;
-}
 
 // ─── Component ──────────────────────────────────────────
 
@@ -343,7 +307,6 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
   // Completion outcome (Phase A) — cheap pure computation, used only when isCompleted
   const outcome = computeSwitchOutcome(logs, data.switch.total_days);
   const outcomeMessage = getOutcomeMessage(outcome, petName, `${newProduct.brand} ${newName}`);
-  const outcomeStats = buildOutcomeStatItems(outcome);
 
   const oldTotal = data.dailyServingAmount;
   const newTotal = data.switch.new_serving_size
@@ -395,85 +358,21 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
       >
         {/* Completed state — outcome-aware (Phase A) */}
         {isCompleted && (
-          <View style={styles.completedCard}>
-            <Ionicons
-              name={outcomeToneIcon(outcomeMessage.tone)}
-              size={48}
-              color={outcomeToneColor(outcomeMessage.tone)}
-            />
-            <Text style={[styles.completedTitle, { color: outcomeToneColor(outcomeMessage.tone) }]}>
-              {outcomeMessage.title}
-            </Text>
-            <Text style={styles.completedBody}>{outcomeMessage.body}</Text>
-
-            {/* Stat strip — counts by category, zero counts skipped */}
-            {outcomeStats.length > 0 && (
-              <View style={styles.completedStats}>
-                {outcomeStats.map((stat, i) => (
-                  <React.Fragment key={stat.label}>
-                    {i > 0 && <Text style={styles.completedStatSep}>·</Text>}
-                    <View style={styles.completedStatItem}>
-                      <View style={[styles.completedStatDot, { backgroundColor: stat.dot }]} />
-                      <Text style={styles.completedStatText}>{stat.count} {stat.label}</Text>
-                    </View>
-                  </React.Fragment>
-                ))}
-              </View>
-            )}
-
-            <Text style={styles.restockNudge}>
-              Open a new bag? Tap Restock in your Pantry to start tracking.
-            </Text>
-
-            <TouchableOpacity
-              style={styles.completeButton}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.completeButtonText}>Back to Pantry</Text>
-            </TouchableOpacity>
-          </View>
+          <CompletedCard
+            outcome={outcome}
+            outcomeMessage={outcomeMessage}
+            onBack={() => navigation.goBack()}
+          />
         )}
 
         {!isCompleted && (
           <>
             {/* Product comparison header — Fix 3: Image staging, Fix 4: Old score deleted */}
-            <View style={styles.comparisonCard}>
-              <View style={styles.comparisonProduct}>
-                <View style={styles.imageStage}>
-                  {oldProduct.image_url ? (
-                    <Image source={{ uri: oldProduct.image_url }} style={styles.comparisonImage} />
-                  ) : (
-                    <Ionicons name="cube-outline" size={20} color={Colors.textTertiary} />
-                  )}
-                </View>
-                <Text style={styles.comparisonName} numberOfLines={2}>{oldProduct.brand}</Text>
-              </View>
-
-              <View style={styles.comparisonArrowCol}>
-                <Ionicons name="arrow-forward" size={18} color={Colors.textTertiary} />
-                {/* Score badge centered between products — only new product score */}
-                {data.newScore != null && (
-                  <View style={[styles.miniScoreBadge, { backgroundColor: `${getScoreColor(data.newScore)}33` }]}>
-                    <Text style={[styles.miniScoreText, { color: getScoreColor(data.newScore) }]}>
-                      {data.newScore}%
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.comparisonProduct}>
-                <View style={styles.imageStage}>
-                  {newProduct.image_url ? (
-                    <Image source={{ uri: newProduct.image_url }} style={styles.comparisonImage} />
-                  ) : (
-                    <Ionicons name="cube-outline" size={20} color={Colors.textTertiary} />
-                  )}
-                </View>
-                <Text style={styles.comparisonName} numberOfLines={2}>{newProduct.brand}</Text>
-              </View>
-            </View>
+            <ComparisonCard
+              oldProduct={oldProduct}
+              newProduct={newProduct}
+              newScore={data.newScore}
+            />
 
             {/* Paused banner */}
             {isPaused && (
@@ -485,75 +384,26 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
 
             {/* Consecutive missed days warning — Fix 9 */}
             {showMissedWarning && (
-              <View style={styles.missedWarningBanner}>
-                <Ionicons name="warning-outline" size={18} color={Colors.severityAmber} />
-                <View style={styles.missedWarningContent}>
-                  <Text style={styles.missedWarningText}>
-                    You missed several days of logging. If you haven't been mixing the food as planned, consider restarting the schedule to reduce the risk of digestive discomfort.
-                  </Text>
-                  <View style={styles.missedWarningActions}>
-                    <TouchableOpacity onPress={handleRestart} activeOpacity={0.7}>
-                      <Text style={styles.missedWarningActionRestart}>Restart</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setWarningDismissed(true)} activeOpacity={0.7}>
-                      <Text style={styles.missedWarningActionDismiss}>Dismiss</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+              <MissedWarningBanner
+                onRestart={handleRestart}
+                onDismiss={() => setWarningDismissed(true)}
+              />
             )}
 
             {/* Today's Mix — Fix 1: Vertical recipe layout */}
-            <View style={styles.todayCard}>
-              <Text style={styles.todaySectionLabel}>TODAY'S MIX</Text>
-              <Text style={styles.todayDayText}>Day {currentDay}</Text>
-
-              {/* Proportion gauge — fully saturated segments with inline labels */}
-              <View style={styles.proportionBar}>
-                {todayMix.oldPct > 0 && (
-                  <View style={[styles.proportionSegment, {
-                    flex: todayMix.oldPct,
-                    backgroundColor: Colors.severityAmber,
-                  }]}>
-                    {todayMix.oldPct >= 18 && (
-                      <Text style={styles.proportionLabel}>{todayMix.oldPct}%</Text>
-                    )}
-                  </View>
-                )}
-                <View style={[styles.proportionSegment, {
-                  flex: todayMix.newPct,
-                  backgroundColor: Colors.severityGreen,
-                }]}>
-                  {todayMix.newPct >= 18 && (
-                    <Text style={styles.proportionLabel}>{todayMix.newPct}%</Text>
-                  )}
-                </View>
-              </View>
-
-              {/* Recipe layout — vertical, color-coded to match proportion bar */}
-              <View style={styles.recipeLayout}>
-                {todayMix.oldPct > 0 && (
-                  <View style={styles.recipeLine}>
-                    <View style={[styles.recipeDot, { backgroundColor: Colors.severityAmber }]} />
-                    <Text style={styles.recipeAmount}>{oldAmount} {oldUnitStr} ({todayMix.oldPct}%)</Text>
-                    <Text style={styles.recipeSep}>·</Text>
-                    <Text style={styles.recipeBrand} numberOfLines={1}>{oldProduct.brand}</Text>
-                  </View>
-                )}
-                <View style={styles.recipeLine}>
-                  <View style={[styles.recipeDot, { backgroundColor: Colors.severityGreen }]} />
-                  <Text style={styles.recipeAmount}>{newAmount} {newUnitStr} ({todayMix.newPct}%)</Text>
-                  <Text style={styles.recipeSep}>·</Text>
-                  <Text style={styles.recipeBrand} numberOfLines={1}>{newProduct.brand}</Text>
-                </View>
-              </View>
-
-              <Text style={styles.mixInstruction}>
-                {todayMix.newPct === 100
-                  ? `Serve 100% ${truncate(newName, 25)} in ${petName}'s bowl`
-                  : `Mix both foods together in ${petName}'s bowl`}
-              </Text>
-            </View>
+            <TodayMixCard
+              currentDay={currentDay}
+              todayMix={todayMix}
+              oldProduct={oldProduct}
+              newProduct={newProduct}
+              oldName={oldName}
+              newName={newName}
+              oldAmount={oldAmount}
+              newAmount={newAmount}
+              oldUnitStr={oldUnitStr}
+              newUnitStr={newUnitStr}
+              petName={petName}
+            />
 
             {/* Upset advisory (D-095 compliant) */}
             {showUpsetAdvisory && (
@@ -739,83 +589,17 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
       </ScrollView>
 
       {/* Retroactive logging / history bottom sheet — Fix 8 */}
-      <Modal
-        visible={retroDay != null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setRetroDay(null)}
-      >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setRetroDay(null)}>
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        </Pressable>
-        <View style={styles.sheetContainer}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            {retroDay != null && (() => {
-              const retroLog = logs.find(l => l.day_number === retroDay);
-              const isReadOnly = !!retroLog?.tummy_check;
-              const retroEntry = schedule.find(s => s.day === retroDay);
-
-              return (
-                <>
-                  <Text style={styles.sheetTitle}>
-                    {isReadOnly ? `Day ${retroDay} — Logged` : `Log Day ${retroDay}`}
-                  </Text>
-                  <Text style={styles.sheetSubtitle}>
-                    {retroEntry ? `${retroEntry.phase}` : ''}
-                  </Text>
-                  <Text style={styles.sheetQuestion}>
-                    {isReadOnly
-                      ? `${petName}'s digestion on Day ${retroDay}:`
-                      : `How was ${petName}'s digestion on Day ${retroDay}?`}
-                  </Text>
-
-                  <View style={styles.sheetPills}>
-                    {TUMMY_OPTIONS.map(opt => {
-                      const isSelected = retroLog?.tummy_check === opt.key;
-                      return (
-                        <TouchableOpacity
-                          key={opt.key}
-                          style={[
-                            styles.tummyPill,
-                            isSelected && {
-                              backgroundColor: `${opt.color}25`,
-                              borderColor: opt.color,
-                            },
-                          ]}
-                          onPress={() => {
-                            if (!isReadOnly) handleTummyCheck(opt.key, retroDay);
-                          }}
-                          disabled={isReadOnly || tummyLoading}
-                          activeOpacity={isReadOnly ? 1 : 0.7}
-                        >
-                          <Ionicons name={opt.icon} size={18} color={isSelected ? opt.color : Colors.textSecondary} />
-                          <Text style={[styles.tummyPillText, isSelected && { color: opt.color }]}>
-                            {opt.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  {isReadOnly && (
-                    <Text style={styles.sheetReadOnlyHint}>
-                      Tap a missed day to log retroactively
-                    </Text>
-                  )}
-                </>
-              );
-            })()}
-          </View>
-        </View>
-      </Modal>
+      <RetroLogSheet
+        retroDay={retroDay}
+        logs={logs}
+        schedule={schedule}
+        petName={petName}
+        tummyLoading={tummyLoading}
+        onLog={handleTummyCheck}
+        onClose={() => setRetroDay(null)}
+      />
     </View>
   );
-}
-
-function truncate(str: string, max: number): string {
-  if (str.length <= max) return str;
-  return str.slice(0, max - 1) + '\u2026';
 }
 
 // ─── Styles ─────────────────────────────────────────────
@@ -852,85 +636,8 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: FontSizes.md, color: Colors.textSecondary },
 
   // Completed state
-  completedCard: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 40,
-    paddingHorizontal: Spacing.lg,
-  },
-  completedTitle: { fontSize: FontSizes.xl, fontWeight: '800', color: Colors.severityGreen },
-  completedBody: { fontSize: FontSizes.md, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
-  completedStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  completedStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  completedStatDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  completedStatText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  completedStatSep: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    paddingHorizontal: 2,
-  },
-  completedDoneButton: {
-    marginTop: 16,
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-  },
-  completedDoneButtonText: { fontSize: FontSizes.md, fontWeight: '700', color: '#FFFFFF' },
 
   // Comparison — Fix 3: image staging, Fix 4: centered score, Fix 14: token migration
-  comparisonCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    paddingTop: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  comparisonProduct: { flex: 1, alignItems: 'center', gap: 6, minHeight: 90 },
-  imageStage: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    padding: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  comparisonImage: { width: 48, height: 48, borderRadius: 8, resizeMode: 'contain' as const },
-  comparisonArrowCol: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingTop: 18,
-  },
-  comparisonName: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center', minHeight: 28 },
-  miniScoreBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  miniScoreText: { fontSize: 10, fontWeight: '700' },
 
   // Paused
   pausedBanner: {
@@ -947,72 +654,18 @@ const styles = StyleSheet.create({
   pausedText: { flex: 1, fontSize: FontSizes.sm, color: Colors.severityAmber, lineHeight: 18 },
 
   // Missed days warning — Fix 9
-  missedWarningBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: `${Colors.severityAmber}10`,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.severityAmber,
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: `${Colors.severityAmber}30`,
-  },
-  missedWarningContent: { flex: 1, gap: 10 },
-  missedWarningText: { fontSize: FontSizes.sm, color: Colors.severityAmber, lineHeight: 20 },
-  missedWarningActions: { flexDirection: 'row', gap: 16 },
-  missedWarningActionRestart: { fontSize: FontSizes.sm, fontWeight: '700', color: Colors.accent },
-  missedWarningActionDismiss: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.textSecondary },
 
   // Today's mix — featured card with full cyan frame (thicker than standard hairline)
-  todayCard: {
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    borderWidth: 2,
-    borderColor: Colors.accent,
-    gap: 10,
-  },
   todaySectionLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: Colors.accent,
     letterSpacing: 0.5,
   },
-  todayDayText: { fontSize: FontSizes.xl, fontWeight: '800', color: Colors.textPrimary },
 
   // Proportion gauge — fully saturated, taller, inline labels
-  proportionBar: {
-    flexDirection: 'row',
-    height: 18,
-    borderRadius: 9,
-    overflow: 'hidden',
-    marginTop: 2,
-  },
-  proportionSegment: {
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  proportionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
 
   // Fix 1: Vertical recipe layout
-  recipeLayout: { gap: 8, marginTop: 2 },
-  recipeLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  recipeDot: { width: 8, height: 8, borderRadius: 4 },
-  recipeAmount: { fontSize: FontSizes.sm, fontWeight: '700', color: Colors.textPrimary },
-  recipeSep: { fontSize: FontSizes.sm, color: Colors.textTertiary },
-  recipeBrand: { fontSize: FontSizes.sm, color: Colors.textSecondary, flex: 1 },
-
-  mixInstruction: { fontSize: FontSizes.sm, color: Colors.textTertiary, lineHeight: 18 },
 
   // Advisory
   advisoryCard: {
@@ -1114,14 +767,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     gap: Spacing.md,
   },
-  restockNudge: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
   completeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1175,52 +820,4 @@ const styles = StyleSheet.create({
   },
 
   // Fix 8: Bottom sheet — canonical spec from .agent/design.md:307-365
-  sheetContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: Colors.cardSurface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
-    maxHeight: '85%',
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.textTertiary,
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
-  },
-  sheetTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  sheetSubtitle: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    marginBottom: Spacing.sm,
-  },
-  sheetQuestion: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
-  },
-  sheetPills: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: Spacing.md,
-  },
-  sheetReadOnlyHint: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
 });
