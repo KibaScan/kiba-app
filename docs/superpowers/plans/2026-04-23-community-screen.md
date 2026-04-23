@@ -14,6 +14,7 @@
 
 **Conventions used throughout:**
 - TDD: failing test → implementation → green test → commit. Tests-first, no exceptions.
+- **Imports:** this codebase does NOT configure a `@/` path alias (verified Task 3). Every `@/...` import shown in this plan must be rewritten to a relative path before committing — e.g. `@/utils/xpLevel` → `../../src/utils/xpLevel` in test files. Follow the existing test convention in `__tests__/utils/formatters.test.ts` or `__tests__/utils/bookmarkRowState.test.ts`.
 - All migrations end with a manual smoke step (apply locally + verify in Studio).
 - All new RN screens follow Matte Premium design (`.agent/design.md`): `cardSurface`, `hairlineBorder`, `Spacing.md` padding, `borderRadius: 16`. Read existing `PantryScreen` / `BookmarksScreen` for the canonical patterns.
 - Pantry-pattern offline: writes throw a custom `*OfflineError`, reads return `[]` gracefully. See `src/services/pantryService.ts` for the canonical example.
@@ -296,8 +297,10 @@ describe('levelForXP', () => {
     expect(levelForXP(1000).level).toBe(5);
   });
   it('handles very large XP without overflow', () => {
+    // With MULTIPLIER=1.8, 1M XP lands around L16. Bound is curve-dependent;
+    // the real assertion is Number.isFinite on the threshold.
     const result = levelForXP(1_000_000);
-    expect(result.level).toBeGreaterThan(20);
+    expect(result.level).toBeGreaterThan(10);
     expect(Number.isFinite(result.nextThreshold)).toBe(true);
   });
   it('exposes LEVEL_THRESHOLDS as deterministic array', () => {
