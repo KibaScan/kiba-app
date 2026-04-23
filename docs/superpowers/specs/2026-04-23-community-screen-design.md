@@ -90,7 +90,7 @@ Deep-links into the Community stack from elsewhere:
 
 ## 4. Data Model
 
-### 4.1 New tables (migrations 041–046)
+### 4.1 New tables + buckets (migrations 041–047)
 
 ```sql
 -- 041_community_recipes.sql
@@ -196,6 +196,42 @@ CREATE INDEX ON score_flags (status, created_at DESC) WHERE status = 'open';
 
 -- 046_xp_triggers.sql
 -- See §5 for full trigger definitions (scans, votes, products, recipes).
+-- ALL trigger functions must be declared SECURITY DEFINER and owned by postgres.
+
+-- 047_storage_buckets.sql — missed in initial cut
+-- Provisions recipe-images and blog-images public buckets plus owner-scoped RLS.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('recipe-images', 'recipe-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('blog-images', 'blog-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- recipe-images RLS: writers can only touch their own {userId}/... path
+CREATE POLICY "Users can upload to own recipe folder" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'recipe-images'
+    AND (auth.uid())::text = (string_to_array(name, '/'))[1]
+  );
+
+CREATE POLICY "Users can delete their own recipe images" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'recipe-images'
+    AND (auth.uid())::text = (string_to_array(name, '/'))[1]
+  );
+
+CREATE POLICY "Public read of recipe images" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'recipe-images');
+
+-- blog-images: service role only for writes (no auth.uid() folder convention)
+CREATE POLICY "Public read of blog images" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'blog-images');
+-- Writes allowed by service role only; no public policy.
 ```
 
 ### 4.2 Static data
@@ -241,6 +277,23 @@ Single source of truth — reused by Toxic Database UI **and** Kiba Kitchen's `v
 - Discovery bonus uses `NOT EXISTS (SELECT 1 FROM scans WHERE product_id = NEW.product_id AND id <> NEW.id)` — exactly one user per UPC gets the bonus (racy for near-simultaneous first scans, acceptable edge case).
 - `needs_review` flip is service-role only — users cannot self-approve their own submission.
 
+**SECURITY DEFINER required:** every trigger function that writes to `user_xp_events` or `user_xp_totals` MUST be declared `SECURITY DEFINER` and owned by `postgres`. RLS only allows SELECT on those tables for `auth.uid()`; an INSERT from a trigger running as the invoking user would hit the RLS wall and roll back the entire scan/vote/recipe transaction. Pattern matches existing `get_kiba_index_stats` in `026_kiba_index.sql`.
+
+**Idempotency on approval triggers:** the `missing_product_approved` and `recipe_approved` triggers fire on `AFTER UPDATE` whenever the relevant flag/status flips toward "approved." A moderator who approves → un-approves → re-approves would otherwise grant XP twice. Each grant must be guarded:
+
+```sql
+IF NEW.status = 'approved' AND OLD.status IS DISTINCT FROM 'approved' THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM user_xp_events
+    WHERE recipe_id = NEW.id AND event_type = 'recipe_approved'
+  ) THEN
+    -- Grant XP
+  END IF;
+END IF;
+```
+
+Same pattern for `missing_product_approved` keyed on `product_id`.
+
 ### 5.2 Level curve
 
 Deterministic pure function in `src/utils/xpLevel.ts`:
@@ -252,30 +305,34 @@ export function levelForXP(totalXP: number): { level: number; progress: number; 
 
 Easy to retune without migration — thresholds live in code.
 
-### 5.3 Streak logic (48h grace)
+### 5.3 Streak logic (1-day grace = miss at most 1 calendar day)
+
+**Semantic refinement:** earlier draft framed this as "48h grace window" measured in hours. Switched to **calendar-day math** to avoid the time-of-day paradox (scan Mon 11:59 PM → Wed 1:00 AM = 25h elapsed but the stored DATE measures 49h from Mon-midnight to Wed-1am, breaking what should be a preserved one-day-skip). Final semantic: **you can skip at most one calendar day and keep your streak.**
 
 Executed inside the scan trigger:
 
-```
--- Pseudocode
+```sql
+-- Pseudocode (real impl uses PL/pgSQL inside SECURITY DEFINER function)
 on AFTER INSERT on scans:
-  totals = SELECT FROM user_xp_totals WHERE user_id = NEW.user_id
-  gap_hours = EXTRACT(EPOCH FROM NOW() - totals.streak_last_scan_date) / 3600
-  today = CURRENT_DATE AT TIME ZONE 'UTC'   -- user-TZ refinement deferred; see §12
+  totals = SELECT FROM user_xp_totals WHERE user_id = NEW.user_id;
+  today = (NOW() AT TIME ZONE 'UTC')::DATE;
+  gap_days = today - totals.streak_last_scan_date;  -- integer days
 
   IF totals IS NULL THEN
-    INSERT (1 day streak)
-  ELSIF today = totals.streak_last_scan_date THEN
+    INSERT row with streak_current_days = 1, streak_last_scan_date = today;
+  ELSIF gap_days = 0 THEN
     -- same-day scan, no-op for streak
-  ELSIF gap_hours <= 48 THEN
-    UPDATE streak_current_days += 1, streak_last_scan_date = today
+  ELSIF gap_days <= 2 THEN
+    -- gap of 1 calendar day (gap_days=1) or 1 missed day (gap_days=2) = preserve
+    UPDATE streak_current_days = streak_current_days + 1, streak_last_scan_date = today;
   ELSE
-    UPDATE streak_current_days = 1, streak_last_scan_date = today
-  END IF
-  UPDATE streak_longest_days = GREATEST(streak_longest_days, streak_current_days)
+    -- 2+ missed days = reset
+    UPDATE streak_current_days = 1, streak_last_scan_date = today;
+  END IF;
+  UPDATE streak_longest_days = GREATEST(streak_longest_days, streak_current_days);
 ```
 
-Pure-function helper `src/utils/streakGap.ts` replicates the logic for unit testing and for client-side preview (optimistic UI).
+Pure-function helper `src/utils/streakGap.ts` mirrors the logic for unit testing and client-side preview. Test cases must include the day-boundary edge: scan at 23:59 then next scan at 00:01 next day = `gap_days=1` = preserve.
 
 ### 5.4 Weekly XP (computed on read)
 
@@ -326,7 +383,16 @@ Single RPC `get_user_xp_summary()` SECURITY DEFINER returns all fields. Offline:
 - Cover photo: single upload to Storage `recipe-images` public bucket (path: `{userId}/{recipeId}.jpg`)
 - AAFCO acknowledgment checkbox (required) — text: *"I understand this recipe is not a complete-and-balanced AAFCO diet and should only be fed as an occasional supplement, not as my pet's primary food."*
 
-**On submit:** client inserts row with `status='pending'` → immediately calls Edge Function `validate-recipe` which runs auto-validators (§6.2) and UPDATEs the row to `auto_rejected` or `pending_review`.
+**Submission order — critical sequencing:**
+
+1. Client generates `recipeId` locally via `Crypto.randomUUID()` (Expo `expo-crypto`). Database `id` column drops `DEFAULT gen_random_uuid()` so server doesn't override.
+2. Client uploads image to Storage at `{userId}/{recipeId}.jpg`. Cover URL is now deterministic.
+3. Client INSERTs row with the explicit `id` and the cover URL. RLS allows insert because `user_id = auth.uid()`.
+4. Edge Function `validate-recipe` is called immediately with `recipeId`. Validators run; row UPDATEs to `auto_rejected` or `pending_review`.
+
+**Why this order:** if the database auto-generated `id`, the client wouldn't know the storage path until after insert — but `validate-recipe` would already have fired. Reversing to client-generated UUID makes upload + insert atomic from the client's view.
+
+**Orphan cleanup:** if step 3 fails after step 2 succeeded, the storage object is orphaned. A weekly pg_cron job (`cleanup-orphan-recipe-images`) deletes objects in `recipe-images` whose `{recipeId}` doesn't exist in `community_recipes`. Out of MVP scope — flag for post-launch.
 
 ### 6.2 Auto-validators (Edge Function `validate-recipe`)
 
@@ -335,9 +401,11 @@ Reads a deploy-time copy of `toxic_foods.json` co-located in `supabase/functions
 1. **Toxic-ingredient scan:** normalize each submitted ingredient name (lowercase, strip punctuation) → fuzzy-match against each toxic-food entry (`name` + `alt_names`) → if `species_severity[recipe.species] === 'toxic'`, reject with reason `"Contains {ingredient}, which is toxic to {species}."`
 2. **UPVM regex (D-095):** run regex over concatenated `title + subtitle + prep_steps`:
    ```
-   /\b(treat|cure|prevent|diagnose|helps with|good for .+ (disease|condition|allergy|arthritis|kidney|liver|cancer))\b/i
+   /\b(cure|prevent|diagnose|((helps with|good for|treats) .+ (disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i
    ```
    Any match → reject with reason `"Community recipes cannot include health or medical claims."`
+
+   **Why not standalone `treat`:** "treat" is a noun in this domain ("Peanut Butter Dog Treats"). Banning it would auto-reject legitimate treat recipes. The grouping `(helps with|good for|treats) .+ (disease|condition|...)` correctly applies the condition tail to all three prefixes — "treats arthritis" matches but "Peanut Butter Treat" does not. Borderline phrasing ("good for shedding") falls through to human review per the design's safety-net intent — the auto-validator catches the obvious; Studio review handles nuance.
 3. **Required-field presence** — duplicate of client-side validation; server is source of truth.
 
 Pass → `status='pending_review'`, notification not yet sent (wait for Studio approval).
@@ -389,20 +457,22 @@ Steven reviews `community_recipes WHERE status='pending_review' ORDER BY created
 - Body: A-Z sectioned SectionList of cards per published vendor. Each card: brand name + quick-action row (email button via `mailto:`, website button via `Linking.openURL`).
 - Tap card → expands inline (no separate detail screen) to show HQ country + larger action buttons.
 
-### 7.3 Deep-link from ResultScreen
+### 7.3 Deep-link from ResultScreen — bundled-slug check (offline-safe)
 
-`ResultScreen` overflow menu conditionally shows "Contact {brand_name}" — visible IF:
+`ResultScreen` is offline-tolerant; an `await supabase.from('vendors').select(...)` in the overflow menu would hang on poor connection (grocery-store WiFi, basement). Instead, the published vendor slug list is bundled into the client at build time:
 
-```ts
-const { data } = await supabase
-  .from('vendors')
-  .select('brand_slug')
-  .eq('brand_slug', brandSlugify(product.brand))
-  .eq('is_published', true)
-  .maybeSingle();
-```
+- `scripts/seedVendors.ts` writes two artifacts after each seed run:
+  1. Database upsert (existing).
+  2. `src/data/published_vendor_slugs.json` — flat array `["pure-balance", "wellness", ...]` of `is_published=true` slugs only.
+- `ResultScreen` overflow check is purely synchronous:
+  ```ts
+  import publishedVendors from '@/data/published_vendor_slugs.json';
+  const slug = brandSlugify(product.brand);
+  const showContactBrand = publishedVendors.includes(slug);
+  ```
+- Tap → navigate to `VendorDirectory` with `{ initialBrand: product.brand }`. The destination screen then makes the network call to fetch full vendor details; if offline at that point, it falls back to a cached subset (per pantry-pattern).
 
-Tap → navigate to `VendorDirectory` with `{ initialBrand: product.brand }`.
+**Tradeoff:** vendor publish state in the deep-link is bundle-pinned. A vendor newly flipped to `is_published=true` only appears in the menu after the next app build. Acceptable for the launch cadence; document as known limitation.
 
 ---
 
@@ -581,8 +651,8 @@ Body: *"{recipe.title} — {rejection_reason}"*
 
 | Day | Work |
 |---|---|
-| W1 D1 | Migrations 041–045. Drop pgTAP scaffolding. RLS policies + tests. |
-| W1 D2 | Migration 046 (XP triggers). pgTAP trigger tests. Pure-helper utilities (xpLevel, streakGap, weeklyXPWindow, brandSlugify, validateRecipeSubmission). |
+| W1 D1 | Migrations 041–045, 047 (storage buckets + RLS). Drop pgTAP scaffolding OR Deno test harness. RLS policies + tests. |
+| W1 D2 | Migration 046 (XP triggers — all `SECURITY DEFINER`, idempotent approval checks). Trigger tests. Pure-helper utilities (xpLevel, streakGap, weeklyXPWindow, brandSlugify, validateRecipeSubmission). |
 | W1 D3 | `toxic_foods.json` curated seed. `validate-recipe` Edge Function + fixture tests. Seeder script. |
 | W1 D4 | `xpService.ts` + `communityService.ts`. CommunityScreen XP ribbon + Recall banner + subreddit link. |
 | W1 D5 | `ToxicDatabase` screen + `VendorDirectory` screen + deep-link from `ResultScreen`. |
@@ -613,6 +683,14 @@ Body: *"{recipe.title} — {rejection_reason}"*
 6. **Kitchen moderation operational debt** — if submissions spike, review queue grows. Mitigate with weekly cadence + explicit SLA ("reviewed within 7 days") in submission confirmation toast.
 7. **Discovery XP for bypassed products** — scans with `result.bypass=true` (vet diet, variety pack, species mismatch, recalled) do NOT insert into `scan_history` per current ResultScreen:317 logic. This means vet-diet scans yield 0 XP. Intentional: bypasses are non-scored, so no XP reward. Document in trigger test.
 
+8. **Optimistic offline XP display** — client shows cached `total_xp` when offline. When the user scans offline, the scan itself fails (scans table write requires network); XP doesn't advance. On reconnect, next `get_user_xp_summary` refresh catches up. No optimistic client-side XP increment — accepted MVP limitation, not a correctness bug.
+
+9. **Vendor slug rename edge** — if a brand renames (producing a different `brandSlugify` output), `seedVendors.ts` upsert by slug will create a NEW row rather than update the old. Both could be `is_published=true` simultaneously, which orphans the old row. For MVP, document that slug renames require manual cleanup in Studio (delete or unpublish the old row).
+
+10. **Storage orphan cleanup** — recipe-images bucket can accumulate orphan images when step 3 of submission (§6.1) fails after step 2 succeeds. Out of MVP scope; add a `cleanup-orphan-recipe-images` pg_cron job post-launch.
+
+11. **Second-pass review notes** — this spec incorporates fixes from a second-pass review that caught: (a) trigger RLS crash without `SECURITY DEFINER`, (b) streak math paradox from mixing DATE/TIMESTAMP, (c) UPVM regex banning the word "treat" (noun) and misgrouped "helps with", (d) double-grant XP via repeated approval flips, (e) chicken-and-egg image upload with server-generated UUID, (f) offline-breaking vendor-deep-link network call, (g) missing storage bucket provisioning migration.
+
 ---
 
 ## 18. Files Touched (high-level)
@@ -623,10 +701,12 @@ Body: *"{recipe.title} — {rejection_reason}"*
 - `supabase/migrations/043_blog_posts.sql`
 - `supabase/migrations/044_vendors.sql`
 - `supabase/migrations/045_score_flags.sql`
-- `supabase/migrations/046_xp_triggers.sql`
+- `supabase/migrations/046_xp_triggers.sql` (all functions `SECURITY DEFINER` + idempotent)
+- `supabase/migrations/047_storage_buckets.sql` (recipe-images + blog-images + RLS)
 - `supabase/functions/validate-recipe/index.ts`
 - `supabase/tests/` (pgTAP trigger tests)
 - `src/data/toxic_foods.json`
+- `src/data/published_vendor_slugs.json` (build artifact from `scripts/seedVendors.ts`; offline-safe ResultScreen check)
 - `src/types/community.ts`, `src/types/xp.ts`
 - `src/utils/xpLevel.ts`, `src/utils/streakGap.ts`, `src/utils/weeklyXPWindow.ts`, `src/utils/brandSlugify.ts`, `src/utils/validateRecipeSubmission.ts`
 - `src/services/xpService.ts`, `src/services/communityService.ts`, `src/services/recipeService.ts`, `src/services/vendorService.ts`, `src/services/blogService.ts`, `src/services/scoreFlagService.ts`
@@ -635,7 +715,8 @@ Body: *"{recipe.title} — {rejection_reason}"*
 - `src/screens/BlogListScreen.tsx`, `BlogDetailScreen.tsx`
 - `src/screens/SafetyFlagsScreen.tsx`
 - `src/components/community/` (subcomponents: XPRibbon, DiscoveryGrid, RecallBanner, SubredditFooter, KiIndexHighlights, etc.)
-- `scripts/seedVendors.ts`
+- `scripts/seedVendors.ts` (database upsert + regenerate `src/data/published_vendor_slugs.json`)
+- `scripts/syncToxicFoods.ts` (copies `src/data/toxic_foods.json` → `supabase/functions/validate-recipe/toxic_foods.json` pre-deploy)
 - `docs/data/vendors.json` (placeholder; Steven fills)
 - Tests for all of the above.
 
