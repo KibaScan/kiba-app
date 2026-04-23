@@ -51,14 +51,20 @@ export function CompareOtherPets({ otherPets, scoresMap, expanded, loading, onTo
               <View key={op.id} style={ss.otherPetRow}>
                 <View style={ss.otherPetScoreCell}>
                   <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreA, false) }]} />
-                  <Text style={[ss.otherPetScore, highlightA && { color: Colors.accent }]}>
+                  <Text
+                    style={[ss.otherPetScore, highlightA && { color: Colors.accent }]}
+                    accessibilityLabel={`${Math.round(scores.scoreA)}% match for ${op.name}`}
+                  >
                     {Math.round(scores.scoreA)}%
                   </Text>
                 </View>
                 <Text style={ss.otherPetName} numberOfLines={1}>{op.name}</Text>
                 <View style={ss.otherPetScoreCell}>
                   <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreB, false) }]} />
-                  <Text style={[ss.otherPetScore, highlightB && { color: Colors.accent }]}>
+                  <Text
+                    style={[ss.otherPetScore, highlightB && { color: Colors.accent }]}
+                    accessibilityLabel={`${Math.round(scores.scoreB)}% match for ${op.name}`}
+                  >
                     {Math.round(scores.scoreB)}%
                   </Text>
                 </View>

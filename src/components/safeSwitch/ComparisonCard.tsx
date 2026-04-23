@@ -16,9 +16,10 @@ interface ComparisonCardProps {
   oldProduct: ComparisonCardProduct;
   newProduct: ComparisonCardProduct;
   newScore: number | null | undefined;
+  petName: string;
 }
 
-export default function ComparisonCard({ oldProduct, newProduct, newScore }: ComparisonCardProps) {
+export default function ComparisonCard({ oldProduct, newProduct, newScore, petName }: ComparisonCardProps) {
   return (
     <View style={styles.comparisonCard}>
       <View style={styles.comparisonProduct}>
@@ -36,7 +37,10 @@ export default function ComparisonCard({ oldProduct, newProduct, newScore }: Com
         <Ionicons name="arrow-forward" size={18} color={Colors.textTertiary} />
         {/* Score badge centered between products — only new product score */}
         {newScore != null && (
-          <View style={[styles.miniScoreBadge, { backgroundColor: `${getScoreColor(newScore)}33` }]}>
+          <View
+            style={[styles.miniScoreBadge, { backgroundColor: `${getScoreColor(newScore)}33` }]}
+            accessibilityLabel={`${newScore}% match for ${petName}`}
+          >
             <Text style={[styles.miniScoreText, { color: getScoreColor(newScore) }]}>
               {newScore}%
             </Text>

@@ -16,6 +16,7 @@ interface SearchResultsListProps {
   searchResults: ProductSearchResult[];
   searchLoading: boolean;
   searchQuery: string;
+  petName: string;
   onResultTap: (item: ProductSearchResult) => void;
 }
 
@@ -23,6 +24,7 @@ export function SearchResultsList({
   searchResults,
   searchLoading,
   searchQuery,
+  petName,
   onResultTap,
 }: SearchResultsListProps) {
   return (
@@ -34,6 +36,7 @@ export function SearchResultsList({
             style={styles.searchResultRow}
             onPress={() => onResultTap(item)}
             activeOpacity={0.7}
+            accessibilityLabel={item.final_score != null ? `${item.final_score}% match for ${petName}` : undefined}
           >
             {item.image_url ? (
               <Image source={{ uri: item.image_url }} style={styles.searchResultImage} />

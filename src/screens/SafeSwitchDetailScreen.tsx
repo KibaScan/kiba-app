@@ -372,6 +372,7 @@ export default function SafeSwitchDetailScreen({ navigation, route }: Props) {
               oldProduct={oldProduct}
               newProduct={newProduct}
               newScore={data.newScore}
+              petName={petName}
             />
 
             {/* Paused banner */}

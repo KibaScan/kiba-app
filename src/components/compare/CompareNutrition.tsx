@@ -1,6 +1,6 @@
 // CompareNutrition — Two-column nutrition DMB comparison (protein/fat/fiber/moisture/kcal).
 // Pure presentational component. Props provided by CompareScreen (state stays in parent).
-// Clinical-copy rule (D-094): no color-coded "winner" for nutrition rows.
+// Clinical-copy rule (D-095): no color-coded "winner" for nutrition rows.
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -41,7 +41,7 @@ export function CompareNutrition({ productA, productB }: Props) {
           {NUTRITION_ROWS.map(({ key, label, field }) => {
             const valA = productA[field];
             const valB = productB[field];
-            // Clinical-copy rule (D-094): no color-coded "winner" for
+            // Clinical-copy rule (D-095): no color-coded "winner" for
             // nutrition rows — "higher fat" isn't universally better.
             // Use subtle bold/dim differentiation only.
             const comparable = valA != null && valB != null;

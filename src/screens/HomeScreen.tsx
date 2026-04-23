@@ -436,6 +436,7 @@ export default function HomeScreen() {
             searchResults={searchResults}
             searchLoading={searchLoading}
             searchQuery={searchQuery}
+            petName={activePet?.name ?? ''}
             onResultTap={handleSearchResultTap}
           />
         )}

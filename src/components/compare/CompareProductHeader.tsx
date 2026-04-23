@@ -42,8 +42,7 @@ export function CompareProductHeader({ product, score, petName, species, isParti
           size="small"
         />
       </View>
-      {/* D-094: score is always framed, but use the verdict label pattern
-          (same as ResultScreen) to avoid echoing the number from the ring. */}
+      {/* D-168: CompareScreen is a dense surface — verdict label here, full phrase in ScoreRing's accessibilityLabel. */}
       <Text style={ss.matchLabel}>{getVerdictLabel(score, firstName)}</Text>
     </View>
   );
