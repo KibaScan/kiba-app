@@ -3010,7 +3010,6 @@ This is optional — user can stay in weight mode if they prefer.
 
 **Implementation:**
 - `src/components/pantry/PantryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
-- `src/components/pantry/PantryCard.tsx` — same treatment
 - `src/components/scoring/ScoreRing.tsx` — removed the "match for {petName}" caption entirely; full phrase moved to `accessibilityLabel` on the score number. Orphaned `matchLabel` style removed. Screen reader flow preserved via `importantForAccessibility="no-hide-descendants"` on the percent sign so the score number's `accessibilityLabel` is the single utterance.
 - `PetShareCard.tsx`, browse components unchanged (already match tier; PetShareCard keeps full phrase as the sole outbound-share surface)
 

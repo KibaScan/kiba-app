@@ -81,29 +81,6 @@ export async function registerPushToken(expoPushToken: string): Promise<void> {
 }
 
 /**
- * Deactivates the push token for the current device.
- * Called on logout (future).
- */
-async function unregisterPushToken(): Promise<void> {
-  try {
-    if (!(await isOnline())) return;
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
-
-    const deviceId = await getDeviceId();
-
-    await supabase
-      .from('push_tokens')
-      .update({ is_active: false })
-      .eq('user_id', session.user.id)
-      .eq('device_id', deviceId);
-  } catch (err) {
-    console.warn('[Kiba Push] Token unregister failed:', err);
-  }
-}
-
-/**
  * Updates a single notification preference in user_settings.
  * Throws on offline — callers should catch and show toast.
  */
