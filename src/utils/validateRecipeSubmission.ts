@@ -48,12 +48,14 @@ export function validateRecipe(r: RecipeSubmission): ValidationResult {
   for (const ing of r.ingredients) {
     const match = findToxicMatch(ing.name, r.species);
     if (match) {
-      const lethalSpecies =
-        r.species === 'both'
-          ? match.species_severity.dog === 'toxic'
-            ? 'dog'
-            : 'cat'
-          : r.species;
+      const dogToxic = match.species_severity.dog === 'toxic';
+      const catToxic = match.species_severity.cat === 'toxic';
+      let lethalSpecies: string;
+      if (r.species === 'both') {
+        lethalSpecies = dogToxic && catToxic ? 'dogs and cats' : dogToxic ? 'dogs' : 'cats';
+      } else {
+        lethalSpecies = r.species === 'dog' ? 'dogs' : 'cats';
+      }
       return {
         valid: false,
         reason: `This recipe contains ${match.name}, which is toxic to ${lethalSpecies}. Please remove it and resubmit.`,
