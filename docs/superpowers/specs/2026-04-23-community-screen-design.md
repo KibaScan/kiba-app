@@ -342,8 +342,10 @@ Not stored. Query:
 SELECT COALESCE(SUM(xp_delta), 0) AS weekly_xp
 FROM user_xp_events
 WHERE user_id = $1
-  AND created_at >= date_trunc('week', NOW() AT TIME ZONE 'UTC');
+  AND created_at >= (date_trunc('week', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC');
 ```
+
+**Why the trailing `AT TIME ZONE 'UTC'`:** without it, `date_trunc(...)` returns a `TIMESTAMP WITHOUT TIME ZONE`, which Postgres implicitly casts to `TIMESTAMPTZ` using the database session's timezone. If the session is not UTC, the Monday-midnight boundary shifts. Re-anchoring with `AT TIME ZONE 'UTC'` produces a `TIMESTAMPTZ` that comparies cleanly against `created_at`.
 
 Tradeoff: PostgreSQL's `date_trunc('week', ...)` uses ISO 8601 (week starts Monday 00:00). So weekly XP resets Monday 00:00 UTC. Some users in distant timezones see reset at an unnatural local time. Accepted MVP limitation — user-TZ timestamp column can be added post-launch without data migration.
 

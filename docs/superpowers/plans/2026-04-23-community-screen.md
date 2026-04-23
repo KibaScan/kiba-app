@@ -558,8 +558,12 @@ Run: `npm test -- __tests__/utils/brandSlugify.test.ts`
 ```ts
 // src/utils/brandSlugify.ts
 export function brandSlugify(brand: string): string {
+  // Strip "elision" punctuation (apostrophes, periods in initials) FIRST so
+  // they collapse cleanly. Then convert remaining non-alphanum to hyphens.
+  // Test case: "Hill's Science Diet" → "hills-science-diet" (NOT "hill-s-...").
   return brand
     .toLowerCase()
+    .replace(/['.]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
@@ -1024,7 +1028,7 @@ BEGIN
     COALESCE((
       SELECT SUM(xp_delta)::INT FROM user_xp_events
       WHERE user_id = v_user
-        AND created_at >= date_trunc('week', NOW() AT TIME ZONE 'UTC')
+        AND created_at >= (date_trunc('week', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')
     ), 0)
   FROM (SELECT NULL::INT) AS dummy
   LEFT JOIN user_xp_totals t ON t.user_id = v_user;
@@ -1155,9 +1159,10 @@ git commit -m "M9 community: curated toxic_foods.json + syncToxicFoods script"
 
 - [ ] **Step 1: Write the Edge Function**
 
+`Deno.serve` is a native global in current Supabase Edge Runtime — no `std/http/server.ts` import needed.
+
 ```ts
 // supabase/functions/validate-recipe/index.ts
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import toxicFoods from './toxic_foods.json' with { type: 'json' };
 
@@ -1186,7 +1191,7 @@ function findToxicMatch(name: string, species: 'dog' | 'cat' | 'both'): ToxicEnt
   return null;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -1283,12 +1288,13 @@ Deno.test('toxic_foods.json has chocolate entry', () => {
 });
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run tests** (uses Supabase CLI's bundled Deno; bare `deno` is unlikely to be on PATH in this Expo repo)
 
 ```bash
-cd supabase/functions/validate-recipe
-deno test --allow-read
+npx supabase functions test validate-recipe
 ```
+
+If `supabase functions test` is unavailable in your CLI version, fall back to `npx supabase functions serve --no-verify-jwt validate-recipe` and run tests against the local function endpoint via `curl` or a Jest integration test. Don't install Deno globally just for this.
 
 Expected: PASS, 5 tests.
 
@@ -1846,10 +1852,12 @@ Per spec §6.4.
 - [ ] **Step 1: Install dep**
 
 ```bash
-npm install react-native-markdown-display
+npm install react-native-marked
 ```
 
-If RN 0.83 incompatibility surfaces, fall back to a comparable lib (e.g., `@ronradtke/react-native-markdown-display` fork or `marked` + custom renderer). Document the choice.
+**DO NOT use `react-native-markdown-display`** — it relies on `ViewPropTypes`, which React Native removed from core in 0.71. On Expo SDK 55 / RN 0.83 the build hard-crashes on launch.
+
+`react-native-marked` is actively maintained and uses native components for rendering. If its API surface is insufficient (e.g., custom image lazy-loading), wrap `marked` directly and render with native RN components. Document any deviation in the commit message.
 
 - [ ] **Step 2: BlogCarousel** — horizontal `FlatList`, 3 most-recent posts. Hidden when `fetchPublishedPosts()` returns `[]`. "See all →" link → `BlogList`.
 - [ ] **Step 3: BlogListScreen** — vertical `FlatList`, all published posts.
