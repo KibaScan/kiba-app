@@ -76,6 +76,7 @@ dataset_kiba_v*.json
 scripts/import/dataset_kiba_v*.json
 data/
 !src/data/
+!docs/data/
 
 # WSL zone transfer metadata
 *:Zone.Identifier

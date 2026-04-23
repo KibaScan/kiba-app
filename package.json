@@ -15,7 +15,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
-    "sync:toxics": "npx ts-node scripts/syncToxicFoods.ts"
+    "sync:toxics": "npx ts-node scripts/syncToxicFoods.ts",
+    "seed:vendors": "npx ts-node scripts/seedVendors.ts"
   },
   "jest": {
     "preset": "jest-expo",
