@@ -27,7 +27,13 @@ ALTER TABLE community_recipes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users insert own recipes" ON community_recipes
   FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    user_id = auth.uid()
+    AND status = 'pending'
+    AND is_killed = false
+    AND rejection_reason IS NULL
+    AND reviewed_at IS NULL
+  );
 
 CREATE POLICY "Users read own + approved recipes" ON community_recipes
   FOR SELECT TO authenticated

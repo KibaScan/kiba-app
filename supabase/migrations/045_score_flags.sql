@@ -7,7 +7,7 @@ CREATE TABLE score_flags (
   user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
   pet_id UUID NOT NULL REFERENCES pets ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products ON DELETE CASCADE,
-  scan_id UUID NULL,
+  scan_id UUID NULL REFERENCES scan_history(id) ON DELETE SET NULL,
   reason TEXT NOT NULL
     CHECK (reason IN ('score_wrong','ingredient_missing','recalled','data_outdated','recipe_concern','other')),
   detail TEXT,
@@ -22,7 +22,13 @@ CREATE INDEX score_flags_user_idx ON score_flags (user_id, created_at DESC);
 
 ALTER TABLE score_flags ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users insert own flags" ON score_flags
-  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND status = 'open'
+    AND admin_note IS NULL
+    AND reviewed_at IS NULL
+  );
 CREATE POLICY "Users read own flags" ON score_flags
   FOR SELECT TO authenticated USING (user_id = auth.uid());
 -- UPDATE: service role only.

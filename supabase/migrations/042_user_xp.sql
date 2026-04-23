@@ -37,3 +37,10 @@ ALTER TABLE user_xp_totals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own xp totals" ON user_xp_totals
   FOR SELECT TO authenticated USING (user_id = auth.uid());
 -- INSERT/UPDATE: triggers only.
+
+-- NOTE: user_xp_events and user_xp_totals have no INSERT/UPDATE policy.
+-- All writes come from triggers added in migration 046 (Task 8) which MUST
+-- be declared SECURITY DEFINER owned by `postgres` — otherwise they fire
+-- as the invoking user, hit the SELECT-only RLS wall, and rollback the
+-- originating INSERT (into scans, kiba_index_votes, etc.). Pattern matches
+-- existing 026_kiba_index.sql get_kiba_index_stats RPC.
