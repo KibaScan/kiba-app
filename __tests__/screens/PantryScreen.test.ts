@@ -60,7 +60,7 @@ import {
   sortItems,
   shouldShowD157Nudge,
   getDietBannerConfig,
-} from '../../src/screens/PantryScreen';
+} from '../../src/utils/pantryScreenHelpers';
 import type { PantryCardData, DietCompletenessResult } from '../../src/types/pantry';
 
 // ─── Test Fixture ───────────────────────────────────────

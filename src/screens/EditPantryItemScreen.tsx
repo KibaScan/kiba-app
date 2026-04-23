@@ -41,9 +41,10 @@ import {
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName, formatServing } from '../utils/formatters';
-import { shouldShowD157Nudge } from './PantryScreen';
+import { shouldShowD157Nudge } from '../utils/pantryScreenHelpers';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
 import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
+import { FedThisTodayActionCard } from '../components/pantry/edit/FedThisTodayActionCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chipToggle } from '../utils/haptics';
 import {
@@ -52,66 +53,16 @@ import {
   Spacing,
   SEVERITY_COLORS,
 } from '../utils/constants';
+import {
+  formatTime,
+  buildFrequencyUpdate,
+  shouldShowFedTodayCard,
+} from '../utils/editPantryItemHelpers';
 
 // ─── Types ──────────────────────────────────────────────
 
 type Props = NativeStackScreenProps<PantryStackParamList, 'EditPantryItem'>;
-
-// ─── Exported Pure Helpers ──────────────────────────────
-
-export function formatTime(time24: string): string {
-  const [hStr, mStr] = time24.split(':');
-  const h = parseInt(hStr, 10);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${displayH}:${mStr} ${period}`;
-}
-
 // D-164: unit label is always 'servings' — picker removed
-
-/**
- * Build the assignment update payload for a schedule-toggle change.
- * Schedule is the single source of truth for both feeding_frequency AND
- * auto_deplete_enabled (daily → true, as_needed → false). Toggling to
- * as_needed also forces notifications_on=false; toggling to daily leaves
- * notifications_on untouched so the user's existing preference is preserved.
- */
-export function buildFrequencyUpdate(
-  freq: FeedingFrequency,
-): Parameters<typeof updatePetAssignment>[1] {
-  const isDaily = freq === 'daily';
-  const updates: Parameters<typeof updatePetAssignment>[1] = {
-    feeding_frequency: freq,
-    auto_deplete_enabled: isDaily,
-  };
-  if (!isDaily) {
-    updates.notifications_on = false;
-  }
-  return updates;
-}
-
-interface FedTodayCardVisibilityState {
-  feedingFrequency: FeedingFrequency;
-  isEmpty: boolean;
-  isActive: boolean;
-  isRecalled: boolean;
-}
-
-/**
- * Returns true when the "Fed This Today" Featured Action Card should render
- * at the top of EditPantryItemScreen. Gated to as_needed items that are
- * meaningfully loggable — hides on daily (auto-deplete handles it), empty
- * (nothing to deduct), recalled (bypass per D-158), or soft-deleted.
- * See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b.
- */
-export function shouldShowFedTodayCard(state: FedTodayCardVisibilityState): boolean {
-  return (
-    state.feedingFrequency === 'as_needed' &&
-    !state.isEmpty &&
-    state.isActive &&
-    !state.isRecalled
-  );
-}
 
 // ─── Component ──────────────────────────────────────────
 
@@ -421,24 +372,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               PantryCard Log feeding button is one screen away.
               See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b. */}
           {showFedTodayCard && (
-            <TouchableOpacity
-              style={styles.fedTodayCard}
-              onPress={() => setLogFeedingSheetVisible(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Log a feeding to deduct inventory"
-            >
-              <View style={styles.fedTodayIconBox}>
-                <Ionicons name="restaurant-outline" size={24} color="#FFFFFF" />
-              </View>
-              <View style={styles.fedTodayTextContainer}>
-                <Text style={styles.fedTodayTitle}>Fed This Today</Text>
-                <Text style={styles.fedTodaySubtitle}>
-                  Log a feeding to deduct inventory
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
-            </TouchableOpacity>
+            <FedThisTodayActionCard onPress={() => setLogFeedingSheetVisible(true)} />
           )}
 
           {/* ── Quantity Card ── */}
@@ -792,40 +726,6 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-  },
-
-  // Fed This Today Featured Action Card
-  fedTodayCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    padding: Spacing.md,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  fedTodayIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-  },
-  fedTodayTextContainer: {
-    flex: 1,
-  },
-  fedTodayTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  fedTodaySubtitle: {
-    fontSize: FontSizes.sm,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
   },
 
   // Cards
