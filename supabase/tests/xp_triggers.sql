@@ -44,9 +44,9 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
   VALUES ('00000000-0000-0000-0000-000000000101',
-          'Test Kibble', 'dog', 'dry_food', 'hash_1')
+          'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- Action: first scan
@@ -67,7 +67,7 @@ BEGIN;
     -- At minimum: scan(+10) + discovery(+50) = 60 XP
     -- (this is the first scan of this product ever, so discovery fires too)
     -- We check >= 10 to avoid coupling this test to discovery details.
-    -- Exact XP is validated in Test 5.
+    -- Exact XP is validated in Test 6.
     IF v_totals.total_xp < 10 THEN
       RAISE EXCEPTION 'Test 1 FAILED: expected total_xp >= 10, got %', v_totals.total_xp;
     END IF;
@@ -111,10 +111,10 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
   VALUES
-    ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1'),
-    ('00000000-0000-0000-0000-000000000102', 'Test Treat',  'dog', 'treat',    'hash_2')
+    ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1'),
+    ('00000000-0000-0000-0000-000000000102', 'Test Brand', 'Test Treat',  'dog', 'treat',      'community', 'hash_2')
     ON CONFLICT (id) DO NOTHING;
 
   -- First scan today
@@ -173,8 +173,8 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
-  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1')
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- Manually prime the totals row to simulate yesterday's scan
@@ -218,9 +218,9 @@ BEGIN;
 ROLLBACK;
 
 -- =============================================================================
--- Test 4: Gap of 3+ days resets streak to 1
+-- Test 4: Gap of exactly 2 days (grace day) = streak preserved and extended
 -- =============================================================================
-\echo 'Test 4: 3-day gap resets streak to 1'
+\echo 'Test 4: Grace-day boundary (gap=2) preserves and extends streak'
 BEGIN;
 
   INSERT INTO auth.users (id, email) VALUES
@@ -233,8 +233,73 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
-  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1')
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
+    ON CONFLICT (id) DO NOTHING;
+
+  -- Prime with a 3-day streak that ended the day before yesterday (gap_days = 2 when scan fires today)
+  INSERT INTO user_xp_totals (
+    user_id, total_xp, scans_count, discoveries_count, contributions_count,
+    streak_current_days, streak_longest_days, streak_last_scan_date
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    30, 3, 0, 0,
+    3, 3,
+    (NOW() AT TIME ZONE 'UTC')::DATE - 2  -- day before yesterday → gap = 2 (within grace)
+  );
+
+  -- Scan today: grace window keeps the streak alive, extends to 4
+  INSERT INTO scan_history (user_id, pet_id, product_id, final_score, score_breakdown)
+  VALUES ('00000000-0000-0000-0000-000000000001',
+          '00000000-0000-0000-0000-000000000011',
+          '00000000-0000-0000-0000-000000000101',
+          75, '{}');
+
+  DO $$
+  DECLARE
+    v_totals user_xp_totals%ROWTYPE;
+  BEGIN
+    SELECT * INTO v_totals FROM user_xp_totals
+    WHERE user_id = '00000000-0000-0000-0000-000000000001';
+
+    IF v_totals.streak_current_days <> 4 THEN
+      RAISE EXCEPTION 'Test 4 FAILED: grace day should extend streak to 4, got %',
+        v_totals.streak_current_days;
+    END IF;
+
+    IF v_totals.streak_longest_days < 4 THEN
+      RAISE EXCEPTION 'Test 4 FAILED: longest streak should be bumped to >= 4, got %',
+        v_totals.streak_longest_days;
+    END IF;
+
+    IF v_totals.streak_last_scan_date <> (NOW() AT TIME ZONE 'UTC')::DATE THEN
+      RAISE EXCEPTION 'Test 4 FAILED: streak_last_scan_date should be today, got %',
+        v_totals.streak_last_scan_date;
+    END IF;
+
+    RAISE NOTICE 'Test 4 PASSED';
+  END $$;
+
+ROLLBACK;
+
+-- =============================================================================
+-- Test 5: Gap of 3+ days resets streak to 1
+-- =============================================================================
+\echo 'Test 5: 3-day gap resets streak to 1'
+BEGIN;
+
+  INSERT INTO auth.users (id, email) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'user_a@test.invalid')
+    ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO pets (id, user_id, name, species)
+  VALUES ('00000000-0000-0000-0000-000000000011',
+          '00000000-0000-0000-0000-000000000001',
+          'Rex', 'dog')
+    ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- Prime with a 7-day streak from 5 days ago (gap = 5, well above the 2-day grace)
@@ -263,25 +328,25 @@ BEGIN;
     WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     IF v_totals.streak_current_days <> 1 THEN
-      RAISE EXCEPTION 'Test 4 FAILED: expected streak reset to 1, got %',
+      RAISE EXCEPTION 'Test 5 FAILED: expected streak reset to 1, got %',
         v_totals.streak_current_days;
     END IF;
 
     -- Longest streak should be preserved (7), not overwritten
     IF v_totals.streak_longest_days < 7 THEN
-      RAISE EXCEPTION 'Test 4 FAILED: longest streak should be preserved >= 7, got %',
+      RAISE EXCEPTION 'Test 5 FAILED: longest streak should be preserved >= 7, got %',
         v_totals.streak_longest_days;
     END IF;
 
-    RAISE NOTICE 'Test 4 PASSED';
+    RAISE NOTICE 'Test 5 PASSED';
   END $$;
 
 ROLLBACK;
 
 -- =============================================================================
--- Test 5: First scan of a UPC = discovery bonus. Second user's scan = no bonus.
+-- Test 6: First scan of a UPC = discovery bonus. Second user's scan = no bonus.
 -- =============================================================================
-\echo 'Test 5: Discovery bonus fires for first global scan, not second'
+\echo 'Test 6: Discovery bonus fires for first global scan, not second'
 BEGIN;
 
   -- Two users
@@ -296,8 +361,8 @@ BEGIN;
     ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000002', 'Luna', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
-  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1')
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- USER_A scans first → should get scan(+10) + discovery(+50) = +60
@@ -336,30 +401,30 @@ BEGIN;
       AND event_type = 'discovery';
 
     IF v_xp_a <> 60 THEN
-      RAISE EXCEPTION 'Test 5 FAILED: USER_A expected 60 XP (scan+discovery), got %', v_xp_a;
+      RAISE EXCEPTION 'Test 6 FAILED: USER_A expected 60 XP (scan+discovery), got %', v_xp_a;
     END IF;
 
     IF v_disc_a <> 1 THEN
-      RAISE EXCEPTION 'Test 5 FAILED: USER_A expected 1 discovery event, got %', v_disc_a;
+      RAISE EXCEPTION 'Test 6 FAILED: USER_A expected 1 discovery event, got %', v_disc_a;
     END IF;
 
     IF v_xp_b <> 10 THEN
-      RAISE EXCEPTION 'Test 5 FAILED: USER_B expected 10 XP (scan only), got %', v_xp_b;
+      RAISE EXCEPTION 'Test 6 FAILED: USER_B expected 10 XP (scan only), got %', v_xp_b;
     END IF;
 
     IF v_disc_b <> 0 THEN
-      RAISE EXCEPTION 'Test 5 FAILED: USER_B expected 0 discovery events, got %', v_disc_b;
+      RAISE EXCEPTION 'Test 6 FAILED: USER_B expected 0 discovery events, got %', v_disc_b;
     END IF;
 
-    RAISE NOTICE 'Test 5 PASSED';
+    RAISE NOTICE 'Test 6 PASSED';
   END $$;
 
 ROLLBACK;
 
 -- =============================================================================
--- Test 6: Vote WITHOUT prior scan = +0 XP (unverified vote)
+-- Test 7: Vote WITHOUT prior scan = +0 XP (unverified vote)
 -- =============================================================================
-\echo 'Test 6: Vote without prior scan awards no XP'
+\echo 'Test 7: Vote without prior scan awards no XP'
 BEGIN;
 
   INSERT INTO auth.users (id, email) VALUES
@@ -372,8 +437,8 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
-  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1')
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- Vote WITHOUT any prior scan
@@ -396,22 +461,22 @@ BEGIN;
     WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     IF v_vote_events <> 0 THEN
-      RAISE EXCEPTION 'Test 6 FAILED: expected 0 vote_verified events, got %', v_vote_events;
+      RAISE EXCEPTION 'Test 7 FAILED: expected 0 vote_verified events, got %', v_vote_events;
     END IF;
 
     IF v_xp <> 0 THEN
-      RAISE EXCEPTION 'Test 6 FAILED: expected 0 XP for unverified vote, got %', v_xp;
+      RAISE EXCEPTION 'Test 7 FAILED: expected 0 XP for unverified vote, got %', v_xp;
     END IF;
 
-    RAISE NOTICE 'Test 6 PASSED';
+    RAISE NOTICE 'Test 7 PASSED';
   END $$;
 
 ROLLBACK;
 
 -- =============================================================================
--- Test 7: Vote AFTER prior scan = +15 XP (verified vote)
+-- Test 8: Vote AFTER prior scan = +15 XP (verified vote)
 -- =============================================================================
-\echo 'Test 7: Vote after scan awards +15 XP'
+\echo 'Test 8: Vote after scan awards +15 XP'
 BEGIN;
 
   INSERT INTO auth.users (id, email) VALUES
@@ -424,8 +489,8 @@ BEGIN;
           'Rex', 'dog')
     ON CONFLICT (id) DO NOTHING;
 
-  INSERT INTO products (id, name, target_species, category, ingredients_hash)
-  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Kibble', 'dog', 'dry_food', 'hash_1')
+  INSERT INTO products (id, brand, name, target_species, category, source, ingredients_hash)
+  VALUES ('00000000-0000-0000-0000-000000000101', 'Test Brand', 'Test Kibble', 'dog', 'daily_food', 'community', 'hash_1')
     ON CONFLICT (id) DO NOTHING;
 
   -- Scan first (earns 60 XP: 10 scan + 50 discovery)
@@ -455,23 +520,23 @@ BEGIN;
     WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     IF v_vote_events <> 1 THEN
-      RAISE EXCEPTION 'Test 7 FAILED: expected 1 vote_verified event, got %', v_vote_events;
+      RAISE EXCEPTION 'Test 8 FAILED: expected 1 vote_verified event, got %', v_vote_events;
     END IF;
 
     -- 60 (scan+discovery) + 15 (verified vote) = 75
     IF v_total_xp <> 75 THEN
-      RAISE EXCEPTION 'Test 7 FAILED: expected 75 total XP, got %', v_total_xp;
+      RAISE EXCEPTION 'Test 8 FAILED: expected 75 total XP, got %', v_total_xp;
     END IF;
 
-    RAISE NOTICE 'Test 7 PASSED';
+    RAISE NOTICE 'Test 8 PASSED';
   END $$;
 
 ROLLBACK;
 
 -- =============================================================================
--- Test 8: Recipe approve → re-approve → +100 XP only once (idempotent)
+-- Test 9: Recipe approve → re-approve → +100 XP only once (idempotent)
 -- =============================================================================
-\echo 'Test 8: Recipe re-approval awards XP only once'
+\echo 'Test 9: Recipe re-approval awards XP only once'
 BEGIN;
 
   INSERT INTO auth.users (id, email) VALUES
@@ -516,23 +581,23 @@ BEGIN;
 
     IF v_recipe_events <> 1 THEN
       RAISE EXCEPTION
-        'Test 8 FAILED: expected 1 recipe_approved event (idempotent), got %', v_recipe_events;
+        'Test 9 FAILED: expected 1 recipe_approved event (idempotent), got %', v_recipe_events;
     END IF;
 
     IF v_total_xp <> 100 THEN
       RAISE EXCEPTION
-        'Test 8 FAILED: expected 100 XP after re-approval (not 200), got %', v_total_xp;
+        'Test 9 FAILED: expected 100 XP after re-approval (not 200), got %', v_total_xp;
     END IF;
 
-    RAISE NOTICE 'Test 8 PASSED';
+    RAISE NOTICE 'Test 9 PASSED';
   END $$;
 
 ROLLBACK;
 
 -- =============================================================================
--- Test 9: Product needs_review false→true→false = +100 XP only once (idempotent)
+-- Test 10: Product needs_review false→true→false = +100 XP only once (idempotent)
 -- =============================================================================
-\echo 'Test 9: Missing product re-approval awards XP only once'
+\echo 'Test 10: Missing product re-approval awards XP only once'
 BEGIN;
 
   INSERT INTO auth.users (id, email) VALUES
@@ -541,11 +606,11 @@ BEGIN;
 
   -- Insert a community-contributed product pending moderation
   INSERT INTO products (
-    id, name, target_species, category, ingredients_hash,
+    id, brand, name, target_species, category, source, ingredients_hash,
     needs_review, contributed_by
   ) VALUES (
     '00000000-0000-0000-0000-000000000101',
-    'Community Kibble', 'dog', 'dry_food', 'hash_contrib',
+    'Test Brand', 'Community Kibble', 'dog', 'daily_food', 'community', 'hash_contrib',
     true,
     '00000000-0000-0000-0000-000000000001'
   );
@@ -579,15 +644,15 @@ BEGIN;
 
     IF v_approval_events <> 1 THEN
       RAISE EXCEPTION
-        'Test 9 FAILED: expected 1 missing_product_approved event, got %', v_approval_events;
+        'Test 10 FAILED: expected 1 missing_product_approved event, got %', v_approval_events;
     END IF;
 
     IF v_total_xp <> 100 THEN
       RAISE EXCEPTION
-        'Test 9 FAILED: expected 100 XP after oscillation (not 200), got %', v_total_xp;
+        'Test 10 FAILED: expected 100 XP after oscillation (not 200), got %', v_total_xp;
     END IF;
 
-    RAISE NOTICE 'Test 9 PASSED';
+    RAISE NOTICE 'Test 10 PASSED';
   END $$;
 
 ROLLBACK;
