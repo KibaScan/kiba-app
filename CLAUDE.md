@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: April 16, 2026 — M9 in progress. Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: April 23, 2026 — M9 in progress (session 62 shipped dead-code sweep + 8-screen file-split refactor). Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
