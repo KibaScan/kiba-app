@@ -2,14 +2,13 @@
 // Premium-gated (canCompare). D-095 compliant: factual, never editorial.
 // All scores computed on-the-fly via scoreProduct() — never cached/base.
 
-import React, { useEffect, useState, useCallback, useMemo, type ComponentProps } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,52 +16,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { scoreProduct, PipelineResult } from '../services/scoring/pipeline';
-import { computeKeyDifferences, KeyDifference } from '../utils/keyDifferences';
-import { ScoreRing, getScoreColor } from '../components/scoring/ScoreRing';
-import { Colors, FontSizes, Spacing, SCORING_WEIGHTS, getVerdictLabel } from '../utils/constants';
-import { stripBrandFromName, toDisplayName, getConversationalName } from '../utils/formatters';
+import { computeKeyDifferences } from '../utils/keyDifferences';
+import { Colors, FontSizes, Spacing, getVerdictLabel } from '../utils/constants';
+import { getConversationalName } from '../utils/formatters';
 import { getPetAllergens, getPetConditions } from '../services/petService';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { CompareProductPickerSheet } from '../components/compare/CompareProductPickerSheet';
+import { CompareProductHeader } from '../components/compare/CompareProductHeader';
+import { CompareScoreBreakdown } from '../components/compare/CompareScoreBreakdown';
+import { CompareNutrition } from '../components/compare/CompareNutrition';
+import { CompareKeyDifferences } from '../components/compare/CompareKeyDifferences';
+import { CompareOtherPets } from '../components/compare/CompareOtherPets';
+import { CompareIngredientsSection } from '../components/compare/CompareIngredientsSection';
 import type { ScanStackParamList } from '../types/navigation';
 import type { Product } from '../types';
-import { resolveKcalPerCup } from '../utils/calorieEstimation';
-import type { ProductIngredient, ScoredResult } from '../types/scoring';
-
-// ─── Constants ──────────────────────────────────────────
-
-const BUCKET_LABELS = [
-  { key: 'ingredientQuality' as const, label: 'Ingredient Quality', maxKey: 'iq' as const },
-  { key: 'nutritionalProfile' as const, label: 'Nutritional Profile', maxKey: 'np' as const },
-  { key: 'formulation' as const, label: 'Formulation', maxKey: 'fc' as const },
-];
-
-const NUTRITION_ROWS = [
-  { key: 'protein', label: 'Protein', field: 'ga_protein_pct' as const },
-  { key: 'fat', label: 'Fat', field: 'ga_fat_pct' as const },
-  { key: 'fiber', label: 'Fiber', field: 'ga_fiber_pct' as const },
-  { key: 'moisture', label: 'Moisture', field: 'ga_moisture_pct' as const },
-];
-
-const SEVERITY_DOT: Record<string, string> = {
-  danger: Colors.severityRed,
-  caution: Colors.severityAmber,
-  neutral: Colors.textTertiary,
-  good: Colors.severityGreen,
-};
-
-const KEY_DIFF_ICONS: Record<KeyDifference['icon'], ComponentProps<typeof Ionicons>['name']> = {
-  warning: 'warning',
-  checkmark: 'checkmark-circle',
-  'arrow-up': 'arrow-up-circle',
-  'arrow-down': 'arrow-down-circle',
-};
-
-const KEY_DIFF_COLORS: Record<KeyDifference['severity'], string> = {
-  negative: Colors.severityRed,
-  positive: Colors.severityGreen,
-  neutral: Colors.textSecondary,
-};
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Compare'>;
 
@@ -228,16 +195,7 @@ export default function CompareScreen({ route, navigation }: Props) {
   const displayName = pet?.name ?? 'your pet';
   const category = productA?.category === 'treat' ? 'treat' : 'daily_food';
 
-  // ─── Helpers ────────────────────────────────────────────
-  const getMaxBucket = (cat: string) => {
-    const w = cat === 'treat' ? SCORING_WEIGHTS.treat : SCORING_WEIGHTS.daily_food;
-    return {
-      iq: Math.round(w.iq * 100),
-      np: Math.round(w.np * 100),
-      fc: Math.round(w.fc * 100),
-    };
-  };
-
+  // ─── Handlers ───────────────────────────────────────────
   const handleSwapProduct = useCallback((newBId: string) => {
     setPickerVisible(false);
     setProductBId(newBId);
@@ -283,8 +241,6 @@ export default function CompareScreen({ route, navigation }: Props) {
     );
   }
 
-  const bucketMax = getMaxBucket(category);
-
   // ─── Render ─────────────────────────────────────────────
   return (
     <View style={[ss.container, { paddingTop: insets.top }]}>
@@ -308,7 +264,7 @@ export default function CompareScreen({ route, navigation }: Props) {
       >
         {/* ─── Product Headers ─────────────────────────── */}
         <View style={ss.productHeaders}>
-          <ProductHeader
+          <CompareProductHeader
             product={productA}
             score={scoreA}
             petName={displayName}
@@ -316,7 +272,7 @@ export default function CompareScreen({ route, navigation }: Props) {
             isPartial={resultA.scoredResult.isPartialScore}
           />
           <View style={ss.headerDivider} />
-          <ProductHeader
+          <CompareProductHeader
             product={productB}
             score={scoreB}
             petName={displayName}
@@ -326,216 +282,35 @@ export default function CompareScreen({ route, navigation }: Props) {
         </View>
 
         {/* ─── Score Breakdown ─────────────────────────── */}
-        <View style={ss.section}>
-          <Text style={ss.sectionTitle}>Score Breakdown</Text>
-          {BUCKET_LABELS.map(({ key, label, maxKey }) => {
-            const rawA = resultA.scoredResult.layer1[key];
-            const rawB = resultB.scoredResult.layer1[key];
-            const max = bucketMax[maxKey];
-            if (max === 0) return null; // treat: skip NP/FC
-
-            // Convert raw 0-100 bucket score → weighted contribution out of max
-            const valA = Math.round((rawA / 100) * max);
-            const valB = Math.round((rawB / 100) * max);
-            const highlightA = valA > valB;
-            const highlightB = valB > valA;
-
-            return (
-              <View key={key} style={ss.bucketRow}>
-                <Text style={[
-                  ss.bucketValue,
-                  highlightA && ss.bucketValueWinner,
-                  highlightB && ss.bucketValueLoser,
-                ]}>
-                  {valA}/{max}
-                </Text>
-                <Text style={ss.bucketLabel}>{label}</Text>
-                <Text style={[
-                  ss.bucketValue,
-                  highlightB && ss.bucketValueWinner,
-                  highlightA && ss.bucketValueLoser,
-                ]}>
-                  {valB}/{max}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
+        <CompareScoreBreakdown
+          layer1A={resultA.scoredResult.layer1}
+          layer1B={resultB.scoredResult.layer1}
+          category={category}
+        />
 
         {/* ─── Nutrition DMB ───────────────────────────── */}
-        <View style={ss.section}>
-          <Text style={ss.sectionTitle}>Nutrition (DMB)</Text>
-          {productA.ga_protein_pct == null && productB.ga_protein_pct == null ? (
-            <Text style={ss.emptyText}>No nutritional data available</Text>
-          ) : (
-            <>
-              {NUTRITION_ROWS.map(({ key, label, field }) => {
-                const valA = productA[field];
-                const valB = productB[field];
-                // Clinical-copy rule (D-094): no color-coded "winner" for
-                // nutrition rows — "higher fat" isn't universally better.
-                // Use subtle bold/dim differentiation only.
-                const comparable = valA != null && valB != null;
-                const aHeavier = comparable && (valA as number) > (valB as number);
-                const bHeavier = comparable && (valB as number) > (valA as number);
-                return (
-                  <View key={key} style={ss.nutritionRow}>
-                    <Text style={[
-                      ss.nutritionValue,
-                      aHeavier && ss.nutritionValueHeavier,
-                      bHeavier && ss.nutritionValueLighter,
-                    ]}>
-                      {valA != null ? `${valA}%` : '—'}
-                    </Text>
-                    <Text style={ss.nutritionLabel}>{label}</Text>
-                    <Text style={[
-                      ss.nutritionValue,
-                      bHeavier && ss.nutritionValueHeavier,
-                      aHeavier && ss.nutritionValueLighter,
-                    ]}>
-                      {valB != null ? `${valB}%` : '—'}
-                    </Text>
-                  </View>
-                );
-              })}
-              {/* kcal/cup row — resolved with estimation fallback */}
-              {(() => {
-                const cupA = resolveKcalPerCup(productA);
-                const cupB = resolveKcalPerCup(productB);
-                if (!cupA && !cupB) return null;
-                const fmtCup = (r: { kcalPerCup: number; isEstimated: boolean } | null) =>
-                  r == null ? '—' : `${r.kcalPerCup.toLocaleString()}${r.isEstimated ? '*' : ''}`;
-                const comparable = cupA != null && cupB != null;
-                const aHeavier = comparable && cupA!.kcalPerCup > cupB!.kcalPerCup;
-                const bHeavier = comparable && cupB!.kcalPerCup > cupA!.kcalPerCup;
-                return (
-                  <View style={ss.nutritionRow}>
-                    <Text style={[
-                      ss.nutritionValue,
-                      aHeavier && ss.nutritionValueHeavier,
-                      bHeavier && ss.nutritionValueLighter,
-                    ]}>
-                      {fmtCup(cupA)}
-                    </Text>
-                    <Text style={ss.nutritionLabel}>kcal/cup</Text>
-                    <Text style={[
-                      ss.nutritionValue,
-                      bHeavier && ss.nutritionValueHeavier,
-                      aHeavier && ss.nutritionValueLighter,
-                    ]}>
-                      {fmtCup(cupB)}
-                    </Text>
-                  </View>
-                );
-              })()}
-              {(productA.ga_protein_pct == null || productB.ga_protein_pct == null) && (
-                <Text style={ss.partialNote}>Partial data — some values unavailable</Text>
-              )}
-            </>
-          )}
-        </View>
+        <CompareNutrition productA={productA} productB={productB} />
 
         {/* ─── Key Differences ─────────────────────────── */}
-        {keyDifferences.length > 0 && (
-          <View style={ss.section}>
-            <Text style={ss.sectionTitle}>Key Differences</Text>
-            {keyDifferences.map((diff) => (
-              <View key={diff.id} style={ss.diffCard}>
-                <Ionicons
-                  name={KEY_DIFF_ICONS[diff.icon]}
-                  size={20}
-                  color={KEY_DIFF_COLORS[diff.severity]}
-                  style={ss.diffIcon}
-                />
-                <Text style={ss.diffText}>
-                  <Text style={ss.diffSubject}>{diff.subject}</Text>
-                  {' '}{diff.verb}{' '}
-                  <Text style={ss.diffClaim}>{diff.claim}</Text>
-                  {diff.trailing ? ` ${diff.trailing}` : ''}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <CompareKeyDifferences differences={keyDifferences} />
 
         {/* ─── Your Other Pets ──────────────────────────── */}
-        {otherPets.length > 0 && (
-          <View style={ss.section}>
-            <TouchableOpacity
-              style={ss.sectionHeader}
-              onPress={() => setOtherPetsExpanded(!otherPetsExpanded)}
-              activeOpacity={0.7}
-            >
-              <Text style={ss.sectionTitle}>Your Other Pets</Text>
-              <Ionicons
-                name={otherPetsExpanded ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={Colors.textSecondary}
-              />
-            </TouchableOpacity>
-            {otherPetsExpanded && (
-              otherPetsLoading ? (
-                <View style={ss.otherPetsLoading}>
-                  <ActivityIndicator size="small" color={Colors.accent} />
-                  <Text style={ss.otherPetsLoadingText}>Scoring for your other pets…</Text>
-                </View>
-              ) : (
-                otherPets.map(op => {
-                  const scores = otherPetScores.get(op.id);
-                  if (!scores) return null;
-                  const highlightA = scores.scoreA > scores.scoreB;
-                  const highlightB = scores.scoreB > scores.scoreA;
-                  return (
-                    <View key={op.id} style={ss.otherPetRow}>
-                      <View style={ss.otherPetScoreCell}>
-                        <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreA, false) }]} />
-                        <Text style={[ss.otherPetScore, highlightA && { color: Colors.accent }]}>
-                          {Math.round(scores.scoreA)}%
-                        </Text>
-                      </View>
-                      <Text style={ss.otherPetName} numberOfLines={1}>{op.name}</Text>
-                      <View style={ss.otherPetScoreCell}>
-                        <View style={[ss.otherPetDot, { backgroundColor: getScoreColor(scores.scoreB, false) }]} />
-                        <Text style={[ss.otherPetScore, highlightB && { color: Colors.accent }]}>
-                          {Math.round(scores.scoreB)}%
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })
-              )
-            )}
-          </View>
-        )}
+        <CompareOtherPets
+          otherPets={otherPets}
+          scoresMap={otherPetScores}
+          expanded={otherPetsExpanded}
+          loading={otherPetsLoading}
+          onToggle={() => setOtherPetsExpanded(!otherPetsExpanded)}
+        />
 
         {/* ─── Ingredients ─────────────────────────────── */}
-        <View style={ss.section}>
-          <TouchableOpacity
-            style={ss.sectionHeader}
-            onPress={() => setIngredientsExpanded(!ingredientsExpanded)}
-            activeOpacity={0.7}
-          >
-            <Text style={ss.sectionTitle}>Ingredients</Text>
-            <Ionicons
-              name={ingredientsExpanded ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={Colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {ingredientsExpanded && (
-            <View style={ss.ingredientColumns}>
-              <View style={ss.ingredientCol}>
-                {renderIngredientList(resultA.ingredients, pet?.species ?? 'dog')}
-                <IngredientsFooter ingredients={resultA.ingredients} species={pet?.species ?? 'dog'} />
-              </View>
-              <View style={ss.ingredientDivider} />
-              <View style={ss.ingredientCol}>
-                {renderIngredientList(resultB.ingredients, pet?.species ?? 'dog')}
-                <IngredientsFooter ingredients={resultB.ingredients} species={pet?.species ?? 'dog'} />
-              </View>
-            </View>
-          )}
-        </View>
+        <CompareIngredientsSection
+          ingredientsA={resultA.ingredients}
+          ingredientsB={resultB.ingredients}
+          species={pet?.species ?? 'dog'}
+          expanded={ingredientsExpanded}
+          onToggle={() => setIngredientsExpanded(!ingredientsExpanded)}
+        />
 
         {/* ─── Bottom CTA ──────────────────────────────── */}
         <View style={ss.ctaContainer}>
@@ -570,127 +345,6 @@ export default function CompareScreen({ route, navigation }: Props) {
         species={pet?.species ?? 'dog'}
         category={category as 'daily_food' | 'treat'}
       />
-    </View>
-  );
-}
-
-// ─── Product Header Sub-Component ───────────────────────
-
-function ProductHeader({
-  product,
-  score,
-  petName,
-  species,
-  isPartial,
-}: {
-  product: Product;
-  score: number;
-  petName: string;
-  species: 'dog' | 'cat';
-  isPartial: boolean;
-}) {
-  const firstName = petName === 'your pet' ? null : petName.split(' ')[0];
-  return (
-    <View style={ss.productCard}>
-      <View style={ss.productImageStage}>
-        {product.image_url ? (
-          <Image source={{ uri: product.image_url }} style={ss.productImage} resizeMode="contain" />
-        ) : (
-          <Ionicons name="cube-outline" size={32} color={Colors.textTertiary} />
-        )}
-      </View>
-      <Text style={ss.productBrand} numberOfLines={1}>{product.brand}</Text>
-      <Text style={ss.productName} numberOfLines={2}>
-        {stripBrandFromName(product.brand, product.name)}
-      </Text>
-      <View style={ss.scoreRingWrapper}>
-        <ScoreRing
-          score={score}
-          petName={petName}
-          petPhotoUri={null}
-          species={species}
-          isPartialScore={isPartial}
-          size="small"
-        />
-      </View>
-      {/* D-094: score is always framed, but use the verdict label pattern
-          (same as ResultScreen) to avoid echoing the number from the ring. */}
-      <Text style={ss.matchLabel}>{getVerdictLabel(score, firstName)}</Text>
-    </View>
-  );
-}
-
-// ─── Ingredient List Helper ─────────────────────────────
-
-function renderIngredientList(ingredients: ProductIngredient[], species: 'dog' | 'cat') {
-  const sevKey = species === 'dog' ? 'dog_base_severity' : 'cat_base_severity';
-  const display = ingredients.slice(0, 10);
-
-  return display.map((ing, i) => (
-    <View key={`${ing.canonical_name}-${i}`} style={ss.ingredientItem}>
-      <View style={[ss.severityDot, { backgroundColor: SEVERITY_DOT[ing[sevKey]] ?? Colors.textTertiary }]} />
-      <Text style={ss.ingredientName} numberOfLines={1}>
-        {toDisplayName(ing.canonical_name)}
-      </Text>
-    </View>
-  ));
-}
-
-// ─── Ingredients Footer ─────────────────────────────────
-// Mini composition bar + severity tally for ingredients beyond position 10.
-// Top 10 are already listed above, so this surfaces hidden red/amber items.
-// Tally row shows [dot + count] per non-zero severity in good→danger order.
-function IngredientsFooter({
-  ingredients,
-  species,
-}: {
-  ingredients: ProductIngredient[];
-  species: 'dog' | 'cat';
-}) {
-  const beyond = ingredients
-    .filter((i) => i.position > 10)
-    .sort((a, b) => a.position - b.position);
-  if (beyond.length === 0) return null;
-
-  const sevKey = species === 'dog' ? 'dog_base_severity' : 'cat_base_severity';
-  const widthPct = 100 / beyond.length;
-
-  // Severity counts — iterate in good→neutral→caution→danger order
-  const counts: Record<string, number> = { good: 0, neutral: 0, caution: 0, danger: 0 };
-  for (const ing of beyond) {
-    const sev = ing[sevKey] ?? 'neutral';
-    counts[sev] = (counts[sev] ?? 0) + 1;
-  }
-  const tallyOrder: Array<'good' | 'neutral' | 'caution' | 'danger'> = [
-    'good',
-    'neutral',
-    'caution',
-    'danger',
-  ];
-
-  return (
-    <View style={ss.ingredientsFooter}>
-      <View style={ss.miniBar}>
-        {beyond.map((ing, idx) => {
-          const color = SEVERITY_DOT[ing[sevKey]] ?? Colors.textTertiary;
-          return (
-            <View
-              key={`${ing.position}-${idx}`}
-              style={{ width: `${widthPct}%`, height: '100%', backgroundColor: color }}
-            />
-          );
-        })}
-      </View>
-      <View style={ss.ingredientsTally}>
-        {tallyOrder.map((sev) =>
-          counts[sev] > 0 ? (
-            <View key={sev} style={ss.ingredientsTallyItem}>
-              <View style={[ss.severityDot, { backgroundColor: SEVERITY_DOT[sev] }]} />
-              <Text style={ss.ingredientsTallyCount}>{counts[sev]}</Text>
-            </View>
-          ) : null,
-        )}
-      </View>
     </View>
   );
 }
@@ -757,275 +411,6 @@ const ss = StyleSheet.create({
   },
   headerDivider: {
     width: Spacing.sm,
-  },
-  productCard: {
-    flex: 1,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    alignItems: 'center',
-  },
-  productImageStage: {
-    width: '100%',
-    height: 84,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: Spacing.sm + 4,
-    marginBottom: Spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-  },
-  productBrand: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  productName: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-    minHeight: 36,
-  },
-  scoreRingWrapper: {
-    marginBottom: Spacing.xs,
-  },
-  matchLabel: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-
-  // Sections — Matte Premium card anatomy (.agent/design.md)
-  section: {
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    marginBottom: Spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-
-  // Score breakdown
-  bucketRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairlineBorder,
-  },
-  bucketLabel: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-  },
-  bucketValue: {
-    width: 60,
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  bucketValueWinner: {
-    color: Colors.accent,
-  },
-  bucketValueLoser: {
-    color: Colors.textSecondary,
-    fontWeight: '600',
-  },
-
-  // Nutrition
-  nutritionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairlineBorder,
-  },
-  nutritionLabel: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-  },
-  nutritionValue: {
-    width: 60,
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  nutritionValueHeavier: {
-    fontWeight: '800',
-  },
-  nutritionValueLighter: {
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  partialNote: {
-    fontSize: FontSizes.xs,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-    fontStyle: 'italic',
-  },
-  emptyText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    paddingVertical: Spacing.md,
-  },
-
-  // Key differences — sit inside the section card, so lift slightly against cardSurface
-  diffCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  diffIcon: {
-    marginRight: Spacing.sm,
-    marginTop: 1,
-  },
-  diffText: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  diffSubject: {
-    color: Colors.textPrimary,
-    fontWeight: '700',
-  },
-  diffClaim: {
-    color: Colors.textPrimary,
-    fontWeight: '700',
-  },
-
-  // Ingredients
-  ingredientColumns: {
-    flexDirection: 'row',
-    marginTop: Spacing.xs,
-  },
-  ingredientCol: {
-    flex: 1,
-  },
-  ingredientDivider: {
-    width: Spacing.sm,
-  },
-  ingredientItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 3,
-  },
-  severityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  ingredientName: {
-    flex: 1,
-    fontSize: FontSizes.xs,
-    color: Colors.textPrimary,
-  },
-
-  // Ingredients footer — mini severity bar + tally for ingredients beyond top 10
-  ingredientsFooter: {
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.hairlineBorder,
-  },
-  miniBar: {
-    flexDirection: 'row',
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  ingredientsTally: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.xs + 2,
-  },
-  ingredientsTallyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ingredientsTallyCount: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-  },
-
-  // Other pets
-  otherPetsLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-  },
-  otherPetsLoadingText: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-  },
-  otherPetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.hairlineBorder,
-  },
-  otherPetScoreCell: {
-    width: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  otherPetDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  otherPetScore: {
-    fontSize: FontSizes.sm,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  otherPetName: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    textAlign: 'center',
   },
 
   // CTA
