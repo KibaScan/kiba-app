@@ -12,13 +12,12 @@ import {
   Image,
   Alert,
   SafeAreaView,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CatIcon, DogIcon, DailyFoodIcon } from '../components/icons/speciesIcons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Colors, FontSizes, Spacing } from '../utils/constants';
+import { Colors, Spacing } from '../utils/constants';
 import { styles } from './pethub/PetHubStyles';
 import {
   calculateScoreAccuracy,
@@ -27,28 +26,29 @@ import {
   capitalizeFirst,
   ACTIVITY_LABELS,
 } from './pethub/petHubHelpers';
-import { isPremium, canAddPet } from '../utils/permissions';
+import { canAddPet } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { useScanStore } from '../stores/useScanStore';
 import {
   getPetConditions,
   getPetAllergens,
   getMedications,
-  deleteMedication,
 } from '../services/petService';
-import { getConditionsForSpecies } from '../data/conditions';
-import { CONDITION_ICONS } from '../constants/iconMaps';
-import { CONDITION_SVG_ICONS } from '../components/icons/conditionSvgIcons';
 import { getWeightUnitPref, computePetDer } from '../utils/pantryHelpers';
 import PortionCard from '../components/PortionCard';
 import TreatBatteryGauge from '../components/TreatBatteryGauge';
 import { calculateTreatBudget } from '../services/treatBattery';
 import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { TreatQuickPickerSheet } from '../components/treats/TreatQuickPickerSheet';
-import { getHealthRecords, getUpcomingAppointments, deleteHealthRecord, deleteAppointment } from '../services/appointmentService';
+import { getHealthRecords, getUpcomingAppointments } from '../services/appointmentService';
 import { supabase } from '../services/supabase';
 import HealthRecordDetailSheet from '../components/appointments/HealthRecordDetailSheet';
 import WeightEstimateSheet from '../components/WeightEstimateSheet';
+import { HealthConditionsCard } from '../components/pethub/HealthConditionsCard';
+import { AppointmentsCard } from '../components/pethub/AppointmentsCard';
+import { MedicationsCard } from '../components/pethub/MedicationsCard';
+import { MedicalRecordsCard } from '../components/pethub/MedicalRecordsCard';
+import { VetReportCard } from '../components/pethub/VetReportCard';
 import { KCAL_PER_LB } from '../utils/weightGoal';
 import type { Pet, PetCondition, PetAllergen, PetMedication } from '../types/pet';
 import type { Appointment, PetHealthRecord } from '../types/appointment';
@@ -65,18 +65,6 @@ import { generateVetReportHTML } from '../utils/vetReportHTML';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
-import SwipeableRow from '../components/ui/SwipeableRow';
-import type { AppointmentType } from '../types/appointment';
-
-// ─── Appointment type icons (matching drill-down) ─────────
-const APPT_ICONS: Record<AppointmentType, string> = {
-  vet_visit: 'medical-outline',
-  grooming: 'cut-outline',
-  medication: 'medkit-outline',
-  vaccination: 'shield-checkmark-outline',
-  deworming: 'fitness-outline',
-  other: 'calendar-outline',
-};
 
 const FEEDING_STYLE_LABELS: Record<string, string> = {
   dry_only: 'Dry only',
@@ -276,19 +264,6 @@ export default function PetHubScreen({ navigation }: Props) {
   const lifeStageLabel = activePet.life_stage
     ? capitalizeFirst(activePet.life_stage)
     : null;
-
-  // Condition label + icon lookup. Returns {tag, label, ionicon} for chip rendering.
-  // Custom PNG icons (CONDITION_ICONS) are preferred; ionicon is the fallback when
-  // a condition has no matching asset (e.g. allergy, hyperthyroid).
-  const conditionDefs = getConditionsForSpecies(activePet.species);
-  const conditionItems = conditions.map((c) => {
-    const def = conditionDefs.find((d) => d.tag === c.condition_tag);
-    return {
-      tag: c.condition_tag,
-      label: def?.label ?? c.condition_tag,
-      ionicon: (def?.icon ?? 'ellipsis-horizontal-circle-outline') as string,
-    };
-  });
 
   const conditionTags = conditions.map((c) => c.condition_tag);
   // Always show carousel so "+ Add Pet" is visible (D-120).
@@ -607,376 +582,44 @@ export default function PetHubScreen({ navigation }: Props) {
         </View>
 
         {/* (f) Health conditions summary */}
-        <View style={styles.healthRecordCard}>
-          <View style={styles.healthRecordHeader}>
-            <Text style={styles.healthRecordTitle}>Health Conditions</Text>
-            {activePet.health_reviewed_at != null && (
-              <TouchableOpacity
-                style={styles.headerSeeAll}
-                activeOpacity={0.7}
-                onPress={() =>
-                  navigation.navigate('HealthConditions', {
-                    petId: activePet.id,
-                    fromCreate: false,
-                  })
-                }
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {healthLoading ? (
-            <ActivityIndicator
-              color={Colors.accent}
-              size="small"
-              style={styles.loadingSpinner}
-            />
-          ) : activePet.health_reviewed_at == null ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate('HealthConditions', {
-                  petId: activePet.id,
-                  fromCreate: false,
-                })
-              }
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Set up health conditions</Text>
-            </TouchableOpacity>
-          ) : conditions.length === 0 ? (
-            <View style={styles.healthyBadge}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={16}
-                color={Colors.severityGreen}
-              />
-              <Text style={styles.healthyText}>No known conditions</Text>
-            </View>
-          ) : (
-            <View>
-              <View style={styles.conditionChips}>
-                {conditionItems.slice(0, 4).map(({ tag, label, ionicon }) => {
-                  // Priority: SVG component > PNG asset > Ionicon fallback.
-                  // SVG wins when present because vector paths stay crisp at
-                  // any size, unlike the V1 thin-stroke PNGs.
-                  const SvgIcon = CONDITION_SVG_ICONS[tag];
-                  const customIcon = CONDITION_ICONS[tag];
-                  return (
-                    <View key={tag} style={styles.conditionChip}>
-                      {SvgIcon ? (
-                        <SvgIcon size={16} color={Colors.severityAmber} />
-                      ) : customIcon ? (
-                        <Image source={customIcon} style={styles.conditionChipIcon} />
-                      ) : (
-                        <Ionicons
-                          name={ionicon as any}
-                          size={16}
-                          color={Colors.severityAmber}
-                        />
-                      )}
-                      <Text style={styles.conditionChipText}>{label}</Text>
-                    </View>
-                  );
-                })}
-                {conditionItems.length > 4 && (
-                  <View style={styles.conditionChipOverflow}>
-                    <Text style={styles.conditionChipOverflowText}>
-                      +{conditionItems.length - 4} more
-                    </Text>
-                  </View>
-                )}
-              </View>
-              {allergens.length > 0 && (
-                <Text style={styles.allergenCount}>
-                  {allergens.length} food allergen{allergens.length !== 1 ? 's' : ''} tracked
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
+        <HealthConditionsCard
+          pet={activePet}
+          conditions={conditions}
+          allergens={allergens}
+          healthLoading={healthLoading}
+          navigation={navigation}
+        />
 
         {/* Appointments */}
-        <View style={styles.healthRecordCard}>
-          <View style={styles.healthRecordHeader}>
-            <Text style={styles.healthRecordTitle}>Appointments</Text>
-            {appointments.length > 0 && (
-              <TouchableOpacity
-                style={styles.headerSeeAll}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Appointments')}
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
-            )}
-          </View>
-          {appointments.length === 0 ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('CreateAppointment')}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              {appointments.slice(0, 3).map((appt) => (
-                <SwipeableRow
-                  key={appt.id}
-                  onDelete={async () => {
-                    await deleteAppointment(appt.id);
-                    setAppointments((prev) => prev.filter((a) => a.id !== appt.id));
-                  }}
-                  deleteConfirmMessage={`Delete this appointment? This cannot be undone.`}
-                >
-                  <TouchableOpacity
-                    style={styles.healthRecordRow}
-                    activeOpacity={0.7}
-                    onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: appt.id })}
-                  >
-                    <View style={styles.apptIconCircle}>
-                      <Ionicons
-                        name={(APPT_ICONS[appt.type] ?? 'calendar-outline') as any}
-                        size={18}
-                        color={Colors.accent}
-                      />
-                    </View>
-                    <View style={styles.healthRecordInfo}>
-                      <Text style={styles.healthRecordName}>
-                        {appt.custom_label || appt.type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </Text>
-                      <Text style={styles.healthRecordDate}>
-                        {new Date(appt.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </Text>
-                      {appt.location ? <Text style={styles.healthRecordVet}>{appt.location}</Text> : null}
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                  </TouchableOpacity>
-                </SwipeableRow>
-              ))}
-
-              {/* Always-visible add link */}
-              <TouchableOpacity
-                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('CreateAppointment')}
-              >
-                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-                <Text style={styles.addRecordLinkText}>Schedule an appointment</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <AppointmentsCard
+          appointments={appointments}
+          setAppointments={setAppointments}
+          navigation={navigation}
+        />
 
         {/* Medications (M6) — display-only, no scoring impact */}
-        <View style={styles.healthRecordCard}>
-          <View style={styles.healthRecordHeader}>
-            <Text style={styles.healthRecordTitle}>Medications</Text>
-            {medications.filter((m) => m.status !== 'past').length > 0 && (
-              <TouchableOpacity
-                style={styles.headerSeeAll}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Medications')}
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {medications.filter((m) => m.status !== 'past').length === 0 ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate('MedicationForm', {
-                  petId: activePet.id,
-                  petName: activePet.name,
-                  conditions: conditionTags.filter((t) => t !== 'allergy'),
-                })
-              }
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Add a medication</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              {medications
-                .filter((m) => m.status !== 'past')
-                .slice(0, 3)
-                .map((med) => (
-                  <SwipeableRow
-                    key={med.id}
-                    onDelete={async () => {
-                      await deleteMedication(med.id);
-                      getMedications(activePet.id).then(setMedications).catch(() => {});
-                    }}
-                    onEdit={() =>
-                      navigation.navigate('MedicationForm', {
-                        petId: activePet.id,
-                        petName: activePet.name,
-                        medication: med,
-                        conditions: conditionTags.filter((t) => t !== 'allergy'),
-                      })
-                    }
-                    deleteConfirmMessage={`Delete "${med.medication_name}"? This cannot be undone.`}
-                  >
-                    <TouchableOpacity
-                      style={styles.healthRecordRow}
-                      activeOpacity={0.7}
-                      onPress={() =>
-                        navigation.navigate('MedicationForm', {
-                          petId: activePet.id,
-                          petName: activePet.name,
-                          medication: med,
-                          conditions: conditionTags.filter((t) => t !== 'allergy'),
-                        })
-                      }
-                    >
-                      <View style={styles.medicationRowInner}>
-                        <View
-                          style={[
-                            styles.medicationStatusDot,
-                            { backgroundColor: med.status === 'current' ? Colors.severityGreen : Colors.severityAmber },
-                          ]}
-                        />
-                        <View style={styles.healthRecordInfo}>
-                          <Text style={styles.healthRecordName}>{med.medication_name}</Text>
-                          {med.dosage ? (
-                            <Text style={styles.healthRecordDate}>{med.dosage}</Text>
-                          ) : null}
-                        </View>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                    </TouchableOpacity>
-                  </SwipeableRow>
-                ))}
-
-
-
-              {/* Persistent add CTA */}
-              <TouchableOpacity
-                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
-                activeOpacity={0.7}
-                onPress={() =>
-                  navigation.navigate('MedicationForm', {
-                    petId: activePet.id,
-                    petName: activePet.name,
-                    conditions: conditionTags.filter((t) => t !== 'allergy'),
-                  })
-                }
-              >
-                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-                <Text style={styles.addRecordLinkText}>Add Medication</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <MedicationsCard
+          pet={activePet}
+          medications={medications}
+          setMedications={setMedications}
+          conditionTags={conditionTags}
+          navigation={navigation}
+        />
 
         {/* Medical Records — unified chronological timeline */}
-        <View style={styles.healthRecordCard}>
-          <View style={styles.healthRecordHeader}>
-            <Text style={styles.healthRecordTitle}>Medical Records</Text>
-            {healthRecords.length > 0 && (
-              <TouchableOpacity
-                style={styles.headerSeeAll}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('MedicalRecords')}
-              >
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
-              </TouchableOpacity>
-            )}
-          </View>
-          {healthRecords.length === 0 ? (
-            <TouchableOpacity
-              style={styles.addRecordLink}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('HealthRecordForm')}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-              <Text style={styles.addRecordLinkText}>Add a medical record</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              {/* Top 3 records, sorted chronologically */}
-              {[...healthRecords]
-                .sort((a, b) => b.administered_at.localeCompare(a.administered_at))
-                .slice(0, 3)
-                .map((r) => (
-                  <SwipeableRow
-                    key={r.id}
-                    onDelete={async () => {
-                      await deleteHealthRecord(r.id);
-                      getHealthRecords(activePet.id).then(setHealthRecords).catch(() => {});
-                    }}
-                    onEdit={() => { setSelectedRecord(r); setDetailSheetVisible(true); }}
-                    deleteConfirmMessage={`Delete "${r.treatment_name}"? This cannot be undone.`}
-                  >
-                    <TouchableOpacity
-                      style={styles.healthRecordRow}
-                      activeOpacity={0.7}
-                      onPress={() => { setSelectedRecord(r); setDetailSheetVisible(true); }}
-                    >
-                      <Ionicons
-                        name={r.record_type === 'vaccination' ? 'shield-checkmark-outline' : 'fitness-outline'}
-                        size={16}
-                        color={Colors.accent}
-                        style={styles.medicalRecordIcon}
-                      />
-                      <View style={styles.healthRecordInfo}>
-                        <Text style={styles.healthRecordName}>{r.treatment_name}</Text>
-                        <Text style={styles.healthRecordDate}>
-                          {new Date(r.administered_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          {r.next_due_at ? ` \u2014 Next: ${new Date(r.next_due_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
-                        </Text>
-                        {r.vet_name ? <Text style={styles.healthRecordVet}>{r.vet_name}</Text> : null}
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                    </TouchableOpacity>
-                  </SwipeableRow>
-                ))}
-
-              {/* Persistent add CTA — bottom-anchored, single steering wheel */}
-              <TouchableOpacity
-                style={[styles.addRecordLink, { marginTop: Spacing.sm }]}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('HealthRecordForm')}
-              >
-                <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-                <Text style={styles.addRecordLinkText}>Add Medical Record</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <MedicalRecordsCard
+          pet={activePet}
+          healthRecords={healthRecords}
+          setHealthRecords={setHealthRecords}
+          onOpenDetail={(r) => { setSelectedRecord(r); setDetailSheetVisible(true); }}
+          navigation={navigation}
+        />
 
         {/* Vet Report (M6) — wrapped in card to match dashboard pattern */}
-        <TouchableOpacity
-          style={styles.vetReportCard}
-          activeOpacity={0.7}
+        <VetReportCard
+          loading={vetReportLoading}
           onPress={handleGenerateVetReport}
-          disabled={vetReportLoading}
-        >
-          <View style={styles.vetReportRow}>
-            {vetReportLoading ? (
-              <ActivityIndicator size="small" color={Colors.accent} />
-            ) : (
-              <Ionicons name="document-text-outline" size={22} color={Colors.accent} />
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.vetReportTitle}>Vet Report</Text>
-              <Text style={styles.vetReportDesc}>
-                {vetReportLoading ? 'Generating…' : 'Generate a shareable diet summary for your vet'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-          </View>
-        </TouchableOpacity>
+        />
 
         {/* Health disclaimer (D-163) — bottom of scroll */}
         <Text style={styles.healthDisclaimer}>
