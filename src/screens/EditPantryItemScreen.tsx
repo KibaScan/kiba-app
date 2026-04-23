@@ -44,6 +44,7 @@ import { stripBrandFromName, formatServing } from '../utils/formatters';
 import { shouldShowD157Nudge } from '../utils/pantryScreenHelpers';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
 import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
+import { FedThisTodayActionCard } from '../components/pantry/edit/FedThisTodayActionCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chipToggle } from '../utils/haptics';
 import {
@@ -371,24 +372,7 @@ export default function EditPantryItemScreen({ navigation, route }: Props) {
               PantryCard Log feeding button is one screen away.
               See docs/superpowers/specs/2026-04-14-wet-food-extras-path-design.md §3b. */}
           {showFedTodayCard && (
-            <TouchableOpacity
-              style={styles.fedTodayCard}
-              onPress={() => setLogFeedingSheetVisible(true)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Log a feeding to deduct inventory"
-            >
-              <View style={styles.fedTodayIconBox}>
-                <Ionicons name="restaurant-outline" size={24} color="#FFFFFF" />
-              </View>
-              <View style={styles.fedTodayTextContainer}>
-                <Text style={styles.fedTodayTitle}>Fed This Today</Text>
-                <Text style={styles.fedTodaySubtitle}>
-                  Log a feeding to deduct inventory
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
-            </TouchableOpacity>
+            <FedThisTodayActionCard onPress={() => setLogFeedingSheetVisible(true)} />
           )}
 
           {/* ── Quantity Card ── */}
@@ -742,40 +726,6 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
-  },
-
-  // Fed This Today Featured Action Card
-  fedTodayCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    padding: Spacing.md,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  fedTodayIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-  },
-  fedTodayTextContainer: {
-    flex: 1,
-  },
-  fedTodayTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  fedTodaySubtitle: {
-    fontSize: FontSizes.sm,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
   },
 
   // Cards

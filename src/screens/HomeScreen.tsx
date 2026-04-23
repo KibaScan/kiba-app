@@ -497,7 +497,6 @@ export default function HomeScreen() {
               <BookmarksSection
                 bookmarkCards={bookmarkCards}
                 petName={activePet.name}
-                activePetId={activePetId}
                 onCardPress={handleBookmarkCardPress}
                 onSeeAll={() => navigation.navigate('Bookmarks')}
               />

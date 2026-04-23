@@ -8,7 +8,6 @@ import type { BookmarkCardData } from '../../types/bookmark';
 interface BookmarksSectionProps {
   bookmarkCards: BookmarkCardData[];
   petName: string;
-  activePetId: string | null;
   onCardPress: (productId: string, isRecalled: boolean) => void;
   onSeeAll: () => void;
 }
@@ -16,7 +15,6 @@ interface BookmarksSectionProps {
 export function BookmarksSection({
   bookmarkCards,
   petName,
-  activePetId,
   onCardPress,
   onSeeAll,
 }: BookmarksSectionProps) {

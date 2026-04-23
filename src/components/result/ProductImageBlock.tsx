@@ -5,7 +5,7 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../../utils/constants';
+import { Colors, Spacing } from '../../utils/constants';
 
 interface Props {
   imageUrl: string;
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   productImageContainer: {
     width: '100%',
     height: 200,
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
     position: 'relative',
   },
   productImage: {
