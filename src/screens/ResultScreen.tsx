@@ -10,7 +10,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   Alert,
   Linking,
   Platform,
@@ -18,7 +17,6 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { styles } from './result/ResultScreenStyles';
@@ -83,6 +81,9 @@ import { computePetDer, pickBaseForSwap } from '../utils/pantryHelpers';
 import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
 import { ResultHeaderMenu } from '../components/result/ResultHeaderMenu';
+import { ResultFullHeader } from '../components/result/ResultFullHeader';
+import { ProductImageBlock } from '../components/result/ProductImageBlock';
+import { ResultActionButtons } from '../components/result/ResultActionButtons';
 import { useBookmarkStore } from '../stores/useBookmarkStore';
 import { BookmarkOfflineError, BookmarksFullError } from '../types/bookmark';
 
@@ -525,47 +526,14 @@ export default function ResultScreen() {
   // ─── Full result view ─────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.headerIconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.productBrand} numberOfLines={1}>
-            {product!.brand}
-          </Text>
-          <Text style={styles.productName} numberOfLines={2}>
-            {stripBrandFromName(product!.brand, product!.name)}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={handleToggleBookmark}
-            style={styles.headerIconButton}
-            accessibilityRole="button"
-            accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
-          >
-            <Ionicons
-              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color={isBookmarked ? Colors.accent : Colors.textSecondary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setMenuVisible(true)}
-            style={styles.headerIconButton}
-            accessibilityRole="button"
-            accessibilityLabel="More actions"
-          >
-            <Ionicons name="ellipsis-horizontal-circle" size={22} color={Colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ResultFullHeader
+        productBrand={product!.brand}
+        productName={stripBrandFromName(product!.brand, product!.name)}
+        isBookmarked={isBookmarked}
+        onBack={() => navigation.goBack()}
+        onToggleBookmark={handleToggleBookmark}
+        onOpenMenu={() => setMenuVisible(true)}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -574,23 +542,7 @@ export default function ResultScreen() {
       >
         {/* Product image with gradient edge fade (D-093) */}
         {product!.image_url && (
-          <View style={styles.productImageContainer}>
-            <Image
-              source={{ uri: product!.image_url }}
-              style={styles.productImage}
-              resizeMode="contain"
-            />
-            <LinearGradient
-              colors={['transparent', Colors.background]}
-              style={styles.imageGradientBottom}
-            />
-            <LinearGradient
-              colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.imageGradientSides}
-            />
-          </View>
+          <ProductImageBlock imageUrl={product!.image_url} />
         )}
 
         {/* ─── Above Fold ─────────────────────────────────── */}
@@ -985,11 +937,20 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Compare button (D-052: premium gate) */}
-        <TouchableOpacity
-          style={styles.compareButton}
-          activeOpacity={0.7}
-          onPress={() => {
+        {/* Compare / Add to Pantry / Start Safe Switch action buttons */}
+        <ResultActionButtons
+          petDisplayName={displayName}
+          showAddToPantry={!!(product && pet)}
+          showSafeSwitch={!!(
+            product && pet && pantryAnchors.length > 0 &&
+            product.category === 'daily_food' &&
+            !product.is_supplemental && !isVetDiet &&
+            product.product_form !== 'wet' &&
+            pet.feeding_style !== 'custom' &&
+            !scoredResult?.bypass
+          )}
+          safeSwitchLocked={!canUseSafeSwaps()}
+          onCompare={() => {
             if (!canCompare()) {
               (navigation as any).navigate('Paywall', {
                 trigger: 'compare',
@@ -999,61 +960,27 @@ export default function ResultScreen() {
             }
             setComparePickerVisible(true);
           }}
-        >
-          <Ionicons name="git-compare-outline" size={18} color={Colors.accent} />
-          <Text style={styles.compareButtonText}>Compare with another product</Text>
-        </TouchableOpacity>
-
-        {/* Add to Pantry */}
-        {product && pet && (
-          <TouchableOpacity
-            style={styles.trackButton}
-            onPress={handleTrackFood}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
-            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-              Add to {displayName}'s Pantry
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* V2-1: Start Safe Switch — explicit entry for scanned products */}
-        {product && pet && pantryAnchors.length > 0 &&
-         product.category === 'daily_food' &&
-         !product.is_supplemental && !isVetDiet &&
-         product.product_form !== 'wet' &&
-         pet.feeding_style !== 'custom' &&
-         !scoredResult?.bypass && (
-          <TouchableOpacity
-            style={styles.trackButton}
-            onPress={() => {
-              if (!canUseSafeSwaps()) {
-                (navigation as any).navigate('Paywall', { trigger: 'safe_swap', petName: pet.name });
-                return;
-              }
-              const anchor = pickBaseForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0];
-              if (!anchor) return;
-              (navigation.getParent() as any)?.navigate('Pantry', {
-                screen: 'SafeSwitchSetup',
-                params: {
-                  pantryItemId: anchor.pantryItemId,
-                  newProductId: product.id,
-                  petId: pet.id,
-                  newServingSize: null,
-                  newServingSizeUnit: null,
-                  newFeedingsPerDay: null,
-                },
-              });
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={canUseSafeSwaps() ? "swap-horizontal-outline" : "lock-closed-outline"} size={18} color={Colors.accent} />
-            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-              Start Safe Switch
-            </Text>
-          </TouchableOpacity>
-        )}
+          onAddToPantry={handleTrackFood}
+          onStartSafeSwitch={() => {
+            if (!canUseSafeSwaps()) {
+              (navigation as any).navigate('Paywall', { trigger: 'safe_swap', petName: pet!.name });
+              return;
+            }
+            const anchor = pickBaseForSwap(pantryAnchors, product!.product_form ?? null) ?? pantryAnchors[0];
+            if (!anchor) return;
+            (navigation.getParent() as any)?.navigate('Pantry', {
+              screen: 'SafeSwitchSetup',
+              params: {
+                pantryItemId: anchor.pantryItemId,
+                newProductId: product!.id,
+                petId: pet!.id,
+                newServingSize: null,
+                newServingSizeUnit: null,
+                newFeedingsPerDay: null,
+              },
+            });
+          }}
+        />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
