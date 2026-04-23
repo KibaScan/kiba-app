@@ -41,7 +41,7 @@ import {
 } from '../utils/pantryHelpers';
 import { canUseGoalWeight } from '../utils/permissions';
 import { stripBrandFromName, formatServing } from '../utils/formatters';
-import { shouldShowD157Nudge } from './PantryScreen';
+import { shouldShowD157Nudge } from '../utils/pantryScreenHelpers';
 import { SharePantrySheet } from '../components/pantry/SharePantrySheet';
 import { FedThisTodaySheet } from '../components/pantry/FedThisTodaySheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
