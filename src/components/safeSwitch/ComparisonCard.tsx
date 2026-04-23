@@ -37,10 +37,7 @@ export default function ComparisonCard({ oldProduct, newProduct, newScore }: Com
         {/* Score badge centered between products — only new product score */}
         {newScore != null && (
           <View style={[styles.miniScoreBadge, { backgroundColor: `${getScoreColor(newScore)}33` }]}>
-            <Text
-              style={[styles.miniScoreText, { color: getScoreColor(newScore) }]}
-              accessibilityLabel={`${newScore}%`}
-            >
+            <Text style={[styles.miniScoreText, { color: getScoreColor(newScore) }]}>
               {newScore}%
             </Text>
           </View>
