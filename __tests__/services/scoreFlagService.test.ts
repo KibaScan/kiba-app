@@ -1,6 +1,7 @@
 // scoreFlagService — submitFlag + fetchMyFlags + fetchCommunityActivityCounts.
-// Mirrors recipeService.test.ts mocking pattern (Supabase + network), but
-// reads PROPAGATE DB errors here (spec) rather than swallowing into [].
+// Mirrors recipeService.test.ts mocking pattern (Supabase + network). Reads
+// return [] on DB error per src/services/CLAUDE.md convention (blogService,
+// recipeService, appointmentService all do this). Writes still throw.
 
 jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn(),
@@ -179,14 +180,14 @@ describe('fetchMyFlags', () => {
     expect(result).toEqual([SAMPLE_FLAG]);
   });
 
-  test('propagates DB error', async () => {
+  test('returns [] on DB error', async () => {
     (supabase.auth.getUser as jest.Mock).mockResolvedValue({
       data: { user: { id: 'user-1' } },
     });
     const chain = mockChain({ data: null, error: { message: 'boom' } });
     (supabase.from as jest.Mock).mockReturnValue(chain);
 
-    await expect(fetchMyFlags()).rejects.toThrow(/boom|fetch|flag/i);
+    await expect(fetchMyFlags()).resolves.toEqual([]);
   });
 });
 
@@ -213,11 +214,11 @@ describe('fetchCommunityActivityCounts', () => {
     await expect(fetchCommunityActivityCounts()).resolves.toEqual([]);
   });
 
-  test('propagates RPC error', async () => {
+  test('returns [] on RPC error', async () => {
     (supabase.rpc as jest.Mock).mockResolvedValue({
       data: null,
       error: { message: 'rpc failed' },
     });
-    await expect(fetchCommunityActivityCounts()).rejects.toThrow(/rpc|fetch|count/i);
+    await expect(fetchCommunityActivityCounts()).resolves.toEqual([]);
   });
 });

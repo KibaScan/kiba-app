@@ -4,9 +4,9 @@
 // Aggregate counts via SECURITY DEFINER RPC: migration 049.
 //
 // Writes throw ScoreFlagOfflineError offline (pantryService convention).
-// Reads return [] gracefully on offline / no-auth-user, but PROPAGATE DB
-// errors — callers need to surface "we couldn't load your reports" rather
-// than silently rendering an empty state.
+// Reads return [] gracefully on offline / no-auth-user / DB error — mirrors
+// blogService, recipeService, appointmentService per src/services/CLAUDE.md.
+// A "couldn't load" UX, if needed, belongs at the hook/component layer.
 
 import { supabase } from './supabase';
 import { isOnline } from '../utils/network';
@@ -63,9 +63,9 @@ export async function submitFlag(input: SubmitScoreFlagInput): Promise<ScoreFlag
 // ─── Read Functions ─────────────────────────────────────
 
 /**
- * Fetch the current user's flags, newest first. Returns [] on offline or
- * when there is no auth user. Propagates DB errors so callers can surface
- * a "couldn't load" message.
+ * Fetch the current user's flags, newest first. Returns [] on offline,
+ * when there is no auth user, or on DB error (codebase convention — see
+ * src/services/CLAUDE.md). "Couldn't load" UX belongs at hook/component.
  */
 export async function fetchMyFlags(): Promise<ScoreFlag[]> {
   if (!(await isOnline())) return [];
@@ -83,7 +83,8 @@ export async function fetchMyFlags(): Promise<ScoreFlag[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to fetch score flags: ${error.message}`);
+    console.warn('[fetchMyFlags] FAILED:', error.message);
+    return [];
   }
 
   return (data ?? []) as ScoreFlag[];
@@ -93,7 +94,7 @@ export async function fetchMyFlags(): Promise<ScoreFlag[]> {
  * Aggregate flag-reason counts over the past 7 days, across all users.
  * Backed by SECURITY DEFINER RPC (migration 049) — no PII surfaced, only
  * reason + count. Used by the Community Activity tab on SafetyFlagsScreen.
- * Returns [] on offline. Propagates RPC errors.
+ * Returns [] on offline or RPC error (codebase convention).
  */
 export async function fetchCommunityActivityCounts(): Promise<CommunityActivityCount[]> {
   if (!(await isOnline())) return [];
@@ -101,7 +102,8 @@ export async function fetchCommunityActivityCounts(): Promise<CommunityActivityC
   const { data, error } = await supabase.rpc('get_score_flag_activity_counts');
 
   if (error) {
-    throw new Error(`Failed to fetch community activity counts: ${error.message}`);
+    console.warn('[fetchCommunityActivityCounts] FAILED:', error.message);
+    return [];
   }
 
   return (data ?? []) as CommunityActivityCount[];
