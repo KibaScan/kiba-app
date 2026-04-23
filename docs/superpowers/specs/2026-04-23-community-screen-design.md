@@ -403,11 +403,15 @@ Reads a deploy-time copy of `toxic_foods.json` co-located in `supabase/functions
 1. **Toxic-ingredient scan:** normalize each submitted ingredient name (lowercase, strip punctuation) → fuzzy-match against each toxic-food entry (`name` + `alt_names`) → if `species_severity[recipe.species] === 'toxic'`, reject with reason `"Contains {ingredient}, which is toxic to {species}."`
 2. **UPVM regex (D-095):** run regex over concatenated `title + subtitle + prep_steps`:
    ```
-   /\b(cure|prevent|diagnose|((helps with|good for|treats) .+ (disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i
+   /\b(cure|prevent|diagnose|((helps with|good for|treats)\s+(?:\S+\s+)*?(disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i
    ```
    Any match → reject with reason `"Community recipes cannot include health or medical claims."`
 
-   **Why not standalone `treat`:** "treat" is a noun in this domain ("Peanut Butter Dog Treats"). Banning it would auto-reject legitimate treat recipes. The grouping `(helps with|good for|treats) .+ (disease|condition|...)` correctly applies the condition tail to all three prefixes — "treats arthritis" matches but "Peanut Butter Treat" does not. Borderline phrasing ("good for shedding") falls through to human review per the design's safety-net intent — the auto-validator catches the obvious; Studio review handles nuance.
+   **Why not standalone `treat`:** "treat" is a noun in this domain ("Peanut Butter Dog Treats"). Banning it would auto-reject legitimate treat recipes. The grouping `(helps with|good for|treats) ... (disease|condition|...)` applies the condition tail to all three prefixes — "treats arthritis" matches (zero intervening words), "treats chronic arthritis" matches (one intervening word), but "Peanut Butter Treat" does not.
+
+   **Why `\s+(?:\S+\s+)*?` instead of ` .+ `:** the literal-space + `.+` + literal-space pattern requires AT LEAST one intervening word, so "treats arthritis" (no intervening word) wouldn't match. The non-greedy `\s+(?:\S+\s+)*?` allows zero or more intervening words and matches the whole adjacency.
+
+   Borderline phrasing ("good for shedding") falls through to human review per the design's safety-net intent — the auto-validator catches the obvious; Studio review handles nuance.
 3. **Required-field presence** — duplicate of client-side validation; server is source of truth.
 
 Pass → `status='pending_review'`, notification not yet sent (wait for Studio approval).

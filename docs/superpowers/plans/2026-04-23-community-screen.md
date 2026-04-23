@@ -1181,7 +1181,7 @@ interface ToxicEntry {
 }
 
 const UPVM_REGEX =
-  /\b(cure|prevent|diagnose|((helps with|good for|treats) .+ (disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i;
+  /\b(cure|prevent|diagnose|((helps with|good for|treats)\s+(?:\S+\s+)*?(disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i;
 
 function findToxicMatch(name: string, species: 'dog' | 'cat' | 'both'): ToxicEntry | null {
   const normalized = name.toLowerCase().trim();
@@ -1275,8 +1275,11 @@ const UPVM_REGEX =
 Deno.test('UPVM allows "Peanut Butter Dog Treat"', () => {
   assertEquals(UPVM_REGEX.test('Peanut Butter Dog Treat'), false);
 });
-Deno.test('UPVM blocks "treats arthritis"', () => {
-  assertEquals(UPVM_REGEX.test('Wonder mix that treats arthritis pain'), true);
+Deno.test('UPVM blocks "treats arthritis" (zero intervening words)', () => {
+  assertEquals(UPVM_REGEX.test('Wonder stew that treats arthritis'), true);
+});
+Deno.test('UPVM blocks "treats chronic arthritis" (intervening word)', () => {
+  assertEquals(UPVM_REGEX.test('Recipe that treats chronic arthritis pain'), true);
 });
 Deno.test('UPVM blocks "helps with kidney disease"', () => {
   assertEquals(UPVM_REGEX.test('helps with kidney disease'), true);
