@@ -62,7 +62,7 @@ function estimateCarbPct(product: Product): number | null {
   return Math.max(0, 100 - product.ga_protein_pct - product.ga_fat_pct - product.ga_fiber_pct - moisture - ash);
 }
 
-export interface CalorieEstimate {
+interface CalorieEstimate {
   kcalPerKg: number;
   kcalPerUnit: number | null; // derived from kcalPerKg + unit_weight_g
   source: CalorieSource;
@@ -129,7 +129,7 @@ function deriveKcalPerUnit(kcalPerKg: number, unitWeightG: number | null): numbe
 /** Standard dry kibble cup weight in grams (industry average 100-120g). */
 const DRY_FOOD_GRAMS_PER_CUP = 110;
 
-export interface KcalPerCupResult {
+interface KcalPerCupResult {
   kcalPerCup: number;
   isEstimated: boolean;
 }

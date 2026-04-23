@@ -71,7 +71,7 @@ export interface BrowseCounts {
 
 // ─── Sub-filter definitions per category ───────────────────
 
-export const DAILY_FOOD_FILTERS: SubFilterDef[] = [
+const DAILY_FOOD_FILTERS: SubFilterDef[] = [
   { key: 'dry', label: 'Dry' },
   { key: 'wet', label: 'Wet' },
   { key: 'freeze_dried', label: 'Freeze-Dried' },
@@ -79,13 +79,13 @@ export const DAILY_FOOD_FILTERS: SubFilterDef[] = [
   { key: 'other', label: 'Other' },
 ];
 
-export const TOPPERS_FILTERS: SubFilterDef[] = [
+const TOPPERS_FILTERS: SubFilterDef[] = [
   { key: 'wet', label: 'Wet' },
   { key: 'freeze_dried', label: 'Freeze-Dried' },
   { key: 'dry', label: 'Dry' },
 ];
 
-export const TREAT_FILTERS: SubFilterDef[] = [
+const TREAT_FILTERS: SubFilterDef[] = [
   { key: 'crunchy_biscuits', label: 'Crunchy & Biscuits' },
   { key: 'jerky_chews', label: 'Jerky & Chews' },
   { key: 'freeze_dried', label: 'Freeze-Dried' },
@@ -93,7 +93,7 @@ export const TREAT_FILTERS: SubFilterDef[] = [
   { key: 'dental', label: 'Dental' },
 ];
 
-export const SUPPLEMENT_FILTERS: SubFilterDef[] = [
+const SUPPLEMENT_FILTERS: SubFilterDef[] = [
   { key: 'joint_hip', label: 'Joint & Hip' },
   { key: 'skin_coat', label: 'Skin & Coat' },
   { key: 'digestive', label: 'Digestive' },

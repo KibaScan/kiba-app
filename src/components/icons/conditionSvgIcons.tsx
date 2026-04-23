@@ -20,7 +20,7 @@ interface IconProps {
 
 // ─── gi_sensitive (Sensitive stomach) ──────────────────
 // Source: assets/Icons/conditions-svg/sensitive-stomach.svg
-export const SensitiveStomachIcon: React.FC<IconProps> = ({
+const SensitiveStomachIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -34,7 +34,7 @@ export const SensitiveStomachIcon: React.FC<IconProps> = ({
 
 // ─── joint (Joint issues) ──────────────────────────────
 // Source: assets/Icons/conditions-svg/joint-issues.svg
-export const JointIssuesIcon: React.FC<IconProps> = ({
+const JointIssuesIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -48,7 +48,7 @@ export const JointIssuesIcon: React.FC<IconProps> = ({
 
 // ─── pancreatitis (Pancreatitis) ───────────────────────
 // Source: assets/Icons/conditions-svg/pancreatitis.svg
-export const PancreatitisIcon: React.FC<IconProps> = ({
+const PancreatitisIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -62,7 +62,7 @@ export const PancreatitisIcon: React.FC<IconProps> = ({
 
 // ─── ckd (Kidney disease) ──────────────────────────────
 // Source: assets/Icons/conditions-svg/kidney-disease.svg
-export const KidneyDiseaseIcon: React.FC<IconProps> = ({
+const KidneyDiseaseIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -76,7 +76,7 @@ export const KidneyDiseaseIcon: React.FC<IconProps> = ({
 
 // ─── urinary (Urinary issues) ──────────────────────────
 // Source: assets/Icons/conditions-svg/urinary-issues.svg
-export const UrinaryIssuesIcon: React.FC<IconProps> = ({
+const UrinaryIssuesIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -90,7 +90,7 @@ export const UrinaryIssuesIcon: React.FC<IconProps> = ({
 
 // ─── diabetes (Diabetes) ───────────────────────────────
 // Source: assets/Icons/conditions-svg/diabetes.svg
-export const DiabetesIcon: React.FC<IconProps> = ({
+const DiabetesIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -104,7 +104,7 @@ export const DiabetesIcon: React.FC<IconProps> = ({
 
 // ─── hypothyroid (Hypothyroidism) ──────────────────────
 // Source: assets/Icons/conditions-svg/hypothyroidism.svg
-export const HypothyroidismIcon: React.FC<IconProps> = ({
+const HypothyroidismIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -119,7 +119,7 @@ export const HypothyroidismIcon: React.FC<IconProps> = ({
 // ─── liver (Liver disease) ─────────────────────────────
 // Source: assets/Icons/conditions-svg/liver-disease.svg
 // 2 paths: organ silhouette + spot detail.
-export const LiverDiseaseIcon: React.FC<IconProps> = ({
+const LiverDiseaseIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -138,7 +138,7 @@ export const LiverDiseaseIcon: React.FC<IconProps> = ({
 // ─── seizures (Seizures / Epilepsy) ────────────────────
 // Source: assets/Icons/conditions-svg/seizures-epilepsy.svg
 // SF Symbol export — native viewBox preserved.
-export const SeizuresIcon: React.FC<IconProps> = ({
+const SeizuresIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -153,7 +153,7 @@ export const SeizuresIcon: React.FC<IconProps> = ({
 // ─── allergy (Food allergies) ──────────────────────────
 // Source: assets/Icons/conditions-svg/food-allergies.svg
 // SF Symbol export — dots pattern + ring circles.
-export const FoodAllergiesIcon: React.FC<IconProps> = ({
+const FoodAllergiesIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (
@@ -172,7 +172,7 @@ export const FoodAllergiesIcon: React.FC<IconProps> = ({
 // ─── skin (Skin & coat issues) ─────────────────────────
 // Source: assets/Icons/conditions-svg/skin-coat-issues.svg
 // SF Symbol export — circle ring (50% opacity) + paw detail.
-export const SkinCoatIcon: React.FC<IconProps> = ({
+const SkinCoatIcon: React.FC<IconProps> = ({
   size = 24,
   color = '#00B4D8',
 }) => (

@@ -42,8 +42,8 @@ import type { Product } from '../types';
 
 // ─── Types ──────────────────────────────────────────────
 
-export type FilterChip = 'all' | 'dry' | 'wet' | 'treats' | 'supplemental' | 'recalled' | 'running_low';
-export type SortOption = 'default' | 'name' | 'score' | 'days_remaining';
+type FilterChip = 'all' | 'dry' | 'wet' | 'treats' | 'supplemental' | 'recalled' | 'running_low';
+type SortOption = 'default' | 'name' | 'score' | 'days_remaining';
 
 type Props = NativeStackScreenProps<PantryStackParamList, 'PantryMain'>;
 

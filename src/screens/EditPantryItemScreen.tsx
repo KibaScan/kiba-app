@@ -90,7 +90,7 @@ export function buildFrequencyUpdate(
   return updates;
 }
 
-export interface FedTodayCardVisibilityState {
+interface FedTodayCardVisibilityState {
   feedingFrequency: FeedingFrequency;
   isEmpty: boolean;
   isActive: boolean;

@@ -20,7 +20,7 @@ export type NotificationType =
 // ─── DB Interfaces ───────────────────────────────────────
 
 /** Matches push_tokens table exactly (8 columns). */
-export interface PushToken {
+interface PushToken {
   id: string;
   user_id: string;
   expo_push_token: string;

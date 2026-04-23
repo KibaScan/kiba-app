@@ -90,3 +90,5 @@ _scratch/
 
 # superpowers brainstorm session artifacts (visual companion mockups, state)
 .superpowers/
+.knip-report.json
+.tsc-baseline.txt

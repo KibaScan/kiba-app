@@ -20,8 +20,6 @@ interface AppState {
   hideModal: () => void;
 }
 
-export { CURRENT_TOS_VERSION };
-
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({

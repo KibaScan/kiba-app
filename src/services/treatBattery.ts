@@ -5,7 +5,7 @@
 
 // ─── Types ──────────────────────────────────────────────
 
-export interface TreatsPerDayResult {
+interface TreatsPerDayResult {
   count: number;
   warning: boolean;
 }

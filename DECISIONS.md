@@ -2991,7 +2991,7 @@ This is optional — user can stay in weight mode if they prefer.
 | Tier | Visible text | Surfaces |
 |------|--------------|----------|
 | **Outbound share** (no app context) | `{score}% match for {petName}` | `PetShareCard` — audience is non-users viewing a screenshot; no surrounding pet context exists |
-| **In-app, moderate space** | `{score}% match` | `ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet` — list rows where the "match" label clarifies that `%` is a suitability, not a generic percentage |
+| **In-app, moderate space** | `{score}% match` | `PantryCard`, `TopPickRankRow`, `SharePantrySheet` — list rows where the "match" label clarifies that `%` is a suitability, not a generic percentage |
 | **In-app, dense or hero-minimal** | `{score}%` | `ScoreRing` (ResultScreen centerpiece — pet photo anchors context, caption is redundant noise), `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows |
 
 **Accessibility invariant:** Every score element MUST expose the full phrase `"${score}% match for ${petName}"` to assistive tech. On hero/share surfaces where visible text already is the full phrase, the visible `<Text>` itself satisfies the invariant. On list-row and tight-pill tiers where visible text abbreviates, add an explicit `accessibilityLabel={\`${score}% match for ${petName}\`}` on the score element. Screen readers always hear the full context; sighted users see density appropriate to surface.
@@ -3009,8 +3009,7 @@ This is optional — user can stay in weight mode if they prefer.
 - **Split into visible-tier + a11y-tier without codifying surfaces:** Future agents regenerate conflicting decisions per surface. Explicit surface table prevents drift.
 
 **Implementation:**
-- `src/components/ScanHistoryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
-- `src/components/pantry/PantryCard.tsx` — same treatment
+- `src/components/pantry/PantryCard.tsx` — visible text → `{score}% match`, full phrase preserved in `accessibilityLabel`
 - `src/components/scoring/ScoreRing.tsx` — removed the "match for {petName}" caption entirely; full phrase moved to `accessibilityLabel` on the score number. Orphaned `matchLabel` style removed. Screen reader flow preserved via `importantForAccessibility="no-hide-descendants"` on the percent sign so the score number's `accessibilityLabel` is the single utterance.
 - `PetShareCard.tsx`, browse components unchanged (already match tier; PetShareCard keeps full phrase as the sole outbound-share surface)
 
@@ -3028,7 +3027,7 @@ This is optional — user can stay in weight mode if they prefer.
 - `src/components/result/SafeSwapSection.tsx` — `accessibilityLabel` on the per-candidate card `TouchableOpacity`.
 - `src/components/pantry/SharePantrySheet.tsx` — `petScore` hoisted out of IIFE; `accessibilityLabel` on the per-pet row `TouchableOpacity` with pet name + score + sharing state.
 
-**Reference pattern for future score surfaces:** When the score lives inside a `TouchableOpacity` / `Pressable` card, put the `accessibilityLabel` on the outer pressable (React Native flattens inner element labels by default). When the score is in a plain `View` / `Text` hierarchy (e.g., `ScoreWaterfall`, `ScanHistoryCard`, `PantryCard`), the `accessibilityLabel` can go directly on the score `<Text>`. If an outer pressable already carries a semantic label (e.g., `"${product_name}, rank ${rank}"`), extend it with score + pet rather than creating a conflicting inner element.
+**Reference pattern for future score surfaces:** When the score lives inside a `TouchableOpacity` / `Pressable` card, put the `accessibilityLabel` on the outer pressable (React Native flattens inner element labels by default). When the score is in a plain `View` / `Text` hierarchy (e.g., `ScoreWaterfall`, `PantryCard`), the `accessibilityLabel` can go directly on the score `<Text>`. If an outer pressable already carries a semantic label (e.g., `"${product_name}, rank ${rank}"`), extend it with score + pet rather than creating a conflicting inner element.
 
 ### D-169: Bookmarks — Per-Pet Watchlist
 **Status:** LOCKED

@@ -44,7 +44,7 @@ Flag `any` types in `src/types/`, `src/services/scoring/`, `src/utils/permission
 ### 9. Score Framing (D-168, supersedes D-094)
 Score framing is tiered by whether pet context is recoverable from surrounding UI:
 - **Outbound share** (audience has no app context): `{score}% match for {petName}` — `PetShareCard` only
-- **In-app list rows:** `{score}% match` (`ScanHistoryCard`, `PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
+- **In-app list rows:** `{score}% match` (`PantryCard`, `TopPickRankRow`, `SharePantrySheet`)
 - **In-app dense or hero-minimal:** `{score}%` (`ScoreRing`, `BrowseProductRow`, `TopPicksCarousel`, `TopPickHeroCard`, `ScoreWaterfall`, `SafeSwapSection` rows)
 
 Every score element MUST expose the full `"${score}% match for ${petName}"` phrase to assistive tech. `PetShareCard` satisfies this via visible text. All in-app surfaces require an `accessibilityLabel` carrying the full phrase — on the outer pressable when the score is inside a `TouchableOpacity` / `Pressable` card (RN flattens inner labels by default), on the score `<Text>` itself when there is no outer pressable. This preserves D-094's legal defensibility. Flag in-app score surfaces that lack the `accessibilityLabel` at the correct level. Flag any visible text that violates its surface tier (e.g., `ScoreRing` showing the full phrase in visible text, or `BrowseProductRow` showing it). Exception: debug logs, test fixtures.
