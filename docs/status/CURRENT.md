@@ -52,7 +52,6 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **Pantry unit model gap (deferred spec)** — wet food as BASE in Custom Splits returns 0 servings; dry food lbs-vs-cups display unclear. Full analysis + 6 open questions + 5 proposed directions at `docs/superpowers/specs/2026-04-12-pantry-unit-model-gap-DEFERRED.md`. Pick up post-M9 or whenever user data motivates it.
 - **`SafeSwapSection.tsx` scattered paywall checks** — `canUseSafeSwaps` and `canCompare` called inside a component (pre-existing pattern, flagged in Phase 2 ultrareview). Needs a dedicated `src/utils/permissions.ts` audit sweep to pull them back to the callsite level.
 - **`pantryService.ts` (1080 LOC) + `pantryHelpers.ts` (860 LOC) domain-split** — different refactor shape from the session-62 screen file-splits (service/util domain boundaries rather than component extraction). Separate session.
-- HomeScreen visual overhaul (custom assets, layout polish) — now at 581 LOC after session 62, much more approachable target
 - Custom icon rollout (5 pending v2 bold variants)
 - Search UX overhaul on HomeScreen
 - Same-brand disambiguation for `getConversationalName` — deferred from session 19. Two products sharing brand + identical first-2 descriptor words render identical short names. Flag-later if users hit this in the wild.
@@ -98,17 +97,17 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **Key new subfolders created in `src/components/`:** `home/` (9 files), `safeSwitch/` (5 files), `pet/edit/` (5 files), `compare/` (6 new files in existing folder), `pethub/` (5 files), `pantry/list/` (6 files), `pantry/edit/` (1 file), `result/` (3 new files). Plus `src/utils/editPantryItemHelpers.ts` + `src/utils/pantryScreenHelpers.ts`.
 - **Numbers (all green at HEAD `3a99e32`):** 79 suites / **1665 tests** (unchanged — refactor preserved all test logic; only `import` paths in 2 test files changed per Rule 4). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit`: 11 lines (structural `batch-score/scoring/` Deno noise only — search-uiux noise eliminated). `npx madge --circular src/`: zero cycles across 199+ files.
 - **Not done yet:**
-  - **On-device smoke check** of all 8 refactored screens — scroll, tap, compare to pre-refactor visual memory. Priority order: `ResultScreen` + `CompareScreen` (score surfaces, most a11y-sensitive) → `HomeScreen` (category carousel + recent scans + search bar, most extracts) → `PantryScreen` (pet carousel + filter chips) → the remaining four.
   - **`SafeSwapSection.tsx` scattered paywall checks** — pre-existing but flagged in Phase 2 ultrareview. Dedicated `permissions.ts` audit pass needed to pull `canUseSafeSwaps`/`canCompare` calls back to callsite.
   - **Hardcoded `#FFFFFF` literals in a few extracts** (pre-existing patterns from originals) — candidate for future design-token sweep.
   - **Session 61 carry-items still open:** on-device QA of shimmer cadence / cache-miss force path / cross-pet race reproduction; `usePantryStore.logTreat` narrow revert-window fix; VoiceOver QA on 11 bookmark/scan + 7 D-168 a11y-backfill surfaces; render-test hardening for near-cap amber `toHaveStyle` check; `batchScoreOnDevice.ts:291` network-failure diagnosis.
   - **Matte Premium ~17 rgba alpha sites** — explicitly deferred per CURRENT.md guidance.
   - **`pantryService.ts` (1080 LOC) + `pantryHelpers.ts` (860 LOC) domain-split** — different refactor shape, separate session.
-  - **Next M9 scope pick:** HomeScreen visual overhaul (now at 581 LOC, much more approachable), custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit.
+  - **Next M9 scope pick:** custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit.
 - **Start the next session by:**
   1. **`/boot`** — verify rolling window rotated: session 62 → Previous, new session → Last. `m5-complete` HEAD should be `3a99e32` or newer.
-  2. **On-device smoke check** on the 8 refactored screens. Prioritize ResultScreen + CompareScreen + HomeScreen.
-  3. Pick one: (a) on-device findings; (b) session 61 carry-items (shimmer QA, logTreat, VoiceOver); (c) HomeScreen visual overhaul; (d) `permissions.ts` audit (SafeSwapSection scatter); (e) `pantryService`/`pantryHelpers` domain-split.
+  2. Pick one: (a) session 61 carry-items (shimmer QA, logTreat, VoiceOver); (b) `permissions.ts` audit (SafeSwapSection scatter); (c) `pantryService`/`pantryHelpers` domain-split.
+
+  On-device smoke check of the 8 refactored screens (session 62) came back clean — dropped from the queue.
 - **Gotchas / context for next session:**
   - **`Agent` tool `isolation: "worktree"` roots off a stale ancestor, NOT current HEAD.** Experimentally verified this session: worktrees created off `e6c8069` despite current branch at `0795596`. 3 partial-success agents reported 70/1588 tests (pre-M9). If you need worktree isolation in the future, verify each worktree's `git log -1` matches your expected base BEFORE trusting its output. For refactors that need current HEAD, dispatch **serially in the main tree** — wall-clock ~60 min for 8 agents was acceptable.
   - **Stream idle timeout on long agents is a real risk.** Agent 2 (EditPantryItemScreen) timed out at 32 tool uses with "API Error: Stream idle timeout - partial response received". Partial state on disk was consistent and gate-green, so we salvaged it per Rule 7. Budget for timeouts on long-running agents; have a "verify + commit what's on disk" fallback.
@@ -154,7 +153,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
     3. Cross-pet race repro via fast PetHubScreen carousel tap during (a) AddToPantrySheet add, (b) EditPantryItemScreen save/restock/delete, (c) Top Matches refresh on HomeScreen — confirm no ghost rows from prior pet flash into the new pet's list.
   - **`usePantryStore.logTreat` narrow window.** Flagged in inline comment but not fixed. Address if observed in on-device QA.
   - **Carry items still open from session 60:** on-device VoiceOver QA on 11 bookmark/scan surfaces + 7 D-168 a11y-backfill surfaces; render-test hardening for near-cap amber `toHaveStyle` check; `batchScoreOnDevice` network-failure diagnosis at line 291.
-  - **Next M9 scope pick:** HomeScreen visual overhaul, custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit (~17 rgba sites).
+  - **Next M9 scope pick:** custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit (~17 rgba sites).
 - **Start the next session by:**
   1. **`/boot`** — verify rolling window rotated: session 61 → Previous, new session → Last. `m5-complete` HEAD should be `3d61319`.
   2. **On-device QA** of the three stacked commits — shimmer cadence, cache-miss force path, cross-pet race reproduction.
