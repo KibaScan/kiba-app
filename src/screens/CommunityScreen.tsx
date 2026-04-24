@@ -1,11 +1,11 @@
-// Kiba — Community Tab (M9, Task 20 + Task 25)
+// Kiba — Community Tab (M9, Task 20 + Task 25 + Task 26)
 // Real shell layout per spec §3:
 //   XPRibbon  ·  FeaturedRecipeHero  ·  RecallBanner
-//   DiscoveryGrid (placeholder)  ·  BlogCarousel (placeholder)  ·  SubredditFooter
+//   DiscoveryGrid (placeholder)  ·  BlogCarousel  ·  SubredditFooter
 //
 // XPRibbon respects D-070 (subtle, not hero). Zero emoji per D-084 — Ionicons.
-// DiscoveryGrid / BlogCarousel are inert placeholders; Tasks 30 / 26 will
-// replace them.
+// DiscoveryGrid is still an inert placeholder; Task 30 will replace it.
+// BlogCarousel self-fetches and collapses to null on empty/offline.
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
@@ -16,6 +16,7 @@ import { XPRibbon } from '../components/community/XPRibbon';
 import { RecallBanner } from '../components/community/RecallBanner';
 import { SubredditFooter } from '../components/community/SubredditFooter';
 import { FeaturedRecipeHero } from '../components/community/FeaturedRecipeHero';
+import { BlogCarousel } from '../components/community/BlogCarousel';
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
@@ -40,8 +41,7 @@ export default function CommunityScreen() {
         {/* DiscoveryGrid — Task 30 */}
         <View style={{ height: 0 }} />
 
-        {/* BlogCarousel — Task 26 */}
-        <View style={{ height: 0 }} />
+        <BlogCarousel />
 
         <SubredditFooter />
       </ScrollView>
