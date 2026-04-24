@@ -10,7 +10,6 @@
 // Writes throw RecipeOfflineError offline (pantryService convention).
 // Reads return [] / null offline.
 
-import * as Crypto from 'expo-crypto';
 import { supabase } from './supabase';
 import { isOnline } from '../utils/network';
 import {
@@ -26,6 +25,24 @@ const COLUMNS = 'id, user_id, title, subtitle, species, life_stage, ingredients,
 const DEFAULT_LIMIT = 20;
 
 // ─── Internal ───────────────────────────────────────────
+
+/**
+ * RFC 4122 v4 UUID generator. Prefers `globalThis.crypto.randomUUID` (native
+ * in Hermes / RN 0.74+) so we don't pull in the `expo-crypto` native module —
+ * adding it forces a dev-client rebuild ("Cannot find native module
+ * 'ExpoCrypto'"). Falls back to `Math.random()` only on platforms missing the
+ * Web Crypto API; collision risk is acceptable for a recipe submission ID
+ * (single-user write, immediately consumed by the upload+insert pair).
+ */
+function randomUUID(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  // RFC 4122 v4 fallback
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 async function requireOnline(): Promise<void> {
   if (!(await isOnline())) throw new RecipeOfflineError();
@@ -78,7 +95,7 @@ export async function submitRecipe(
 
   // Client-supplied UUID lets the storage path be deterministic before the
   // INSERT, keeping upload + insert atomic from the client's perspective.
-  const recipeId = Crypto.randomUUID();
+  const recipeId = randomUUID();
 
   const coverImageUrl = await uploadCoverImage(userId, recipeId, input.cover_image_uri);
 

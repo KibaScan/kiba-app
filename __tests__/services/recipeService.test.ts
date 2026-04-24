@@ -14,9 +14,14 @@ jest.mock('../../src/services/supabase', () => ({
   },
 }));
 
-jest.mock('expo-crypto', () => ({
-  randomUUID: jest.fn(() => 'fixed-uuid-for-tests'),
-}));
+// Pin globalThis.crypto.randomUUID so tests get a deterministic recipe id.
+// Service uses crypto.randomUUID() (native in RN 0.74+/Hermes) to avoid the
+// expo-crypto native-module dependency.
+beforeEach(() => {
+  (globalThis as { crypto?: { randomUUID?: () => string } }).crypto = {
+    randomUUID: () => 'fixed-uuid-for-tests',
+  };
+});
 
 import {
   submitRecipe,
