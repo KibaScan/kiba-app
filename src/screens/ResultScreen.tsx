@@ -86,6 +86,8 @@ import { ProductImageBlock } from '../components/result/ProductImageBlock';
 import { ResultActionButtons } from '../components/result/ResultActionButtons';
 import { useBookmarkStore } from '../stores/useBookmarkStore';
 import { BookmarkOfflineError, BookmarksFullError } from '../types/bookmark';
+import { isPublishedSlug } from '../services/vendorService';
+import { brandSlugify } from '../utils/brandSlugify';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -216,6 +218,24 @@ export default function ResultScreen() {
       );
     }
   };
+
+  // Contact brand → cross-stack jump to CommunityStack/VendorDirectory.
+  // Visibility: synchronous bundled-slug check (no network). Result lives on
+  // multiple stacks; jumping to a CommunityStack route requires going through
+  // the parent tab navigator. Same pattern as the Pantry SafeSwitch handoff
+  // above (see lines around `getParent()?.navigate('Pantry', { screen: ... })`).
+  const showContactBrand = useMemo(() => {
+    if (!product?.brand) return false;
+    return isPublishedSlug(brandSlugify(product.brand));
+  }, [product?.brand]);
+
+  const handleContactBrand = useCallback(() => {
+    if (!product?.brand) return;
+    (navigation.getParent() as any)?.navigate('Community', {
+      screen: 'VendorDirectory',
+      params: { initialBrand: product.brand },
+    });
+  }, [navigation, product?.brand]);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -1042,6 +1062,8 @@ export default function ResultScreen() {
         onClose={() => setMenuVisible(false)}
         onShare={handleShare}
         onReportIssue={handleReportIssue}
+        onContactBrand={showContactBrand ? handleContactBrand : undefined}
+        brandName={showContactBrand ? product?.brand : undefined}
       />
     </SafeAreaView>
   );

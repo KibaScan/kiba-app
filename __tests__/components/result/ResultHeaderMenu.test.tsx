@@ -51,4 +51,46 @@ describe('ResultHeaderMenu', () => {
     expect(baseProps.onShare).not.toHaveBeenCalled();
     expect(baseProps.onReportIssue).not.toHaveBeenCalled();
   });
+
+  // ─── Contact brand item (Task 23, M9 Community) ───────────────────────────
+  describe('Contact brand item', () => {
+    test('hidden when onContactBrand is not provided', () => {
+      const { queryByText } = render(<ResultHeaderMenu {...baseProps} brandName="Pure Balance" />);
+      expect(queryByText(/Contact /)).toBeNull();
+    });
+
+    test('hidden when brandName is not provided', () => {
+      const onContactBrand = jest.fn();
+      const { queryByText } = render(
+        <ResultHeaderMenu {...baseProps} onContactBrand={onContactBrand} />,
+      );
+      expect(queryByText(/Contact /)).toBeNull();
+    });
+
+    test('renders "Contact {brand}" item when both onContactBrand + brandName provided', () => {
+      const onContactBrand = jest.fn();
+      const { getByText } = render(
+        <ResultHeaderMenu
+          {...baseProps}
+          onContactBrand={onContactBrand}
+          brandName="Pure Balance"
+        />,
+      );
+      expect(getByText('Contact Pure Balance')).toBeTruthy();
+    });
+
+    test('tap fires onContactBrand and closes', () => {
+      const onContactBrand = jest.fn();
+      const { getByText } = render(
+        <ResultHeaderMenu
+          {...baseProps}
+          onContactBrand={onContactBrand}
+          brandName="Pure Balance"
+        />,
+      );
+      fireEvent.press(getByText('Contact Pure Balance'));
+      expect(onContactBrand).toHaveBeenCalledTimes(1);
+      expect(baseProps.onClose).toHaveBeenCalledTimes(1);
+    });
+  });
 });

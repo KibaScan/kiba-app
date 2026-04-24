@@ -1,5 +1,8 @@
 // Overflow menu for ResultScreen header. Bookmark lives in its own header icon
-// (visible state); this sheet hosts the secondary actions: Share + Report issue.
+// (visible state); this sheet hosts the secondary actions: Share + (optional)
+// Contact brand + Report issue. The "Contact {brand}" item only renders when
+// the parent has decided the brand has a published vendor row — visibility
+// logic lives in ResultScreen so this stays a dumb presenter.
 
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -12,6 +15,8 @@ interface Props {
   onClose: () => void;
   onShare: () => void;
   onReportIssue: () => void;
+  onContactBrand?: () => void;
+  brandName?: string;
 }
 
 export function ResultHeaderMenu({
@@ -19,12 +24,16 @@ export function ResultHeaderMenu({
   onClose,
   onShare,
   onReportIssue,
+  onContactBrand,
+  brandName,
 }: Props) {
   const insets = useSafeAreaInsets();
   const handle = (fn: () => void) => () => {
     fn();
     onClose();
   };
+
+  const showContact = Boolean(onContactBrand && brandName);
 
   return (
     <Modal
@@ -48,6 +57,16 @@ export function ResultHeaderMenu({
             label="Share"
             onPress={handle(onShare)}
           />
+          {showContact && (
+            <>
+              <View style={styles.divider} />
+              <MenuItem
+                icon="mail-outline"
+                label={`Contact ${brandName}`}
+                onPress={handle(onContactBrand!)}
+              />
+            </>
+          )}
           <View style={styles.divider} />
           <MenuItem
             icon="flag-outline"
