@@ -31,26 +31,7 @@ import {
   ScoreFlagOfflineError,
   type ScoreFlagReason,
 } from '../../types/scoreFlag';
-
-// ─── Display labels (UPVM-compliant copy) ───────────────
-
-const REASON_LABELS: Record<ScoreFlagReason, string> = {
-  score_wrong: 'Score seems off',
-  ingredient_missing: 'Ingredient missing or wrong',
-  recalled: 'I think this is recalled',
-  data_outdated: 'Information looks outdated',
-  recipe_concern: 'Recipe safety concern',
-  other: 'Something else',
-};
-
-const DEFAULT_REASON_ORDER: ScoreFlagReason[] = [
-  'score_wrong',
-  'ingredient_missing',
-  'recalled',
-  'data_outdated',
-  'recipe_concern',
-  'other',
-];
+import { REASON_LABELS, DEFAULT_REASON_ORDER } from '../../utils/safetyFlagLabels';
 
 const DETAIL_MAX_LENGTH = 500;
 const AUTO_CLOSE_DELAY_MS = 1500;
