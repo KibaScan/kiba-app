@@ -1,0 +1,24 @@
+-- Migration 050: REVOKE PUBLIC EXECUTE on upsert_user_xp_totals
+--
+-- Hotfix for a privilege-escalation bug introduced in migration 046.
+-- `upsert_user_xp_totals(UUID, INT, TEXT)` is SECURITY DEFINER and writes
+-- user_xp_totals — a table with SELECT-only RLS for users (writes via
+-- trigger only, per 042:41-46). Postgres defaults `CREATE FUNCTION` to
+-- `GRANT EXECUTE TO PUBLIC`, and PostgREST exposes any non-TRIGGER-returning
+-- public-schema function to the authenticated role. Attack path:
+--
+--     supabase.rpc('upsert_user_xp_totals', {
+--       p_user_id: '<any uuid>', p_xp_delta: 999999, p_event_type: 'scan'
+--     })
+--
+-- Any authenticated user can call the helper and inflate their own totals,
+-- tamper with other users' totals, or spike scans_count/discoveries_count/
+-- contributions_count. This defeats the trigger-only write contract.
+--
+-- Fix: REVOKE PUBLIC EXECUTE. The trigger functions in 046 call this via
+-- PERFORM; they are SECURITY DEFINER owned by postgres and run with owner
+-- privileges, so they are unaffected by this revoke. No downstream callers.
+--
+-- Cache invalidation not needed: does not affect pet_product_scores inputs.
+
+REVOKE EXECUTE ON FUNCTION upsert_user_xp_totals(UUID, INT, TEXT) FROM PUBLIC;
