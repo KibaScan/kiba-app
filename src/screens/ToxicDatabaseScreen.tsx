@@ -100,7 +100,7 @@ export function filterAndGroupToxics(
 
 const RAW_ENTRIES = (toxicFoods as { toxics: ToxicEntry[] }).toxics;
 
-export default function ToxicDatabaseScreen(_props: Props) {
+export default function ToxicDatabaseScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [species, setSpecies] = useState<'dog' | 'cat'>('dog');
   const [query, setQuery] = useState<string>('');
@@ -114,6 +114,16 @@ export default function ToxicDatabaseScreen(_props: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.header}>
         <Text style={styles.title}>Toxic Database</Text>
         <Text style={styles.subtitle}>
@@ -266,6 +276,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  navBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
   },
   header: {
     paddingHorizontal: Spacing.lg,

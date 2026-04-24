@@ -1,8 +1,17 @@
-# Project Status — Last updated 2026-04-23 (session 63 — M9 Community shipped: full Community tab rebuild — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags; PR open on `m9-community`)
+# Project Status — Last updated 2026-04-24 (mid-session review follow-up on top of session 64 — `/code-review` surfaced 8 findings; CRITICAL protected on prod via Studio SQL; PRs #19 hotfix + #20 follow-up open on `m9-community`)
 
 ## Active Milestone
 
 **M9 — UI Polish & Search** (search UX overhaul, general polish, UX friction fixes)
+
+## Mid-Session Review Follow-Up (2026-04-24)
+
+`/code-review` on PR #18 surfaced 8 validated findings (1 CRITICAL + 4 HIGH + 3 MEDIUM). All addressed in code; plan at `~/.claude/plans/humble-seeking-mango.md`.
+
+- **PR #19 — hotfix** (`m9-xp-revoke-hotfix` → `m9-community`): migration 050 revokes EXECUTE on `upsert_user_xp_totals(UUID,INT,TEXT)` from PUBLIC + anon + authenticated. SECURITY DEFINER helper was publicly RPC-callable — any authenticated user could write arbitrary XP totals. **Prod protected via Studio SQL (`REVOKE ... FROM PUBLIC, anon, authenticated`) on 2026-04-24; `has_function_privilege('authenticated', ...) = false` verified.** Migration repair pending post-merge.
+- **PR #20 — follow-up** (`m9-community-review-fixes` stacked on hotfix, → `m9-community`): migrations 051 + 052, `validate-recipe` JWT auth + ownership + status guards, `fetchKibaIndexHighlights` swap to `get_kiba_index_candidates` RPC (community-aggregation via SECURITY DEFINER, bypasses per-user RLS on `kiba_index_votes`), `XPRibbon` cache-vs-fetch race guard, back buttons on 4 screens (`VendorDirectory`, `ToxicDatabase`, `Bookmarks`, `ScanHistory`), `TopPickHeroCard` D-168 "match" text deletion.
+- **051 scope**: idempotency guards on `process_scan_xp` + `process_vote_xp` (DELETE → re-INSERT farming), advisory xact lock on discovery bonus (READ COMMITTED race), defense-in-depth REVOKE anon on `get_user_xp_summary` + `get_score_flag_activity_counts`.
+- **Supabase grant gotcha** — Supabase's initial setup grants EXECUTE on all public routines to anon + authenticated + service_role via `ALTER DEFAULT PRIVILEGES`. `REVOKE ... FROM PUBLIC` alone does NOT override — must name the roles. Caught during Studio verification when `has_function_privilege` stayed `true` after the PUBLIC-only revoke.
 
 ## Last Completed
 
@@ -26,9 +35,9 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1886 passing / 105 suites
+- **Tests:** 1889 passing / 106 suites (was 1886 / 105 at session 64 HEAD; +3 tests, +1 suite from review follow-up — XPRibbon race regression + candidates-RPC-errors case)
 - **Decisions:** 132
-- **Migrations:** 49 (001–049 — **all applied to live DB** as of session 64; 039+040 were manually applied earlier and reconciled via `migration repair`)
+- **Migrations:** 52 locally (001–052 — 001–049 applied to live DB as of session 64; 050 manually applied to prod via Studio SQL on 2026-04-24 (`migration repair` pending post-merge); 051 + 052 unapplied, will go via `supabase db push --linked` after PRs #19 + #20 merge)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors

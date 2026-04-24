@@ -25,14 +25,19 @@ export function XPRibbon({ initialSummary = null }: Props) {
   const [summary, setSummary] = useState<XPSummary | null>(initialSummary);
   const [loading, setLoading] = useState<boolean>(initialSummary === null);
 
+  const freshResolvedRef = useRef<boolean>(false);
+
   useEffect(() => {
     let cancelled = false;
+    freshResolvedRef.current = false;
     if (initialSummary !== null) return;
 
     // Hydrate from cache first so the ribbon doesn't shimmer on every visit.
+    // Race guard: if the fresh fetch has already resolved (network beat disk),
+    // do NOT overwrite the fresh value with the stale cache.
     AsyncStorage.getItem(CACHE_KEY)
       .then((raw) => {
-        if (cancelled || !raw) return;
+        if (cancelled || !raw || freshResolvedRef.current) return;
         try {
           const cached = JSON.parse(raw) as XPSummary;
           setSummary(cached);
@@ -46,6 +51,8 @@ export function XPRibbon({ initialSummary = null }: Props) {
     fetchXPSummary()
       .then((fresh) => {
         if (cancelled) return;
+        freshResolvedRef.current = true; // set BEFORE setSummary so a
+                                         // late-arriving cache read bails out
         setSummary(fresh);
         setLoading(false);
         AsyncStorage.setItem(CACHE_KEY, JSON.stringify(fresh)).catch(() => {});
