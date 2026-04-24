@@ -26,6 +26,7 @@ jest.mock('@react-navigation/native-stack', () => ({}));
 
 jest.mock('../../src/services/xpService');
 jest.mock('../../src/services/communityService');
+jest.mock('../../src/services/recipeService');
 
 import React from 'react';
 import { Linking } from 'react-native';
@@ -37,11 +38,13 @@ const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as
 import CommunityScreen from '../../src/screens/CommunityScreen';
 import * as xpService from '../../src/services/xpService';
 import * as communityService from '../../src/services/communityService';
+import * as recipeService from '../../src/services/recipeService';
 import type { XPSummary } from '../../src/types/xp';
 import type { RecentRecall } from '../../src/services/communityService';
 
 const mockedXp = xpService as jest.Mocked<typeof xpService>;
 const mockedCommunity = communityService as jest.Mocked<typeof communityService>;
+const mockedRecipe = recipeService as jest.Mocked<typeof recipeService>;
 
 const POPULATED_XP: XPSummary = {
   total_xp: 2340,
@@ -86,6 +89,10 @@ describe('CommunityScreen', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     mockedCommunity.fetchKibaIndexHighlights = jest.fn().mockResolvedValue([]);
+    // FeaturedRecipeHero (Task 25) self-fetches; default to empty so the
+    // existing CommunityScreen tests don't accidentally exercise the live
+    // network. Tests that care about hero state should override per-case.
+    mockedRecipe.fetchApprovedRecipes.mockResolvedValue([]);
   });
 
   afterEach(() => jest.clearAllMocks());

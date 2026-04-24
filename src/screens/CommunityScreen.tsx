@@ -1,11 +1,11 @@
-// Kiba — Community Tab (M9, Task 20)
+// Kiba — Community Tab (M9, Task 20 + Task 25)
 // Real shell layout per spec §3:
-//   XPRibbon  ·  FeaturedRecipeHero (placeholder)  ·  RecallBanner
+//   XPRibbon  ·  FeaturedRecipeHero  ·  RecallBanner
 //   DiscoveryGrid (placeholder)  ·  BlogCarousel (placeholder)  ·  SubredditFooter
 //
 // XPRibbon respects D-070 (subtle, not hero). Zero emoji per D-084 — Ionicons.
-// FeaturedRecipeHero / DiscoveryGrid / BlogCarousel are inert placeholders;
-// Tasks 25 / 30 / 26 will replace them.
+// DiscoveryGrid / BlogCarousel are inert placeholders; Tasks 30 / 26 will
+// replace them.
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
@@ -15,6 +15,7 @@ import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { XPRibbon } from '../components/community/XPRibbon';
 import { RecallBanner } from '../components/community/RecallBanner';
 import { SubredditFooter } from '../components/community/SubredditFooter';
+import { FeaturedRecipeHero } from '../components/community/FeaturedRecipeHero';
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
@@ -32,8 +33,7 @@ export default function CommunityScreen() {
       >
         <XPRibbon />
 
-        {/* FeaturedRecipeHero — Task 25 */}
-        <View style={{ height: 0 }} />
+        <FeaturedRecipeHero />
 
         <RecallBanner />
 
