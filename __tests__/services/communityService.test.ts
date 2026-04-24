@@ -74,6 +74,29 @@ describe('fetchRecentRecalls', () => {
 // ─── fetchKibaIndexHighlights ───────────────────────────
 
 describe('fetchKibaIndexHighlights', () => {
+  // Dispatch-by-name helper: candidates RPC returns flat rows, stats RPC
+  // returns KibaIndexStats. Mirrors how communityService.ts now consumes them
+  // post-migration 052.
+  function mockRpcDispatch(options: {
+    candidates?: { data: unknown; error: unknown };
+    statsByProduct?: Record<string, unknown>;
+    statsByProductError?: Record<string, unknown>;
+  }) {
+    (supabase.rpc as jest.Mock).mockImplementation((name: string, args: Record<string, unknown>) => {
+      if (name === 'get_kiba_index_candidates') {
+        return Promise.resolve(options.candidates ?? { data: [], error: null });
+      }
+      if (name === 'get_kiba_index_stats') {
+        const id = args.p_product_id as string;
+        if (options.statsByProductError?.[id]) {
+          return Promise.resolve({ data: null, error: options.statsByProductError[id] });
+        }
+        return Promise.resolve({ data: options.statsByProduct?.[id] ?? null, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+  }
+
   test('returns [] when offline', async () => {
     (isOnline as jest.Mock).mockResolvedValue(false);
     await expect(fetchKibaIndexHighlights('cat')).resolves.toEqual([]);
@@ -82,24 +105,28 @@ describe('fetchKibaIndexHighlights', () => {
   });
 
   test('returns [] when no candidate votes exist', async () => {
-    const candidatesChain = mockChain({ data: [], error: null });
-    (supabase.from as jest.Mock).mockReturnValue(candidatesChain);
+    mockRpcDispatch({ candidates: { data: [], error: null } });
     await expect(fetchKibaIndexHighlights('dog')).resolves.toEqual([]);
-    expect(supabase.rpc).not.toHaveBeenCalled();
+    // Only the candidates RPC should have been called — no stats fan-out.
+    const rpcCalls = (supabase.rpc as jest.Mock).mock.calls;
+    expect(rpcCalls).toHaveLength(1);
+    expect(rpcCalls[0][0]).toBe('get_kiba_index_candidates');
+  });
+
+  test('returns [] when the candidates RPC errors', async () => {
+    mockRpcDispatch({ candidates: { data: null, error: { message: 'boom' } } });
+    await expect(fetchKibaIndexHighlights('dog')).resolves.toEqual([]);
   });
 
   test('returns top 3 per metric for the given species, ranked by ratio', async () => {
     // Five candidate products each with distinct stats so ranking is deterministic.
     const candidates = [
-      { product_id: 'p-1', products: { brand: 'A', name: 'One' } },
-      { product_id: 'p-2', products: { brand: 'B', name: 'Two' } },
-      { product_id: 'p-3', products: { brand: 'C', name: 'Three' } },
-      { product_id: 'p-4', products: { brand: 'D', name: 'Four' } },
-      { product_id: 'p-5', products: { brand: 'E', name: 'Five' } },
+      { product_id: 'p-1', brand: 'A', name: 'One' },
+      { product_id: 'p-2', brand: 'B', name: 'Two' },
+      { product_id: 'p-3', brand: 'C', name: 'Three' },
+      { product_id: 'p-4', brand: 'D', name: 'Four' },
+      { product_id: 'p-5', brand: 'E', name: 'Five' },
     ];
-    const candidatesChain = mockChain({ data: candidates, error: null });
-    (supabase.from as jest.Mock).mockReturnValue(candidatesChain);
-
     // Stats per product. Ratios:
     //   p-1: taste 0.90 (9/10), tummy 0.80 (8/10)  ← top picky
     //   p-2: taste 0.10 (1/10), tummy 0.10 (1/10)  ← bottom both
@@ -113,13 +140,13 @@ describe('fetchKibaIndexHighlights', () => {
       'p-4': { total_votes: 18, taste: { total: 10, loved: 7, picky: 2, refused: 1 }, tummy: { total: 10, perfect: 6, soft_stool: 3, upset: 1 } },
       'p-5': { total_votes: 4,  taste: { total: 2,  loved: 1, picky: 1, refused: 0 }, tummy: { total: 2,  perfect: 1, soft_stool: 1, upset: 0 } },
     };
-    (supabase.rpc as jest.Mock).mockImplementation((_name: string, args: { p_product_id: string }) =>
-      Promise.resolve({ data: statsByProduct[args.p_product_id], error: null }),
-    );
+    mockRpcDispatch({
+      candidates: { data: candidates, error: null },
+      statsByProduct,
+    });
 
     const result = await fetchKibaIndexHighlights('cat');
 
-    expect(supabase.from).toHaveBeenCalledWith('kiba_index_votes');
     // Picky-eaters top 3 by taste.loved/total: p-1 (0.9), p-3 (0.8), p-4 (0.7)
     const picky = result.filter(r => r.metric === 'picky_eaters');
     expect(picky).toHaveLength(3);
@@ -136,28 +163,27 @@ describe('fetchKibaIndexHighlights', () => {
     }));
   });
 
-  test('passes species filter through to candidate query', async () => {
-    const candidatesChain = mockChain({ data: [], error: null });
-    (supabase.from as jest.Mock).mockReturnValue(candidatesChain);
+  test('passes species + limit through to the candidates RPC', async () => {
+    mockRpcDispatch({ candidates: { data: [], error: null } });
     await fetchKibaIndexHighlights('cat');
-    // species filter goes through pets!inner.species — verify the .eq was called for it
-    expect(candidatesChain.eq).toHaveBeenCalledWith('pets.species', 'cat');
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'get_kiba_index_candidates',
+      expect.objectContaining({ p_species: 'cat' }),
+    );
   });
 
   test('skips products with stat-fetch errors instead of crashing', async () => {
     const candidates = [
-      { product_id: 'p-1', products: { brand: 'A', name: 'One' } },
-      { product_id: 'p-2', products: { brand: 'B', name: 'Two' } },
+      { product_id: 'p-1', brand: 'A', name: 'One' },
+      { product_id: 'p-2', brand: 'B', name: 'Two' },
     ];
-    const candidatesChain = mockChain({ data: candidates, error: null });
-    (supabase.from as jest.Mock).mockReturnValue(candidatesChain);
-
-    (supabase.rpc as jest.Mock)
-      .mockResolvedValueOnce({ data: null, error: { message: 'boom' } })
-      .mockResolvedValueOnce({
-        data: { total_votes: 10, taste: { total: 10, loved: 8, picky: 1, refused: 1 }, tummy: { total: 10, perfect: 7, soft_stool: 2, upset: 1 } },
-        error: null,
-      });
+    mockRpcDispatch({
+      candidates: { data: candidates, error: null },
+      statsByProductError: { 'p-1': { message: 'boom' } },
+      statsByProduct: {
+        'p-2': { total_votes: 10, taste: { total: 10, loved: 8, picky: 1, refused: 1 }, tummy: { total: 10, perfect: 7, soft_stool: 2, upset: 1 } },
+      },
+    });
 
     const result = await fetchKibaIndexHighlights('dog');
     // Only p-2 should appear (p-1 errored)

@@ -69,40 +69,36 @@ const TOP_N_PER_METRIC = 3;
 
 interface CandidateRow {
   product_id: string;
-  products: { brand: string; name: string } | null;
+  brand: string;
+  name: string;
 }
+
+const CANDIDATE_LIMIT = 200;
 
 export async function fetchKibaIndexHighlights(species: 'dog' | 'cat'): Promise<KibaIndexHighlight[]> {
   if (!(await isOnline())) return [];
 
   try {
-    // Step 1: Find candidate products voted on for this species.
-    // The kiba_index_votes → pets join filters by species; products join
-    // hydrates brand + name in one round-trip.
-    const { data: rawCandidates, error: candidatesErr } = await supabase
-      .from('kiba_index_votes')
-      .select('product_id, products!inner(brand, name), pets!inner(species)')
-      .eq('pets.species', species);
+    // Step 1: Fetch candidate products voted on for this species via the
+    // SECURITY DEFINER aggregation RPC (migration 052). Querying
+    // `kiba_index_votes` directly would trigger per-user RLS and narrow
+    // the feed to products the current user voted on.
+    const { data: rawCandidates, error: candidatesErr } = await supabase.rpc(
+      'get_kiba_index_candidates',
+      { p_species: species, p_limit: CANDIDATE_LIMIT },
+    );
 
     if (candidatesErr || !rawCandidates) return [];
 
-    // Dedupe by product_id (one row per vote in source).
-    const candidates = rawCandidates as unknown as Array<CandidateRow & { pets: { species: string } }>;
-    const byProduct = new Map<string, CandidateRow>();
-    for (const row of candidates) {
-      if (!byProduct.has(row.product_id) && row.products) {
-        byProduct.set(row.product_id, { product_id: row.product_id, products: row.products });
-      }
-    }
-
-    if (byProduct.size === 0) return [];
+    const candidates = rawCandidates as CandidateRow[];
+    if (candidates.length === 0) return [];
 
     // Step 2: Per-product RPC for stats. Run in parallel; tolerate per-row
     // errors so one bad fetch doesn't drop the whole highlight reel.
     type Scored = { row: CandidateRow; stats: KibaIndexStats };
     const scored: Scored[] = [];
     const statsResults = await Promise.all(
-      [...byProduct.values()].map(async row => {
+      candidates.map(async row => {
         const { data, error } = await supabase.rpc('get_kiba_index_stats', {
           p_product_id: row.product_id,
           p_species: species,
@@ -136,21 +132,19 @@ export async function fetchKibaIndexHighlights(species: 'dog' | 'cat'): Promise<
 
     const out: KibaIndexHighlight[] = [];
     for (const p of pickyRanked) {
-      if (!p.scored.row.products) continue;
       out.push({
         product_id: p.scored.row.product_id,
-        brand: p.scored.row.products.brand,
-        name: p.scored.row.products.name,
+        brand: p.scored.row.brand,
+        name: p.scored.row.name,
         metric: 'picky_eaters',
         score: p.ratio,
       });
     }
     for (const t of tummyRanked) {
-      if (!t.scored.row.products) continue;
       out.push({
         product_id: t.scored.row.product_id,
-        brand: t.scored.row.products.brand,
-        name: t.scored.row.products.name,
+        brand: t.scored.row.brand,
+        name: t.scored.row.name,
         metric: 'sensitive_tummies',
         score: t.ratio,
       });
