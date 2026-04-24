@@ -81,7 +81,7 @@ export function filterAndGroupVendors(
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export default function VendorDirectoryScreen({ route }: Props) {
+export default function VendorDirectoryScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const initialBrand = route?.params?.initialBrand ?? '';
 
@@ -117,6 +117,16 @@ export default function VendorDirectoryScreen({ route }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.header}>
         <Text style={styles.title}>Vendor Directory</Text>
         <Text style={styles.subtitle}>
@@ -212,6 +222,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  navBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
   },
   header: {
     paddingHorizontal: Spacing.lg,

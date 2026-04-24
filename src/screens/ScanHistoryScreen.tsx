@@ -85,7 +85,17 @@ export default function ScanHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+      <View style={[styles.navBar, { paddingTop: insets.top + Spacing.sm }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.header}>
         <Text style={styles.title}>Recent Scans</Text>
         <Text style={styles.subtitle}>
           {activePet.name} · {scans.length} recent
@@ -185,6 +195,10 @@ export default function ScanHistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  navBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xs,
+  },
   header: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,

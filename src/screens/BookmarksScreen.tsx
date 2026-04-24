@@ -94,7 +94,17 @@ export default function BookmarksScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+      <View style={[styles.navBar, { paddingTop: insets.top + Spacing.sm }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.header}>
         <View style={styles.headerRow}>
           {activePet.photo_url ? (
             <Image source={{ uri: activePet.photo_url }} style={styles.petPhoto} />
@@ -181,8 +191,13 @@ export default function BookmarksScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  navBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xs,
+  },
   header: {
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.hairlineBorder,
