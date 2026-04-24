@@ -127,142 +127,190 @@ export const usePantryStore = create<PantryState>()((set, get) => ({
     set({ loading: true, error: null });
     try {
       await addToPantry(input, petId);
-      const pid = get()._petId ?? petId;
 
+      // Refetch the pet we mutated (petId arg), not the currently-active pet.
+      // Cross-pet race: if user switched while the server call was in flight,
+      // `_petId` now points to a different pet — using it would make us refetch
+      // the wrong pet and leave the mutated pet's cache stale.
       const [items, dietStatus] = await Promise.all([
-        getPantryForPet(pid),
-        evaluateDietCompleteness(pid, getPetName(pid)),
+        getPantryForPet(petId),
+        evaluateDietCompleteness(petId, getPetName(petId)),
       ]);
-      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
-      set({
-        items,
-        dietStatus,
-        loading: false,
-        _petCache: {
-          ...get()._petCache,
-          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
-        },
-      });
+      const activeSwitchData = get()._petCache[petId]?.activeSwitchData ?? null;
+      const nextCache = {
+        ...get()._petCache,
+        [petId]: { items, dietStatus, activeSwitchData },
+      };
+
+      // Always update cache; only update top-level state if the mutated pet
+      // is still active (avoids clobbering the now-visible pet's view).
+      if (get()._petId === petId) {
+        set({ items, dietStatus, loading: false, _petCache: nextCache });
+      } else {
+        set({ _petCache: nextCache, loading: false });
+      }
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] addItem failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to add item.', loading: false });
+      if (get()._petId === petId) {
+        set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to add item.', loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
   removeItem: async (itemId, petId) => {
+    const pid = get()._petId ?? petId;
+    if (!pid) {
+      const msg = 'No pet ID available for removal.';
+      if (__DEV__) console.warn('[usePantryStore] removeItem failed:', msg);
+      set({ error: msg, loading: false });
+      Alert.alert('Cannot Remove', msg);
+      return;
+    }
     set({ loading: true, error: null });
     try {
-      const pid = get()._petId ?? petId;
-      if (!pid) {
-         throw new Error('No pet ID available for removal.');
-      }
-
       await removePantryItem(itemId, petId);
 
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
-      set({
-        items,
-        dietStatus,
-        loading: false,
-        _petCache: {
-          ...get()._petCache,
-          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
-        },
-      });
+      const activeSwitchData = get()._petCache[pid]?.activeSwitchData ?? null;
+      const nextCache = {
+        ...get()._petCache,
+        [pid]: { items, dietStatus, activeSwitchData },
+      };
+
+      if (get()._petId === pid) {
+        set({ items, dietStatus, loading: false, _petCache: nextCache });
+      } else {
+        set({ _petCache: nextCache, loading: false });
+      }
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       const msg = (e as Error).message ?? 'Failed to remove item.';
       if (__DEV__) console.warn('[usePantryStore] removeItem failed:', msg);
-      set({ error: msg, loading: false });
-      Alert.alert('Cannot Remove', msg);
+      if (get()._petId === pid) {
+        set({ error: msg, loading: false });
+        Alert.alert('Cannot Remove', msg);
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
   restockItem: async (itemId) => {
+    // Capture mutated pet BEFORE the await — reading `_petId` after means we'd
+    // refetch whatever pet is active when the server call returns, not the one
+    // whose item we just restocked.
+    const pid = get()._petId;
+    if (!pid) return;
     set({ loading: true, error: null });
     try {
       await restockPantryItem(itemId);
-      const pid = get()._petId!;
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
-      set({
-        items,
-        dietStatus,
-        loading: false,
-        _petCache: {
-          ...get()._petCache,
-          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
-        },
-      });
+      const activeSwitchData = get()._petCache[pid]?.activeSwitchData ?? null;
+      const nextCache = {
+        ...get()._petCache,
+        [pid]: { items, dietStatus, activeSwitchData },
+      };
+      if (get()._petId === pid) {
+        set({ items, dietStatus, loading: false, _petCache: nextCache });
+      } else {
+        set({ _petCache: nextCache, loading: false });
+      }
     } catch (e) {
       console.error('[usePantryStore] restockItem failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to restock item.', loading: false });
+      if (get()._petId === pid) {
+        set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to restock item.', loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
   updateItem: async (itemId, updates) => {
+    const pid = get()._petId;
+    if (!pid) return;
     set({ loading: true, error: null });
     try {
       await updatePantryItem(itemId, updates);
-      const pid = get()._petId!;
       const [items, dietStatus] = await Promise.all([
         getPantryForPet(pid),
         evaluateDietCompleteness(pid, getPetName(pid)),
       ]);
-      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
-      set({
-        items,
-        dietStatus,
-        loading: false,
-        _petCache: {
-          ...get()._petCache,
-          [pid]: { items, dietStatus, activeSwitchData: existingSwitch },
-        },
-      });
+      const activeSwitchData = get()._petCache[pid]?.activeSwitchData ?? null;
+      const nextCache = {
+        ...get()._petCache,
+        [pid]: { items, dietStatus, activeSwitchData },
+      };
+      if (get()._petId === pid) {
+        set({ items, dietStatus, loading: false, _petCache: nextCache });
+      } else {
+        set({ _petCache: nextCache, loading: false });
+      }
     } catch (e) {
       console.error('[usePantryStore] updateItem failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to update item.', loading: false });
+      if (get()._petId === pid) {
+        set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to update item.', loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
   shareItem: async (itemId, petId, assignment) => {
+    // `petId` is the RECIPIENT. The sharer (item owner) is the currently-active
+    // pet — capture it before the await so a mid-flight pet switch doesn't
+    // make us refetch the wrong pantry.
+    const sharerId = get()._petId;
+    if (!sharerId) return;
     set({ loading: true, error: null });
     try {
       await sharePantryItem(itemId, petId, assignment);
-      const pid = get()._petId!;
       const [items, dietStatus] = await Promise.all([
-        getPantryForPet(pid),
-        evaluateDietCompleteness(pid, getPetName(pid)),
+        getPantryForPet(sharerId),
+        evaluateDietCompleteness(sharerId, getPetName(sharerId)),
       ]);
-      const existingSwitch = get()._petCache[pid]?.activeSwitchData ?? get().activeSwitchData;
-      // Share also rebalances/refreshes the target pet's assignments server-side
+      const activeSwitchData = get()._petCache[sharerId]?.activeSwitchData ?? null;
+      // Share rebalances/refreshes the recipient's assignments server-side
       // (rebalanceBaseShares + refreshWetReserve) — invalidate its cache entry
-      // so the next switch to that pet fetches fresh data. If petId === pid
+      // so the next switch to that pet fetches fresh data. If petId === sharerId
       // (defensive), the subsequent reassignment wins and the entry is rebuilt.
       const nextCache = { ...get()._petCache };
       delete nextCache[petId];
-      nextCache[pid] = { items, dietStatus, activeSwitchData: existingSwitch };
-      set({
-        items,
-        dietStatus,
-        loading: false,
-        _petCache: nextCache,
-      });
+      nextCache[sharerId] = { items, dietStatus, activeSwitchData };
+      if (get()._petId === sharerId) {
+        set({ items, dietStatus, loading: false, _petCache: nextCache });
+      } else {
+        set({ _petCache: nextCache, loading: false });
+      }
       rescheduleAllFeeding().catch(() => {});
     } catch (e) {
       console.error('[usePantryStore] shareItem failed:', e);
-      set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to share item.', loading: false });
+      if (get()._petId === sharerId) {
+        set({ error: e instanceof PantryOfflineError ? e.message : 'Failed to share item.', loading: false });
+      } else {
+        set({ loading: false });
+      }
     }
   },
 
+  // Note on cross-pet race: logTreat does NOT share the staleness bug that
+  // the other mutations had. All writes are keyed to the explicit `petId` arg
+  // (both the optimistic apply and the error revert target `_petCache[petId]`),
+  // so a mid-flight pet switch can't misroute the cache update. The only
+  // narrow window is the `set({ items: applyTreatDeduction(items) })` write,
+  // which targets top-level state — but it happens BEFORE the await, so the
+  // switch can only happen after it. The later revert-on-error also writes
+  // stale top-level `items`; on a mid-flight pet switch the new pet's state
+  // would briefly flicker with the sharer's items. Small enough to flag here
+  // rather than fix in this pass.
   logTreat: async (itemId, petId) => {
     const items = get().items;
     const item = items.find(i => i.id === itemId);

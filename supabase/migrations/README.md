@@ -1,6 +1,6 @@
 # Supabase Migrations
 
-39 migrations applied to the Kiba Supabase project in sequence. Each
+49 migrations applied to the Kiba Supabase project in sequence. Each
 file represents one deployed schema change: numbered, dated via git,
 reviewable in isolation. RLS policies live inside the migration that
 creates the table they protect — no cross-cutting auth migrations.
@@ -18,7 +18,7 @@ creates the table they protect — no cross-cutting auth migrations.
 
 ## Milestone map
 
-Not all 39 are equally interesting. The ones below are the load-bearing
+Not all 49 are equally interesting. The ones below are the load-bearing
 schema moments; the rest are incremental additions (columns, indexes,
 backfills) that sit on top of these foundations.
 
@@ -82,6 +82,28 @@ backfills) that sit on top of these foundations.
 | `034_behavioral_feeding.sql` | **Behavioral feeding rewrite.** `feeding_style` + `feeding_role` (base / rotational) replacing the rigid slot/meal-fraction system. Wet Reserve Engine + completeness engine refactor. `feeding_log` table + `log_wet_feeding_atomic` / `undo_wet_feeding_atomic` RPCs for log-driven wet feedings. |
 | `038_fuzzy_search_rpc.sql` | `pg_trgm` fuzzy search for HomeScreen product text search |
 | `039_wet_intent_resolved_at.sql` | **Wet food extras path.** Nullable `wet_intent_resolved_at` TIMESTAMPTZ on `pets` gates the new `FeedingIntentSheet` one-time intercept. Backfill marks existing non-dry_only pets and pets with active cross-format pantry items as already-resolved so the intercept only fires for net-new dry_only state. Uses `ADD COLUMN IF NOT EXISTS` for re-run safety (pets-table convention per 022/028/029/031/035). |
+| `040_bookmarks.sql` | **D-169 bookmarks.** Per-pet product watchlist with `UNIQUE(pet_id, product_id)`. Hard cap of 20 enforced client-side. RLS pinned to `user_id = auth.uid()`. |
+
+### M9 Community (041–049)
+
+Last big pre-launch scope: Community tab rebuild — XP engine, Kiba
+Kitchen (UGC recipes with auto-validators), Vendor Directory, Toxic
+Database, Blog (Studio CMS), and D-072 community safety flags. Triggers
+fire on existing tables (`scan_history`, `kiba_index_votes`, `products`)
+so the XP system retroactively rewards every new scan/vote/contribution
+from the moment 046 lands.
+
+| Migration | What |
+|-----------|------|
+| `041_community_recipes.sql` | UGC recipe submissions. **Client-supplied UUID** (no `DEFAULT gen_random_uuid()`) — needed because the storage path `{userId}/{recipeId}.jpg` must be deterministic before the INSERT. RLS WITH CHECK pins inserts to `status='pending'`, `is_killed=false`, `rejection_reason=NULL`, `reviewed_at=NULL` so users can't self-approve. `is_killed` boolean is the emergency killswitch (Studio-flippable; instantly hides from feed + detail). |
+| `042_user_xp.sql` | `user_xp_events` (immutable ledger) + `user_xp_totals` (denormalized counters + streak state). **SELECT-only RLS** — all writes happen via the SECURITY DEFINER triggers in 046. Writing client-side is denied by policy. |
+| `043_blog_posts.sql` | Admin-authored blog posts. Public read where `is_published=true`. Writes via service role (Steven authors in Supabase Studio's row editor). |
+| `044_vendors.sql` | Brand contact directory. `brand_slug TEXT UNIQUE` joins to a normalized form of `products.brand`. Public read where `is_published=true`. Seeded from `docs/data/vendors.json` via `npm run seed:vendors`, which also writes `src/data/published_vendor_slugs.json` for offline-safe ResultScreen overflow checks. `parent_company` collected for analytics but never displayed in UI. |
+| `045_score_flags.sql` | **D-072 community safety flags.** Per-user reports on score quality, ingredient gaps, suspected recalls, etc. RLS WITH CHECK pins inserts to `status='open'`, `admin_note=NULL`, `reviewed_at=NULL` (mirrors 041's pattern — prevents queue poisoning). `scan_id` FK → `scan_history(id)` ON DELETE SET NULL. UPDATE service-role only (Studio triage). |
+| `046_xp_triggers.sql` | **Five SECURITY DEFINER trigger functions** owned by `postgres` (so SELECT-only RLS on `user_xp_*` doesn't roll back the originating INSERT): `process_scan_xp` on `scan_history` (+10 + discovery bonus + calendar-day streak with 1-day grace, gap=2 preserves), `process_vote_xp` on `kiba_index_votes` (+15 only if user has prior `scan_history` for that product — anti-search-farm), `process_recipe_approval_xp` on `community_recipes` (+100, idempotent via `NOT EXISTS` guard so approve→un-approve→re-approve doesn't double-grant), `process_missing_product_approval_xp` on `products` (same pattern keyed on `product_id`). Helper `upsert_user_xp_totals` rolls totals + counters + streak in one shot. |
+| `047_storage_buckets.sql` | Two public buckets: `recipe-images` (per-user folder RLS — `auth.uid()` must match the first `/`-segment of `name` for INSERT/DELETE) and `blog-images` (writes service-role only). Public SELECT on both. **First migration in this repo to provision storage buckets via SQL** — `pet-photos` was created in Studio manually. |
+| `048_xp_summary_rpc.sql` | `get_user_xp_summary()` SECURITY DEFINER returns the 7 columns the XPRibbon needs (totals + streak + computed `weekly_xp`). Weekly window uses `(date_trunc('week', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')` — the trailing `AT TIME ZONE` re-anchors the timestamp-without-tz back to TIMESTAMPTZ so the comparison against `created_at` doesn't drift with session timezone. ISO-week boundary = Monday 00:00 UTC. |
+| `049_score_flag_aggregate_rpc.sql` | `get_score_flag_activity_counts()` SECURITY DEFINER returns reason + count over the last 7 days for the SafetyFlagsScreen "Community Activity" tab. Counts only — no PII surfaced. |
 
 ### Data integrity fixes
 

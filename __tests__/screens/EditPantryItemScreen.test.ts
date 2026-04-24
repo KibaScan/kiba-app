@@ -57,7 +57,7 @@ jest.mock('../../src/utils/network', () => ({
   isOnline: jest.fn().mockResolvedValue(true),
 }));
 
-import { formatTime, buildFrequencyUpdate, shouldShowFedTodayCard } from '../../src/screens/EditPantryItemScreen';
+import { formatTime, buildFrequencyUpdate, shouldShowFedTodayCard } from '../../src/utils/editPantryItemHelpers';
 
 // ─── formatTime ────────────────────────────────────────
 

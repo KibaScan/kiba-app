@@ -34,7 +34,7 @@ describe('TopPickRankRow', () => {
   it('renders rank, brand, name, score, and insight text', () => {
     const onPress = jest.fn();
     const { getByText } = render(
-      <TopPickRankRow pick={entry} rank={2} insight={insight} onPress={onPress} />,
+      <TopPickRankRow pick={entry} rank={2} petName="Buster" insight={insight} onPress={onPress} />,
     );
     expect(getByText('#2')).toBeTruthy();
     expect(getByText('Test Brand')).toBeTruthy();
@@ -43,10 +43,17 @@ describe('TopPickRankRow', () => {
     expect(getByText('Free of chicken')).toBeTruthy();
   });
 
+  it('accessibility label includes full "{score}% match for {petName}" phrase (D-168)', () => {
+    const { getByLabelText } = render(
+      <TopPickRankRow pick={entry} rank={2} petName="Buster" insight={insight} onPress={() => {}} />,
+    );
+    expect(getByLabelText(/88% match for Buster/i)).toBeTruthy();
+  });
+
   it('invokes onPress when tapped', () => {
     const onPress = jest.fn();
     const { getByLabelText } = render(
-      <TopPickRankRow pick={entry} rank={2} insight={insight} onPress={onPress} />,
+      <TopPickRankRow pick={entry} rank={2} petName="Buster" insight={insight} onPress={onPress} />,
     );
     fireEvent.press(getByLabelText(/Salmon Recipe/i));
     expect(onPress).toHaveBeenCalledTimes(1);
@@ -54,7 +61,7 @@ describe('TopPickRankRow', () => {
 
   it('renders without an insight row when insight is null', () => {
     const { queryByText } = render(
-      <TopPickRankRow pick={entry} rank={3} insight={null} onPress={() => {}} />,
+      <TopPickRankRow pick={entry} rank={3} petName="Buster" insight={null} onPress={() => {}} />,
     );
     expect(queryByText('Free of chicken')).toBeNull();
   });

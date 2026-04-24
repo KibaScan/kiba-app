@@ -3,13 +3,13 @@
 // D-095: Factual criteria only — "typically have" not "should have"
 // D-084: Ionicons references, no emoji
 
-export interface QualityCriterion {
+interface QualityCriterion {
   label: string;
   description: string;
   icon: string; // Ionicon name
 }
 
-export interface QualityReference {
+interface QualityReference {
   category: 'daily_food' | 'treat';
   species: 'dog' | 'cat';
   title: string;

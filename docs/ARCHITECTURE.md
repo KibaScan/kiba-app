@@ -43,7 +43,7 @@ docs/
 └── status/               CURRENT.md — latest session state, "up next" queue
 
 .agent/                   Matte Premium design system (tokens, card anatomy, anti-patterns)
-DECISIONS.md              129 decisions, D-001 → D-167 with explicit supersessions
+DECISIONS.md              130 decisions, D-001 → D-168 with explicit supersessions
 ROADMAP.md                Milestone plan, M0–M9 complete/in-progress, M10+ backlog
 CLAUDE.md                 Canonical AI-assistant briefing (lean; detail in references/)
 ```

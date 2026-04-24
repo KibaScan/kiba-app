@@ -146,6 +146,4 @@ export const AAFCO_STATEMENT_STATUS = {
 
 // ─── Misc ───────────────────────────────────────────────
 
-export const MOISTURE_THRESHOLD = 12;
-export const BREED_MODIFIER_CAP = 10;
 export const CURRENT_SCORING_VERSION = '5';

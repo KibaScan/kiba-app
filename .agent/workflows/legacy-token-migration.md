@@ -104,7 +104,6 @@ Process in this exact order. Do not skip ahead.
 - `src/screens/IngredientCaptureScreen.tsx` — :721 `[C]`, :723 `[B]`, :769 `[C]`, :775 `[C]`, :783 `[B]`, :789 `[C]`, :794 `[B]`, :838 `[C]`, :840 `[B]`
 - `src/screens/ScanScreen.tsx` — :541 `[C]`, :587 `[C]`, :589 `[B]`, :609 `[C]`, :615 `[B]`
 - `src/screens/ProductConfirmScreen.tsx` — :179 `[C]`, :249 `[C]`, :251 `[B]`, :272 `[C]`, :278 `[B]`, :286 `[C]`
-- `src/components/ScanHistoryCard.tsx` — :112 `[C]`
 
 ### Group F — Safe switch
 

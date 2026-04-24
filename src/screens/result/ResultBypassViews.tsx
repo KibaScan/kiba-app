@@ -32,7 +32,7 @@ import { usePantryStore } from '../../stores/usePantryStore';
 
 // ─── Shared Props ──────────────────────────────────────────
 
-export interface BypassViewProps {
+interface BypassViewProps {
   product: Product;
   pet: PetProfile | null;
   displayName: string;

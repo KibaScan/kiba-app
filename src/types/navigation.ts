@@ -31,6 +31,8 @@ export type HomeStackParamList = {
   AppointmentDetail: { appointmentId: string };
   Compare: { productAId: string; productBId: string; petId: string };
   SafeSwitchDetail: { switchId: string };
+  Bookmarks: undefined;
+  ScanHistory: undefined;
 };
 
 export type CommunityStackParamList = {
@@ -38,6 +40,14 @@ export type CommunityStackParamList = {
   Result: { productId: string; petId: string | null; pantryItemIdHint?: string };
   RecallDetail: { productId: string };
   Compare: { productAId: string; productBId: string; petId: string };
+  KibaKitchenFeed: undefined;
+  KibaKitchenSubmit: undefined;
+  KibaKitchenRecipeDetail: { recipeId: string };
+  ToxicDatabase: undefined;
+  VendorDirectory: { initialBrand?: string } | undefined;
+  BlogList: undefined;
+  BlogDetail: { postId: string };
+  SafetyFlags: undefined;
 };
 
 export type PantryStackParamList = {

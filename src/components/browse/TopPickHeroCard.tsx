@@ -31,7 +31,11 @@ export function TopPickHeroCard({ pick, petName, insights, onPress }: TopPickHer
       style={[styles.card, { borderColor: scoreColor }]}
       onPress={onPress}
       activeOpacity={0.85}
-      accessibilityLabel={`${pick.product_name}, best overall match`}
+      accessibilityLabel={
+        pick.final_score != null
+          ? `${pick.product_name}, best overall match, ${pick.final_score}% match for ${petName}`
+          : `${pick.product_name}, best overall match`
+      }
     >
       <View style={styles.accentBadge}>
         <Ionicons name="trophy" size={14} color={scoreColor} />
@@ -56,7 +60,6 @@ export function TopPickHeroCard({ pick, petName, insights, onPress }: TopPickHer
             <Text style={[styles.scoreText, { color: scoreColor }]}>
               {pick.final_score}%
             </Text>
-            <Text style={[styles.scoreLabel, { color: scoreColor }]}>match</Text>
           </View>
         )}
       </View>
@@ -138,12 +141,6 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: FontSizes.xl,
     fontWeight: '700',
-  },
-  scoreLabel: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-    marginTop: -2,
-    letterSpacing: 0.3,
   },
   brand: {
     fontSize: FontSizes.sm,

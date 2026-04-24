@@ -2,12 +2,6 @@
 // These are exported and tested in __tests__/screens/PetHubScreen.test.ts
 
 import type { Pet } from '../../types/pet';
-import {
-  calculateRER,
-  getDerMultiplier,
-  lbsToKg,
-} from '../../services/portionCalculator';
-import { getAgeMonths } from '../../components/PortionCard';
 
 // ─── Exported Pure Helpers (testable) ─────────────────────
 
@@ -49,22 +43,6 @@ export function getStaleWeightMonths(
 export function formatStaleWeightMessage(months: number): string {
   const unit = months === 1 ? 'month' : 'months';
   return `Weight last updated ${months} ${unit} ago \u2014 still accurate?`;
-}
-
-// ─── Internal Helpers ─────────────────────────────────────
-
-export function computeDER(pet: Pet): number | null {
-  if (pet.weight_current_lbs == null) return null;
-  const ageMonths = getAgeMonths(pet.date_of_birth) ?? undefined;
-  const rer = calculateRER(lbsToKg(pet.weight_current_lbs));
-  const { multiplier } = getDerMultiplier({
-    species: pet.species,
-    lifeStage: pet.life_stage,
-    isNeutered: pet.is_neutered,
-    activityLevel: pet.activity_level,
-    ageMonths,
-  });
-  return Math.round(rer * multiplier);
 }
 
 export function capitalizeFirst(s: string): string {

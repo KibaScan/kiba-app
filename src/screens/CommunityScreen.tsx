@@ -1,65 +1,30 @@
-// Kiba — Community Tab (Placeholder)
-// Teaser sections for upcoming features: Kiba Kitchen, Blog, Kiba Index,
-// Symptom Detective, Community Contributions.
+// Kiba — Community Tab (M9, Task 20 + Task 25 + Task 26 + Task 30)
+// Real shell layout per spec §3:
+//   XPRibbon  ·  FeaturedRecipeHero  ·  RecallBanner
+//   DiscoveryGrid  ·  BlogCarousel  ·  SubredditFooter
+//
+// XPRibbon respects D-070 (subtle, not hero). Zero emoji per D-084 — Ionicons.
+// DiscoveryGrid is the 2x2 tile grid (Task 30) — Toxic Database, Vendor
+// Directory, Kiba Index Highlights, Safety Flags.
+// BlogCarousel self-fetches and collapses to null on empty/offline.
+
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Colors, FontSizes, Spacing } from '../utils/constants';
-
-// ─── Section Data ───────────────────────────────────────
-
-const SECTIONS: readonly {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  tint: string;
-  description: string;
-}[] = [
-  {
-    title: 'Kiba Kitchen',
-    icon: 'restaurant-outline',
-    tint: '#F97316',
-    description: 'Homemade pet food recipes, scored by our engine. Coming soon.',
-  },
-  {
-    title: 'Pet Health & Nutrition',
-    icon: 'newspaper-outline',
-    tint: Colors.textSecondary,
-    description: 'Expert articles on pet food, health, and nutrition. Coming soon.',
-  },
-  {
-    title: 'Kiba Index',
-    icon: 'thumbs-up-outline',
-    tint: Colors.severityAmber,
-    description:
-      'Rate your pet\u2019s food \u2014 Taste Test and Tummy Check ratings from real pet owners. Coming soon.',
-  },
-  {
-    title: 'Symptom Detective',
-    icon: 'pulse-outline',
-    tint: Colors.severityRed,
-    description:
-      'Track daily symptoms and detect ingredient sensitivities over time. Coming soon.',
-  },
-  {
-    title: 'Help Grow Kiba',
-    icon: 'people-outline',
-    tint: Colors.accent,
-    description:
-      'Scanned a product we don\u2019t have? Your contributions help every pet owner.',
-  },
-];
-
-// ─── Component ──────────────────────────────────────────
+import { XPRibbon } from '../components/community/XPRibbon';
+import { RecallBanner } from '../components/community/RecallBanner';
+import { SubredditFooter } from '../components/community/SubredditFooter';
+import { FeaturedRecipeHero } from '../components/community/FeaturedRecipeHero';
+import { BlogCarousel } from '../components/community/BlogCarousel';
+import { DiscoveryGrid } from '../components/community/DiscoveryGrid';
 
 export default function CommunityScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Community</Text>
       </View>
@@ -69,23 +34,21 @@ export default function CommunityScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {SECTIONS.map((section) => (
-          <View key={section.title} style={styles.card}>
-            <View style={[styles.iconCircle, { backgroundColor: `${section.tint}15` }]}>
-              <Ionicons name={section.icon} size={24} color={section.tint} />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.cardTitle}>{section.title}</Text>
-              <Text style={styles.cardDescription}>{section.description}</Text>
-            </View>
-          </View>
-        ))}
+        <XPRibbon />
+
+        <FeaturedRecipeHero />
+
+        <RecallBanner />
+
+        <DiscoveryGrid />
+
+        <BlogCarousel />
+
+        <SubredditFooter />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
-
-// ─── Styles ─────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -94,14 +57,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
+    paddingTop: 0,
     paddingBottom: Spacing.sm,
   },
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: '800',
     color: Colors.textPrimary,
-    letterSpacing: 0.5,
+    lineHeight: 30,
   },
   scroll: {
     flex: 1,
@@ -109,38 +72,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: 120,
-    gap: Spacing.md,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.md,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardBody: {
-    flex: 1,
-    gap: 4,
-  },
-  cardTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  cardDescription: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    lineHeight: 18,
+    paddingBottom: 88,
   },
 });

@@ -1,18 +1,30 @@
 # Kiba — Product Roadmap
 
 > Master timeline from foundation to scale.
-> Updated: April 7, 2026
+> Updated: April 23, 2026
 > Reference: DECISIONS.md for rationale behind each item.
 
 ---
 
-## Current Status: M9 In Progress (M0–M8 Done)
+## Current Status: M9 In Progress — Community tab shipped (M0–M8 Done)
 
-**Completed:**
+**M9 Community tab shipped (April 23, 2026 — branch `m9-community`):**
+- Server-side XP engine — points for camera scans (anti-abuse: prior `scan_history` row required), Kiba Index votes, recipe approvals, missing-product approvals; calendar-day streak with 1-day grace; `get_user_xp_summary` RPC
+- Kiba Kitchen — community-recipe submission + feed + detail; auto-validators (toxic JSON + UPVM regex via `validate-recipe` Edge Function); `is_killed` kill-switch; client-supplied UUID storage path; pending → approved/auto_rejected/rejected status flow
+- Vendor Directory — Studio-CMS `vendors` table + bundled `assets/vendors.json` for offline reads; A-Z search + inline expand + mailto/website actions
+- ResultScreen overflow → "Contact {brand}" deep-link (offline-safe)
+- Toxic Database — 35 curated entries, species toggle + search + category filter; single source of truth shared with `validate-recipe`
+- Blog — Studio CMS + `react-native-marked` rendering; carousel on Community + dedicated list/detail screens
+- Recall Live Feed banner on CommunityScreen
+- D-072 community safety flags — `SafetyFlagSheet` + tabbed `SafetyFlagsScreen` (My Flags + Community Activity); ResultScreen overflow entry
+- 9 migrations (041–049) + 2 storage buckets (recipe-images, blog-images) — all written, NOT yet applied to staging (Docker was unavailable during dev). Apply via `npx supabase db push`. See `docs/qa/2026-04-23-m9-community-qa.md` for the full migration apply checklist.
+- D-170 — Kitchen recipe-flag entry deferred to a future `recipe_flags` table (`score_flags.pet_id NOT NULL` + `product_id NOT NULL` constraints intentionally preserved)
+
+**Completed (pre-M9 Community):**
 - Brand finalized (Kiba / kibascan.com)
 - Scoring architecture validated (55/30/15 daily food, 65/35/0 supplemental, 100% treats)
 - 2 interactive HTML prototypes (Cat Treat V3.1, Dog Food V3)
-- Decision log established (129 decisions, D-001 through D-167, non-sequential)
+- Decision log established (132 decisions, D-001 through D-170, non-sequential)
 - 5 toxicity databases compiled (380+ items across dog/cat)
 - Competitive analysis (Pawdi teardown complete)
 - Pricing model locked ($24.99/yr annual, $5.99/mo monthly, 5 free scans/week)
@@ -706,6 +718,9 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 - [x] **Custom Feeding Style** — `CustomFeedingStyleScreen`, kcal inputs per food, DER banner, visual sum bar, scale-invariant pct storage. Service layer: `updateCalorieShares`, `transitionToCustomMode/FromCustomMode`. 4th option in `FeedingStyleSetupSheet`
 - [x] **`rebalanceBaseShares` auto-split** — even calorie_share_pct across base foods after add/remove/share, proportional serving_size scaling
 - [x] **Feeding style mismatch detection** — `AddToPantrySheet` re-shows `FeedingStyleSetupSheet` when adding non-dry to `dry_only` (or dry to `wet_only`)
+- [x] **Bookmarks + expanded history** — per-pet bookmarks (migration 040, cap 20), dedicated `BookmarksScreen` + `ScanHistoryScreen`, ResultScreen bookmark icon + overflow menu (Share / Report issue via `mailto:`), long-press entry on scan rows. D-169.
+- [x] **Multi-agent cleanup (session 62)** — knip + manual dead-code sweep; 8-screen file-split refactor (3,132 LOC reduction across screens >1,000 LOC). PRs #16 + #17.
+- [x] **Community tab rebuild (session 63 — pulled forward from M10 lite)** — full 11-phase / 32-task plan: server-side XP engine, Kiba Kitchen (recipe submission + auto-validators), Vendor Directory (Studio CMS + bundled offline assets), Toxic Database (35 curated entries), Blog (Studio CMS + react-native-marked), D-072 Community Safety Flags (sheet + tabbed screen + ResultScreen entry), Recall Live Feed banner. Migrations 041–049 + 2 storage buckets. D-170 (recipe-flag entry deferred to future `recipe_flags` table). Spec: `docs/superpowers/specs/2026-04-23-community-screen-design.md`. Plan: `docs/superpowers/plans/2026-04-23-community-screen.md`. QA: `docs/qa/2026-04-23-m9-community-qa.md`.
 - [ ] Top Picks per category/sub-filter (up to 50, dedicated screen — stub ready)
 - [ ] HomeScreen visual overhaul (custom assets, layout polish)
 - [ ] General UX friction fixes
@@ -726,14 +741,16 @@ pet_allergens (D-097 — many-to-many, only populated when allergy condition exi
 
 > Goal: Lightweight engagement loop — points and streaks only. Cosmetics and leaderboard deferred.
 
-- [ ] XP engine: points for scanning, contributing, correcting classifications (D-128 `user_corrected_*` fields), streaks
-- [ ] Submit missing products (photo → OCR → review) — **M3 foundation already built:** D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`
-- [ ] Community safety flags (users flag suspect scores → review queue)
+- [x] **XP engine: points for scanning, contributing, correcting classifications, streaks** (shipped under M9 Community — session 63). Server-side triggers in migration 046, idempotent on approvals, calendar-day streak with 1-day grace. `D-128 user_corrected_*` field-level XP not yet wired (XP currently fires on scan, vote, recipe approval, missing-product approval).
+- [x] **Submit missing products** — M3 foundation built (D-091 miss flow, parse-ingredients Edge Function, community save with `contributed_by = auth.uid()`); XP grant on approval shipped under M9 Community (`process_missing_product_approval_xp` trigger, migration 046).
+- [x] **Community safety flags (D-072)** — `score_flags` table (migration 045), `SafetyFlagSheet` + tabbed `SafetyFlagsScreen`, ResultScreen overflow entry. Shipped under M9 Community — session 63. Recipe-flag entry deferred to future `recipe_flags` table per D-170.
 
 **Deferred to later update:**
-- Moderation queue UI for submitted products
+- Moderation queue UI for submitted products (Studio is the M9 surface)
 - Cosmetic rewards (profile borders, badges)
 - Top contributor leaderboard
+- `recipe_flags` table to re-enable Kitchen "Report issue" overflow (D-170)
+- D-128 `user_corrected_*` field-level XP grants
 
 ---
 

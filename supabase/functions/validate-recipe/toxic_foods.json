@@ -1,0 +1,442 @@
+{
+  "toxics": [
+    {
+      "id": "chocolate",
+      "name": "Chocolate",
+      "alt_names": ["cocoa", "cacao", "dark chocolate", "milk chocolate", "baker's chocolate", "chocolate chips"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "diarrhea", "tremors", "rapid heart rate", "seizures"],
+      "safe_threshold_note": "Toxicity scales with theobromine content. Baker's and dark chocolate are the most dangerous; milk and white chocolate contain less theobromine but are still not safe.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Chocolate", "url": "https://www.petpoisonhelpline.com/poison/chocolate/" }
+      ]
+    },
+    {
+      "id": "xylitol",
+      "name": "Xylitol",
+      "alt_names": ["birch sugar", "wood sugar", "sugar alcohol"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "caution" },
+      "symptoms": ["hypoglycemia", "vomiting", "weakness", "collapse", "liver failure"],
+      "safe_threshold_note": "Rapid insulin release and acute liver injury in dogs at doses as low as 0.1 g/kg. Feline data are limited; treat as a precaution.",
+      "references": [
+        { "label": "FDA — Xylitol and Your Dog", "url": "https://www.fda.gov/consumers/consumer-updates/paws-xylitol-dangers-your-dog" },
+        { "label": "Pet Poison Helpline — Xylitol", "url": "https://www.petpoisonhelpline.com/poison/xylitol/" }
+      ]
+    },
+    {
+      "id": "grapes-raisins",
+      "name": "Grapes and Raisins",
+      "alt_names": ["grape", "raisin", "currant", "sultana"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "caution" },
+      "symptoms": ["vomiting", "lethargy", "decreased appetite", "dehydration", "acute kidney failure"],
+      "safe_threshold_note": "The toxic mechanism (implicated: tartaric acid) causes acute kidney injury in dogs at variable doses. Feline data are limited; treat as not safe.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Grapes and Raisins", "url": "https://www.petpoisonhelpline.com/poison/grapes-and-raisins/" }
+      ]
+    },
+    {
+      "id": "onion",
+      "name": "Onion",
+      "alt_names": ["onions", "onion powder", "shallot", "dehydrated onion"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "weakness", "pale gums", "elevated heart rate", "hemolytic anemia"],
+      "safe_threshold_note": "All parts in any form (raw, cooked, powdered, dehydrated) damage red blood cells. Cats are roughly twice as sensitive as dogs.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Onions and Garlic", "url": "https://www.petpoisonhelpline.com/poison/onions-and-garlic/" }
+      ]
+    },
+    {
+      "id": "garlic",
+      "name": "Garlic",
+      "alt_names": ["garlic powder", "garlic salt", "allium sativum"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "diarrhea", "abdominal pain", "weakness", "hemolytic anemia"],
+      "safe_threshold_note": "Considered roughly five times more concentrated than onion. Cats are more sensitive than dogs; no culinary amount is considered safe.",
+      "references": [
+        { "label": "Pet Poison Helpline — Onions and Garlic", "url": "https://www.petpoisonhelpline.com/poison/onions-and-garlic/" },
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" }
+      ]
+    },
+    {
+      "id": "chives",
+      "name": "Chives",
+      "alt_names": ["allium schoenoprasum", "chive"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "drooling", "abdominal pain", "weakness", "hemolytic anemia"],
+      "safe_threshold_note": "Member of the Allium family; same mechanism as onion and garlic. Cats are more sensitive.",
+      "references": [
+        { "label": "ASPCA — Chives (Toxic to Cats and Dogs)", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/chives" }
+      ]
+    },
+    {
+      "id": "leek",
+      "name": "Leek",
+      "alt_names": ["leeks", "allium porrum"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "lethargy", "pale gums", "weakness", "hemolytic anemia"],
+      "safe_threshold_note": "Member of the Allium family; same mechanism as onion and garlic. Cats are more sensitive.",
+      "references": [
+        { "label": "ASPCA — Leek (Toxic to Cats and Dogs)", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/leek" }
+      ]
+    },
+    {
+      "id": "macadamia-nut",
+      "name": "Macadamia Nuts",
+      "alt_names": ["macadamia", "macadamia nut"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "caution" },
+      "symptoms": ["weakness", "hindlimb incoordination", "vomiting", "tremors", "hyperthermia"],
+      "safe_threshold_note": "Dogs show clinical signs at doses as low as 2 g/kg. Feline data are limited; treat as not safe.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Macadamia Nuts", "url": "https://www.petpoisonhelpline.com/poison/macadamia-nuts/" }
+      ]
+    },
+    {
+      "id": "alcohol",
+      "name": "Alcohol",
+      "alt_names": ["ethanol", "beer", "wine", "liquor", "spirits", "hops"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "disorientation", "tremors", "respiratory depression", "metabolic acidosis"],
+      "safe_threshold_note": "Includes fermented beverages, raw bread dough, and rotten/fermented fruit. Small volumes can cause significant toxicity.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Alcohol", "url": "https://www.petpoisonhelpline.com/poison/alcohol/" }
+      ]
+    },
+    {
+      "id": "caffeine",
+      "name": "Caffeine",
+      "alt_names": ["coffee", "tea", "espresso", "coffee grounds", "energy drink", "guarana"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["hyperactivity", "restlessness", "vomiting", "elevated heart rate", "seizures"],
+      "safe_threshold_note": "Methylxanthine toxicity shares a mechanism with chocolate (theobromine). Coffee grounds and tea bags are concentrated sources.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Caffeine", "url": "https://www.petpoisonhelpline.com/poison/caffeine/" }
+      ]
+    },
+    {
+      "id": "raw-bread-dough",
+      "name": "Raw Bread Dough",
+      "alt_names": ["yeast dough", "unbaked dough", "rising dough"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["abdominal distension", "vomiting", "disorientation", "tremors", "respiratory depression"],
+      "safe_threshold_note": "Yeast ferments in the stomach producing ethanol and carbon dioxide — combining alcohol toxicity with gastric dilatation.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Bread Dough", "url": "https://www.petpoisonhelpline.com/poison/bread-dough/" }
+      ]
+    },
+    {
+      "id": "avocado",
+      "name": "Avocado",
+      "alt_names": ["persea americana", "avocado pit", "avocado skin"],
+      "category": "food",
+      "species_severity": { "dog": "caution", "cat": "caution" },
+      "symptoms": ["vomiting", "diarrhea", "gastrointestinal upset", "pancreatitis"],
+      "safe_threshold_note": "Persin content in leaves, bark, and pit is most concerning. Pit is an obstruction hazard. Flesh is high-fat and can trigger pancreatitis.",
+      "references": [
+        { "label": "ASPCA — People Foods to Avoid", "url": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets" },
+        { "label": "Pet Poison Helpline — Avocado", "url": "https://www.petpoisonhelpline.com/poison/avocado/" }
+      ]
+    },
+    {
+      "id": "cherry-pit",
+      "name": "Cherry Pits",
+      "alt_names": ["cherry", "cherry seed", "cherry stone", "stone fruit pit"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["difficulty breathing", "dilated pupils", "bright red gums", "shock"],
+      "safe_threshold_note": "Pits, leaves, and stems contain cyanogenic glycosides. Whole pits are also a GI obstruction risk. Applies to peach, plum, and apricot pits as well.",
+      "references": [
+        { "label": "ASPCA — Cherry (Toxic to Dogs and Cats)", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/cherry" }
+      ]
+    },
+    {
+      "id": "raw-egg",
+      "name": "Raw Eggs",
+      "alt_names": ["uncooked egg", "raw egg white"],
+      "category": "food",
+      "species_severity": { "dog": "caution", "cat": "caution" },
+      "symptoms": ["gastrointestinal upset", "diarrhea", "dull coat", "skin problems"],
+      "safe_threshold_note": "Raw egg whites contain avidin, which binds biotin and can cause deficiency over time. Also carries Salmonella and E. coli exposure risk.",
+      "references": [
+        { "label": "FDA — Raw Pet Food Guidance", "url": "https://www.fda.gov/animal-veterinary/animal-health-literacy/get-facts-raw-pet-food-diets-can-be-dangerous-you-and-your-pet" },
+        { "label": "AVMA — Raw Pet Foods", "url": "https://www.avma.org/resources-tools/avma-policies/raw-or-undercooked-animal-source-protein-cat-and-dog-diets" }
+      ]
+    },
+    {
+      "id": "raw-fish",
+      "name": "Raw Fish",
+      "alt_names": ["uncooked fish", "raw salmon", "raw tuna"],
+      "category": "food",
+      "species_severity": { "dog": "caution", "cat": "caution" },
+      "symptoms": ["loss of appetite", "weight loss", "seizures", "thiamine deficiency"],
+      "safe_threshold_note": "Raw fish can contain thiaminase, which breaks down vitamin B1 (thiamine). Chronic feeding in cats can cause thiamine deficiency; cooking inactivates the enzyme. Also carries parasite and bacterial risk.",
+      "references": [
+        { "label": "FDA — Raw Pet Food Guidance", "url": "https://www.fda.gov/animal-veterinary/animal-health-literacy/get-facts-raw-pet-food-diets-can-be-dangerous-you-and-your-pet" }
+      ]
+    },
+    {
+      "id": "nutmeg",
+      "name": "Nutmeg",
+      "alt_names": ["myristica fragrans", "ground nutmeg"],
+      "category": "food",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["disorientation", "abdominal pain", "elevated heart rate", "hallucinations", "seizures"],
+      "safe_threshold_note": "Myristicin is the toxic compound. Large amounts are required for severe effects, but small doses cause gastrointestinal upset.",
+      "references": [
+        { "label": "Pet Poison Helpline — Nutmeg", "url": "https://www.petpoisonhelpline.com/poison/nutmeg/" }
+      ]
+    },
+    {
+      "id": "lily-true",
+      "name": "True Lily",
+      "alt_names": ["lilium", "easter lily", "tiger lily", "asiatic lily", "daylily", "hemerocallis", "stargazer lily"],
+      "category": "plant",
+      "species_severity": { "dog": "caution", "cat": "toxic" },
+      "symptoms": ["vomiting", "lethargy", "loss of appetite", "dehydration", "acute kidney failure"],
+      "safe_threshold_note": "All parts of true lilies (Lilium spp.) and daylilies (Hemerocallis spp.) cause acute kidney failure in cats — even pollen, water from the vase, or a single leaf is potentially fatal. Dogs develop only mild gastrointestinal signs.",
+      "references": [
+        { "label": "ASPCA — Cats and Lily Toxicity", "url": "https://www.aspca.org/pet-care/animal-poison-control/cats-plant-list" },
+        { "label": "Pet Poison Helpline — Lilies", "url": "https://www.petpoisonhelpline.com/poison/lilies/" }
+      ]
+    },
+    {
+      "id": "tulip",
+      "name": "Tulip",
+      "alt_names": ["tulipa", "tulip bulb"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "drooling", "diarrhea", "depression", "cardiac abnormalities"],
+      "safe_threshold_note": "Bulbs contain the highest concentration of tulipalin A and B. Ingestion of bulbs is the most dangerous exposure.",
+      "references": [
+        { "label": "ASPCA — Tulip", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/tulip" }
+      ]
+    },
+    {
+      "id": "sago-palm",
+      "name": "Sago Palm",
+      "alt_names": ["cycas revoluta", "cycad", "coontie palm"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "bloody diarrhea", "bruising", "liver failure", "seizures"],
+      "safe_threshold_note": "All parts contain cycasin; seeds are the most toxic. Ingestion carries a high mortality rate even with veterinary treatment.",
+      "references": [
+        { "label": "ASPCA — Sago Palm", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/sago-palm" },
+        { "label": "Pet Poison Helpline — Sago Palm", "url": "https://www.petpoisonhelpline.com/poison/sago-palm/" }
+      ]
+    },
+    {
+      "id": "oleander",
+      "name": "Oleander",
+      "alt_names": ["nerium oleander", "rose bay"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["drooling", "vomiting", "diarrhea", "abnormal heart rate", "tremors"],
+      "safe_threshold_note": "Contains cardiac glycosides (oleandrin). All parts of the plant, including dried leaves, are toxic.",
+      "references": [
+        { "label": "ASPCA — Oleander", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/oleander" }
+      ]
+    },
+    {
+      "id": "azalea",
+      "name": "Azalea",
+      "alt_names": ["rhododendron", "mountain laurel"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "drooling", "weakness", "cardiac arrhythmia", "coma"],
+      "safe_threshold_note": "Contains grayanotoxins that disrupt sodium channels in skeletal and cardiac muscle. Ingestion of a few leaves can cause severe signs.",
+      "references": [
+        { "label": "ASPCA — Azalea", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/azalea" }
+      ]
+    },
+    {
+      "id": "dieffenbachia",
+      "name": "Dieffenbachia",
+      "alt_names": ["dumb cane", "tropic snow"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["oral irritation", "intense burning of mouth", "drooling", "vomiting", "difficulty swallowing"],
+      "safe_threshold_note": "Contains insoluble calcium oxalate crystals that cause immediate oral pain upon chewing.",
+      "references": [
+        { "label": "ASPCA — Dieffenbachia", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/dieffenbachia" }
+      ]
+    },
+    {
+      "id": "pothos",
+      "name": "Pothos",
+      "alt_names": ["epipremnum aureum", "devil's ivy", "golden pothos"],
+      "category": "plant",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["oral irritation", "drooling", "vomiting", "difficulty swallowing"],
+      "safe_threshold_note": "Contains insoluble calcium oxalate crystals. A common household houseplant responsible for many exposure calls.",
+      "references": [
+        { "label": "ASPCA — Pothos", "url": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants/pothos" }
+      ]
+    },
+    {
+      "id": "ibuprofen",
+      "name": "Ibuprofen",
+      "alt_names": ["advil", "motrin", "nurofen"],
+      "category": "medication",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "bloody stool", "abdominal pain", "kidney failure", "ulceration"],
+      "safe_threshold_note": "Nonsteroidal anti-inflammatory toxicity. Cats are approximately twice as sensitive as dogs. Even a single tablet can cause gastrointestinal ulceration or kidney failure.",
+      "references": [
+        { "label": "Pet Poison Helpline — Ibuprofen", "url": "https://www.petpoisonhelpline.com/poison/ibuprofen/" },
+        { "label": "FDA — Pets and Human Medications", "url": "https://www.fda.gov/consumers/consumer-updates/paws-some-things-pet-owners-should-know-about-pain-relievers" }
+      ]
+    },
+    {
+      "id": "acetaminophen",
+      "name": "Acetaminophen",
+      "alt_names": ["tylenol", "paracetamol", "panadol"],
+      "category": "medication",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["brown or muddy gums", "difficulty breathing", "facial swelling", "liver failure", "methemoglobinemia"],
+      "safe_threshold_note": "Cats lack the enzyme (UDP-glucuronosyltransferase) needed to metabolize acetaminophen safely; a single regular-strength tablet can be fatal. Never administer to pets without veterinary direction.",
+      "references": [
+        { "label": "Pet Poison Helpline — Acetaminophen", "url": "https://www.petpoisonhelpline.com/poison/acetaminophen/" },
+        { "label": "FDA — Pets and Human Medications", "url": "https://www.fda.gov/consumers/consumer-updates/paws-some-things-pet-owners-should-know-about-pain-relievers" }
+      ]
+    },
+    {
+      "id": "naproxen",
+      "name": "Naproxen",
+      "alt_names": ["aleve", "anaprox", "naprosyn"],
+      "category": "medication",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["vomiting", "bloody stool", "abdominal pain", "kidney failure", "weakness"],
+      "safe_threshold_note": "Long-acting NSAID with a narrow margin of safety in dogs and cats. Smaller doses than ibuprofen can cause gastrointestinal and renal injury.",
+      "references": [
+        { "label": "Pet Poison Helpline — Naproxen", "url": "https://www.petpoisonhelpline.com/poison/naproxen/" }
+      ]
+    },
+    {
+      "id": "pseudoephedrine",
+      "name": "Pseudoephedrine",
+      "alt_names": ["sudafed", "contac", "decongestant"],
+      "category": "medication",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["hyperactivity", "elevated heart rate", "hypertension", "tremors", "seizures"],
+      "safe_threshold_note": "Stimulant with a very narrow margin of safety in pets; ingestion of even one tablet can cause severe signs in small dogs and cats.",
+      "references": [
+        { "label": "Pet Poison Helpline — Pseudoephedrine", "url": "https://www.petpoisonhelpline.com/poison/pseudoephedrine/" }
+      ]
+    },
+    {
+      "id": "aspirin",
+      "name": "Aspirin",
+      "alt_names": ["acetylsalicylic acid", "asa", "bayer aspirin"],
+      "category": "medication",
+      "species_severity": { "dog": "caution", "cat": "toxic" },
+      "symptoms": ["vomiting", "loss of appetite", "bloody stool", "weakness", "metabolic acidosis"],
+      "safe_threshold_note": "Cats metabolize salicylates slowly and are highly sensitive to toxicity. Dogs are more tolerant but still experience gastrointestinal ulceration at over-the-counter doses. Never administer to pets without veterinary direction.",
+      "references": [
+        { "label": "Pet Poison Helpline — Aspirin", "url": "https://www.petpoisonhelpline.com/poison/aspirin/" }
+      ]
+    },
+    {
+      "id": "adderall",
+      "name": "Amphetamines",
+      "alt_names": ["adderall", "vyvanse", "ritalin", "amphetamine"],
+      "category": "medication",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["hyperactivity", "elevated heart rate", "hypertension", "tremors", "seizures"],
+      "safe_threshold_note": "ADHD medications are potent stimulants. Small doses can cause severe cardiovascular and neurologic effects.",
+      "references": [
+        { "label": "Pet Poison Helpline — ADD/ADHD Medications", "url": "https://www.petpoisonhelpline.com/poison/adhd-medications/" }
+      ]
+    },
+    {
+      "id": "antifreeze",
+      "name": "Antifreeze",
+      "alt_names": ["ethylene glycol", "radiator fluid", "coolant"],
+      "category": "household",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["drunken appearance", "vomiting", "increased thirst", "acute kidney failure", "coma"],
+      "safe_threshold_note": "Ethylene glycol has a sweet taste attractive to pets. A very small volume (a teaspoon or less for cats) can be fatal. Propylene glycol-based antifreeze is lower toxicity but still not safe.",
+      "references": [
+        { "label": "AVMA — Antifreeze Poisoning", "url": "https://www.avma.org/resources-tools/pet-owners/petcare/antifreeze-toxicity" },
+        { "label": "Pet Poison Helpline — Antifreeze", "url": "https://www.petpoisonhelpline.com/poison/antifreeze/" }
+      ]
+    },
+    {
+      "id": "rodenticide",
+      "name": "Rodenticide",
+      "alt_names": ["rat poison", "mouse poison", "warfarin", "bromethalin", "cholecalciferol"],
+      "category": "household",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["bleeding", "bruising", "weakness", "tremors", "kidney failure"],
+      "safe_threshold_note": "Multiple active ingredients with different mechanisms (anticoagulants, neurotoxins, calcium mobilizers). Secondary poisoning can also occur if a pet eats a poisoned rodent.",
+      "references": [
+        { "label": "Pet Poison Helpline — Rodenticides", "url": "https://www.petpoisonhelpline.com/poison/mouse-and-rat-poisons/" },
+        { "label": "EPA — Rodenticides and Pets", "url": "https://www.epa.gov/rodenticides" }
+      ]
+    },
+    {
+      "id": "tea-tree-oil",
+      "name": "Tea Tree Oil",
+      "alt_names": ["melaleuca oil", "melaleuca alternifolia"],
+      "category": "household",
+      "species_severity": { "dog": "caution", "cat": "toxic" },
+      "symptoms": ["drooling", "weakness", "muscle tremors", "depression", "hypothermia"],
+      "safe_threshold_note": "Dilute formulations under 1% are generally tolerated topically on dogs; undiluted or concentrated (over 1%) tea tree oil is toxic to cats at any amount and to dogs at higher doses.",
+      "references": [
+        { "label": "Pet Poison Helpline — Tea Tree Oil", "url": "https://www.petpoisonhelpline.com/poison/tea-tree-oil/" }
+      ]
+    },
+    {
+      "id": "bleach",
+      "name": "Bleach",
+      "alt_names": ["sodium hypochlorite", "chlorine bleach", "household bleach"],
+      "category": "household",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["drooling", "vomiting", "oral irritation", "coughing", "chemical burns"],
+      "safe_threshold_note": "Dilute household bleach causes gastrointestinal irritation; concentrated or ultra-bleach is corrosive. Mixing with ammonia produces toxic chloramine gas.",
+      "references": [
+        { "label": "Pet Poison Helpline — Bleach", "url": "https://www.petpoisonhelpline.com/poison/bleach/" }
+      ]
+    },
+    {
+      "id": "essential-oils-concentrated",
+      "name": "Concentrated Essential Oils",
+      "alt_names": ["eucalyptus oil", "peppermint oil", "pennyroyal oil", "wintergreen oil", "cinnamon oil", "pine oil"],
+      "category": "household",
+      "species_severity": { "dog": "caution", "cat": "toxic" },
+      "symptoms": ["drooling", "vomiting", "tremors", "difficulty breathing", "liver injury"],
+      "safe_threshold_note": "Cats lack the liver enzyme (glucuronyl transferase) to metabolize many essential oil constituents. Diffusers can expose pets through inhalation and grooming. Avoid topical application on cats.",
+      "references": [
+        { "label": "Pet Poison Helpline — Essential Oils and Cats", "url": "https://www.petpoisonhelpline.com/poison/essential-oils-and-cats/" },
+        { "label": "ASPCA — Essential Oils", "url": "https://www.aspca.org/news/essential-oils-and-cats" }
+      ]
+    },
+    {
+      "id": "detergent-pod",
+      "name": "Concentrated Laundry Detergent Pod",
+      "alt_names": ["laundry pod", "dishwasher pod", "tide pod", "single-use detergent pod"],
+      "category": "household",
+      "species_severity": { "dog": "toxic", "cat": "toxic" },
+      "symptoms": ["drooling", "vomiting", "coughing", "difficulty breathing", "lethargy"],
+      "safe_threshold_note": "Concentrated surfactants in pods cause more severe signs than regular liquid detergent — including aspiration pneumonia when the capsule ruptures in the mouth.",
+      "references": [
+        { "label": "Pet Poison Helpline — Laundry Detergent Pods", "url": "https://www.petpoisonhelpline.com/poison/laundry-detergent-pods/" }
+      ]
+    }
+  ]
+}

@@ -217,7 +217,7 @@ export function applyConditionHardFilters(
 const GROWTH_CLAIMS = ['puppy', 'kitten', 'growth'];
 const ADULT_SENIOR_CLAIMS = ['adult', 'maintenance', 'senior'];
 
-export function applyLifeStageFilter(
+function applyLifeStageFilter(
   candidates: CandidateRow[],
   petLifeStage: string | null,
 ): CandidateRow[] {
@@ -415,7 +415,7 @@ export function assignCuratedSlots(
 
 // ─── Fetch Parameters ───────────────────────────────────
 
-export interface FetchSafeSwapsParams {
+interface FetchSafeSwapsParams {
   petId: string;
   species: 'dog' | 'cat';
   category: string;
@@ -608,7 +608,7 @@ async function fetchCardiacDcmExclusions(
 // Lightweight check: does pet_product_scores have ANY rows for this pet?
 // Used to distinguish "empty cache" from "all candidates filtered out."
 
-export async function isCachePopulated(petId: string): Promise<boolean> {
+async function isCachePopulated(petId: string): Promise<boolean> {
   const { count } = await supabase
     .from('pet_product_scores')
     .select('product_id', { count: 'exact', head: true })

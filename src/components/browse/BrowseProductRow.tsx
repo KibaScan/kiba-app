@@ -11,6 +11,7 @@ import type { BrowseProduct } from '../../types/categoryBrowse';
 interface Props {
   product: BrowseProduct;
   rank: number;
+  petName: string;
   onPress: () => void;
 }
 
@@ -20,14 +21,17 @@ function stripBrandPrefix(name: string, brand: string): string {
   return stripped || name;
 }
 
-export function BrowseProductRow({ product, rank, onPress }: Props) {
+export function BrowseProductRow({ product, rank, petName, onPress }: Props) {
   const hasScore = product.final_score !== null;
   const score = product.final_score ?? 0;
   const scoreColor = hasScore ? getScoreColor(score, product.is_supplemental) : Colors.textTertiary;
   const displayName = stripBrandPrefix(product.product_name, product.brand);
+  const a11yLabel = hasScore
+    ? `${product.brand || 'Unknown Brand'} ${displayName}, ${score}% match for ${petName}`
+    : `${product.brand || 'Unknown Brand'} ${displayName}, no score yet`;
 
   return (
-    <Pressable style={styles.row} onPress={onPress}>
+    <Pressable style={styles.row} onPress={onPress} accessibilityLabel={a11yLabel}>
       {({ pressed }) => (
         <>
           {/* Rank */}

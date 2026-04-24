@@ -14,7 +14,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "sync:toxics": "npx ts-node scripts/syncToxicFoods.ts",
+    "seed:vendors": "npx ts-node scripts/seedVendors.ts"
   },
   "jest": {
     "preset": "jest-expo",
@@ -29,7 +31,6 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.6",
-    "@expo/ngrok": "^4.1.3",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.6.0",
@@ -43,6 +44,7 @@
     "expo-audio": "~55.0.8",
     "expo-blur": "~55.0.10",
     "expo-camera": "~55.0.9",
+    "expo-crypto": "~55.0.14",
     "expo-dev-client": "~55.0.11",
     "expo-device": "~55.0.10",
     "expo-font": "~55.0.4",
@@ -57,6 +59,7 @@
     "react-dom": "19.2.0",
     "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
+    "react-native-marked": "^8.0.1",
     "react-native-purchases": "^9.11.2",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.2",
@@ -74,9 +77,9 @@
     "babel-plugin-transform-import-meta": "^2.3.3",
     "babel-preset-expo": "^55.0.10",
     "jest-expo": "^55.0.11",
-    "patch-package": "^8.0.1",
+    "knip": "^6.6.1",
+    "madge": "^8.0.0",
     "react-test-renderer": "^19.2.0",
-    "ts-jest": "^29.4.6",
     "typescript": "~5.9.2"
   },
   "private": true

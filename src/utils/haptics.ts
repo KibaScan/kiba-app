@@ -17,11 +17,6 @@ export function speciesToggle(): void {
   if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 }
 
-/** Scan button press */
-export function scanButton(): void {
-  if (isSupported) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-}
-
 /** Save success */
 export function saveSuccess(): void {
   if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -35,11 +30,6 @@ export function barcodeRecognized(): void {
 /** 100% profile complete */
 export function profileComplete(): void {
   if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-}
-
-/** Hepatic lipidosis warning (D-062) */
-export function hepaticWarning(): void {
-  if (isSupported) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 }
 
 /** Scan error / general error */

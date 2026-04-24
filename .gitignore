@@ -75,6 +75,8 @@ __pycache__/
 dataset_kiba_v*.json
 scripts/import/dataset_kiba_v*.json
 data/
+!src/data/
+!docs/data/
 
 # WSL zone transfer metadata
 *:Zone.Identifier
@@ -90,3 +92,5 @@ _scratch/
 
 # superpowers brainstorm session artifacts (visual companion mockups, state)
 .superpowers/
+.knip-report.json
+.tsc-baseline.txt

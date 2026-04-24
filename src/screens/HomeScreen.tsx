@@ -4,21 +4,18 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Image,
-  ActivityIndicator,
+  Alert,
   Keyboard,
 } from 'react-native';
+import { BookmarksFullError, BookmarkOfflineError } from '../types/bookmark';
+import { BookmarkToggleSheet } from '../components/common/BookmarkToggleSheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, FontSizes, Spacing, Limits, SEVERITY_COLORS, getScoreColor } from '../utils/constants';
-import { stripBrandFromName, sanitizeBrand } from '../utils/formatters';
-import { CATEGORY_ICONS, CATEGORY_ICONS_FILLED } from '../constants/iconMaps';
+import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { canSearch, isPremium, getScanWindowInfo } from '../utils/permissions';
 import { useActivePetStore } from '../stores/useActivePetStore';
 import { usePantryStore } from '../stores/usePantryStore';
@@ -26,9 +23,8 @@ import { getUpcomingAppointments } from '../services/appointmentService';
 import { getRecentScans } from '../services/scanHistoryService';
 import { searchProducts, ensureCacheFresh } from '../services/topMatches';
 import { supabase } from '../services/supabase';
-import { InfoTooltip } from '../components/ui/InfoTooltip';
 import type { ProductSearchResult } from '../services/topMatches';
-import type { Appointment, AppointmentType } from '../types/appointment';
+import type { Appointment } from '../types/appointment';
 import type { ScanHistoryItem } from '../types/scanHistory';
 import type { HomeStackParamList, TabParamList } from '../types/navigation';
 import type { BrowseCategory } from '../types/categoryBrowse';
@@ -39,57 +35,20 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { SafeSwitchCardData } from '../types/safeSwitch';
 import { SafeSwitchBanner } from '../components/pantry/SafeSwitchBanner';
 import { getActiveSwitchForPet } from '../services/safeSwitchService';
+import { useBookmarkStore } from '../stores/useBookmarkStore';
+import { fetchBookmarkCards } from '../services/bookmarkService';
+import type { BookmarkCardData } from '../types/bookmark';
+import { RecallBanner } from '../components/home/RecallBanner';
+import { HomeEmptyState } from '../components/home/HomeEmptyState';
+import { AppointmentRow } from '../components/home/AppointmentRow';
+import { PantryNavRow } from '../components/home/PantryNavRow';
+import { CategoryGrid } from '../components/home/CategoryGrid';
+import { HomeSearchBar } from '../components/home/HomeSearchBar';
+import { SearchResultsList } from '../components/home/SearchResultsList';
+import { BookmarksSection } from '../components/home/BookmarksSection';
+import { RecentScansSection } from '../components/home/RecentScansSection';
 
 type HomeNav = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
-
-// ─── Constants ──────────────────────────────────────────
-
-const APPT_TYPE_ICONS: Record<AppointmentType, keyof typeof Ionicons.glyphMap> = {
-  vet_visit: 'medical-outline',
-  grooming: 'cut-outline',
-  medication: 'medkit-outline',
-  vaccination: 'shield-checkmark-outline',
-  deworming: 'fitness-outline',
-  other: 'calendar-outline',
-};
-
-const APPT_TYPE_LABELS: Record<AppointmentType, string> = {
-  vet_visit: 'vet visit',
-  grooming: 'grooming',
-  medication: 'medication',
-  vaccination: 'vaccination',
-  deworming: 'deworming',
-  other: 'appointment',
-};
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-const BROWSE_CATEGORIES: readonly {
-  key: import('../types/categoryBrowse').BrowseCategory;
-  label: string;
-  tint: string;
-}[] = [
-  { key: 'daily_food', label: 'Daily Food', tint: Colors.accent },
-  { key: 'toppers_mixers', label: 'Toppers & Mixers', tint: '#14B8A6' },
-  { key: 'treat', label: 'Treats', tint: Colors.severityAmber },
-  { key: 'supplement', label: 'Supplements', tint: '#A78BFA' },
-] as const;
-
-// ─── Helpers ────────────────────────────────────────────
-
-function formatRelativeDay(isoStr: string): string {
-  const date = new Date(isoStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Tomorrow';
-  if (diffDays > 1 && diffDays <= 6) return DAYS[date.getDay()];
-  return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
-}
 
 // ─── Component ──────────────────────────────────────────
 
@@ -107,6 +66,34 @@ export default function HomeScreen() {
   const [appointmentLoading, setAppointmentLoading] = useState(false);
   const [recentScans, setRecentScans] = useState<ScanHistoryItem[]>([]);
   const [activeSwitchData, setActiveSwitchData] = useState<SafeSwitchCardData | null>(null);
+
+  const bookmarkIds = useBookmarkStore((s) =>
+    s.bookmarks.map((b) => b.id).join(','),
+  );
+  const loadBookmarks = useBookmarkStore((s) => s.loadForPet);
+  const [bookmarkCards, setBookmarkCards] = useState<BookmarkCardData[]>([]);
+
+  // ── Long-press bookmark state ──
+  const [longPressTarget, setLongPressTarget] = useState<{ productId: string } | null>(null);
+
+  const longPressIsBookmarked = useBookmarkStore((s) =>
+    longPressTarget && activePetId ? s.isBookmarked(activePetId, longPressTarget.productId) : false,
+  );
+
+  const longPressToggle = useBookmarkStore((s) => s.toggle);
+
+  const handleLongPressToggle = async () => {
+    if (!activePetId || !longPressTarget) return;
+    try {
+      await longPressToggle(activePetId, longPressTarget.productId);
+    } catch (err) {
+      if (err instanceof BookmarksFullError) {
+        Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
+      }
+    }
+  };
 
   // ── Search state (local to HomeScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,6 +122,19 @@ export default function HomeScreen() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // ── Bookmark loading ──
+  useEffect(() => {
+    loadBookmarks(activePetId);
+  }, [activePetId, loadBookmarks]);
+
+  useEffect(() => {
+    if (!activePet) {
+      setBookmarkCards([]);
+      return;
+    }
+    void fetchBookmarkCards(activePet).then((cards) => setBookmarkCards(cards.slice(0, 3)));
+  }, [activePet, bookmarkIds]);
 
   // ── Derived values ──
 
@@ -352,9 +352,30 @@ export default function HomeScreen() {
     Keyboard.dismiss();
   }, []);
 
+  const handleScanPress = useCallback((productId: string, isRecalled: boolean) => {
+    if (isRecalled) {
+      navigation.navigate('RecallDetail', { productId });
+    } else {
+      navigation.navigate('Result', { productId, petId: activePetId });
+    }
+  }, [navigation, activePetId]);
+
+  const handleBookmarkCardPress = useCallback((productId: string, isRecalled: boolean) => {
+    if (isRecalled) {
+      navigation.navigate('RecallDetail', { productId });
+    } else {
+      navigation.navigate('Result', { productId, petId: activePetId });
+    }
+  }, [navigation, activePetId]);
+
+  const handleScanLongPress = useCallback((productId: string) => {
+    setLongPressTarget({ productId });
+  }, []);
+
   // ── Render ──
 
   const hasContent = recentScans.length > 0 || pantryItems.length > 0;
+  const searchEnabled = canSearch();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -376,91 +397,29 @@ export default function HomeScreen() {
       >
         {/* 1. Recall alert — highest priority, always first (D-125: free) */}
         {recalledItems.length > 0 && activePet && (
-          <TouchableOpacity
-            style={styles.recallCard}
+          <RecallBanner
+            count={recalledItems.length}
+            petName={activePet.name}
             onPress={navigateToPantry}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="warning-outline"
-              size={20}
-              color={SEVERITY_COLORS.danger}
-            />
-            <Text style={styles.recallCardBody} numberOfLines={2}>
-              {recalledItems.length} recalled product
-              {recalledItems.length !== 1 ? 's' : ''} in{' '}
-              {activePet.name}&apos;s pantry
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={Colors.textTertiary}
-            />
-          </TouchableOpacity>
+          />
         )}
 
         {/* 2. Search bar — premium: real input; free: tappable facade → paywall */}
-        <View style={styles.searchBarContainer}>
-          {canSearch() ? (
-            <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search pet food products..."
-                placeholderTextColor={Colors.textTertiary}
-                value={searchQuery}
-                onChangeText={handleSearchChange}
-                onFocus={() => setIsSearchFocused(true)}
-                returnKeyType="search"
-                autoCorrect={false}
-              />
-              {searchLoading && <ActivityIndicator size="small" color={Colors.accent} />}
-              {searchQuery.length > 0 && !searchLoading && (
-                <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="close-circle" size={16} color={Colors.textTertiary} />
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.searchBar}
-              onPress={handleSearchBarPress}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} />
-              <Text style={styles.searchPlaceholder}>Search pet food products...</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <HomeSearchBar
+          canSearch={searchEnabled}
+          searchQuery={searchQuery}
+          searchLoading={searchLoading}
+          onChangeText={handleSearchChange}
+          onFocus={() => setIsSearchFocused(true)}
+          onClear={clearSearch}
+          onFacadePress={handleSearchBarPress}
+        />
 
         {/* 3. Browse categories — always visible */}
-        <View style={styles.categoryGrid}>
-          {BROWSE_CATEGORIES.map((cat) => {
-            const selected = activeCategory === cat.key;
-            return (
-              <TouchableOpacity
-                key={cat.key}
-                style={[
-                  styles.categoryCard,
-                  selected && {
-                    borderColor: cat.tint,
-                    borderWidth: 2,
-                    backgroundColor: `${cat.tint}26`,
-                  },
-                ]}
-                onPress={() => handleCategoryTap(cat.key)}
-                activeOpacity={0.7}
-              >
-                <Image
-                  source={selected ? CATEGORY_ICONS_FILLED[cat.key] : CATEGORY_ICONS[cat.key]}
-                  style={{ width: 56, height: 56, tintColor: selected ? cat.tint : Colors.textTertiary }}
-                  resizeMode="contain"
-                />
-                <Text style={[styles.categoryLabel, selected && { color: cat.tint }]}>{cat.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <CategoryGrid
+          activeCategory={activeCategory}
+          onCategoryTap={handleCategoryTap}
+        />
 
         {/* 3b. Sub-filter chips — shown below category grid when a category is active */}
         {activeCategory && (
@@ -471,64 +430,15 @@ export default function HomeScreen() {
           />
         )}
 
-
         {/* 4. Search results — shown when search active */}
         {isSearchActive && (
-          <View style={styles.searchResultsContainer}>
-            {searchResults.length > 0 ? (
-              searchResults.map((item) => (
-                <TouchableOpacity
-                  key={item.product_id}
-                  style={styles.searchResultRow}
-                  onPress={() => handleSearchResultTap(item)}
-                  activeOpacity={0.7}
-                >
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={styles.searchResultImage} />
-                  ) : (
-                    <View style={[styles.searchResultImage, styles.searchResultImagePlaceholder]}>
-                      <Ionicons name="cube-outline" size={18} color={Colors.textTertiary} />
-                    </View>
-                  )}
-                  <View style={styles.searchResultInfo}>
-                    <Text style={styles.searchResultBrand} numberOfLines={1}>
-                      {sanitizeBrand(item.brand)}
-                    </Text>
-                    <Text style={styles.searchResultName} numberOfLines={2}>
-                      {stripBrandFromName(item.brand, item.product_name)}
-                    </Text>
-                  </View>
-                  {item.final_score != null ? (
-                    <View
-                      style={[
-                        styles.scorePill,
-                        { backgroundColor: `${getScoreColor(item.final_score, item.is_supplemental)}1A` },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.scorePillText,
-                          { color: getScoreColor(item.final_score, item.is_supplemental) },
-                        ]}
-                      >
-                        {item.final_score}%
-                      </Text>
-                    </View>
-                  ) : (
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-                  )}
-                </TouchableOpacity>
-              ))
-            ) : searchLoading ? (
-              <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: Spacing.xl }} />
-            ) : searchQuery.trim() ? (
-              <View style={styles.searchEmptyState}>
-                <Text style={styles.searchEmptyText}>
-                  No products found for &quot;{searchQuery}&quot;
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          <SearchResultsList
+            searchResults={searchResults}
+            searchLoading={searchLoading}
+            searchQuery={searchQuery}
+            petName={activePet?.name ?? ''}
+            onResultTap={handleSearchResultTap}
+          />
         )}
 
         {/* ── Normal content (hidden when search active) ── */}
@@ -549,33 +459,16 @@ export default function HomeScreen() {
 
             {/* 6. Upcoming appointment */}
             {!appointmentLoading && nextAppointment && appointmentPetName ? (
-              <TouchableOpacity
-                style={styles.appointmentRow}
+              <AppointmentRow
+                type={nextAppointment.type}
+                petName={appointmentPetName}
+                scheduledAt={nextAppointment.scheduled_at}
                 onPress={() =>
                   navigation.navigate('AppointmentDetail', {
                     appointmentId: nextAppointment.id,
                   })
                 }
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={APPT_TYPE_ICONS[nextAppointment.type]}
-                  size={20}
-                  color={Colors.accent}
-                />
-                <Text style={styles.appointmentText} numberOfLines={1}>
-                  {appointmentPetName}&apos;s{' '}
-                  {APPT_TYPE_LABELS[nextAppointment.type]}
-                </Text>
-                <Text style={styles.appointmentDate}>
-                  {formatRelativeDay(nextAppointment.scheduled_at)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={Colors.textTertiary}
-                />
-              </TouchableOpacity>
+              />
             ) : null}
 
             {/* Safe Switch status (M7, compact) */}
@@ -589,142 +482,55 @@ export default function HomeScreen() {
 
             {/* 7. Pantry nav row (carded — matches appointment row) */}
             {activePet && (
-              <TouchableOpacity
-                style={styles.pantryRow}
+              <PantryNavRow
+                petName={activePet.name}
+                photoUrl={activePet.photo_url}
+                foodCount={pantryCategories.foods}
+                treatCount={pantryCategories.treats}
+                hasItems={pantryItems.length > 0}
                 onPress={navigateToPantry}
-                activeOpacity={0.7}
-              >
-                <View style={styles.pantryRowAvatar}>
-                  {activePet.photo_url ? (
-                    <Image source={{ uri: activePet.photo_url }} style={styles.pantryRowPhoto} />
-                  ) : (
-                    <Ionicons name="paw-outline" size={12} color={Colors.accent} />
-                  )}
-                </View>
-                <Text style={styles.pantryRowTitle} numberOfLines={1}>
-                  {activePet.name}&apos;s Pantry
-                </Text>
-                {pantryItems.length > 0 ? (
-                  <Text style={styles.pantryRowSubtitle}>
-                    {pantryCategories.foods} food{pantryCategories.foods !== 1 ? 's' : ''} ·{' '}
-                    {pantryCategories.treats} treat{pantryCategories.treats !== 1 ? 's' : ''}
-                  </Text>
-                ) : (
-                  <Text style={styles.pantryRowSubtitle}>Start tracking</Text>
-                )}
-                <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-              </TouchableOpacity>
+              />
+            )}
+
+            {/* 6. Bookmarks (hidden when empty) */}
+            {bookmarkCards.length > 0 && activePet && (
+              <BookmarksSection
+                bookmarkCards={bookmarkCards}
+                petName={activePet.name}
+                onCardPress={handleBookmarkCardPress}
+                onSeeAll={() => navigation.navigate('Bookmarks')}
+              />
             )}
 
             {/* 7. Recent Scans — redesigned counter */}
             {recentScans.length > 0 && activePet && (
-              <View style={styles.recentScansSection}>
-                <View style={styles.recentScansHeader}>
-                  <Text style={styles.recentScansTitle}>Recent Scans</Text>
-                  {!premium && scanWindowInfo ? (
-                    <View style={styles.scanCounterRow}>
-                      <View style={[styles.scanCounterPill, { backgroundColor: `${scanCounterColor}20` }]}>
-                        <Text style={[styles.scanCounterText, { color: scanCounterColor }]}>
-                          {scanWindowInfo.count}/{Limits.freeScansPerWeek} this week
-                        </Text>
-                      </View>
-                      <InfoTooltip text={scanTooltipText} size={14} />
-                    </View>
-                  ) : (
-                    <Text style={styles.recentScansWeekly}>
-                      {weeklyCount} this week
-                    </Text>
-                  )}
-                </View>
-                {recentScans.map((scan) => {
-                  const scoreColor =
-                    scan.final_score != null
-                      ? getScoreColor(scan.final_score, scan.product.is_supplemental)
-                      : null;
-
-                  return (
-                    <TouchableOpacity
-                      key={scan.id}
-                      style={styles.scanRow}
-                      onPress={() => {
-                        if (scan.product.is_recalled) {
-                          navigation.navigate('RecallDetail', {
-                            productId: scan.product_id,
-                          });
-                        } else {
-                          navigation.navigate('Result', {
-                            productId: scan.product_id,
-                            petId: activePetId,
-                          });
-                        }
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      {scan.product.image_url ? (
-                        <Image
-                          source={{ uri: scan.product.image_url }}
-                          style={styles.scanRowImage}
-                        />
-                      ) : (
-                        <View style={styles.scanRowImagePlaceholder}>
-                          <Ionicons
-                            name="cube-outline"
-                            size={18}
-                            color={Colors.textTertiary}
-                          />
-                        </View>
-                      )}
-                      <View style={styles.scanRowInfo}>
-                        <Text style={styles.scanRowBrand} numberOfLines={1}>
-                          {sanitizeBrand(scan.product.brand)}
-                        </Text>
-                        <Text style={styles.scanRowName} numberOfLines={2}>
-                          {stripBrandFromName(scan.product.brand, scan.product.name)}
-                        </Text>
-                      </View>
-                      {scoreColor ? (
-                        <View
-                          style={[
-                            styles.scorePill,
-                            { backgroundColor: `${scoreColor}1A` },
-                          ]}
-                        >
-                          <Text style={[styles.scorePillText, { color: scoreColor }]}>
-                            {scan.final_score}%
-                          </Text>
-                        </View>
-                      ) : (
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color={Colors.textTertiary}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <RecentScansSection
+                recentScans={recentScans}
+                petName={activePet.name}
+                weeklyCount={weeklyCount}
+                premium={premium}
+                scanWindowInfo={scanWindowInfo}
+                scanCounterColor={scanCounterColor}
+                scanTooltipText={scanTooltipText}
+                onScanPress={handleScanPress}
+                onLongPress={handleScanLongPress}
+                onSeeAll={() => navigation.navigate('ScanHistory')}
+              />
             )}
 
             {/* 8. Empty state */}
-            {!hasContent && (
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="camera-outline"
-                  size={48}
-                  color={Colors.textTertiary}
-                  style={{ marginBottom: Spacing.md }}
-                />
-                <Text style={styles.emptyTitle}>Scan your first product</Text>
-                <Text style={styles.emptySubtitle}>
-                  Tap the scan button below to check{'\n'}a pet food, treat, or
-                  supplement.
-                </Text>
-              </View>
-            )}
+            {!hasContent && <HomeEmptyState />}
           </>
         )}
       </ScrollView>
+      {longPressTarget && (
+        <BookmarkToggleSheet
+          visible={longPressTarget !== null}
+          onClose={() => setLongPressTarget(null)}
+          isBookmarked={longPressIsBookmarked}
+          onToggle={handleLongPressToggle}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -771,274 +577,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: 120,
-  },
-
-  // Recall card
-  recallCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: `${SEVERITY_COLORS.danger}15`,
-    borderLeftWidth: 3,
-    borderLeftColor: SEVERITY_COLORS.danger,
-    borderRadius: 16,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  recallCardBody: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: SEVERITY_COLORS.danger,
-    lineHeight: 18,
-  },
-
-  // Search bar
-  searchBarContainer: {
-    marginBottom: Spacing.md,
-  },
-  searchBar: {
-    height: 44,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
-    padding: 0,
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontSize: FontSizes.md,
-    color: Colors.textTertiary,
-  },
-
-  // Browse categories
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  categoryCard: {
-    width: '48%' as unknown as number,
-    flexGrow: 1,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-  },
-  categoryLabel: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-
-  // Search results
-  searchResultsContainer: {
-    gap: Spacing.xs,
-  },
-  searchResultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-  },
-  searchResultImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  searchResultImagePlaceholder: {
-    backgroundColor: Colors.cardSurface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchResultInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  searchResultBrand: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  searchResultName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  searchEmptyState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xl,
-  },
-  searchEmptyText: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-
-  // Appointment row
-  appointmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    marginBottom: Spacing.md,
-  },
-  appointmentText: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  appointmentDate: {
-    fontSize: FontSizes.sm,
-    color: Colors.accent,
-    fontWeight: '600',
-  },
-
-  // Pantry slim row
-  pantryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    marginBottom: Spacing.md,
-  },
-  pantryRowAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#00B4D815',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  pantryRowPhoto: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  pantryRowTitle: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  pantryRowSubtitle: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    textAlign: 'right',
-  },
-
-  // Scan counter
-  scanCounterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  scanCounterPill: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  scanCounterText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-  },
-
-  // Recent scans
-  recentScansSection: {
-    marginBottom: Spacing.md,
-  },
-  recentScansHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  recentScansTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  recentScansWeekly: {
-    fontSize: FontSizes.sm,
-    color: Colors.accent,
-  },
-  scanRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-  },
-  scanRowImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  scanRowImagePlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: Colors.cardSurface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanRowInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  scanRowBrand: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  scanRowName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  scorePill: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  scorePillText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '700',
-  },
-
-  // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyTitle: {
-    fontSize: FontSizes.xl,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  emptySubtitle: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
   },
 });

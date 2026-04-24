@@ -1,6 +1,6 @@
 // Kiba — Result Screen
 // Single scrollable screen with progressive disclosure (D-108).
-// Score framing: "[X]% match for [Pet Name]" (D-094). Zero emoji (D-084).
+// Score framing: tiered per D-168 (supersedes D-094) — ScoreRing shows "{score}%" in visible text; full phrase in accessibilityLabel. Zero emoji (D-084).
 // Wires LoadingTerminal + scoreProduct pipeline.
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -10,13 +10,13 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   Alert,
+  Linking,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, FontSizes, Spacing } from '../utils/constants';
 import { styles } from './result/ResultScreenStyles';
@@ -80,6 +80,15 @@ import { useTreatBatteryStore } from '../stores/useTreatBatteryStore';
 import { computePetDer, pickBaseForSwap } from '../utils/pantryHelpers';
 import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
+import { ResultHeaderMenu } from '../components/result/ResultHeaderMenu';
+import { SafetyFlagSheet } from '../components/community/SafetyFlagSheet';
+import { ResultFullHeader } from '../components/result/ResultFullHeader';
+import { ProductImageBlock } from '../components/result/ProductImageBlock';
+import { ResultActionButtons } from '../components/result/ResultActionButtons';
+import { useBookmarkStore } from '../stores/useBookmarkStore';
+import { BookmarkOfflineError, BookmarksFullError } from '../types/bookmark';
+import { isPublishedSlug } from '../services/vendorService';
+import { brandSlugify } from '../utils/brandSlugify';
 
 // ─── Navigation Types ────────────────────────────────────
 
@@ -166,6 +175,78 @@ export default function ResultScreen() {
   const [petConditions, setPetConditions] = useState<string[]>([]);
   const [petAllergenGroups, setPetAllergenGroups] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [flagSheetVisible, setFlagSheetVisible] = useState(false);
+  const isBookmarked = useBookmarkStore((s) =>
+    petId ? s.isBookmarked(petId, productId) : false,
+  );
+  const toggleBookmark = useBookmarkStore((s) => s.toggle);
+
+  const handleToggleBookmark = async () => {
+    if (!petId) {
+      Alert.alert('Select a pet', 'Choose an active pet before bookmarking.');
+      return;
+    }
+    try {
+      await toggleBookmark(petId, productId);
+    } catch (err) {
+      if (err instanceof BookmarksFullError) {
+        Alert.alert('Bookmarks full', 'Remove one to save another.');
+      } else if (err instanceof BookmarkOfflineError) {
+        Alert.alert('Offline', 'Bookmarks can be added once you are back online.');
+      } else {
+        Alert.alert('Could not save', err instanceof Error ? err.message : 'Unknown error');
+      }
+    }
+  };
+
+  const handleShare = () => {
+    captureAndShare(shareCardRef, displayName, score);
+  };
+
+  const handleReportIssue = async () => {
+    const subject = encodeURIComponent(`Report issue — ${product?.brand ?? ''} ${product?.name ?? ''}`.trim());
+    const body = encodeURIComponent(
+      `Product: ${productId}\nPet: ${petId ?? '(none)'}\nPlatform: ${Platform.OS} ${String(Platform.Version)}\n\nDescribe the issue:\n`,
+    );
+    const url = `mailto:support@kibascan.com?subject=${subject}&body=${body}`;
+    const ok = await Linking.canOpenURL(url);
+    if (ok) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        'No email client configured',
+        'Email support@kibascan.com directly with the product name and what went wrong.',
+      );
+    }
+  };
+
+  // Contact brand → cross-stack jump to CommunityStack/VendorDirectory.
+  // Visibility: synchronous bundled-slug check (no network). Result lives on
+  // multiple stacks; jumping to a CommunityStack route requires going through
+  // the parent tab navigator. Same pattern as the Pantry SafeSwitch handoff
+  // above (see lines around `getParent()?.navigate('Pantry', { screen: ... })`).
+  const showContactBrand = useMemo(() => {
+    if (!product?.brand) return false;
+    return isPublishedSlug(brandSlugify(product.brand));
+  }, [product?.brand]);
+
+  const handleContactBrand = useCallback(() => {
+    if (!product?.brand) return;
+    (navigation.getParent() as any)?.navigate('Community', {
+      screen: 'VendorDirectory',
+      params: { initialBrand: product.brand },
+    });
+  }, [navigation, product?.brand]);
+
+  // Flag this score (Task 29, M9 Community, D-072). Opens SafetyFlagSheet
+  // pre-populated with the current scan's pet + product. scanId is intentionally
+  // not threaded today: the scan_history insert above is fire-and-forget and
+  // doesn't capture the inserted row id. The submit RPC tolerates a missing
+  // scan_id (it's optional in the SafetyFlag schema).
+  const handleFlagScore = useCallback(() => {
+    setFlagSheetVisible(true);
+  }, []);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -476,25 +557,14 @@ export default function ResultScreen() {
   // ─── Full result view ─────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.productBrand} numberOfLines={1}>
-            {product!.brand}
-          </Text>
-          <Text style={styles.productName} numberOfLines={2}>
-            {stripBrandFromName(product!.brand, product!.name)}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => captureAndShare(shareCardRef, displayName, score)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="share-outline" size={22} color={Colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
+      <ResultFullHeader
+        productBrand={product!.brand}
+        productName={stripBrandFromName(product!.brand, product!.name)}
+        isBookmarked={isBookmarked}
+        onBack={() => navigation.goBack()}
+        onToggleBookmark={handleToggleBookmark}
+        onOpenMenu={() => setMenuVisible(true)}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -503,23 +573,7 @@ export default function ResultScreen() {
       >
         {/* Product image with gradient edge fade (D-093) */}
         {product!.image_url && (
-          <View style={styles.productImageContainer}>
-            <Image
-              source={{ uri: product!.image_url }}
-              style={styles.productImage}
-              resizeMode="contain"
-            />
-            <LinearGradient
-              colors={['transparent', Colors.background]}
-              style={styles.imageGradientBottom}
-            />
-            <LinearGradient
-              colors={[Colors.background, 'transparent', 'transparent', Colors.background]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.imageGradientSides}
-            />
-          </View>
+          <ProductImageBlock imageUrl={product!.image_url} />
         )}
 
         {/* ─── Above Fold ─────────────────────────────────── */}
@@ -914,11 +968,20 @@ export default function ResultScreen() {
           />
         )}
 
-        {/* Compare button (D-052: premium gate) */}
-        <TouchableOpacity
-          style={styles.compareButton}
-          activeOpacity={0.7}
-          onPress={() => {
+        {/* Compare / Add to Pantry / Start Safe Switch action buttons */}
+        <ResultActionButtons
+          petDisplayName={displayName}
+          showAddToPantry={!!(product && pet)}
+          showSafeSwitch={!!(
+            product && pet && pantryAnchors.length > 0 &&
+            product.category === 'daily_food' &&
+            !product.is_supplemental && !isVetDiet &&
+            product.product_form !== 'wet' &&
+            pet.feeding_style !== 'custom' &&
+            !scoredResult?.bypass
+          )}
+          safeSwitchLocked={!canUseSafeSwaps()}
+          onCompare={() => {
             if (!canCompare()) {
               (navigation as any).navigate('Paywall', {
                 trigger: 'compare',
@@ -928,61 +991,27 @@ export default function ResultScreen() {
             }
             setComparePickerVisible(true);
           }}
-        >
-          <Ionicons name="git-compare-outline" size={18} color={Colors.accent} />
-          <Text style={styles.compareButtonText}>Compare with another product</Text>
-        </TouchableOpacity>
-
-        {/* Add to Pantry */}
-        {product && pet && (
-          <TouchableOpacity
-            style={styles.trackButton}
-            onPress={handleTrackFood}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
-            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-              Add to {displayName}'s Pantry
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* V2-1: Start Safe Switch — explicit entry for scanned products */}
-        {product && pet && pantryAnchors.length > 0 &&
-         product.category === 'daily_food' &&
-         !product.is_supplemental && !isVetDiet &&
-         product.product_form !== 'wet' &&
-         pet.feeding_style !== 'custom' &&
-         !scoredResult?.bypass && (
-          <TouchableOpacity
-            style={styles.trackButton}
-            onPress={() => {
-              if (!canUseSafeSwaps()) {
-                (navigation as any).navigate('Paywall', { trigger: 'safe_swap', petName: pet.name });
-                return;
-              }
-              const anchor = pickBaseForSwap(pantryAnchors, product.product_form ?? null) ?? pantryAnchors[0];
-              if (!anchor) return;
-              (navigation.getParent() as any)?.navigate('Pantry', {
-                screen: 'SafeSwitchSetup',
-                params: {
-                  pantryItemId: anchor.pantryItemId,
-                  newProductId: product.id,
-                  petId: pet.id,
-                  newServingSize: null,
-                  newServingSizeUnit: null,
-                  newFeedingsPerDay: null,
-                },
-              });
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={canUseSafeSwaps() ? "swap-horizontal-outline" : "lock-closed-outline"} size={18} color={Colors.accent} />
-            <Text style={[styles.trackButtonText, { color: Colors.accent }]}>
-              Start Safe Switch
-            </Text>
-          </TouchableOpacity>
-        )}
+          onAddToPantry={handleTrackFood}
+          onStartSafeSwitch={() => {
+            if (!canUseSafeSwaps()) {
+              (navigation as any).navigate('Paywall', { trigger: 'safe_swap', petName: pet!.name });
+              return;
+            }
+            const anchor = pickBaseForSwap(pantryAnchors, product!.product_form ?? null) ?? pantryAnchors[0];
+            if (!anchor) return;
+            (navigation.getParent() as any)?.navigate('Pantry', {
+              screen: 'SafeSwitchSetup',
+              params: {
+                pantryItemId: anchor.pantryItemId,
+                newProductId: product!.id,
+                petId: pet!.id,
+                newServingSize: null,
+                newServingSizeUnit: null,
+                newFeedingsPerDay: null,
+              },
+            });
+          }}
+        />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -1038,6 +1067,25 @@ export default function ResultScreen() {
           scoreColor={getScoreColor(score, isSupplemental)}
         />
       </View>
+
+      <ResultHeaderMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onShare={handleShare}
+        onReportIssue={handleReportIssue}
+        onContactBrand={showContactBrand ? handleContactBrand : undefined}
+        brandName={showContactBrand ? product?.brand : undefined}
+        onFlagScore={pet && product ? handleFlagScore : undefined}
+      />
+
+      {pet && product && (
+        <SafetyFlagSheet
+          visible={flagSheetVisible}
+          onClose={() => setFlagSheetVisible(false)}
+          petId={pet.id}
+          productId={product.id}
+        />
+      )}
     </SafeAreaView>
   );
 }

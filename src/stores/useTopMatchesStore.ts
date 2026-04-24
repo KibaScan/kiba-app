@@ -68,7 +68,14 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
       const scores = await fetchTopMatches(petId, {
         category: category === 'all' ? undefined : category,
       });
-      set({ scores, loading: false });
+      // Guard: if the user switched pets while this fetch was in flight,
+      // the top-level `scores` belongs to the new active pet. Writing
+      // `scores` from the stale pet would flash the wrong list.
+      if (useActivePetStore.getState().activePetId === petId) {
+        set({ scores, loading: false });
+      } else {
+        set({ loading: false });
+      }
     } catch (e) {
       console.error('[useTopMatchesStore] loadTopMatches failed:', e);
       set({
@@ -96,7 +103,13 @@ export const useTopMatchesStore = create<TopMatchesState>()((set, get) => ({
       const scores = await fetchTopMatches(petId, {
         category: category === 'all' ? undefined : category,
       });
-      set({ scores, refreshing: false });
+      // Same guard as loadTopMatches — avoid overwriting the active pet's
+      // scores with a stale fetch from a pet the user already switched away from.
+      if (useActivePetStore.getState().activePetId === petId) {
+        set({ scores, refreshing: false });
+      } else {
+        set({ refreshing: false });
+      }
     } catch (e) {
       console.error('[useTopMatchesStore] refreshScores failed:', e);
       set({
