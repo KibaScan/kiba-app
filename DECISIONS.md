@@ -1,7 +1,7 @@
 # Kiba — Decision Log
 
 > Single source of truth for every product, technical, and strategic decision.
-> Updated: April 17, 2026 (131 decisions, D-001 through D-169, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-094 superseded by D-168. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: allergen score cap at 50. D-168: score framing simplification — tiered by surface density, supersedes D-094. D-169: Bookmarks feature — per-pet, 20 cap, no paywall.)
+> Updated: April 23, 2026 (132 decisions, D-001 through D-170, non-sequential. D-052 revised for M3. D-013 superseded by D-137. D-113 superseded by D-136. D-061 superseded by D-160. D-094 superseded by D-168. D-141 section headers superseded by D-143. D-065 partially superseded by D-152. D-152 recommendation behavior partially superseded by D-165. D-150: life stage mismatch moved to Layer 3. D-151: under-4-weeks nursing advisory. D-152–D-158: M5 Pantry + Recall Siren decisions. D-159: low-score feeding context line. D-160–D-165: M5 Phase 2. D-166: weight unit auto-conversion + cups conversion. D-167: allergen score cap at 50. D-168: score framing simplification — tiered by surface density, supersedes D-094. D-169: Bookmarks feature — per-pet, 20 cap, no paywall. D-170: M9 Community — Kitchen recipe-flag entry deferred to dedicated `recipe_flags` table, not wired into `score_flags`.)
 
 ---
 
@@ -3045,6 +3045,39 @@ This is optional — user can stay in weight mode if they prefer.
 **Out of scope (may revisit):** cross-pet sharing of bookmarks, filter/sort on dedicated screens, scan deletion, premium bump above 20.
 
 **Files:** `supabase/migrations/040_bookmarks.sql`, `src/types/bookmark.ts`, `src/services/bookmarkService.ts`, `src/stores/useBookmarkStore.ts`, `src/screens/{Bookmarks,ScanHistory}Screen.tsx`, `src/components/result/ResultHeaderMenu.tsx`, `src/components/common/BookmarkToggleSheet.tsx`.
+
+### D-170: Kiba Kitchen Recipe-Flag Entry — Deferred to Dedicated `recipe_flags` Table
+**Status:** LOCKED
+**Date:** April 23, 2026
+**Milestone:** M9 (Community tab)
+**Depends on:** D-072 (community safety flags)
+
+**Problem:** During M9 Community implementation, the Kiba Kitchen recipe detail screen was specced with an overflow "Report issue" entry that would surface `SafetyFlagSheet` and write a row into `score_flags` with `reason='recipe_concern'`. The implementation hit a schema constraint:
+
+`score_flags` carries `pet_id UUID NOT NULL REFERENCES pets ON DELETE CASCADE` AND `product_id UUID NOT NULL REFERENCES products ON DELETE CASCADE` (migration 045). Community recipes have NEITHER — a recipe is identified by its own UUID in `community_recipes`, not by a pet+product pair. The two viable workarounds were both rejected:
+
+1. **Relax `pet_id` / `product_id` to NULLable** — degrades the existing flag query story (`get_score_flag_activity_counts` joins on product_id), forces every consumer to handle the NULL case, and erodes RLS rigor on the flagged-product surface.
+2. **Stuff fake foreign keys** (e.g., user's active pet + a sentinel product UUID) — data quality breach. Aggregate counts on `score_flags.product_id` would be lying.
+
+**Decision:** Remove the "Report issue" overflow entry from `KibaKitchenRecipeDetailScreen` for M9. Keep `'recipe_concern'` in the `score_flags.reason` enum so it's available when a future `recipe_flags` table (or equivalent surface) ships. Until then, recipe concerns route through Studio email / manual flow. The decision is documented inline at `src/screens/KibaKitchenRecipeDetailScreen.tsx:13-19` so the next agent inheriting the file sees the trail.
+
+**Rationale:**
+- **Schema honesty over feature completeness** — The right fix for "different scope of flag" is "different table," not "weaken the schema of the existing one." `score_flags` is for product-suitability scores, identified by (pet, product). Recipe flags are for recipe content, identified by recipe.
+- **`recipe_concern` enum value is forward-compatible** — `recipe_flags` can reuse the exact reason taxonomy when it ships, so existing `SafetyFlagSheet` UI translates with minimal change.
+- **Studio-email fallback is acceptable for low-volume** — Recipe submissions go through approval before they're public; community-flag-driven moderation pressure on already-approved recipes is expected to be low for the M9 launch window.
+
+**Out of scope (revisit when):**
+- A dedicated `recipe_flags` migration (mirrors `score_flags` but `recipe_id` instead of pet/product FKs)
+- Re-enabling the `KibaKitchenRecipeDetailScreen` overflow with a recipe-aware service call
+- Migrating any Studio-email-collected concerns into `recipe_flags` retroactively
+
+**Implementation:**
+- `src/screens/KibaKitchenRecipeDetailScreen.tsx` — overflow stub removed; inline comment at lines 13–19 explains the rationale and references this decision.
+- `src/types/scoreFlag.ts` — `'recipe_concern'` retained in the `ScoreFlagReason` union for forward-compatibility.
+- `src/utils/safetyFlagLabels.ts` — `recipe_concern` label preserved.
+- `src/components/community/SafetyFlagSheet.tsx` — `defaultReason='recipe_concern'` branch preserved (renders header "Report a concern" instead of "Flag this score") so the future `recipe_flags` integration can reuse the existing sheet without a rewrite.
+
+**Regression risk:** None. `score_flags` schema, RLS, and aggregate RPC are unchanged. No existing surface relied on the recipe-flag entry — it was specced but never user-facing.
 
 ---
 *This document is append-only. Decisions are never silently edited — they are superseded by new decisions with explicit rationale.*

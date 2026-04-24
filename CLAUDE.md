@@ -2,7 +2,7 @@
 
 > Single source of context for Claude Code. Keep lean — details live in spec files.
 > Full architecture + common tasks guide: `.cursorrules` (also at `.github/copilot-instructions.md`)
-> Last updated: April 23, 2026 — M9 in progress (session 62 shipped dead-code sweep + 8-screen file-split refactor). Test count and numbers in `docs/status/CURRENT.md`.
+> Last updated: April 23, 2026 — M9 in progress (session 63 shipped full Community tab rebuild — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags). Test count and numbers in `docs/status/CURRENT.md`.
 
 ---
 
@@ -21,7 +21,7 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 
 | File | What it covers |
 |------|---------------|
-| `DECISIONS.md` | 131 decisions (D-001–D-169, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
+| `DECISIONS.md` | 132 decisions (D-001–D-170, gaps) — always check before implementing. See header for supersession pairs and recent additions. |
 | `ROADMAP.md` | Milestone plan, current scope |
 | `docs/references/scoring-rules.md` | **Full scoring engine rules** — 3 layers, weights, curves, all mechanics |
 | `docs/specs/NUTRITIONAL_PROFILE_BUCKET_SPEC.md` | NP bucket: AAFCO thresholds, DMB, trapezoidal curves |
@@ -32,10 +32,11 @@ Kiba (kibascan.com) — pet food scanner iOS app, "Yuka for pets." Scan barcode 
 | `docs/plans/TOP_MATCHES_PLAN.md` | Top matches recommendation plan |
 | `docs/plans/BEHAVIORAL_FEEDING_IMPLEMENTED.md` | **Canonical reference** for behavioral feeding (migration 034) — feeding_style/feeding_role, Wet Reserve Engine, `computeBehavioralServing`, `log_wet_feeding_atomic`, auto-deplete role-awareness. Read before touching wet feedings, calorie_share_pct, or FedThisTodaySheet. |
 | `docs/plans/VERTEX_AI_BACKFILL_PLAN.md` | **Post-M9** — Vertex AI Gemini Pro backfills for ingredient TLDRs/citations + Amazon A+ image GA extraction |
+| `docs/superpowers/specs/2026-04-23-community-screen-design.md` / `docs/superpowers/plans/2026-04-23-community-screen.md` | **M9 Community tab** — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags. Spec covers 11 phases / 32 tasks; plan has the migration list (041–049). |
 | `docs/references/dataset-field-mapping.md` | Apify → Supabase field mapping |
 | `.agent/design.md` | **Matte Premium design system** — tokens, card anatomy, typography, spacing, SwipeableRow, legacy token migration. **Read before touching any screen UI.** |
 
-**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–040). See scoped CLAUDE.md files in subdirectories for details.
+**Key areas:** `src/services/scoring/` (engine), `src/utils/constants.ts` (Colors, SCORING_WEIGHTS, SEVERITY_COLORS, getScoreColor()), `src/utils/permissions.ts` (ONLY paywall location), `src/services/pantryService.ts` + `src/utils/pantryHelpers.ts` (pantry), `src/services/kibaIndexService.ts` (Kiba Index voting), `src/utils/weightGoal.ts` (D-160 slider math), `supabase/functions/` (Edge Functions), `supabase/migrations/` (001–049). See scoped CLAUDE.md files in subdirectories for details.
 
 **Current status:** `docs/status/CURRENT.md` | **Error lookup:** `docs/errors.md`
 
@@ -76,7 +77,11 @@ Full rules in `docs/references/scoring-rules.md`. Read that file before any scor
 - `kiba_index_votes` — community taste/tummy voting. UNIQUE(user_id, pet_id, product_id). `taste_vote`/`tummy_vote` nullable (partial submissions). `get_kiba_index_stats` RPC for species-filtered aggregation (SECURITY DEFINER). Migration 026.
 - `scan_history` — per-pet scan records (NOT `scans`), FK to `products(id)`. Only non-bypass scans are inserted (ResultScreen:231). `permissions.ts` uses `from('scans')` for rate limiting — different concern.
 - `bookmarks` — per-pet watchlist, UNIQUE(pet_id, product_id), 20-item client cap, RLS via user_id. Live score from `pet_product_scores` cache. Migration 040 (D-169).
-- **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`
+- `community_recipes` — user-submitted Kiba Kitchen recipes. `status` enum (`pending_review`/`approved`/`auto_rejected`/`rejected`). `is_killed BOOLEAN` is the kill-switch flag — flip true to hide instantly from feed AND detail. Recipe row carries a **client-supplied UUID** per spec §6.1 (storage object path uses the same UUID; INSERT happens after the image upload). Migration 041.
+- `user_xp_events` + `user_xp_totals` — XP engine. **SELECT-only RLS**; all writes happen via SECURITY DEFINER triggers in migration 046 (`process_scan_xp`, `process_vote_xp`, `process_recipe_approval_xp`, `process_missing_product_approval_xp`, `upsert_user_xp_totals`). Approval triggers are idempotent — fire only on the false→true transition so re-approval doesn't grant XP twice. Streak math is calendar-day in user TZ with a 1-day grace window. Helper RPC: `get_user_xp_summary` (migration 048). Camera-scan-gated (server checks the prior `scan_history` row exists before granting). Migrations 042 + 046 + 048.
+- `score_flags` — D-072 community safety flags. `pet_id NOT NULL`, `product_id NOT NULL` (FK to pets + products). `reason` CHECK enum includes `recipe_concern` value, but the schema does NOT support recipe-only flags (no recipe FK) — Kitchen recipe reports were intentionally NOT wired (D-170); they route through Studio for now. RLS WITH CHECK pins INSERT to `status='open'` AND `admin_note IS NULL` so users can't pre-resolve their own flags or stuff admin notes. Aggregate RPC: `get_score_flag_activity_counts` (migration 049). Migrations 045 + 049.
+- `vendors` + `blog_posts` — public read of `is_published=true` only; writes are service-role only (managed via Supabase Studio CMS). `vendors` is also bundle-synced with `assets/vendors.json` via `npm run seed:vendors` for offline reads on the Vendor Directory tile. Migrations 043 + 044.
+- **Auth:** Anonymous sign-in via `ensureAuth()`. Storage bucket `pet-photos` (public), path: `{userId}/{petId}.jpg`. Additional buckets `recipe-images` (public, RLS on insert: own-folder only) + `blog-images` (service-role write) — migration 047.
 - **Tab navigation:** Home | Community | (Scan) | Pantry | Me — Search tab was replaced by Community tab. `SearchScreen` deleted; premium text search lives on HomeScreen v2. `CommunityStackParamList` in navigation types.
 
 ## Non-Negotiable Rules

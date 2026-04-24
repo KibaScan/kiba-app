@@ -1,4 +1,4 @@
-# Project Status — Last updated 2026-04-23 (session 62 — Multi-agent cleanup: dead-code sweep + 8-screen refactor; PRs #16 + #17 merged as `bc683b0` + `3a99e32`)
+# Project Status — Last updated 2026-04-23 (session 63 — M9 Community shipped: full Community tab rebuild — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags; PR open on `m9-community`)
 
 ## Active Milestone
 
@@ -26,9 +26,9 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Numbers
 
-- **Tests:** 1665 passing / 79 suites
-- **Decisions:** 131
-- **Migrations:** 40 (001–040)
+- **Tests:** 1886 passing / 105 suites
+- **Decisions:** 132
+- **Migrations:** 49 (001–049 — 041–049 NOT yet applied to staging; Docker was unavailable during dev. Apply via `npx supabase db push`.)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -67,6 +67,59 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 - **Slash commands:** /boot, /handoff, /check-numbers, /audit-context, /milestone-close
 
 ## Last Session
+
+- **Date:** 2026-04-23 (session 63 — M9 Community shipped: full Community tab rebuild — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags)
+- **Branch:** `m9-community` off `m5-complete@3a99e32`. 43 commits + this handoff doc commit. PR open against `main`.
+- **Final code SHA before handoff doc commit:** `65dfcdd` (CommunityScreen final assembly + populated/empty render tests, Phase 11 close).
+- **Accomplished — full 11-phase / 32-task plan executed:**
+  - **Spec:** `docs/superpowers/specs/2026-04-23-community-screen-design.md` (4 review-rounds: initial draft + Gemini reference artifacts + spec patches from second-pass review + third-pass review patches before dispatch).
+  - **Plan:** `docs/superpowers/plans/2026-04-23-community-screen.md` (32 tasks across 11 phases — schema, helpers, services, screens, validators, deep-links, final assembly).
+  - **Migrations 041–049** (NOT yet applied to staging — Docker was unavailable throughout):
+    - 041 `community_recipes` (kill-switch via `is_killed`, status enum, client-supplied UUID)
+    - 042 `user_xp` (events + totals tables, SELECT-only RLS for users)
+    - 043 `blog_posts` (Studio CMS, public read of `is_published=true`)
+    - 044 `vendors` (Studio CMS + bundled `assets/vendors.json` for offline reads)
+    - 045 `score_flags` (D-072; `pet_id NOT NULL` + `product_id NOT NULL`; `recipe_concern` is one of the reason enum values)
+    - 046 XP triggers (SECURITY DEFINER, idempotent on approval; `process_scan_xp`, `process_vote_xp`, `process_recipe_approval_xp`, `process_missing_product_approval_xp`, `upsert_user_xp_totals`)
+    - 047 storage buckets (`recipe-images` user-folder RLS, `blog-images` service-role)
+    - 048 `get_user_xp_summary` RPC
+    - 049 `get_score_flag_activity_counts` RPC
+  - **Pure helpers (TDD):** `xpLevel` (curve), `streakGap` (calendar-day with 1-day grace), `weeklyXPWindow` (ISO-week Monday 00:00 UTC), `validateRecipe` (toxic + UPVM checks), `brandSlugify`.
+  - **Services:** `xpService`, `communityService` (recalls + Kiba Index highlights), `vendorService` (with bundled-slug sync check), `blogService`, `recipeService` (offline-guarded), `scoreFlagService`. All with tests.
+  - **Edge Function:** `validate-recipe` (server-side toxic + UPVM auto-validators) + curated `assets/toxic_foods.json` (35 entries) + `npm run sync:toxics` script.
+  - **Scripts:** `npm run sync:toxics`, `npm run seed:vendors` (with `published_vendor_slugs` artifact for bundled-slug sync check).
+  - **Screens (11 new + 1 rebuild):** `CommunityScreen` (rebuild — XP ribbon + RecallBanner + DiscoveryGrid + KibaKitchenFeed featured hero + BlogCarousel + SubredditFooter), `ToxicDatabaseScreen`, `VendorDirectoryScreen`, `KibaKitchenFeedScreen`, `KibaKitchenSubmitScreen`, `KibaKitchenRecipeDetailScreen`, `BlogListScreen`, `BlogDetailScreen` (markdown via `react-native-marked`), `SafetyFlagsScreen` (tabbed: My Flags + Community Activity).
+  - **Components:** `XPRibbon`, `RecallBanner`, `DiscoveryGrid` + 4 tiles (Toxic / Vendor / Kiba Index / Safety Flags), `SubredditFooter`, `RecipeDisclaimerBanner`, `SafetyFlagSheet`.
+  - **ResultScreen overflow entries:** "Contact {brand}" deep-link (offline-safe; only renders when brand exists in vendors) + "Flag this score" → `SafetyFlagSheet` (D-072).
+  - **D-072 community safety flags shipped end-to-end** (sheet + tabbed screen + ResultScreen entry).
+- **New decisions:** **D-170 — Recipe-flag entry removed from Kitchen detail (deferred to dedicated `recipe_flags` table).** `score_flags` carries `pet_id NOT NULL + product_id NOT NULL` FKs; community recipes have neither. Wiring Kitchen's "Report issue" overflow to `SafetyFlagSheet` would either require relaxing those NOT NULL constraints (loses RLS rigor) or stuffing fake foreign keys (data quality breach). Cleanest path: keep schema honest, remove the stub from Kitchen detail, document that recipe concerns route through Studio email until a dedicated `recipe_flags` table or equivalent surface ships. The `recipe_concern` value remains in the `score_flags.reason` enum for the future `recipe_flags` migration's reason taxonomy. Recorded inline at `src/screens/KibaKitchenRecipeDetailScreen.tsx:13-19`. Header bumped 131 → 132 / D-001–D-169 → D-001–D-170.
+- **Migrations needing apply:** 041–049 + the storage buckets in 047. Run `npx supabase db push` against staging — Docker was unavailable throughout dev so all migrations are unapplied. After push, deploy `validate-recipe` Edge Function (`npx supabase functions deploy validate-recipe`) and run `npm run sync:toxics` so the curated toxic JSON ships in the function bundle. Once Steven curates `assets/vendors.json`, run `npm run seed:vendors` to upsert into the `vendors` table.
+- **Numbers (all green at code HEAD `65dfcdd`):** 105 suites / **1886 tests** / 3 snapshots (+221 from 1665). 132 decisions. 49 migrations (001–049 — 041–049 unapplied to staging). 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit`: 11 lines (pre-existing structural `supabase/functions/batch-score/scoring/` Deno noise only — `src/` + `__tests__/` clean). `npx madge --circular src/`: zero cycles.
+- **Carry-over for the on-device pass (see `docs/qa/2026-04-23-m9-community-qa.md`):**
+  - Empty-state copy correctness on every Community surface (XP ribbon at 0 XP, Vendor Directory before vendors.json populated, Kiba Kitchen before first approval, Blog before first post, Safety Flags Community Activity tab on a fresh DB)
+  - Auto-validator coverage: chocolate recipe → `auto_rejected`; clean recipe → `pending_review`; UPVM-non-compliant copy → `auto_rejected`
+  - Migration apply checklist also lives in the QA doc
+- **Not done yet:**
+  - On-device QA — no device available in dev env. Steven runs `docs/qa/2026-04-23-m9-community-qa.md`.
+  - Migrations 041–049 NOT yet applied — Docker was unavailable.
+  - `vendors.json` curation + `npm run seed:vendors` — placeholder file only.
+  - First blog post + first approved recipe via Studio so the populated states show.
+  - **Future surface:** `recipe_flags` table + Kitchen detail "Report issue" rewire (D-170 placeholder).
+- **Start the next session by:**
+  1. **`/boot`** — verify rolling window rotated: session 62 → Previous, new session → Last. `m5-complete` HEAD should be the squash-merge of PR `m9-community`.
+  2. Apply migrations 041–049 against staging via `npx supabase db push`. Verify per `docs/qa/2026-04-23-m9-community-qa.md` apply checklist.
+  3. Walk the on-device QA list. File any regressions as new fix-forward commits before flipping focus to next M9 scope.
+- **Gotchas / context for next session:**
+  - **Migrations 041–049 are unapplied.** Don't trust any local Supabase state until `npx supabase db push` lands. RPCs (`get_user_xp_summary`, `get_score_flag_activity_counts`) and triggers (`process_scan_xp`, etc.) won't exist on staging until then.
+  - **`score_flags.pet_id NOT NULL`** is intentional — D-170 documents why. If a future agent re-encounters the Kitchen recipe report stub, do NOT relax the constraint. Build `recipe_flags` instead.
+  - **Validate-recipe Edge Function depends on `assets/toxic_foods.json` being synced into the function bundle.** `npm run sync:toxics` is the contract. CI doesn't gate this yet — manual pre-deploy step.
+  - **`vendors.json` is a placeholder.** Empty state copy is the right reality until Steven curates the seed data.
+  - **`react-native-marked`** is the chosen markdown renderer for blog detail. Note in spec §10 — alternative renderers were rejected for image-handling parity.
+  - **Recipe images use a client-supplied UUID** so the storage path can be assembled BEFORE the `community_recipes` row insert. See spec §6.1 + the recipeService implementation. If a future change wants server-supplied UUIDs, the upload-then-insert ordering must change too.
+  - **All session-62 gotchas still apply.**
+  - **Rolling window:** session 61 dropped, session 62 demoted to Previous, this session 63 takes Last.
+
+## Previous Session
 
 - **Date:** 2026-04-23 (session 62 — Multi-agent cleanup: Phase 1 dead-code sweep + Phase 2 eight-screen file-split refactor; both phases merged)
 - **Merges on `m5-complete`:**
@@ -119,50 +172,3 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **Squash-merges lose the per-agent TDD trail.** Phase 1's per-agent commits became `bc683b0`; Phase 2's per-agent commits became `3a99e32`. If you need that granularity for future debugging, fetch feature-branch SHAs BEFORE `--delete-branch` OR preserve the intermediate commits in the final squash commit body.
   - **ScanHistoryCard.tsx no longer exists.** If future sessions cite D-168 implementation examples or look for in-app list-row exemplars, use `PantryCard` (not ScanHistoryCard — file deleted this session). CLAUDE.md line 46, DECISIONS.md D-168 list (3 lines), `.claude/agents/kiba-code-reviewer.md`, and `.agent/workflows/legacy-token-migration.md` were all updated.
   - **All session-60/61 gotchas still apply.**
-
-## Previous Session
-
-- **Date:** 2026-04-22 (session 61 — BookmarkRow extract + cache-miss shimmer + cross-pet race audit; three stacked commits on `m9-bookmark-row-extract` → PR #15)
-- **Branch:** `m9-bookmark-row-extract` off `m5-complete@c99e669`. Three commits stacked in one session: `c5d4e55` (extraction) → `8466b65` (pending split) → `b17a631` (race audit). Pushed to `origin/m9-bookmark-row-extract`.
-- **PR:** [#15](https://github.com/KibaScan/kiba-app/pull/15) — **merged** (squash) to `m5-complete` as `3d61319`. Ultrareview returned zero findings. Feature branch `m9-bookmark-row-extract` deleted locally + remote. `origin/m5-complete` fast-forwarded `1f9e8d5..3d61319`.
-- **Accomplished:** closed three session-60 carry items as three stacked commits, each with a full red→green TDD cycle and a final full-suite pass.
-  - **`c5d4e55` — `BookmarkRow` extraction.** Moved the inline `BookmarkRow` component from `BookmarksScreen.tsx` into `src/components/bookmarks/BookmarkRow.tsx` (new, 205 lines). Matches the colocated `PantryCard` / `ScanHistoryCard` pattern. Navigation decoupled via `onPress: () => void` callback instead of threading a `CompositeNavigationProp` into the row. `BookmarksScreen.tsx` dropped 148 net lines. Existing 6 render tests stayed green without modification — the extraction was pure refactor, not behavior change.
-  - **`8466b65` — pending-vs-bypass state split + shimmer.** Added pure helper `src/utils/bookmarkRowState.ts` with discriminated union `BookmarkRowState = recalled | scored | bypass | pending` and precedence recalled > bypass > scored > pending. Rewired `BookmarkRow` to consume the helper. Added new `<PendingShimmer />` sub-component using `Animated.loop` opacity pulse (0.4 ↔ 0.85, 1.1 s total cycle, native driver). Pending state announces `"{brand} {name}, score pending"` to VoiceOver instead of falling through to the bare brand/name label (which was being announced previously because `isBypass` was conflating `final_score == null` with genuine vet-diet / variety-pack bypasses). Fixes the on-device regression surfaced in session 60 (transient Supabase hiccup → all 17 bookmark rows rendered `—` with no re-hydrate signal). 7 unit tests on the helper (incl. stale-score-on-vet-diet edge case) + 2 render tests on the screen (pending shows shimmer placeholder + no `—`; vet-diet with null score still shows `—` — bypass wins over pending).
-  - **`b17a631` — cross-pet race audit** on `usePantryStore` + `useTopMatchesStore`. Advisor distinguished TWO distinct bug classes that must NOT share an abstraction:
-    - **Pantry (cache-staleness):** `addItem` / `removeItem` / `restockItem` / `updateItem` / `shareItem` previously used `pid = get()._petId ?? petId` AFTER the server await, so a mid-flight pet switch misrouted the refetch to the new active pet AND left the mutated pet's `_petCache[petId]` entry stale. Fix: always refetch the explicit `petId` arg (or capture `_petId` pre-await for item-keyed mutations like restock/update), always write `_petCache[petId]`, gate top-level `items`/`dietStatus`/`error` writes on `_petId === petId`. Removed the `?? get().activeSwitchData` fallback to avoid leaking the active pet's switch data into another pet's cache.
-    - **Top Matches (overwrite):** `loadTopMatches` / `refreshScores` previously did an unconditional `set({ scores })` after the fetch resolved. If the user switched pets mid-fetch, the stale pet's scores clobbered the visible list. Fix: gate `scores` write on `useActivePetStore.getState().activePetId === petId` (this store carries no pet state of its own).
-    - **Safe by construction, no fix needed:** `useTreatBatteryStore` (per-pet map, no top-level state), `useScanStore` (no pet state at all), `usePantryStore.loadPantry` (already guarded by `_petId !== petId` returns on success and error paths).
-    - **`usePantryStore.logTreat` NOT fixed in this pass:** it's already cache-safe (all writes keyed to the explicit `petId` arg), but has a narrow top-level revert window on the optimistic path. Documented inline rather than fixed.
-    - 2 regression tests (one per pattern) — both verified to fail on a temporary revert-and-retest pass before the PR was opened.
-- **New decisions, migrations, scoring changes:** none. No schema work. Regression anchors untouched (Pure Balance = 61, Temptations = 0).
-- **Files changed on `m9-bookmark-row-extract` (vs. `m5-complete@c99e669`):**
-  - `src/components/bookmarks/BookmarkRow.tsx` (new, 205 lines) — extracted row + `<PendingShimmer />` + `buildA11yLabel` + `<TrailingChip />` helpers + styles
-  - `src/utils/bookmarkRowState.ts` (new, 45 lines) — `deriveBookmarkRowState` pure helper + `BookmarkRowState` discriminated union
-  - `src/screens/BookmarksScreen.tsx` (−157 / +9) — imports extracted `BookmarkRow`, threads `onPress` callback, drops row-only styles + `getScoreColor`/`sanitizeBrand`/`stripBrandFromName` imports
-  - `src/stores/usePantryStore.ts` (+186 / −71) — 5 mutations patched; `logTreat` inline comment
-  - `src/stores/useTopMatchesStore.ts` (+17 / −6) — 2 methods patched
-  - `__tests__/utils/bookmarkRowState.test.ts` (new, 75 lines, 7 tests)
-  - `__tests__/stores/usePantryStore.test.ts` (new, 130 lines, 2 tests)
-  - `__tests__/stores/useTopMatchesStore.test.ts` (new, 97 lines, 2 tests)
-  - `__tests__/screens/BookmarksScreen.test.tsx` (+17 / 0) — pending shimmer render test + bypass-wins-over-pending test
-- **Numbers (all green):** 79 suites / **1665 tests** / 3 snapshots (+13 from 1652: 7 bookmarkRowState unit + 2 BookmarksScreen render + 2 pantry race + 2 topmatches race). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit` clean in `src/` + `__tests__/` (pre-existing noise in `docs/plans/search-uiux/` + `supabase/functions/batch-score/` only).
-- **Not done yet:**
-  - **On-device QA of all three commits:**
-    1. Shimmer cadence on a populated Bookmarks list — confirm quiet and not busy on 17 rows. If distracting, bump off-state from 0.4 → 0.5 or slow the cycle to 1.3 s in `PendingShimmer`.
-    2. Force a cache-miss (cold start after network flap) and confirm pending rows pulse while `pet_product_scores` JIT-rehydrates, flipping to scored pills one by one. VoiceOver should announce "score pending" on pulsing rows, "vet diet" on vet-diet rows (bypass precedence still intact).
-    3. Cross-pet race repro via fast PetHubScreen carousel tap during (a) AddToPantrySheet add, (b) EditPantryItemScreen save/restock/delete, (c) Top Matches refresh on HomeScreen — confirm no ghost rows from prior pet flash into the new pet's list.
-  - **`usePantryStore.logTreat` narrow window.** Flagged in inline comment but not fixed. Address if observed in on-device QA.
-  - **Carry items still open from session 60:** on-device VoiceOver QA on 11 bookmark/scan surfaces + 7 D-168 a11y-backfill surfaces; render-test hardening for near-cap amber `toHaveStyle` check; `batchScoreOnDevice` network-failure diagnosis at line 291.
-  - **Next M9 scope pick:** custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit (~17 rgba sites).
-- **Start the next session by:**
-  1. **`/boot`** — verify rolling window rotated: session 61 → Previous, new session → Last. `m5-complete` HEAD should be `3d61319`.
-  2. **On-device QA** of the three stacked commits — shimmer cadence, cache-miss force path, cross-pet race reproduction.
-  3. Pick one: (a) on-device findings from the QA pass; (b) `logTreat` narrow-window fix if flagged by QA; (c) next M9 scope.
-- **Gotchas / context for next session:**
-  - **Two race patterns are NOT one.** Bookmark / TopMatches (flat top-level state) and Pantry (per-pet `_petCache` + duplicated top-level `items`) are structurally different bugs. The advisor explicitly flagged against extracting a shared `withActivePetGuard` helper — one abstraction would hide the distinction. Pantry writes `_petCache[petId]` always, gates top-level on active. Bookmark/TopMatches skips the write entirely if not active. If you audit more stores, keep the two patterns separate.
-  - **`accessibilityElementsHidden` + `importantForAccessibility="no"` hide the view from `@testing-library/react-native` `findByTestId`.** Dropping those props is fine when the parent `TouchableOpacity`'s `accessibilityLabel` subsumes the child — per session-58 D-168 learning, children of a labeled wrapper don't need their own a11y props. Caught by the pending-shimmer render test failing until the props were removed.
-  - **Jest mocks for hanging promises: pre-create the Promise.** If a test needs a mid-await state switch, don't do `mockImplementationOnce(() => new Promise((resolve) => { resolveFn = resolve }))` — the executor only runs when the mock is called, which may be after an earlier `await`. Instead: `const hanging = new Promise((resolve) => { resolveFn = resolve; }); mock.mockImplementationOnce(() => hanging);`. Resolver is assigned synchronously on test setup.
-  - **Session 60's `batchScoreOnDevice.ts:291` network-failure gotcha** directly motivated the pending-shimmer work. If that re-hydrate ever fails silently again, rows correctly pulse now instead of showing `—`. Still worth a defensive fix on the service side.
-  - **Advisor was helpful on scope.** The session-60 handoff phrased option 3 as "port the guard" — a narrow/mechanical framing. Advisor caught that pantry and bookmarks are different patterns requiring different fixes, saved me from misapplying one abstraction to both. Keep consulting before substantive multi-site work.
-  - **`pid = get()._petId ?? petId` idiom in `usePantryStore` was almost-but-not-quite right.** It mostly "self-corrected" to the active pet, so top-level state wasn't visibly broken. The hidden bug was `_petCache[petId]` never being populated for the mutated pet — so switching back to that pet showed stale cache until a full refocus. If you audit any other store that reads `_petId` after a server await, the same trap applies.
-  - **All session-60 gotchas still apply:** `Colors.primary` doesn't exist (use `Colors.accent`); `SwipeableRow` is default export; `batchScoreHybrid` JIT is fire-and-forget for null-score cache; no toast utility; squash-merges lose the TDD trail (preserve fix-forward commits on the feature branch's `origin/` ref).
