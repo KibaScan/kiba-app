@@ -38,7 +38,29 @@ function lethalSpeciesPhrase(match: ToxicEntry, species: 'dog' | 'cat' | 'both')
 Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // ─── Auth: verify caller ──────────────────────────────────
+  // Without this, any authenticated user could pass any recipe_id and
+  // flip another user's `approved` recipe back to `pending_review`.
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'missing authorization' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
   let body: RecipePayload;
   try {
@@ -66,6 +88,24 @@ Deno.serve(async (req) => {
       status: 404,
       headers: { 'content-type': 'application/json' },
     });
+  }
+
+  // ─── Ownership + status guards ─────────────────────────────
+  // Callers can only validate their own recipes, and only while the recipe
+  // is still in the `pending` transient state (before auto-rejection or
+  // moderation). Defense-in-depth against future auth regressions and
+  // prevents demoting an approved recipe back to pending_review.
+  if (recipe.user_id !== user.id) {
+    return new Response(JSON.stringify({ error: 'not your recipe' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  if (recipe.status !== 'pending') {
+    return new Response(
+      JSON.stringify({ error: 'already validated', status: recipe.status }),
+      { status: 400, headers: { 'content-type': 'application/json' } },
+    );
   }
 
   // Toxic-ingredient scan
