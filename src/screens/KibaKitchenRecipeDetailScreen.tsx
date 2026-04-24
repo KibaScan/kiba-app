@@ -10,9 +10,13 @@
 //                   filter is_killed; we guard client-side)
 //   populated     → cover, title, badges, ingredients, prep steps
 //
-// "Report issue" overflow menu is stubbed — Task 27 wires SafetyFlagSheet.
-// score_flags.pet_id NOT NULL constraint means we can't naively map a recipe
-// flag to a row; Task 27 will solve the entry-point UX.
+// Task 27 update: the previously-stubbed "Report issue" overflow menu was
+// REMOVED rather than wired into SafetyFlagSheet. score_flags has FK
+// constraints on BOTH pet_id and product_id (migration 045), and a community
+// recipe has neither — it's a recipe UUID, not a product. The cleanest path
+// is to keep the schema honest: when a dedicated `recipe_flags` table or
+// equivalent surface exists, we'll re-add a recipe-aware report entry. Until
+// then, recipe concerns can route through Studio email / manual flow.
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -66,7 +70,6 @@ export default function KibaKitchenRecipeDetailScreen({
   const { recipeId } = route.params;
 
   const [state, setState] = useState<DetailState>({ status: 'loading' });
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,17 +95,11 @@ export default function KibaKitchenRecipeDetailScreen({
     };
   }, [recipeId]);
 
-  const handleReportPress = () => {
-    setMenuOpen(false);
-    // Task 27 will replace this with SafetyFlagSheet once the recipe-flag
-    // entry-point UX is settled (score_flags.pet_id NOT NULL prevents a
-    // naive 1:1 mapping). Stubbed per Task 25 spec.
-    // eslint-disable-next-line no-console
-    console.warn('TODO Task 27: recipe report flow');
-  };
-
-  // Header is rendered the same regardless of state so back/menu always work.
-  const renderHeader = (showOverflow: boolean) => (
+  // Header is rendered the same regardless of state so back always works.
+  // Overflow menu was removed in Task 27 (see file header comment) — recipes
+  // can't satisfy score_flags' product_id FK, so the entry was deleted rather
+  // than wired with a sentinel-product hack.
+  const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity
         onPress={() => navigation.goBack()}
@@ -113,29 +110,14 @@ export default function KibaKitchenRecipeDetailScreen({
         <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Recipe</Text>
-      {showOverflow ? (
-        <TouchableOpacity
-          onPress={() => setMenuOpen((v) => !v)}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="More options"
-        >
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={24}
-            color={Colors.textPrimary}
-          />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.headerSpacer} />
-      )}
+      <View style={styles.headerSpacer} />
     </View>
   );
 
   if (state.status === 'loading') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {renderHeader(false)}
+        {renderHeader()}
         <DetailShimmer />
       </View>
     );
@@ -144,7 +126,7 @@ export default function KibaKitchenRecipeDetailScreen({
   if (state.status === 'missing') {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {renderHeader(false)}
+        {renderHeader()}
         <View style={styles.missingCard}>
           <Ionicons
             name="close-circle-outline"
@@ -176,25 +158,7 @@ export default function KibaKitchenRecipeDetailScreen({
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {renderHeader(true)}
-
-      {menuOpen && (
-        <View style={styles.menu}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={handleReportPress}
-            accessibilityRole="button"
-            accessibilityLabel="Report issue"
-          >
-            <Ionicons
-              name="flag-outline"
-              size={18}
-              color={Colors.severityRed}
-            />
-            <Text style={styles.menuItemText}>Report issue</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {renderHeader()}
 
       <ScrollView
         style={styles.scroll}
@@ -337,32 +301,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headerSpacer: { width: 24 },
-
-  // Overflow menu
-  menu: {
-    position: 'absolute',
-    right: Spacing.lg,
-    top: Spacing.xxl + Spacing.lg,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 12,
-    paddingVertical: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.hairlineBorder,
-    zIndex: 10,
-    minWidth: 160,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  menuItemText: {
-    fontSize: FontSizes.md,
-    color: Colors.severityRed,
-    fontWeight: '600',
-  },
 
   // Scroll
   scroll: { flex: 1 },

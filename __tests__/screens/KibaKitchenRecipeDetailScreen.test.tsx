@@ -147,19 +147,19 @@ describe('KibaKitchenRecipeDetailScreen', () => {
     expect(banners).toHaveLength(2);
   });
 
-  it('overflow menu shows "Report issue" and warns Task 27 stub when tapped', async () => {
+  it('overflow menu is absent — recipe report path was removed in Task 27', async () => {
+    // Task 27 deleted the "Report issue" entry from this screen rather than
+    // wiring SafetyFlagSheet with a sentinel product_id. score_flags has FK
+    // constraints on both pet_id and product_id, and a community recipe
+    // satisfies neither cleanly. Recipe concerns route through Studio email
+    // / manual flow until a dedicated recipe_flags surface lands.
     mockedRecipe.fetchRecipeById.mockResolvedValue(APPROVED_RECIPE);
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-
-    const { findByLabelText, getByLabelText } = renderScreen();
+    const { queryByLabelText } = renderScreen();
     await flush();
 
-    fireEvent.press(await findByLabelText(/More options/i));
-    fireEvent.press(getByLabelText(/Report issue/i));
-
-    expect(warnSpy).toHaveBeenCalledWith('TODO Task 27: recipe report flow');
-    warnSpy.mockRestore();
+    expect(queryByLabelText(/More options/i)).toBeNull();
+    expect(queryByLabelText(/Report issue/i)).toBeNull();
   });
 
   it('back button on missing-state goes back', async () => {
