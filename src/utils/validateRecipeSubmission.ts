@@ -1,4 +1,5 @@
 import toxicFoods from '../data/toxic_foods.json';
+import type { ToxicEntry } from '../types/toxic';
 
 export interface RecipeSubmission {
   title: string;
@@ -12,13 +13,6 @@ export type ValidationResult = { valid: true } | { valid: false; reason: string 
 
 const UPVM_REGEX =
   /\b(cure|prevent|diagnose|((helps with|good for|treats)\s+(?:\S+\s+)*?(disease|condition|allergy|arthritis|kidney|liver|cancer|diabetes|seizure)))\b/i;
-
-interface ToxicEntry {
-  id: string;
-  name: string;
-  alt_names: string[];
-  species_severity: { dog: 'toxic' | 'caution' | 'safe'; cat: 'toxic' | 'caution' | 'safe' };
-}
 
 function findToxicMatch(
   ingredientName: string,
