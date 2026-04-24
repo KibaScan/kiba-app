@@ -1,10 +1,11 @@
-// Kiba — Community Tab (M9, Task 20 + Task 25 + Task 26)
+// Kiba — Community Tab (M9, Task 20 + Task 25 + Task 26 + Task 30)
 // Real shell layout per spec §3:
 //   XPRibbon  ·  FeaturedRecipeHero  ·  RecallBanner
-//   DiscoveryGrid (placeholder)  ·  BlogCarousel  ·  SubredditFooter
+//   DiscoveryGrid  ·  BlogCarousel  ·  SubredditFooter
 //
 // XPRibbon respects D-070 (subtle, not hero). Zero emoji per D-084 — Ionicons.
-// DiscoveryGrid is still an inert placeholder; Task 30 will replace it.
+// DiscoveryGrid is the 2x2 tile grid (Task 30) — Toxic Database, Vendor
+// Directory, Kiba Index Highlights, Safety Flags.
 // BlogCarousel self-fetches and collapses to null on empty/offline.
 
 import React from 'react';
@@ -17,6 +18,7 @@ import { RecallBanner } from '../components/community/RecallBanner';
 import { SubredditFooter } from '../components/community/SubredditFooter';
 import { FeaturedRecipeHero } from '../components/community/FeaturedRecipeHero';
 import { BlogCarousel } from '../components/community/BlogCarousel';
+import { DiscoveryGrid } from '../components/community/DiscoveryGrid';
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
@@ -38,8 +40,7 @@ export default function CommunityScreen() {
 
         <RecallBanner />
 
-        {/* DiscoveryGrid — Task 30 */}
-        <View style={{ height: 0 }} />
+        <DiscoveryGrid />
 
         <BlogCarousel />
 
