@@ -44,6 +44,14 @@ import CategoryTopPicksScreen from '../screens/CategoryTopPicksScreen';
 import BookmarksScreen from '../screens/BookmarksScreen';
 import ScanHistoryScreen from '../screens/ScanHistoryScreen';
 import CustomFeedingStyleScreen from '../screens/CustomFeedingStyleScreen';
+import KibaKitchenFeedScreen from '../screens/KibaKitchenFeedScreen';
+import KibaKitchenSubmitScreen from '../screens/KibaKitchenSubmitScreen';
+import KibaKitchenRecipeDetailScreen from '../screens/KibaKitchenRecipeDetailScreen';
+import ToxicDatabaseScreen from '../screens/ToxicDatabaseScreen';
+import VendorDirectoryScreen from '../screens/VendorDirectoryScreen';
+import BlogListScreen from '../screens/BlogListScreen';
+import BlogDetailScreen from '../screens/BlogDetailScreen';
+import SafetyFlagsScreen from '../screens/SafetyFlagsScreen';
 import { useAppStore } from '../stores/useAppStore';
 import {
   HomeStackParamList,
@@ -85,6 +93,14 @@ function CommunityStackScreen() {
       <CommunityStack.Screen name="Result" component={ResultScreen} />
       <CommunityStack.Screen name="RecallDetail" component={RecallDetailScreen} />
       <CommunityStack.Screen name="Compare" component={CompareScreen} />
+      <CommunityStack.Screen name="KibaKitchenFeed" component={KibaKitchenFeedScreen} />
+      <CommunityStack.Screen name="KibaKitchenSubmit" component={KibaKitchenSubmitScreen} />
+      <CommunityStack.Screen name="KibaKitchenRecipeDetail" component={KibaKitchenRecipeDetailScreen} />
+      <CommunityStack.Screen name="ToxicDatabase" component={ToxicDatabaseScreen} />
+      <CommunityStack.Screen name="VendorDirectory" component={VendorDirectoryScreen} />
+      <CommunityStack.Screen name="BlogList" component={BlogListScreen} />
+      <CommunityStack.Screen name="BlogDetail" component={BlogDetailScreen} />
+      <CommunityStack.Screen name="SafetyFlags" component={SafetyFlagsScreen} />
     </CommunityStack.Navigator>
   );
 }
