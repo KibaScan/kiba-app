@@ -43,6 +43,8 @@ import * as recipeService from '../../src/services/recipeService';
 import * as blogService from '../../src/services/blogService';
 import type { XPSummary } from '../../src/types/xp';
 import type { RecentRecall } from '../../src/services/communityService';
+import type { CommunityRecipe } from '../../src/types/recipe';
+import type { BlogPost } from '../../src/services/blogService';
 
 const mockedXp = xpService as jest.Mocked<typeof xpService>;
 const mockedCommunity = communityService as jest.Mocked<typeof communityService>;
@@ -80,6 +82,48 @@ const RECALL_FIXTURE: RecentRecall = {
   brand: 'Brand X',
   name: 'Recalled Kibble',
 };
+
+const POPULATED_RECIPE: CommunityRecipe = {
+  id: 'r-1',
+  user_id: 'u-1',
+  title: 'Pumpkin Coconut Bites',
+  subtitle: 'A sweet seasonal treat',
+  species: 'dog',
+  life_stage: 'adult',
+  ingredients: [{ name: 'Pumpkin puree', quantity: 1, unit: 'cup' }],
+  prep_steps: ['Mix and chill.'],
+  cover_image_url: 'https://example.com/cover.jpg',
+  status: 'approved',
+  rejection_reason: null,
+  is_killed: false,
+  created_at: '2026-04-23T10:00:00Z',
+  reviewed_at: '2026-04-23T10:30:00Z',
+};
+
+const POPULATED_POSTS: BlogPost[] = [
+  {
+    id: 'post-1',
+    title: 'Why grain-free is not a magic bullet',
+    subtitle: 'A sober look at DCM headlines.',
+    cover_image_url: 'https://example.com/grain.jpg',
+    body_markdown: '# Body',
+    published_at: '2026-04-22T10:00:00Z',
+    is_published: true,
+    created_at: '2026-04-22T10:00:00Z',
+    updated_at: '2026-04-22T10:00:00Z',
+  },
+  {
+    id: 'post-2',
+    title: 'Reading guaranteed analysis like a pro',
+    subtitle: 'What the percentages actually tell you.',
+    cover_image_url: null,
+    body_markdown: 'body',
+    published_at: '2026-04-21T10:00:00Z',
+    is_published: true,
+    created_at: '2026-04-21T10:00:00Z',
+    updated_at: '2026-04-21T10:00:00Z',
+  },
+];
 
 async function flush() {
   await act(async () => {
@@ -198,5 +242,126 @@ describe('CommunityScreen', () => {
     expect(footer).toBeTruthy();
     fireEvent.press(footer);
     expect(openURLSpy).toHaveBeenCalledWith('https://reddit.com/r/kibascan');
+  });
+
+  // ─── Final assembly: full populated + full empty matrix (Task 31) ────────
+
+  it('renders all 6 sections in order when populated', async () => {
+    mockedXp.fetchXPSummary.mockResolvedValue(POPULATED_XP);
+    mockedCommunity.fetchRecentRecalls.mockResolvedValue([
+      RECALL_FIXTURE,
+      { ...RECALL_FIXTURE, product_id: 'prod-2', name: 'Another' },
+    ]);
+    mockedRecipe.fetchApprovedRecipes.mockResolvedValue([POPULATED_RECIPE]);
+    mockedBlog.fetchPublishedPosts.mockResolvedValue(POPULATED_POSTS);
+
+    const { findByText, getByText } = render(<CommunityScreen />);
+    await flush();
+
+    // 1. XPRibbon — level + XP visible (signature copy from POPULATED_XP)
+    expect(await findByText(/Lv\.\s*7/)).toBeTruthy();
+    expect(getByText(/2,340 XP/)).toBeTruthy();
+
+    // 2. FeaturedRecipeHero — populated card shows recipe title
+    expect(getByText('Pumpkin Coconut Bites')).toBeTruthy();
+
+    // 3. RecallBanner — pluralized count anchors the banner
+    expect(getByText(/2 recent recalls — tap to review/i)).toBeTruthy();
+
+    // 4. DiscoveryGrid — section header + all 4 tile titles
+    expect(getByText('Discover')).toBeTruthy();
+    expect(getByText('Toxic Database')).toBeTruthy();
+    expect(getByText('Vendor Directory')).toBeTruthy();
+    expect(getByText('Kiba Index Highlights')).toBeTruthy();
+    expect(getByText('Safety Flags')).toBeTruthy();
+
+    // 5. BlogCarousel — eyebrow + at least one post title from fixture
+    expect(getByText('READ')).toBeTruthy();
+    expect(getByText('Why grain-free is not a magic bullet')).toBeTruthy();
+
+    // 6. SubredditFooter — pressable invite copy
+    expect(getByText(/r\/kibascan/)).toBeTruthy();
+  });
+
+  it('renders gracefully in fully empty state', async () => {
+    mockedXp.fetchXPSummary.mockResolvedValue(EMPTY_XP);
+    mockedCommunity.fetchRecentRecalls.mockResolvedValue([]);
+    // beforeEach already sets recipes/blog/highlights to [] — leave defaults.
+
+    const { findByText, queryByText, getByText } = render(<CommunityScreen />);
+    await flush();
+
+    // XPRibbon — onboarding copy (zero-XP branch).
+    expect(
+      await findByText(/Scan your first product to start earning XP/),
+    ).toBeTruthy();
+
+    // FeaturedRecipeHero — "Submit the first recipe" CTA on empty.
+    expect(getByText(/Submit the first recipe/i)).toBeTruthy();
+
+    // RecallBanner — hidden when no recalls.
+    expect(queryByText(/recent recall/i)).toBeNull();
+
+    // DiscoveryGrid — always shown (4 tiles, even with no data).
+    expect(getByText('Discover')).toBeTruthy();
+    expect(getByText('Toxic Database')).toBeTruthy();
+    expect(getByText('Vendor Directory')).toBeTruthy();
+    expect(getByText('Kiba Index Highlights')).toBeTruthy();
+    expect(getByText('Safety Flags')).toBeTruthy();
+
+    // BlogCarousel — collapses to null on []. No eyebrow, no see-all chip.
+    expect(queryByText('READ')).toBeNull();
+    expect(queryByText(/See all/i)).toBeNull();
+
+    // SubredditFooter — always present.
+    expect(getByText(/r\/kibascan/)).toBeTruthy();
+  });
+
+  it('hides BlogCarousel cleanly when 0 posts (no stranded eyebrow / chip)', async () => {
+    mockedXp.fetchXPSummary.mockResolvedValue(POPULATED_XP);
+    mockedCommunity.fetchRecentRecalls.mockResolvedValue([]);
+    mockedRecipe.fetchApprovedRecipes.mockResolvedValue([POPULATED_RECIPE]);
+    mockedBlog.fetchPublishedPosts.mockResolvedValue([]);
+
+    const { findByText, queryByText, getByText } = render(<CommunityScreen />);
+    await flush();
+
+    // Sanity: ribbon + hero + grid + footer are present so the carousel is
+    // the only collapsed surface.
+    expect(await findByText(/Lv\.\s*7/)).toBeTruthy();
+    expect(getByText('Pumpkin Coconut Bites')).toBeTruthy();
+    expect(getByText('Discover')).toBeTruthy();
+    expect(getByText(/r\/kibascan/)).toBeTruthy();
+
+    // Carousel-specific surface markers must be gone.
+    expect(queryByText('READ')).toBeNull();
+    expect(queryByText(/See all/i)).toBeNull();
+    // No shimmer either — carousel resolved to null, not loading.
+    expect(queryByText(/Loading/i)).toBeNull();
+  });
+
+  it('recall banner hides when 0 recalls but DiscoveryGrid + others stay', async () => {
+    mockedXp.fetchXPSummary.mockResolvedValue(POPULATED_XP);
+    mockedCommunity.fetchRecentRecalls.mockResolvedValue([]);
+    mockedRecipe.fetchApprovedRecipes.mockResolvedValue([POPULATED_RECIPE]);
+    mockedBlog.fetchPublishedPosts.mockResolvedValue(POPULATED_POSTS);
+
+    const { findByText, queryByText, getByText } = render(<CommunityScreen />);
+    await flush();
+
+    // RecallBanner — silent on []. No partial-empty cascade.
+    expect(queryByText(/recent recall/i)).toBeNull();
+
+    // Every other section remains intact.
+    expect(await findByText(/Lv\.\s*7/)).toBeTruthy();             // XPRibbon
+    expect(getByText('Pumpkin Coconut Bites')).toBeTruthy();        // Recipe
+    expect(getByText('Discover')).toBeTruthy();                     // DiscoveryGrid header
+    expect(getByText('Toxic Database')).toBeTruthy();               // Tile 1
+    expect(getByText('Vendor Directory')).toBeTruthy();             // Tile 2
+    expect(getByText('Kiba Index Highlights')).toBeTruthy();        // Tile 3
+    expect(getByText('Safety Flags')).toBeTruthy();                 // Tile 4
+    expect(getByText('READ')).toBeTruthy();                         // BlogCarousel
+    expect(getByText('Why grain-free is not a magic bullet')).toBeTruthy();
+    expect(getByText(/r\/kibascan/)).toBeTruthy();                  // Footer
   });
 });
