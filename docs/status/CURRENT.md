@@ -28,7 +28,7 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 - **Tests:** 1886 passing / 105 suites
 - **Decisions:** 132
-- **Migrations:** 49 (001–049 — 041–049 NOT yet applied to staging; Docker was unavailable during dev. Apply via `npx supabase db push`.)
+- **Migrations:** 49 (001–049 — **all applied to live DB** as of session 64; 039+040 were manually applied earlier and reconciled via `migration repair`)
 - **Products:** 19,058 (483 vet diets, 1716 supplemental-flagged)
 
 ## Regression Anchors
@@ -68,8 +68,49 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
 
 ## Last Session
 
+- **Date:** 2026-04-23 (session 64 — M9 Community deployment: migrations applied to live DB, Edge Function deployed, expo-crypto runtime fix, README update)
+- **Branch:** `m9-community` (PR #18 still open against `main`). Two substantive commits on top of session 63's `b94d0b1` plus this handoff:
+  - `db94bfa` — `M9 community: drop expo-crypto native dep — use globalThis.crypto.randomUUID`
+  - `ea9de4d` — `M9 community: update migrations README — 49 migrations + M9 Community section + 040 backfill`
+- **Files changed this session:**
+  - `src/services/recipeService.ts` — replaced `Crypto.randomUUID` (expo-crypto) with `globalThis.crypto.randomUUID` + RFC-4122 v4 fallback. Mirrors `pushService.ts:25` pattern.
+  - `__tests__/services/recipeService.test.ts` — swapped `jest.mock('expo-crypto', ...)` for a `beforeEach` that pins the global. 18/18 still pass.
+  - `supabase/migrations/README.md` — count 39→49, added missing `040_bookmarks` row, added full "M9 Community (041–049)" block with per-migration schema notes.
+  - `docs/status/CURRENT.md` — Numbers block updated (migration apply state) + this handoff.
+- **Accomplished:**
+  - **Migrations 041–049 applied to live DB** (`jvvdghwbikwrzrowmlmt` — KibaScan's Project, the only project linked to this repo). `npx supabase db push --linked` ran cleanly in one transaction. **XP triggers are now LIVE** on `scan_history` + `kiba_index_votes` — every new scan/vote starts writing `user_xp_events` immediately.
+  - **Migration history repair on 039 + 040.** Steven manually applied `039_wet_intent_resolved_at` + `040_bookmarks` via Studio's SQL editor previously (M5 011-019 pattern documented in CLAUDE.md). Ran `npx supabase migration repair --status applied 039 040 --linked` BEFORE `db push` to mark them applied without re-execution. `migration list --linked` now shows 001–049 all applied AND present locally.
+  - **`validate-recipe` Edge Function deployed.** All 3 assets uploaded: `index.ts`, `deno.json`, `toxic_foods.json`. Live at `https://jvvdghwbikwrzrowmlmt.supabase.co/functions/v1/validate-recipe`. The toxic JSON was already in sync with `src/data/toxic_foods.json` (verified via `diff -q` before deploy).
+  - **Runtime expo-crypto fix-forward** — emulator hit `[runtime not ready]: Cannot find native module 'ExpoCrypto'` because Task 15 added the dep after the existing dev client was built. Switched `recipeService.submitRecipe` to use `globalThis.crypto.randomUUID()` (native in Hermes / RN 0.74+) with an RFC-4122 v4 `Math.random()` fallback. `expo-crypto` left in `package.json` as harmless-when-unused. Reload-Metro-only fix; no native rebuild required.
+  - **`supabase/migrations/README.md`** got the missing `040_bookmarks.sql` row (D-169) plus a complete new "M9 Community (041–049)" block documenting client-supplied UUID rationale, SELECT-only RLS + trigger-write pattern, RLS WITH CHECK pinning, SECURITY DEFINER discipline, storage-bucket-via-SQL milestone, and the timezone re-anchor on 048.
+- **No new decisions, scoring changes, or migrations this session.** D-170 is still the latest decision (recorded in session 63). 132 decisions, 49 migrations.
+- **Numbers (all green at HEAD before this handoff commit `ea9de4d`):** 105 suites / **1886 tests** / 3 snapshots (unchanged from session 63 — fix-forward swapped a mock; 0 net new tests). 132 decisions. **49 migrations applied to live DB** (state change — was unapplied at end of session 63). 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit`: 11 lines (pre-existing structural `supabase/functions/batch-score/scoring/` Deno noise only — `src/` + `__tests__/` clean).
+- **Not done yet:**
+  - **Vendor data curation.** `docs/data/vendors.json` is still `{"vendors": []}` placeholder. Until Steven curates it and runs `npm run seed:vendors`, Vendor Directory shows the empty-state copy and the ResultScreen "Contact {brand}" overflow item never appears.
+  - **First blog post via Studio.** BlogCarousel renders nothing until at least one row exists in `blog_posts` with `is_published=true`.
+  - **First approved recipe via Studio.** FeaturedRecipeHero shows "Submit the first recipe" CTA until a row in `community_recipes` flips to `status='approved'`.
+  - **On-device QA per `docs/qa/2026-04-23-m9-community-qa.md`.** Migration apply + Edge Function deploy items are now done; smoke check (test scan → `user_xp_totals` updates) + the 12-item app walk-through remain.
+  - **PR #18 merge.** Open against `main`, awaiting on-device QA + Steven's final review.
+  - **Future surface:** `recipe_flags` table + Kitchen detail "Report issue" rewire (D-170 placeholder).
+- **Start the next session by:**
+  1. **`/boot`** — verify rolling window rotated: session 63 → Previous, this session → Last. `m9-community` HEAD should be the handoff commit landing this rotation (one above `ea9de4d`).
+  2. **First-priority on-device QA item:** scan a real product, then check Studio → `user_xp_totals WHERE user_id = <your uid>`. Should show `total_xp = 10` (or 60 for first-discovery scan) + `streak_current_days = 1` + `streak_last_scan_date = today`. If the trigger silently fails, that's the SECURITY DEFINER ownership concern materialized — debug before declaring M9 done.
+  3. Curate `docs/data/vendors.json` + `npm run seed:vendors`. Author 1 blog post via Studio. Submit + approve 1 recipe (chocolate test should auto-reject; clean recipe should land in `pending_review`).
+  4. Pick whichever next item is highest-priority (or merge PR #18 + close M9 if QA is clean).
+- **Gotchas / context for next session:**
+  - **XP triggers are LIVE on production.** Existing users' new scans + Kiba Index votes will start writing `user_xp_events` immediately. Old scans don't backfill. If you ever need to wipe a test user's XP for re-testing: `DELETE FROM user_xp_events WHERE user_id = $1; UPDATE user_xp_totals SET total_xp = 0, scans_count = 0, discoveries_count = 0, contributions_count = 0, streak_current_days = 0, streak_last_scan_date = NULL WHERE user_id = $1;` — but the event ledger is meant to be append-only, so be careful in production.
+  - **Migration repair is the right tool when "applied via Studio" drift surfaces.** `npx supabase migration repair --status applied <version> --linked` updates only the migration history (no SQL re-run). Safe AS LONG AS the schema actually matches what the migration file would have produced. If unsure, dump the schema first.
+  - **`expo-crypto` left in `package.json` despite being unused** — harmless when no JS code imports it (no native registration attempt). Removing it requires `npm uninstall expo-crypto` + lockfile churn + a fresh dev client build. Defer until next dependency cleanup.
+  - **`supabase db diff` requires Docker** for the shadow database — it failed with "Cannot connect to Docker daemon" this session. Use `supabase migration list --linked` for a quick "what's applied vs local" read-only check instead; no Docker needed.
+  - **`supabase functions deploy` works without Docker.** Schema sync needs Docker for the shadow DB diff path, but Edge Function deploy is just an asset upload over the API.
+  - **The dev client may still need a rebuild.** This session's `globalThis.crypto.randomUUID()` swap removed the JS-side `expo-crypto` import, which fixes the immediate `[runtime not ready]` error. But if the previous dev client was built after `expo-crypto` was added to `package.json`, native autolinking may have already registered ExpoCrypto. Reload Metro with `--clear`; if the error persists on cold launch, do a full `npx expo prebuild` + native rebuild.
+  - **All session 63 gotchas still apply** — `recipe_flags` deferral, `vendors.json` placeholder, `react-native-marked` is the chosen markdown renderer, recipe images use client-supplied UUIDs.
+  - **Rolling window:** session 62 dropped, session 63 demoted to Previous, this session takes Last.
+
+## Previous Session
+
 - **Date:** 2026-04-23 (session 63 — M9 Community shipped: full Community tab rebuild — XP engine, Kiba Kitchen, Vendor Directory, Toxic Database, Blog, Safety Flags)
-- **Branch:** `m9-community` off `m5-complete@3a99e32`. 43 commits + this handoff doc commit. PR open against `main`.
+- **Branch:** `m9-community` off `m5-complete@3a99e32`. 43 commits + the session-63 handoff doc commit. PR opened against `main`.
 - **Final code SHA before handoff doc commit:** `65dfcdd` (CommunityScreen final assembly + populated/empty render tests, Phase 11 close).
 - **Accomplished — full 11-phase / 32-task plan executed:**
   - **Spec:** `docs/superpowers/specs/2026-04-23-community-screen-design.md` (4 review-rounds: initial draft + Gemini reference artifacts + spec patches from second-pass review + third-pass review patches before dispatch).
@@ -119,56 +160,3 @@ See `ROADMAP.md` `## Current Status` for the full M0–M8 completed list. M9 hig
   - **All session-62 gotchas still apply.**
   - **Rolling window:** session 61 dropped, session 62 demoted to Previous, this session 63 takes Last.
 
-## Previous Session
-
-- **Date:** 2026-04-23 (session 62 — Multi-agent cleanup: Phase 1 dead-code sweep + Phase 2 eight-screen file-split refactor; both phases merged)
-- **Merges on `m5-complete`:**
-  - `bc683b0` — PR #16 "M9 dead-code sweep — knip + manual targets" (squash of 11 per-agent + fix-forward commits on `m9-deadcode-sweep`). Ultrareview returned 2 nits, both fix-forwarded.
-  - `3a99e32` — PR #17 "M9 refactor — 8 parallel screen file-splits" (squash of 10 per-agent + fix-forward commits on `m9-screen-splits`). Follows `bc683b0`. Ultrareview returned 3 nits, all fix-forwarded.
-  Both feature branches deleted locally + remote via `gh pr merge --squash --delete-branch`.
-- **Accomplished — full Brainstorming → Writing-Plans → Subagent-Driven Development → 2 Gemini review rounds → 2 Ultrareview burns → 2 Merges loop:**
-  - **Spec:** `docs/superpowers/specs/2026-04-22-multi-agent-cleanup-design.md` — two sequential passes, each with its own branch + ultrareview. Integrated two rounds of external review feedback before dispatch (mechanical fixes to knip entry config, tsc gate semantics, macOS `grep -P` → `grep -E`, jest `--maxWorkers=1`, `node -e "require.resolve(...)"` not `require()`).
-  - **Plan:** `docs/superpowers/plans/2026-04-22-multi-agent-cleanup.md` — 13 tasks across 2 phases.
-  - **Phase 1 (dead-code sweep, serialized D1 → A → B → C → D2):** installed `knip@^6.6.1` + `knip.json` tuned for RN/Expo (babel.config.js, metro.config.js, app.json, `*.config.{js,ts,cjs,mjs}` as `entry`; test files in `entry` not `project`; `ignoreDependencies` for `babel-preset-expo` + `babel-plugin-transform-import-meta` because they're string-referenced in `babel.config.js`). Fresh knip report ran between each agent to catch cascading dead-code. Final Phase 1 delta: `docs/plans/search-uiux/` deleted (10 files causing 68 pre-existing tsc errors), `src/components/ScanHistoryCard.tsx` deleted (zero live callers; `ScanHistoryScreen` inlines its rendering), 4 stale-doc references to ScanHistoryCard cleaned up (CLAUDE.md, DECISIONS.md D-168 list ×3, `.agent/workflows/legacy-token-migration.md`, `.claude/agents/kiba-code-reviewer.md`), 64 `export` keywords removed across 30 src/** files (keyword-only), 3 unused deps removed (`@expo/ngrok`, `patch-package`, `ts-jest` → 917 lockfile lines dropped). Ultrareview fix-forward additionally deleted 6 truly-dead symbols (`computeDER`, `unregisterPushToken`, `MOISTURE_THRESHOLD`, `BREED_MODIFIER_CAP`, `scanButton`, `hepaticWarning`) + 4 orphaned imports + 1 duplicate `DECISIONS.md` PantryCard bullet (introduced by an Agent A fix-forward that replaced the ScanHistoryCard line instead of deleting it).
-  - **Phase 2 (refactor — 8 screens file-split):**
-    - First attempt used `Agent({isolation: "worktree"})` in parallel. **The harness rooted worktrees off stale ancestor commit `e6c8069`** (pre-M9 state), so 3 agents that succeeded reported 70/1588 tests (pre-M9 count). Abandoned — nuked 8 worktrees + branches.
-    - Second attempt dispatched 8 agents **serially in the main working tree** on `m9-screen-splits`, one at a time, sonnet model each. Wall-clock ~60 min total. `madge@^8.0.0` installed for circular-import verification (Rule 8). Baseline at `/tmp/kiba-tsc-baseline.txt` (absolute path — originally for worktree agents; serial approach didn't need it but plan retained).
-    - Per-screen deltas (parent LOC before → after / extract count):
-      - `SafeSwitchDetailScreen`: **1226 → 823 (−403)**, 5 extracts → `src/components/safeSwitch/`
-      - `EditPantryItemScreen`: **1222 → 1167 (−55)**, 1 extract → `src/components/pantry/edit/` + helpers → `src/utils/editPantryItemHelpers.ts`, test import updated. Agent timed out mid-work; partial state was consistent + gate-green, salvaged per Rule 7.
-      - `HomeScreen`: **1214 → 581 (−633)**, 9 extracts → `src/components/home/`
-      - `ResultScreen`: **1122 → 1049 (−73)**, 3 extracts → `src/components/result/`, intentionally conservative — skipped score ring / bypass banners / Kiba Index per Rule 7 escape hatch (highest-stakes screen)
-      - `EditPetScreen`: **1083 → 538 (−545)**, 5 extracts → `src/components/pet/edit/`
-      - `PetHubScreen`: **1069 → 712 (−357)**, 5 extracts → `src/components/pethub/`
-      - `CompareScreen`: **1055 → 440 (−615)**, 6 extracts → `src/components/compare/`
-      - `PantryScreen`: **1041 → 590 (−451)**, 6 extracts → `src/components/pantry/list/` + helpers → `src/utils/pantryScreenHelpers.ts`, test import + cross-import fix in `EditPantryItemScreen` (it previously imported `shouldShowD157Nudge` from `PantryScreen`)
-    - `kiba-code-reviewer` pre-flight found **4 D-168 a11y gaps** pre-existing in originals but crystallized into new prop interfaces (`SearchResultsList` + `CompareOtherPets` + `ComparisonCard` missing `petName` prop + `accessibilityLabel`) + **2 D-094 → D-095/D-168 comment drift fixes** in `CompareProductHeader` / `CompareNutrition`. All fix-forwarded.
-    - `/ultrareview` (PR #17) flagged **3 nits**: `BookmarksSection` dead `activePetId` prop (HomeScreen's `handleBookmarkCardPress` already closed over it), `FedThisTodayActionCard.tsx` orphan (Agent 2 timeout artifact — wired in per Option A), `ProductImageBlock` 8px margin drift (`marginBottom: 16` literal vs original `Spacing.lg` = 24). All fix-forwarded.
-  - **Screen total: 9032 → 5900 LOC (−3,132, −35%).** Plus ~3,400 lines removed from Phase 1 dead-code + lockfile cleanup.
-- **New decisions, migrations, scoring changes:** none. No schema work. Regression anchors untouched (Pure Balance = 61, Temptations = 0). Scoring engine (`src/services/scoring/`) and `src/utils/permissions.ts` not modified.
-- **New tooling kept in repo:** `knip@^6.6.1` (devDep) + `knip.json` config — available for future dead-code sweeps. `madge@^8.0.0` (devDep) — available for future circular-import verification.
-- **Key new subfolders created in `src/components/`:** `home/` (9 files), `safeSwitch/` (5 files), `pet/edit/` (5 files), `compare/` (6 new files in existing folder), `pethub/` (5 files), `pantry/list/` (6 files), `pantry/edit/` (1 file), `result/` (3 new files). Plus `src/utils/editPantryItemHelpers.ts` + `src/utils/pantryScreenHelpers.ts`.
-- **Numbers (all green at HEAD `3a99e32`):** 79 suites / **1665 tests** (unchanged — refactor preserved all test logic; only `import` paths in 2 test files changed per Rule 4). 131 decisions. 40 migrations. 19,058 products. Pure Balance = 61, Temptations = 0. `npx tsc --noEmit`: 11 lines (structural `batch-score/scoring/` Deno noise only — search-uiux noise eliminated). `npx madge --circular src/`: zero cycles across 199+ files.
-- **Not done yet:**
-  - **`SafeSwapSection.tsx` scattered paywall checks** — pre-existing but flagged in Phase 2 ultrareview. Dedicated `permissions.ts` audit pass needed to pull `canUseSafeSwaps`/`canCompare` calls back to callsite.
-  - **Hardcoded `#FFFFFF` literals in a few extracts** (pre-existing patterns from originals) — candidate for future design-token sweep.
-  - **Session 61 carry-items still open:** on-device QA of shimmer cadence / cache-miss force path / cross-pet race reproduction; `usePantryStore.logTreat` narrow revert-window fix; VoiceOver QA on 11 bookmark/scan + 7 D-168 a11y-backfill surfaces; render-test hardening for near-cap amber `toHaveStyle` check; `batchScoreOnDevice.ts:291` network-failure diagnosis.
-  - **Matte Premium ~17 rgba alpha sites** — explicitly deferred per CURRENT.md guidance.
-  - **`pantryService.ts` (1080 LOC) + `pantryHelpers.ts` (860 LOC) domain-split** — different refactor shape, separate session.
-  - **Next M9 scope pick:** custom icon rollout (5 pending v2 bold variants), stale browse scores form-aware fix, broader Matte Premium alpha audit.
-- **Start the next session by:**
-  1. **`/boot`** — verify rolling window rotated: session 62 → Previous, new session → Last. `m5-complete` HEAD should be `3a99e32` or newer.
-  2. Pick one: (a) session 61 carry-items (shimmer QA, logTreat, VoiceOver); (b) `permissions.ts` audit (SafeSwapSection scatter); (c) `pantryService`/`pantryHelpers` domain-split.
-
-  On-device smoke check of the 8 refactored screens (session 62) came back clean — dropped from the queue.
-- **Gotchas / context for next session:**
-  - **`Agent` tool `isolation: "worktree"` roots off a stale ancestor, NOT current HEAD.** Experimentally verified this session: worktrees created off `e6c8069` despite current branch at `0795596`. 3 partial-success agents reported 70/1588 tests (pre-M9). If you need worktree isolation in the future, verify each worktree's `git log -1` matches your expected base BEFORE trusting its output. For refactors that need current HEAD, dispatch **serially in the main tree** — wall-clock ~60 min for 8 agents was acceptable.
-  - **Stream idle timeout on long agents is a real risk.** Agent 2 (EditPantryItemScreen) timed out at 32 tool uses with "API Error: Stream idle timeout - partial response received". Partial state on disk was consistent and gate-green, so we salvaged it per Rule 7. Budget for timeouts on long-running agents; have a "verify + commit what's on disk" fallback.
-  - **knip 6.x JSON schema is `{issues: [{file, files, exports, dependencies, devDependencies, types, ...}]}`, NOT flat top-level arrays.** Earlier plan drafts assumed the flat schema and would have produced empty candidate lists silently. Correct extraction: `r.issues.flatMap(i => (i.exports || []).map(...))`. Documented in updated plan.
-  - **knip.json tuning for RN/Expo:** test files go in `entry` (not `project`) or 78+ tests get flagged as unused-file false positives. `babel-preset-expo` + `babel-plugin-transform-import-meta` need `ignoreDependencies` because they're string-referenced in `babel.config.js` (knip's Babel plugin only auto-detects `@babel/*` packages).
-  - **D-168 a11y gap pattern during extraction:** when the original screen didn't pass `petName` for the accessibilityLabel, the extract inherits that gap AND crystallizes it into the new prop interface. Cheaper to fix in situ (add `petName` prop + thread it) during the extraction than to defer. `kiba-code-reviewer` pre-flight caught 4 such gaps this session.
-  - **`/ultrareview` catches cleanup the code-reviewer misses.** Phase 1 ultrareview found 6 truly-dead symbols that Agent B's "keyword-only unexport" contract preserved (keyword-only was correct per contract but a dead-code-framed sweep should catch these). Phase 2 ultrareview found an orphaned component, a dead prop, and an 8px style drift. Don't skip ultrareview on "mechanical" work.
-  - **`git reset --hard` is blocked by permission hooks.** User must run it manually via `!` prefix after each squash-merge to sync local `m5-complete`. `gh pr merge --squash --delete-branch` only deletes the local feature branch — local `m5-complete` diverges because the 10+ intermediate feature-branch commits live locally but origin has only the squash. Fix: `!git reset --hard origin/m5-complete`.
-  - **Squash-merges lose the per-agent TDD trail.** Phase 1's per-agent commits became `bc683b0`; Phase 2's per-agent commits became `3a99e32`. If you need that granularity for future debugging, fetch feature-branch SHAs BEFORE `--delete-branch` OR preserve the intermediate commits in the final squash commit body.
-  - **ScanHistoryCard.tsx no longer exists.** If future sessions cite D-168 implementation examples or look for in-app list-row exemplars, use `PantryCard` (not ScanHistoryCard — file deleted this session). CLAUDE.md line 46, DECISIONS.md D-168 list (3 lines), `.claude/agents/kiba-code-reviewer.md`, and `.agent/workflows/legacy-token-migration.md` were all updated.
-  - **All session-60/61 gotchas still apply.**
