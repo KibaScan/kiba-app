@@ -113,6 +113,22 @@ describe('CommunityScreen', () => {
     expect(await findByText(/Scan your first product to start earning XP/)).toBeTruthy();
   });
 
+  it('hides the XP ribbon entirely when fetch fails and cache is empty', async () => {
+    // AsyncStorage.getItem is mocked to resolve null (empty cache) at the top
+    // of the file, so the only path to populate `summary` here is the network
+    // fetch — which we reject.
+    mockedXp.fetchXPSummary.mockRejectedValue(new Error('network down'));
+    mockedCommunity.fetchRecentRecalls.mockResolvedValue([]);
+
+    const { queryByText, queryByTestId } = render(<CommunityScreen />);
+    await flush();
+
+    // Onboarding copy must not leak to returning users hitting a network blip.
+    expect(queryByText(/Scan your first product to start earning XP/)).toBeNull();
+    // Shimmer should also be gone — we resolved loading and just render null.
+    expect(queryByTestId('xp-ribbon-shimmer')).toBeNull();
+  });
+
   it('hides the recall banner when no recent recalls', async () => {
     mockedXp.fetchXPSummary.mockResolvedValue(POPULATED_XP);
     mockedCommunity.fetchRecentRecalls.mockResolvedValue([]);

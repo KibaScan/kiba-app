@@ -53,7 +53,9 @@ export function XPRibbon({ initialSummary = null }: Props) {
       .catch(() => {
         if (cancelled) return;
         // Failure with no cache: surface as loading-finished so we don't
-        // shimmer forever; rendering falls through to the empty state.
+        // shimmer forever. Render branch hides the ribbon entirely (graceful
+        // degradation) — the zero-XP onboarding copy is reserved for users
+        // we've confirmed have never scanned, not transient network failures.
         setLoading(false);
       });
 
@@ -62,7 +64,11 @@ export function XPRibbon({ initialSummary = null }: Props) {
 
   if (loading) return <RibbonShimmer />;
 
-  if (!summary || summary.total_xp === 0) {
+  // Fetch failed AND no cache available: hide the ribbon. Showing onboarding
+  // copy here would mislead returning users hitting a transient network blip.
+  if (!summary) return null;
+
+  if (summary.total_xp === 0) {
     return (
       <View style={styles.card} accessibilityRole="text">
         <Text style={styles.emptyText}>
