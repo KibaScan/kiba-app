@@ -1,8 +1,10 @@
 // Overflow menu for ResultScreen header. Bookmark lives in its own header icon
 // (visible state); this sheet hosts the secondary actions: Share + (optional)
-// Contact brand + Report issue. The "Contact {brand}" item only renders when
-// the parent has decided the brand has a published vendor row — visibility
-// logic lives in ResultScreen so this stays a dumb presenter.
+// Flag this score + (optional) Contact brand + Report issue. The "Contact
+// {brand}" item only renders when the parent has decided the brand has a
+// published vendor row — visibility logic lives in ResultScreen so this stays
+// a dumb presenter. The "Flag this score" item appears whenever the parent
+// supplies onFlagScore (universally available for in-app scans, per D-072).
 
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -17,6 +19,7 @@ interface Props {
   onReportIssue: () => void;
   onContactBrand?: () => void;
   brandName?: string;
+  onFlagScore?: () => void;
 }
 
 export function ResultHeaderMenu({
@@ -26,6 +29,7 @@ export function ResultHeaderMenu({
   onReportIssue,
   onContactBrand,
   brandName,
+  onFlagScore,
 }: Props) {
   const insets = useSafeAreaInsets();
   const handle = (fn: () => void) => () => {
@@ -57,6 +61,16 @@ export function ResultHeaderMenu({
             label="Share"
             onPress={handle(onShare)}
           />
+          {onFlagScore && (
+            <>
+              <View style={styles.divider} />
+              <MenuItem
+                icon="alert-circle-outline"
+                label="Flag this score"
+                onPress={handle(onFlagScore)}
+              />
+            </>
+          )}
           {showContact && (
             <>
               <View style={styles.divider} />

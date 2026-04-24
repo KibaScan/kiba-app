@@ -93,4 +93,30 @@ describe('ResultHeaderMenu', () => {
       expect(baseProps.onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  // ─── Flag this score item (Task 29, M9 Community, D-072) ──────────────────
+  describe('Flag this score item', () => {
+    test('renders when onFlagScore is provided', () => {
+      const onFlagScore = jest.fn();
+      const { getByText } = render(
+        <ResultHeaderMenu {...baseProps} onFlagScore={onFlagScore} />,
+      );
+      expect(getByText('Flag this score')).toBeTruthy();
+    });
+
+    test('hidden when onFlagScore is not provided', () => {
+      const { queryByText } = render(<ResultHeaderMenu {...baseProps} />);
+      expect(queryByText('Flag this score')).toBeNull();
+    });
+
+    test('tap fires onFlagScore and closes', () => {
+      const onFlagScore = jest.fn();
+      const { getByText } = render(
+        <ResultHeaderMenu {...baseProps} onFlagScore={onFlagScore} />,
+      );
+      fireEvent.press(getByText('Flag this score'));
+      expect(onFlagScore).toHaveBeenCalledTimes(1);
+      expect(baseProps.onClose).toHaveBeenCalledTimes(1);
+    });
+  });
 });

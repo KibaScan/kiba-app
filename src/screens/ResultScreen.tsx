@@ -81,6 +81,7 @@ import { computePetDer, pickBaseForSwap } from '../utils/pantryHelpers';
 import type { PantryAnchor } from '../types/pantry';
 import type { CalorieSource } from '../utils/calorieEstimation';
 import { ResultHeaderMenu } from '../components/result/ResultHeaderMenu';
+import { SafetyFlagSheet } from '../components/community/SafetyFlagSheet';
 import { ResultFullHeader } from '../components/result/ResultFullHeader';
 import { ProductImageBlock } from '../components/result/ProductImageBlock';
 import { ResultActionButtons } from '../components/result/ResultActionButtons';
@@ -175,6 +176,7 @@ export default function ResultScreen() {
   const [petAllergenGroups, setPetAllergenGroups] = useState<string[]>([]);
   const shareCardRef = useRef<View>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [flagSheetVisible, setFlagSheetVisible] = useState(false);
   const isBookmarked = useBookmarkStore((s) =>
     petId ? s.isBookmarked(petId, productId) : false,
   );
@@ -236,6 +238,15 @@ export default function ResultScreen() {
       params: { initialBrand: product.brand },
     });
   }, [navigation, product?.brand]);
+
+  // Flag this score (Task 29, M9 Community, D-072). Opens SafetyFlagSheet
+  // pre-populated with the current scan's pet + product. scanId is intentionally
+  // not threaded today: the scan_history insert above is fire-and-forget and
+  // doesn't capture the inserted row id. The submit RPC tolerates a missing
+  // scan_id (it's optional in the SafetyFlag schema).
+  const handleFlagScore = useCallback(() => {
+    setFlagSheetVisible(true);
+  }, []);
 
   const phase: 'loading' | 'ready' =
     terminalDone && scoringDone ? 'ready' : 'loading';
@@ -1064,7 +1075,17 @@ export default function ResultScreen() {
         onReportIssue={handleReportIssue}
         onContactBrand={showContactBrand ? handleContactBrand : undefined}
         brandName={showContactBrand ? product?.brand : undefined}
+        onFlagScore={pet && product ? handleFlagScore : undefined}
       />
+
+      {pet && product && (
+        <SafetyFlagSheet
+          visible={flagSheetVisible}
+          onClose={() => setFlagSheetVisible(false)}
+          petId={pet.id}
+          productId={product.id}
+        />
+      )}
     </SafeAreaView>
   );
 }
